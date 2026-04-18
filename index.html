@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tobias Fullerton Støier</title>
+    <meta name="description" content="Tobias Fullerton Støier — Head of Digital @ Comwell Hotels. Creative Strategist.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a1628;
+            --bg-darker: #050d1a;
+            --ink: #ffffff;
+            --red: #e32213;
+            --red-soft: rgba(227, 34, 19, 0.15);
+            --ink-muted: rgba(255, 255, 255, 0.6);
+            --ink-dim: rgba(255, 255, 255, 0.4);
+            --line: rgba(255, 255, 255, 0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Bricolage Grotesque', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+            line-height: 1.5;
+            overflow-x: hidden;
+            cursor: none;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.06) 1px, transparent 0);
+            background-size: 28px 28px;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+            opacity: 0.07;
+            pointer-events: none;
+            z-index: 2;
+            mix-blend-mode: overlay;
+        }
+
+        main {
+            position: relative;
+            z-index: 3;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cursor {
+            position: fixed;
+            width: 18px;
+            height: 18px;
+            background: var(--red);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: width 0.25s ease, height 0.25s ease, background 0.25s ease;
+            mix-blend-mode: difference;
+        }
+
+        .cursor-ring {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            border: 1.5px solid var(--ink);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9998;
+            transform: translate(-50%, -50%);
+            transition: transform 0.15s ease, width 0.3s ease, height 0.3s ease;
+            mix-blend-mode: difference;
+        }
+
+        .cursor.hover { width: 60px; height: 60px; background: var(--ink); }
+        .cursor-ring.hover { width: 80px; height: 80px; }
+
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 20;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            background: linear-gradient(to bottom, var(--bg), transparent);
+        }
+
+        nav .current-situation {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        nav .label {
+            color: var(--ink-muted);
+        }
+
+        nav .value {
+            color: var(--red);
+            font-weight: 700;
+        }
+
+        nav .pulse {
+            width: 7px;
+            height: 7px;
+            background: var(--red);
+            border-radius: 50%;
+            animation: blink 1.5s ease-in-out infinite;
+            margin-right: 0.25rem;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; box-shadow: 0 0 10px var(--red); }
+            50% { opacity: 0.3; box-shadow: 0 0 0 var(--red); }
+        }
+
+        nav .right {
+            color: var(--ink-muted);
+        }
+
+        nav .right a {
+            color: inherit;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        nav .right a:hover {
+            color: var(--red);
+        }
+
+        /* HERO - fills screen */
+        .hero {
+            flex: 1;
+            min-height: 100vh;
+            padding: 7rem 2rem 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-bg-text {
+            position: absolute;
+            bottom: 3%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Archivo Black', sans-serif;
+            font-size: clamp(10rem, 32vw, 30rem);
+            color: var(--red);
+            opacity: 0.08;
+            letter-spacing: -0.06em;
+            line-height: 0.8;
+            pointer-events: none;
+            z-index: 0;
+            white-space: nowrap;
+            will-change: transform;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        .hero h1 {
+            font-family: 'Archivo Black', sans-serif;
+            font-size: clamp(3.5rem, 15vw, 16rem);
+            line-height: 0.82;
+            letter-spacing: -0.045em;
+            text-transform: uppercase;
+            margin-bottom: 3.5rem;
+        }
+
+        .hero h1 .line {
+            display: block;
+            overflow: hidden;
+        }
+
+        .hero h1 .line span {
+            display: inline-block;
+            animation: slideUp 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+        }
+
+        .hero h1 .line:nth-child(1) span { animation-delay: 0.1s; }
+        .hero h1 .line:nth-child(2) span {
+            animation-delay: 0.22s;
+            color: var(--red);
+        }
+        .hero h1 .line:nth-child(3) span { animation-delay: 0.34s; }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes fadeIn { to { opacity: 1; } }
+
+        .keywords {
+            font-family: 'Bricolage Grotesque', sans-serif;
+            font-weight: 200;
+            font-size: clamp(1rem, 1.5vw, 1.25rem);
+            line-height: 2;
+            max-width: 900px;
+            margin: 0 auto 3.5rem;
+            opacity: 0;
+            animation: fadeIn 1s ease 0.8s forwards;
+        }
+
+        .keyword {
+            display: inline-block;
+            padding: 0.3em 1em;
+            margin: 0.25em 0.15em;
+            border: 2px solid var(--ink);
+            border-radius: 100px;
+            font-weight: 600;
+            font-size: 0.95em;
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            cursor: default;
+            color: var(--ink);
+        }
+
+        .keyword:hover {
+            background: var(--red);
+            border-color: var(--red);
+            color: var(--ink);
+            transform: rotate(-3deg) scale(1.05);
+        }
+
+        .keyword:nth-child(2n):hover {
+            transform: rotate(3deg) scale(1.05);
+        }
+
+        /* CTAs in hero */
+        .cta-row {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: fadeIn 1s ease 1.1s forwards;
+        }
+
+        .cta {
+            display: inline-block;
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(0.85rem, 1.2vw, 1rem);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--ink);
+            text-decoration: none;
+            padding: 1rem 1.75rem;
+            border: 2px solid var(--ink);
+            border-radius: 100px;
+            transition: all 0.3s ease;
+            font-weight: 700;
+        }
+
+        .cta:hover {
+            background: var(--red);
+            border-color: var(--red);
+            color: var(--ink);
+            transform: translateY(-4px) rotate(-1deg);
+        }
+
+        .cta-linkedin:hover {
+            transform: translateY(-4px) rotate(1deg);
+        }
+
+        footer {
+            padding: 1.5rem 2rem;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            text-align: center;
+            color: var(--ink-dim);
+            border-top: 1px solid var(--line);
+            position: relative;
+            z-index: 3;
+        }
+
+        @media (max-width: 768px) {
+            body { cursor: auto; }
+            .cursor, .cursor-ring { display: none; }
+
+            nav {
+                padding: 1rem 1.25rem;
+                flex-direction: column;
+                gap: 0.35rem;
+                font-size: 0.58rem;
+            }
+
+            nav .right { display: none; }
+
+            .hero {
+                padding: 6rem 1.25rem 3rem;
+            }
+
+            .hero-bg-text {
+                font-size: 14rem;
+                bottom: 5%;
+            }
+
+            .cta {
+                padding: 0.9rem 1.25rem;
+                font-size: 0.75rem;
+            }
+
+            .cta-row {
+                gap: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="cursor"></div>
+    <div class="cursor-ring"></div>
+
+    <nav>
+        <div class="current-situation">
+            <span class="pulse"></span>
+            <span class="label">Current situation:</span>
+            <span class="value">Head of Digital · Comwell Hotels</span>
+        </div>
+        <div class="right">
+            <a href="https://servicedesign.dk" target="_blank" rel="noopener">Servicedesign.dk</a>
+        </div>
+    </nav>
+
+    <main>
+        <section class="hero">
+            <div class="hero-bg-text">STØIER</div>
+            <div class="hero-content">
+                <h1>
+                    <span class="line"><span>Tobias</span></span>
+                    <span class="line"><span>Fullerton</span></span>
+                    <span class="line"><span>Støier</span></span>
+                </h1>
+                <div class="keywords">
+                    <span class="keyword">Digital Strategi</span>
+                    <span class="keyword">Service Design</span>
+                    <span class="keyword">Forretningsudvikling</span>
+                    <span class="keyword">User Experience Design</span>
+                    <span class="keyword">Konceptudvikling</span>
+                </div>
+                <div class="cta-row">
+                    <a href="mailto:tobias@stoeier.dk" class="cta">→ tobias@stoeier.dk</a>
+                    <a href="https://linkedin.com/in/stoeier" target="_blank" rel="noopener" class="cta cta-linkedin">→ LinkedIn</a>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            © Støier
+        </footer>
+    </main>
+
+    <script>
+        const cursor = document.querySelector('.cursor');
+        const ring = document.querySelector('.cursor-ring');
+        let mouseX = 0, mouseY = 0;
+        let ringX = 0, ringY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            cursor.style.left = mouseX + 'px';
+            cursor.style.top = mouseY + 'px';
+        });
+
+        function animateRing() {
+            ringX += (mouseX - ringX) * 0.15;
+            ringY += (mouseY - ringY) * 0.15;
+            ring.style.left = ringX + 'px';
+            ring.style.top = ringY + 'px';
+            requestAnimationFrame(animateRing);
+        }
+        animateRing();
+
+        document.querySelectorAll('a, .keyword').forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                cursor.classList.add('hover');
+                ring.classList.add('hover');
+            });
+            el.addEventListener('mouseleave', () => {
+                cursor.classList.remove('hover');
+                ring.classList.remove('hover');
+            });
+        });
+
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const heroText = document.querySelector('.hero-bg-text');
+            if (heroText) {
+                heroText.style.transform = `translateX(calc(-50% + ${scrolled * 0.2}px))`;
+            }
+        });
+    </script>
+</body>
+</html>
