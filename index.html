@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Støier — Digital Strategist</title>
+    <meta name="description" content="Tobias Støier — Head of Digital @ Comwell Hotels. Arbejder med digital strategi, service design, forretningsudvikling, UX og konceptudvikling.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0d1410;
+            --ink: #f4f1e8;
+            --green: #8fb73e;
+            --purple: #a084dc;
+            --orange: #ff6b35;
+            --red: #e63946;
+            --blue: #3a86ff;
+            --line: rgba(244, 241, 232, 0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Bricolage Grotesque', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+            line-height: 1.5;
+            overflow-x: hidden;
+            cursor: none;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: radial-gradient(circle at 1px 1px, rgba(244, 241, 232, 0.07) 1px, transparent 0);
+            background-size: 24px 24px;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+            opacity: 0.08;
+            pointer-events: none;
+            z-index: 2;
+            mix-blend-mode: overlay;
+        }
+
+        main { position: relative; z-index: 3; }
+
+        .cursor {
+            position: fixed;
+            width: 18px;
+            height: 18px;
+            background: var(--orange);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: width 0.25s ease, height 0.25s ease, background 0.25s ease;
+            mix-blend-mode: difference;
+        }
+
+        .cursor-ring {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            border: 1.5px solid var(--ink);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9998;
+            transform: translate(-50%, -50%);
+            transition: transform 0.15s ease, width 0.3s ease, height 0.3s ease;
+            mix-blend-mode: difference;
+        }
+
+        .cursor.hover { width: 60px; height: 60px; background: var(--green); }
+        .cursor-ring.hover { width: 80px; height: 80px; }
+
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 20;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        /* LIVE badge - "Nuværende job" gimmick */
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--red);
+            color: var(--ink);
+            padding: 0.35rem 0.7rem;
+            border-radius: 4px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            animation: wobble 3s ease-in-out infinite;
+        }
+
+        .live-badge::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            background: var(--ink);
+            border-radius: 50%;
+            animation: blink 1.2s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.2; }
+        }
+
+        @keyframes wobble {
+            0%, 100% { transform: rotate(-2deg); }
+            50% { transform: rotate(2deg); }
+        }
+
+        nav .center {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--ink);
+        }
+
+        nav .center .job-text {
+            opacity: 0.7;
+        }
+
+        nav .right { color: var(--orange); }
+
+        .hero {
+            min-height: 100vh;
+            padding: 6rem 2rem 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-bg-text {
+            position: absolute;
+            bottom: -3rem;
+            right: -2rem;
+            font-family: 'Archivo Black', sans-serif;
+            font-size: clamp(8rem, 25vw, 22rem);
+            color: var(--green);
+            opacity: 0.08;
+            letter-spacing: -0.05em;
+            line-height: 0.8;
+            pointer-events: none;
+            z-index: 0;
+            white-space: nowrap;
+            will-change: transform;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .hero-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--orange);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .hero-label::before {
+            content: '';
+            width: 2rem;
+            height: 1px;
+            background: var(--orange);
+        }
+
+        .hero h1 {
+            font-family: 'Archivo Black', sans-serif;
+            font-size: clamp(3.5rem, 13vw, 13rem);
+            line-height: 0.85;
+            letter-spacing: -0.04em;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+        }
+
+        .hero h1 .line {
+            display: block;
+            overflow: hidden;
+        }
+
+        .hero h1 .line span {
+            display: inline-block;
+            animation: slideUp 1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+        }
+
+        .hero h1 .line:nth-child(1) span { animation-delay: 0.1s; }
+        .hero h1 .line:nth-child(2) span { animation-delay: 0.25s; color: var(--green); font-style: italic; }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .hero-roles {
+            font-family: 'Bricolage Grotesque', sans-serif;
+            font-weight: 200;
+            font-size: clamp(1.2rem, 2.5vw, 2rem);
+            line-height: 1.8;
+            letter-spacing: -0.01em;
+            max-width: 900px;
+            margin-top: 2rem;
+            opacity: 0;
+            animation: fadeIn 1s ease 0.8s forwards;
+        }
+
+        @keyframes fadeIn { to { opacity: 1; } }
+
+        .pill {
+            display: inline-block;
+            padding: 0.15em 0.7em;
+            margin: 0.15em 0.1em;
+            border: 1.5px solid;
+            border-radius: 100px;
+            font-weight: 600;
+            font-size: 0.85em;
+            transition: all 0.3s ease;
+            cursor: default;
+        }
+
+        .pill:hover {
+            transform: rotate(-3deg) scale(1.05);
+        }
+
+        .pill-green { border-color: var(--green); color: var(--green); }
+        .pill-purple { border-color: var(--purple); color: var(--purple); }
+        .pill-orange { border-color: var(--orange); color: var(--orange); }
+        .pill-red { border-color: var(--red); color: var(--red); }
+        .pill-blue { border-color: var(--blue); color: var(--blue); }
+
+        .pill-green:hover { background: var(--green); color: var(--bg); }
+        .pill-purple:hover { background: var(--purple); color: var(--bg); }
+        .pill-orange:hover { background: var(--orange); color: var(--bg); }
+        .pill-red:hover { background: var(--red); color: var(--bg); }
+        .pill-blue:hover { background: var(--blue); color: var(--bg); }
+
+        .scroll-hint {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--ink);
+            opacity: 0.5;
+            animation: bob 2s ease-in-out infinite;
+        }
+
+        @keyframes bob {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-10px); }
+        }
+
+        .marquee {
+            background: var(--green);
+            color: var(--bg);
+            padding: 1.5rem 0;
+            overflow: hidden;
+            border-top: 2px solid var(--bg);
+            border-bottom: 2px solid var(--bg);
+            position: relative;
+            transform: rotate(-1.5deg) scale(1.05);
+            margin: 4rem 0;
+        }
+
+        .marquee-track {
+            display: flex;
+            animation: scroll 30s linear infinite;
+            width: max-content;
+        }
+
+        .marquee-item {
+            font-family: 'Archivo Black', sans-serif;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            white-space: nowrap;
+        }
+
+        .marquee-star {
+            display: inline-block;
+            color: var(--bg);
+            font-size: 0.7em;
+            animation: spin 8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @keyframes scroll {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+
+        section {
+            padding: 6rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .section-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--orange);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section-label::before {
+            content: '';
+            width: 2rem;
+            height: 1px;
+            background: var(--orange);
+        }
+
+        .section-heading {
+            font-family: 'Archivo Black', sans-serif;
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            line-height: 0.9;
+            letter-spacing: -0.03em;
+            text-transform: uppercase;
+            margin-bottom: 3rem;
+        }
+
+        .section-heading .accent {
+            color: var(--green);
+            font-style: italic;
+        }
+
+        .cv-list {
+            list-style: none;
+            border-top: 1px solid var(--line);
+        }
+
+        .cv-row {
+            display: grid;
+            grid-template-columns: 140px 1fr 1.5fr;
+            gap: 2rem;
+            padding: 1.5rem 0;
+            border-bottom: 1px solid var(--line);
+            align-items: baseline;
+            transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+            position: relative;
+        }
+
+        /* Different colors per CV row for extra turtle flavor */
+        .cv-row::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 0;
+            transition: width 0.4s ease;
+        }
+
+        .cv-row:nth-child(4n+1)::before { background: var(--green); }
+        .cv-row:nth-child(4n+2)::before { background: var(--purple); }
+        .cv-row:nth-child(4n+3)::before { background: var(--orange); }
+        .cv-row:nth-child(4n+4)::before { background: var(--red); }
+
+        .cv-row:hover {
+            padding-left: 1.5rem;
+        }
+
+        .cv-row:hover::before { width: 4px; }
+
+        .cv-row:nth-child(4n+1):hover { background: rgba(143, 183, 62, 0.05); }
+        .cv-row:nth-child(4n+2):hover { background: rgba(160, 132, 220, 0.05); }
+        .cv-row:nth-child(4n+3):hover { background: rgba(255, 107, 53, 0.05); }
+        .cv-row:nth-child(4n+4):hover { background: rgba(230, 57, 70, 0.05); }
+
+        .cv-row:nth-child(4n+1):hover .cv-role { color: var(--green); }
+        .cv-row:nth-child(4n+2):hover .cv-role { color: var(--purple); }
+        .cv-row:nth-child(4n+3):hover .cv-role { color: var(--orange); }
+        .cv-row:nth-child(4n+4):hover .cv-role { color: var(--red); }
+
+        .cv-year {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--orange);
+            letter-spacing: 0.05em;
+        }
+
+        .cv-role {
+            font-family: 'Archivo Black', sans-serif;
+            font-size: 1.3rem;
+            text-transform: uppercase;
+            letter-spacing: -0.01em;
+            line-height: 1.2;
+            transition: color 0.3s ease;
+        }
+
+        .cv-where {
+            font-size: 0.95rem;
+            color: rgba(244, 241, 232, 0.65);
+            font-weight: 400;
+        }
+
+        .cv-where strong {
+            color: var(--ink);
+            font-weight: 600;
+        }
+
+        .clients { text-align: center; padding: 6rem 2rem; }
+
+        .clients-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 0.4rem 1rem;
+            margin-top: 2rem;
+            max-width: 1100px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .client-chip {
+            font-family: 'Archivo Black', sans-serif;
+            font-size: clamp(1.1rem, 2.2vw, 1.8rem);
+            text-transform: uppercase;
+            letter-spacing: -0.01em;
+            padding: 0.3em 0.8em;
+            border-radius: 100px;
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            cursor: default;
+            display: inline-block;
+            color: var(--ink);
+        }
+
+        .client-chip:nth-child(5n+1):hover { background: var(--green); color: var(--bg); transform: rotate(-3deg) scale(1.08); }
+        .client-chip:nth-child(5n+2):hover { background: var(--purple); color: var(--bg); transform: rotate(2deg) scale(1.08); }
+        .client-chip:nth-child(5n+3):hover { background: var(--orange); color: var(--bg); transform: rotate(-2deg) scale(1.08); }
+        .client-chip:nth-child(5n+4):hover { background: var(--red); color: var(--bg); transform: rotate(3deg) scale(1.08); }
+        .client-chip:nth-child(5n+5):hover { background: var(--blue); color: var(--bg); transform: rotate(-1deg) scale(1.08); }
+
+        .contact {
+            padding: 8rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .contact::before {
+            content: 'HELLO';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Archivo Black', sans-serif;
+            font-size: clamp(12rem, 30vw, 28rem);
+            color: var(--purple);
+            opacity: 0.06;
+            letter-spacing: -0.04em;
+            pointer-events: none;
+            z-index: 0;
+            line-height: 0.8;
+        }
+
+        .contact-inner { position: relative; z-index: 2; }
+
+        .contact h2 {
+            font-family: 'Archivo Black', sans-serif;
+            font-size: clamp(2.5rem, 7vw, 6rem);
+            line-height: 0.9;
+            letter-spacing: -0.03em;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+        }
+
+        .contact h2 .accent {
+            color: var(--orange);
+            font-style: italic;
+        }
+
+        .email-link {
+            display: inline-block;
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(1.1rem, 2.2vw, 1.6rem);
+            color: var(--ink);
+            text-decoration: none;
+            padding: 1rem 2rem;
+            border: 2px solid var(--ink);
+            border-radius: 100px;
+            margin-top: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .email-link:hover {
+            background: var(--green);
+            border-color: var(--green);
+            color: var(--bg);
+            transform: translateY(-3px) rotate(-1deg);
+        }
+
+        footer {
+            padding: 2rem;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.72rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            text-align: center;
+            color: rgba(244, 241, 232, 0.4);
+            border-top: 1px solid var(--line);
+        }
+
+        footer .heart {
+            color: var(--red);
+            display: inline-block;
+            animation: heartbeat 1.5s ease-in-out infinite;
+        }
+
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(60px);
+            transition: opacity 1s cubic-bezier(0.2, 0.8, 0.2, 1), transform 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 768px) {
+            body { cursor: auto; }
+            .cursor, .cursor-ring { display: none; }
+
+            nav {
+                padding: 1rem 1.25rem;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+
+            nav .center {
+                font-size: 0.6rem;
+                order: 3;
+                width: 100%;
+                justify-content: center;
+            }
+
+            nav .right { display: none; }
+
+            .hero {
+                padding: 6rem 1.25rem 3rem;
+                min-height: 90vh;
+            }
+
+            .hero-bg-text {
+                font-size: 10rem;
+                bottom: -1rem;
+                right: -1rem;
+            }
+
+            .hero-roles {
+                font-size: 1.1rem;
+                line-height: 2;
+            }
+
+            section { padding: 4rem 1.25rem; }
+
+            .cv-row {
+                grid-template-columns: 1fr;
+                gap: 0.3rem;
+                padding: 1.25rem 0;
+            }
+
+            .cv-row:hover { padding-left: 0.75rem; }
+
+            .marquee {
+                margin: 2.5rem 0;
+                padding: 1rem 0;
+            }
+
+            .contact { padding: 5rem 1.25rem; }
+
+            .email-link {
+                padding: 0.85rem 1.5rem;
+                font-size: 1rem;
+            }
+
+            .scroll-hint { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="cursor"></div>
+    <div class="cursor-ring"></div>
+
+    <nav>
+        <div class="live-badge">LIVE</div>
+        <div class="center">
+            <span class="job-text">Nuværende job:</span>
+            <span style="color: var(--green); font-weight: 600;">Head of Digital · Comwell Hotels</span>
+        </div>
+        <div class="right">Støier.dk</div>
+    </nav>
+
+    <main>
+        <section class="hero">
+            <div class="hero-bg-text">STØIER</div>
+            <div class="hero-content">
+                <div class="hero-label">Rødovre · København · 2026</div>
+                <h1>
+                    <span class="line"><span>Tobias</span></span>
+                    <span class="line"><span>Støier</span></span>
+                </h1>
+                <p class="hero-roles">
+                    Jeg laver primært
+                    <span class="pill pill-green">Digital Strategi</span>
+                    <span class="pill pill-orange">Service Design</span>
+                    <span class="pill pill-purple">Forretningsudvikling</span>
+                    <span class="pill pill-blue">User Experience Design</span>
+                    og
+                    <span class="pill pill-red">Konceptudvikling</span>.
+                </p>
+            </div>
+            <div class="scroll-hint">↓ Scroll</div>
+        </section>
+
+        <div class="marquee">
+            <div class="marquee-track">
+                <div class="marquee-item">Digital Strategi <span class="marquee-star">✦</span> Service Design <span class="marquee-star">✦</span> Forretningsudvikling <span class="marquee-star">✦</span> Konceptudvikling <span class="marquee-star">✦</span> UX Design <span class="marquee-star">✦</span></div>
+                <div class="marquee-item">Digital Strategi <span class="marquee-star">✦</span> Service Design <span class="marquee-star">✦</span> Forretningsudvikling <span class="marquee-star">✦</span> Konceptudvikling <span class="marquee-star">✦</span> UX Design <span class="marquee-star">✦</span></div>
+            </div>
+        </div>
+
+        <section class="reveal">
+            <div class="section-label">01 · CV</div>
+            <h2 class="section-heading">CV<span class="accent">.</span></h2>
+            <ul class="cv-list">
+                <li class="cv-row">
+                    <div class="cv-year">2020 →</div>
+                    <div class="cv-role">Head of Digital</div>
+                    <div class="cv-where"><strong>Comwell Hotels</strong> · København</div>
+                </li>
+                <li class="cv-row">
+                    <div class="cv-year">2024 →</div>
+                    <div class="cv-role">Jury Member</div>
+                    <div class="cv-where"><strong>Danish Digital Award</strong></div>
+                </li>
+                <li class="cv-row">
+                    <div class="cv-year">2025 — 26</div>
+                    <div class="cv-role">Nomineringskomité</div>
+                    <div class="cv-where"><strong>Dansk Erhverv</strong> · E-handelsprisen</div>
+                </li>
+                <li class="cv-row">
+                    <div class="cv-year">2017 — 20</div>
+                    <div class="cv-role">Underviser / Vejleder</div>
+                    <div class="cv-where"><strong>DMJX</strong> · Danmarks Medie- og Journalisthøjskole</div>
+                </li>
+                <li class="cv-row">
+                    <div class="cv-year">2017 — 20</div>
+                    <div class="cv-role">Senior Creative Strategist</div>
+                    <div class="cv-where"><strong>Dwarf</strong> · Frederiksberg</div>
+                </li>
+                <li class="cv-row">
+                    <div class="cv-year">2014 — 17</div>
+                    <div class="cv-role">Business Developer</div>
+                    <div class="cv-where"><strong>Dwarf</strong> · Frederiksberg</div>
+                </li>
+                <li class="cv-row">
+                    <div class="cv-year">2013 — 14</div>
+                    <div class="cv-role">UX Designer</div>
+                    <div class="cv-where"><strong>Dwarf</strong> · Frederiksberg</div>
+                </li>
+                <li class="cv-row">
+                    <div class="cv-year">2011 — 13</div>
+                    <div class="cv-role">Information Architect</div>
+                    <div class="cv-where"><strong>DEVANT!</strong> · København</div>
+                </li>
+                <li class="cv-row">
+                    <div class="cv-year">2010 — 11</div>
+                    <div class="cv-role">Task-force Associate</div>
+                    <div class="cv-where"><strong>Promovator</strong> · København</div>
+                </li>
+                <li class="cv-row">
+                    <div class="cv-year">2010 — 11</div>
+                    <div class="cv-role">Digital Communication Intern</div>
+                    <div class="cv-where"><strong>BystedFFW</strong> · København</div>
+                </li>
+            </ul>
+        </section>
+
+        <section class="clients reveal">
+            <div class="section-label" style="justify-content: center;">02 · Brands</div>
+            <h2 class="section-heading">Brands jeg bl.a. har <span class="accent">arbejdet med.</span></h2>
+            <div class="clients-grid">
+                <span class="client-chip">ALD Automotive</span>
+                <span class="client-chip">Alinea</span>
+                <span class="client-chip">Ayvens</span>
+                <span class="client-chip">BørneTelefonen</span>
+                <span class="client-chip">Børns Vilkår</span>
+                <span class="client-chip">Comwell Hotels</span>
+                <span class="client-chip">Danica Pension</span>
+                <span class="client-chip">Dansk Retursystem</span>
+                <span class="client-chip">Dansk Svømmeunion</span>
+                <span class="client-chip">e-mærket</span>
+                <span class="client-chip">Feriepartner</span>
+                <span class="client-chip">Hi3G</span>
+                <span class="client-chip">Human Library</span>
+                <span class="client-chip">Interdan</span>
+                <span class="client-chip">J.Lindeberg</span>
+                <span class="client-chip">Kammeradvokaten</span>
+                <span class="client-chip">Kommunernes Landsforening</span>
+                <span class="client-chip">Kræftens Bekæmpelse</span>
+                <span class="client-chip">LO Plus</span>
+                <span class="client-chip">MINI Danmark</span>
+                <span class="client-chip">Sikkerhedsstyrelsen</span>
+                <span class="client-chip">Sticks'n'Sushi</span>
+                <span class="client-chip">Vestas</span>
+                <span class="client-chip">ZENZ Organic</span>
+            </div>
+        </section>
+
+        <section class="contact">
+            <div class="contact-inner">
+                <div class="section-label" style="justify-content: center;">03 · Kontakt</div>
+                <h2>Skriv <span class="accent">til mig</span></h2>
+                <a href="mailto:tobias@stoeier.dk" class="email-link">tobias@stoeier.dk</a>
+            </div>
+        </section>
+
+        <footer>
+            © 2026 Støier · Lavet med <span class="heart">♥</span> i Rødovre
+        </footer>
+    </main>
+
+    <script>
+        const cursor = document.querySelector('.cursor');
+        const ring = document.querySelector('.cursor-ring');
+        let mouseX = 0, mouseY = 0;
+        let ringX = 0, ringY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            cursor.style.left = mouseX + 'px';
+            cursor.style.top = mouseY + 'px';
+        });
+
+        function animateRing() {
+            ringX += (mouseX - ringX) * 0.15;
+            ringY += (mouseY - ringY) * 0.15;
+            ring.style.left = ringX + 'px';
+            ring.style.top = ringY + 'px';
+            requestAnimationFrame(animateRing);
+        }
+        animateRing();
+
+        document.querySelectorAll('a, .pill, .client-chip, .cv-row, .live-badge').forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                cursor.classList.add('hover');
+                ring.classList.add('hover');
+            });
+            el.addEventListener('mouseleave', () => {
+                cursor.classList.remove('hover');
+                ring.classList.remove('hover');
+            });
+        });
+
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const heroText = document.querySelector('.hero-bg-text');
+            if (heroText) {
+                heroText.style.transform = `translateX(${scrolled * 0.4}px)`;
+            }
+        });
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) entry.target.classList.add('visible');
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    </script>
+</body>
+</html>
