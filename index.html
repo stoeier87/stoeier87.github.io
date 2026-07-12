@@ -28,6 +28,42 @@
             overflow-x: hidden;
         }
 
+        /* UFO-cursor: aktiveres kun via JS paa fine pointers uden reduced motion */
+        html.ufo-on, html.ufo-on a { cursor: none; }
+
+        .ufo {
+            position: fixed;
+            left: 0; top: 0;
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0;
+            will-change: transform;
+        }
+        html.ufo-on .ufo.live { opacity: 1; }
+
+        .ufo .beam {
+            position: absolute;
+            left: 50%;
+            top: 22px;
+            width: 0; height: 0;
+            transform: translateX(-50%);
+            border-left: 14px solid transparent;
+            border-right: 14px solid transparent;
+            border-bottom: 34px solid rgba(224, 58, 47, 0.28);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .ufo.zap .beam { opacity: 1; }
+
+        .ufo .light { animation: ufolight 0.9s linear infinite; }
+        .ufo .light:nth-child(2) { animation-delay: 0.3s; }
+        .ufo .light:nth-child(3) { animation-delay: 0.6s; }
+
+        @keyframes ufolight {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.2; }
+        }
+
         /* Subtil dot-grid over starfield, under indhold */
         .dotgrid {
             position: fixed;
@@ -113,6 +149,10 @@
         .name .word { display: block; white-space: nowrap; }
         .name .word.red { color: var(--red); }
 
+        /* Ordene i rejsen er skjult til JS har splittet dem i bogstaver,
+           saa navnet aldrig staar statisk fra start */
+        html.js-anim #stageName .word { visibility: hidden; }
+
         .stage .word .ltr {
             display: inline-block;
             opacity: 0;
@@ -143,6 +183,19 @@
             align-items: center;
             gap: clamp(2.5rem, 6vh, 4.5rem);
             padding: 6rem 1.25rem 4rem;
+        }
+
+        /* Finalen toner foerst frem naar den scrolles ind, saa den ikke
+           foeles som en statisk dublet af rejsen */
+        html.js-anim .reveal {
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity 0.9s ease, transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        html.js-anim .pills.reveal { transition-delay: 0.15s; }
+        html.js-anim .reveal.in {
+            opacity: 1;
+            transform: none;
         }
 
         .pills {
@@ -231,6 +284,28 @@
     <canvas id="starfield" aria-hidden="true"></canvas>
     <div class="dotgrid" aria-hidden="true"></div>
 
+    <div class="ufo" id="ufo" aria-hidden="true">
+        <div class="beam"></div>
+        <svg width="48" height="34" viewBox="0 0 48 34" fill="none">
+            <defs>
+                <linearGradient id="dome" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="rgba(200,230,255,0.85)"/>
+                    <stop offset="1" stop-color="rgba(120,170,220,0.35)"/>
+                </linearGradient>
+                <linearGradient id="saucer" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#e8edf5"/>
+                    <stop offset="0.55" stop-color="#9aa7bd"/>
+                    <stop offset="1" stop-color="#5c6a85"/>
+                </linearGradient>
+            </defs>
+            <ellipse cx="24" cy="12" rx="9" ry="8.5" fill="url(#dome)"/>
+            <ellipse cx="24" cy="18.5" rx="21" ry="7.5" fill="url(#saucer)"/>
+            <circle class="light" cx="10" cy="21" r="2" fill="#e03a2f"/>
+            <circle class="light" cx="24" cy="23" r="2" fill="#e03a2f"/>
+            <circle class="light" cx="38" cy="21" r="2" fill="#e03a2f"/>
+        </svg>
+    </div>
+
     <header class="topbar">
         <span class="label">Current situation:</span>
         <span class="value">Principal Digital Strategist at Comwell Hotels</span>
@@ -251,12 +326,12 @@
 
         <!-- Slutsektion: navnet samlet + kontakt -->
         <section class="finale">
-            <h1 class="name">
+            <h1 class="name reveal">
                 <span class="word">TOBIAS</span>
                 <span class="word red">FULLERTON</span>
                 <span class="word">STØIER</span>
             </h1>
-            <ul class="pills">
+            <ul class="pills reveal">
                 <li><a class="pill" href="mailto:tobias@stoeier.dk"><span class="arrow">→</span>tobias@stoeier.dk</a></li>
                 <li><a class="pill" href="https://dk.linkedin.com/in/stoeier" target="_blank" rel="noopener"><span class="arrow">→</span>LinkedIn</a></li>
                 <li><a class="pill" href="https://instagram.com/stoeier" target="_blank" rel="noopener"><span class="arrow">→</span>Instagram</a></li>
@@ -275,6 +350,7 @@
         'use strict';
 
         var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (!reduced) document.documentElement.classList.add('js-anim');
 
         /* ============ Starfield ============ */
         var canvas = document.getElementById('starfield');
@@ -311,6 +387,120 @@
             });
         }
 
+        /* ============ Planeter ============ */
+        // r = andel af vmin, s0 = hvor paa rejsen planeten passerer midten,
+        // px = vandret position (andel af W), pf = parallax-dybde
+        var PLANETS = [
+            { name: 'MERKUR',  r: 0.020, s0: 0.06, px: 0.80, pf: 0.42, hi: '#b8b0a8', lo: '#5c554e' },
+            { name: 'VENUS',   r: 0.034, s0: 0.16, px: 0.16, pf: 0.50, hi: '#e8cfa0', lo: '#a67c48' },
+            { name: 'JORDEN',  r: 0.040, s0: 0.27, px: 0.83, pf: 0.58, hi: '#6fb6e8', lo: '#1c4e8a', earth: true },
+            { name: 'MARS',    r: 0.028, s0: 0.38, px: 0.14, pf: 0.46, hi: '#e0704a', lo: '#8a3520' },
+            { name: 'JUPITER', r: 0.105, s0: 0.52, px: 0.85, pf: 0.62, hi: '#d9b48a', lo: '#8a6238', bands: true },
+            { name: 'SATURN',  r: 0.080, s0: 0.67, px: 0.16, pf: 0.55, hi: '#e3c68f', lo: '#9c7a48', ring: true },
+            { name: 'URANUS',  r: 0.042, s0: 0.80, px: 0.82, pf: 0.48, hi: '#a8e0e8', lo: '#4a98a8' },
+            { name: 'NEPTUN',  r: 0.046, s0: 0.92, px: 0.15, pf: 0.60, hi: '#6a8ce8', lo: '#2a3f9c' }
+        ];
+
+        function drawPlanet(p, x, y, r) {
+            // Svag glow
+            var glow = ctx.createRadialGradient(x, y, r * 0.5, x, y, r * 2);
+            glow.addColorStop(0, 'rgba(255,255,255,0.06)');
+            glow.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(x, y, r * 2, 0, 6.2832);
+            ctx.fill();
+
+            // Saturns ring: bagerste halvdel foerst
+            if (p.ring) {
+                ctx.strokeStyle = 'rgba(214, 194, 150, 0.55)';
+                ctx.lineWidth = r * 0.30;
+                ctx.beginPath();
+                ctx.ellipse(x, y, r * 1.75, r * 0.55, -0.32, Math.PI, 6.2832);
+                ctx.stroke();
+            }
+
+            // Kroppen med lys fra oeverste venstre
+            var body = ctx.createRadialGradient(x - r * 0.35, y - r * 0.35, r * 0.1, x, y, r * 1.05);
+            body.addColorStop(0, p.hi);
+            body.addColorStop(1, p.lo);
+            ctx.fillStyle = body;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, 6.2832);
+            ctx.fill();
+
+            if (p.bands || p.earth) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, 6.2832);
+                ctx.clip();
+                if (p.bands) {
+                    // Jupiters striber
+                    ctx.fillStyle = 'rgba(110, 74, 44, 0.35)';
+                    ctx.fillRect(x - r, y - r * 0.52, r * 2, r * 0.18);
+                    ctx.fillRect(x - r, y - r * 0.10, r * 2, r * 0.22);
+                    ctx.fillRect(x - r, y + r * 0.38, r * 2, r * 0.15);
+                    // Den store roede plet
+                    ctx.fillStyle = 'rgba(200, 90, 60, 0.75)';
+                    ctx.beginPath();
+                    ctx.ellipse(x + r * 0.35, y + r * 0.24, r * 0.18, r * 0.11, 0, 0, 6.2832);
+                    ctx.fill();
+                }
+                if (p.earth) {
+                    // Stiliserede kontinenter + polarkappe
+                    ctx.fillStyle = 'rgba(76, 156, 94, 0.85)';
+                    ctx.beginPath();
+                    ctx.ellipse(x - r * 0.30, y - r * 0.15, r * 0.42, r * 0.30, 0.5, 0, 6.2832);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.ellipse(x + r * 0.42, y + r * 0.35, r * 0.28, r * 0.20, -0.4, 0, 6.2832);
+                    ctx.fill();
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                    ctx.beginPath();
+                    ctx.ellipse(x + r * 0.1, y - r * 0.8, r * 0.35, r * 0.18, 0, 0, 6.2832);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+
+            // Ringens forreste halvdel over kroppen
+            if (p.ring) {
+                ctx.strokeStyle = 'rgba(224, 204, 160, 0.7)';
+                ctx.lineWidth = r * 0.30;
+                ctx.beginPath();
+                ctx.ellipse(x, y, r * 1.75, r * 0.55, -0.32, 0, Math.PI);
+                ctx.stroke();
+            }
+
+            // Mono-label som resten af UI'et
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+            ctx.font = '700 10px "Space Mono", monospace';
+            ctx.textAlign = x > W / 2 ? 'right' : 'left';
+            var lx = x > W / 2 ? x - (p.ring ? r * 2 : r) - 12 : x + (p.ring ? r * 2 : r) + 12;
+            ctx.fillText(p.name, lx, y + 3);
+        }
+
+        function drawPlanets(scroll) {
+            var vmin = Math.min(W, H);
+            var S = journeyEnd;
+            for (var i = 0; i < PLANETS.length; i++) {
+                var p = PLANETS[i];
+                var r = p.r * vmin;
+                var worldY = H * 0.55 + p.s0 * S * p.pf;
+                var y = worldY - scroll * p.pf;
+                if (y < -r * 3 || y > H + r * 3) continue;
+                drawPlanet(p, p.px * W, y, r);
+            }
+        }
+
+        // Statisk opstilling naar reduced motion er slaaet til
+        function drawPlanetsStatic() {
+            var vmin = Math.min(W, H);
+            drawPlanet(PLANETS[5], W * 0.85, H * 0.20, 0.05 * vmin);  // Saturn
+            drawPlanet(PLANETS[3], W * 0.12, H * 0.72, 0.025 * vmin); // Mars
+            drawPlanet(PLANETS[2], W * 0.90, H * 0.82, 0.03 * vmin);  // Jorden
+        }
+
         function drawStars(scroll, time) {
             ctx.clearRect(0, 0, W, H);
             for (var li = 0; li < layers.length; li++) {
@@ -330,6 +520,11 @@
                 }
             }
             ctx.globalAlpha = 1;
+            if (reduced) {
+                drawPlanetsStatic();
+            } else {
+                drawPlanets(scroll);
+            }
         }
 
         /* ============ Bogstav-rejsen ============ */
@@ -374,6 +569,8 @@
                     });
                     idx++;
                 });
+                // Ordet var skjult indtil bogstaverne er splittet
+                word.style.visibility = 'visible';
             });
         }
 
@@ -423,6 +620,55 @@
 
         measure();
 
+        /* ============ Finale-reveal ============ */
+        var reveals = document.querySelectorAll('.reveal');
+        if (!reduced && 'IntersectionObserver' in window) {
+            var io = new IntersectionObserver(function (entries) {
+                entries.forEach(function (entry) {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('in');
+                        io.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.25 });
+            reveals.forEach(function (el) { io.observe(el); });
+        } else {
+            reveals.forEach(function (el) { el.classList.add('in'); });
+        }
+
+        /* ============ UFO-cursor ============ */
+        var ufo = document.getElementById('ufo');
+        var finePointer = window.matchMedia('(pointer: fine)').matches;
+        var ufoX = -100, ufoY = -100, targetX = -100, targetY = -100, ufoTilt = 0;
+
+        if (!reduced && finePointer && ufo) {
+            document.documentElement.classList.add('ufo-on');
+            document.addEventListener('mousemove', function (e) {
+                targetX = e.clientX;
+                targetY = e.clientY;
+                if (!ufo.classList.contains('live')) {
+                    ufoX = targetX; ufoY = targetY;
+                    ufo.classList.add('live');
+                }
+            }, { passive: true });
+
+            // Tractor beam over links
+            document.querySelectorAll('a').forEach(function (el) {
+                el.addEventListener('mouseenter', function () { ufo.classList.add('zap'); });
+                el.addEventListener('mouseleave', function () { ufo.classList.remove('zap'); });
+            });
+        }
+
+        function updateUfo() {
+            var dx = targetX - ufoX;
+            ufoX += dx * 0.18;
+            ufoY += (targetY - ufoY) * 0.18;
+            var tilt = Math.max(-22, Math.min(22, dx * 0.6));
+            ufoTilt += (tilt - ufoTilt) * 0.15;
+            ufo.style.transform = 'translate3d(' + (ufoX - 24).toFixed(1) + 'px,' +
+                (ufoY - 18).toFixed(1) + 'px,0) rotate(' + ufoTilt.toFixed(2) + 'deg)';
+        }
+
         if (reduced) {
             // Statisk: ét frame, ingen bevægelse, ingen rejse (skjult via CSS)
             drawStars(0, 0);
@@ -430,6 +676,7 @@
         } else {
             splitLetters();
             updateLetters(0);
+            var ufoActive = finePointer && ufo;
             (function frame(time) {
                 drawStars(scrollPos, time);
                 if (dirty) {
@@ -437,6 +684,7 @@
                     var p = scrollPos / journeyEnd;
                     updateLetters(p < 0 ? 0 : p > 1 ? 1 : p);
                 }
+                if (ufoActive) updateUfo();
                 requestAnimationFrame(frame);
             })(0);
         }
