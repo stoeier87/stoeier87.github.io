@@ -100,8 +100,8 @@
             background: linear-gradient(to bottom, var(--bg) 20%, transparent);
         }
 
-        .topbar .label { color: var(--ink-muted); }
-        .topbar .label::before {
+        .topbar .value { color: var(--red); font-weight: 700; }
+        .topbar .value::before {
             content: '';
             display: inline-block;
             width: 6px; height: 6px;
@@ -111,7 +111,6 @@
             vertical-align: 6%;
             animation: pulse 1.6s ease-in-out infinite;
         }
-        .topbar .value { color: var(--red); font-weight: 700; }
 
         @keyframes pulse {
             0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--red); }
@@ -134,7 +133,15 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            gap: clamp(2rem, 5vh, 4rem);
             overflow: hidden;
+        }
+
+        /* Kontakt-pills toner frem til sidst paa rejsen — samme scroll-motor */
+        html.js-anim .contact {
+            opacity: 0;
+            transform: translateY(40px);
+            pointer-events: none;
         }
 
         .name {
@@ -171,32 +178,6 @@
             transition: opacity 0.4s ease;
         }
         .hint .arrow { color: var(--red); }
-
-        /* ---- Slutsektion ---- */
-        .finale {
-            position: relative;
-            z-index: 2;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            gap: clamp(2.5rem, 6vh, 4.5rem);
-            padding: 6rem 1.25rem 4rem;
-        }
-
-        /* Finalen toner foerst frem naar den scrolles ind, saa den ikke
-           foeles som en statisk dublet af rejsen */
-        html.js-anim .reveal {
-            opacity: 0;
-            transform: translateY(28px);
-            transition: opacity 0.9s ease, transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
-        }
-        html.js-anim .pills.reveal { transition-delay: 0.15s; }
-        html.js-anim .reveal.in {
-            opacity: 1;
-            transform: none;
-        }
 
         .pills {
             list-style: none;
@@ -267,11 +248,19 @@
             outline-offset: 4px;
         }
 
-        /* ---- Reduced motion: alt statisk ---- */
+        /* ---- Reduced motion: alt statisk samlet ---- */
         @media (prefers-reduced-motion: reduce) {
-            .journey { display: none; }
+            .journey { height: auto; }
+            .stage {
+                position: static;
+                height: auto;
+                min-height: 100vh;
+                min-height: 100svh;
+                padding: 7rem 1rem 3rem;
+            }
+            .hint { display: none; }
             .pill { animation: none; }
-            .topbar .label::before { animation: none; }
+            .topbar .value::before { animation: none; }
         }
 
         @media (max-width: 600px) {
@@ -307,38 +296,31 @@
     </div>
 
     <header class="topbar">
-        <span class="label">Current situation:</span>
-        <span class="value">Principal Digital Strategist at Comwell Hotels</span>
+        <span class="value">Principal Digital Strategist — Comwell Hotels</span>
     </header>
 
     <main>
-        <!-- Scroll-rejsen: dekorativ duplikat af navnet, bogstaver flyver ind -->
-        <div class="journey" aria-hidden="true">
+        <!-- Scroll-rejsen: bogstaverne flyver ind og samler navnet,
+             og kontakten toner frem under det til sidst -->
+        <div class="journey">
             <div class="stage">
-                <div class="name" id="stageName">
+                <h1 class="name" id="stageName">
                     <span class="word" data-word="0">TOBIAS</span>
                     <span class="word red" data-word="1">FULLERTON</span>
                     <span class="word" data-word="2">STØIER</span>
-                </div>
+                </h1>
+                <nav class="contact" id="contact" aria-label="Kontakt">
+                    <ul class="pills">
+                        <li><a class="pill" href="mailto:tobias@stoeier.dk"><span class="arrow">→</span>tobias@stoeier.dk</a></li>
+                        <li><a class="pill" href="https://dk.linkedin.com/in/stoeier" target="_blank" rel="noopener"><span class="arrow">→</span>LinkedIn</a></li>
+                        <li><a class="pill" href="https://instagram.com/stoeier" target="_blank" rel="noopener"><span class="arrow">→</span>Instagram</a></li>
+                        <li><a class="pill" href="https://x.com/stoeier" target="_blank" rel="noopener"><span class="arrow">→</span>X</a></li>
+                        <li><a class="pill" href="https://open.spotify.com/artist/1OrUsE9Nua3bqJKM6lPnDW" target="_blank" rel="noopener"><span class="arrow">→</span>Spotify</a></li>
+                    </ul>
+                </nav>
                 <p class="hint" id="hint"><span class="arrow">↓</span> Scroll</p>
             </div>
         </div>
-
-        <!-- Slutsektion: navnet samlet + kontakt -->
-        <section class="finale">
-            <h1 class="name reveal">
-                <span class="word">TOBIAS</span>
-                <span class="word red">FULLERTON</span>
-                <span class="word">STØIER</span>
-            </h1>
-            <ul class="pills reveal">
-                <li><a class="pill" href="mailto:tobias@stoeier.dk"><span class="arrow">→</span>tobias@stoeier.dk</a></li>
-                <li><a class="pill" href="https://dk.linkedin.com/in/stoeier" target="_blank" rel="noopener"><span class="arrow">→</span>LinkedIn</a></li>
-                <li><a class="pill" href="https://instagram.com/stoeier" target="_blank" rel="noopener"><span class="arrow">→</span>Instagram</a></li>
-                <li><a class="pill" href="https://x.com/stoeier" target="_blank" rel="noopener"><span class="arrow">→</span>X</a></li>
-                <li><a class="pill" href="https://open.spotify.com/artist/1OrUsE9Nua3bqJKM6lPnDW" target="_blank" rel="noopener"><span class="arrow">→</span>Spotify</a></li>
-            </ul>
-        </section>
     </main>
 
     <footer>
@@ -472,12 +454,6 @@
                 ctx.stroke();
             }
 
-            // Mono-label som resten af UI'et
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-            ctx.font = '700 10px "Space Mono", monospace';
-            ctx.textAlign = x > W / 2 ? 'right' : 'left';
-            var lx = x > W / 2 ? x - (p.ring ? r * 2 : r) - 12 : x + (p.ring ? r * 2 : r) + 12;
-            ctx.fillText(p.name, lx, y + 3);
         }
 
         function drawPlanets(scroll) {
@@ -530,8 +506,10 @@
         /* ============ Bogstav-rejsen ============ */
         var journey = document.querySelector('.journey');
         var hint = document.getElementById('hint');
+        var contact = document.getElementById('contact');
         var letters = [];
         var journeyEnd = 1;
+        var lastContactT = -1;
 
         // Scroll-vinduer pr. ord (andel af rejsen)
         var WINDOWS = [
@@ -593,6 +571,17 @@
                 l.el.style.opacity = Math.min(1, e * 1.8).toFixed(3);
             }
             if (hint) hint.style.opacity = p > 0.02 ? '0' : '1';
+
+            // Kontakten toner frem naar navnet er fanget (p 0.92-0.99)
+            var ct = (p - 0.92) / 0.07;
+            ct = ct < 0 ? 0 : ct > 1 ? 1 : ct;
+            if (contact && ct !== lastContactT) {
+                lastContactT = ct;
+                var ce = easeOutCubic(ct);
+                contact.style.opacity = ce.toFixed(3);
+                contact.style.transform = 'translateY(' + (40 * (1 - ce)).toFixed(1) + 'px)';
+                contact.style.pointerEvents = ct > 0.5 ? 'auto' : 'none';
+            }
         }
 
         /* ============ Loop (rAF, passive scroll) ============ */
@@ -619,22 +608,6 @@
         window.addEventListener('resize', measure, { passive: true });
 
         measure();
-
-        /* ============ Finale-reveal ============ */
-        var reveals = document.querySelectorAll('.reveal');
-        if (!reduced && 'IntersectionObserver' in window) {
-            var io = new IntersectionObserver(function (entries) {
-                entries.forEach(function (entry) {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('in');
-                        io.unobserve(entry.target);
-                    }
-                });
-            }, { threshold: 0.25 });
-            reveals.forEach(function (el) { io.observe(el); });
-        } else {
-            reveals.forEach(function (el) { el.classList.add('in'); });
-        }
 
         /* ============ UFO-cursor ============ */
         var ufo = document.getElementById('ufo');
