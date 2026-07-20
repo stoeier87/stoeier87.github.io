@@ -15,7 +15,6 @@
         { density: 26000, sizeMin: 1.7, sizeMax: 2.5, parallax: 0.55, alpha: 0.9 }
     ];
 
-    // Deterministisk pseudo-random (stabil på tværs af resize/frames)
     function rand(seed) {
         var x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
         return x - Math.floor(x);
@@ -40,26 +39,71 @@
     }
 
     /* ============ Planeter ============ */
-    // r = andel af vmin, s0 = hvor paa rejsen planeten passerer midten,
-    // px = vandret position (andel af W), pf = parallax-dybde
     var PLANETS = [
-        { name: 'MERKUR',  r: 0.020, s0: 0.06, px: 0.80, pf: 0.42, hi: '#b8b0a8', lo: '#5c554e' },
-        { name: 'VENUS',   r: 0.034, s0: 0.16, px: 0.16, pf: 0.50, hi: '#e8cfa0', lo: '#a67c48' },
-        { name: 'JORDEN',  r: 0.040, s0: 0.27, px: 0.83, pf: 0.58, hi: '#6fb6e8', lo: '#1c4e8a', earth: true },
-        { name: 'MARS',    r: 0.028, s0: 0.38, px: 0.14, pf: 0.46, hi: '#e0704a', lo: '#8a3520' },
-        { name: 'JUPITER', r: 0.105, s0: 0.52, px: 0.85, pf: 0.62, hi: '#d9b48a', lo: '#8a6238', bands: true },
-        { name: 'SATURN',  r: 0.080, s0: 0.67, px: 0.16, pf: 0.55, hi: '#e3c68f', lo: '#9c7a48', ring: true },
-        { name: 'URANUS',  r: 0.042, s0: 0.80, px: 0.82, pf: 0.48, hi: '#a8e0e8', lo: '#4a98a8' },
-        { name: 'NEPTUN',  r: 0.046, s0: 0.92, px: 0.15, pf: 0.60, hi: '#6a8ce8', lo: '#2a3f9c' }
+        { name: 'MERKUR',  r: 0.020, s0: 0.06, px: 0.80, pf: 0.42, hi: '#b8b0a8', lo: '#5c554e', msg: 'Swift little MERKUR ⚡' },
+        { name: 'VENUS',   r: 0.034, s0: 0.16, px: 0.16, pf: 0.50, hi: '#e8cfa0', lo: '#a67c48', msg: 'Cloud queen VENUS ☁️' },
+        { name: 'JORDEN',  r: 0.040, s0: 0.27, px: 0.83, pf: 0.58, hi: '#6fb6e8', lo: '#1c4e8a', earth: true, msg: 'Home signal: JORDEN 🌍' },
+        { name: 'MARS',    r: 0.028, s0: 0.38, px: 0.14, pf: 0.46, hi: '#e0704a', lo: '#8a3520', msg: 'Red frontier MARS 🔴' },
+        { name: 'JUPITER', r: 0.105, s0: 0.52, px: 0.85, pf: 0.62, hi: '#d9b48a', lo: '#8a6238', bands: true, msg: 'Giant JUPITER says hi 🌀' },
+        { name: 'SATURN',  r: 0.080, s0: 0.67, px: 0.16, pf: 0.55, hi: '#e3c68f', lo: '#9c7a48', ring: true, msg: 'Rings online: SATURN 💍' },
+        { name: 'URANUS',  r: 0.042, s0: 0.80, px: 0.82, pf: 0.48, hi: '#a8e0e8', lo: '#4a98a8', msg: 'Cool drift: URANUS 🧊' },
+        { name: 'NEPTUN',  r: 0.046, s0: 0.92, px: 0.15, pf: 0.60, hi: '#6a8ce8', lo: '#2a3f9c', msg: 'Deep blue NEPTUN 🌊' }
     ];
 
-    function isBirthdayJan12() {
-        var now = new Date();
-        return now.getMonth() === 0 && now.getDate() === 12;
+    // Runtime map of visible planets for hover/click hit-test
+    var visiblePlanets = [];
+    var hoveredPlanetIndex = -1;
+
+    // Earth system (moon + ISS orbit) - no live API fetch
+    var earthState = { visible: false, x: 0, y: 0, r: 0 };
+
+    // Mouse
+    var mouse = { x: -9999, y: -9999, inside: false };
+    canvas.addEventListener('mousemove', function (e) {
+        var rect = canvas.getBoundingClientRect();
+        mouse.x = e.clientX - rect.left;
+        mouse.y = e.clientY - rect.top;
+        mouse.inside = true;
+    }, { passive: true });
+    canvas.addEventListener('mouseleave', function () {
+        mouse.inside = false;
+        hoveredPlanetIndex = -1;
+        if (!reduced) canvas.style.cursor = '';
+    }, { passive: true });
+
+    // Simple toast
+    var toastEl = null;
+    var toastHideAt = 0;
+    function ensureToast() {
+        if (toastEl) return;
+        toastEl = document.createElement('div');
+        toastEl.style.position = 'fixed';
+        toastEl.style.left = '50%';
+        toastEl.style.bottom = '1.2rem';
+        toastEl.style.transform = 'translateX(-50%) translateY(12px)';
+        toastEl.style.padding = '0.55rem 0.9rem';
+        toastEl.style.border = '1px solid rgba(255,255,255,0.35)';
+        toastEl.style.borderRadius = '999px';
+        toastEl.style.background = 'rgba(13,20,36,0.88)';
+        toastEl.style.color = '#fff';
+        toastEl.style.fontFamily = "'Space Mono', ui-monospace, monospace";
+        toastEl.style.fontSize = '0.72rem';
+        toastEl.style.letterSpacing = '0.06em';
+        toastEl.style.zIndex = '120';
+        toastEl.style.opacity = '0';
+        toastEl.style.transition = 'opacity .2s ease, transform .2s ease';
+        toastEl.style.pointerEvents = 'none';
+        document.body.appendChild(toastEl);
+    }
+    function showToast(text) {
+        ensureToast();
+        toastEl.textContent = text;
+        toastEl.style.opacity = '1';
+        toastEl.style.transform = 'translateX(-50%) translateY(0)';
+        toastHideAt = performance.now() + 1400;
     }
 
     function drawPlanet(p, x, y, r) {
-        // Svag glow
         var glow = ctx.createRadialGradient(x, y, r * 0.5, x, y, r * 2);
         glow.addColorStop(0, 'rgba(255,255,255,0.06)');
         glow.addColorStop(1, 'rgba(255,255,255,0)');
@@ -68,7 +112,6 @@
         ctx.arc(x, y, r * 2, 0, 6.2832);
         ctx.fill();
 
-        // Saturns ring: bagerste halvdel foerst
         if (p.ring) {
             ctx.strokeStyle = 'rgba(214, 194, 150, 0.55)';
             ctx.lineWidth = r * 0.30;
@@ -77,7 +120,6 @@
             ctx.stroke();
         }
 
-        // Kroppen med lys fra oeverste venstre
         var body = ctx.createRadialGradient(x - r * 0.35, y - r * 0.35, r * 0.1, x, y, r * 1.05);
         body.addColorStop(0, p.hi);
         body.addColorStop(1, p.lo);
@@ -92,19 +134,16 @@
             ctx.arc(x, y, r, 0, 6.2832);
             ctx.clip();
             if (p.bands) {
-                // Jupiters striber
                 ctx.fillStyle = 'rgba(110, 74, 44, 0.35)';
                 ctx.fillRect(x - r, y - r * 0.52, r * 2, r * 0.18);
                 ctx.fillRect(x - r, y - r * 0.10, r * 2, r * 0.22);
                 ctx.fillRect(x - r, y + r * 0.38, r * 2, r * 0.15);
-                // Den store roede plet
                 ctx.fillStyle = 'rgba(200, 90, 60, 0.75)';
                 ctx.beginPath();
                 ctx.ellipse(x + r * 0.35, y + r * 0.24, r * 0.18, r * 0.11, 0, 0, 6.2832);
                 ctx.fill();
             }
             if (p.earth) {
-                // Stiliserede kontinenter + polarkappe
                 ctx.fillStyle = 'rgba(76, 156, 94, 0.85)';
                 ctx.beginPath();
                 ctx.ellipse(x - r * 0.30, y - r * 0.15, r * 0.42, r * 0.30, 0.5, 0, 6.2832);
@@ -116,19 +155,10 @@
                 ctx.beginPath();
                 ctx.ellipse(x + r * 0.1, y - r * 0.8, r * 0.35, r * 0.18, 0, 0, 6.2832);
                 ctx.fill();
-
-                if (isBirthdayJan12()) {
-                    ctx.strokeStyle = 'rgba(224, 62, 47, 0.9)';
-                    ctx.lineWidth = Math.max(1.2, r * 0.08);
-                    ctx.beginPath();
-                    ctx.arc(x, y, r * 1.12, 0, 6.2832);
-                    ctx.stroke();
-                }
             }
             ctx.restore();
         }
 
-        // Ringens forreste halvdel over kroppen
         if (p.ring) {
             ctx.strokeStyle = 'rgba(224, 204, 160, 0.7)';
             ctx.lineWidth = r * 0.30;
@@ -136,102 +166,125 @@
             ctx.ellipse(x, y, r * 1.75, r * 0.55, -0.32, 0, Math.PI);
             ctx.stroke();
         }
-
     }
 
-    function drawPlanets(scroll) {
+    function drawEarthSystem(now) {
+        if (!earthState.visible) return;
+
+        var ex = earthState.x;
+        var ey = earthState.y;
+        var er = earthState.r;
+
+        // Moon orbit
+        var moonOrbit = er * 1.9;
+        var moonR = Math.max(1.8, er * 0.18);
+        var moonA = now * 0.00045;
+        var mx = ex + Math.cos(moonA) * moonOrbit;
+        var my = ey + Math.sin(moonA) * moonOrbit * 0.75;
+
+        ctx.strokeStyle = 'rgba(210,220,245,0.17)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.ellipse(ex, ey, moonOrbit, moonOrbit * 0.75, 0, 0, Math.PI * 2);
+        ctx.stroke();
+
+        var moonGlow = ctx.createRadialGradient(mx, my, 0, mx, my, moonR * 4);
+        moonGlow.addColorStop(0, 'rgba(240,245,255,0.25)');
+        moonGlow.addColorStop(1, 'rgba(240,245,255,0)');
+        ctx.fillStyle = moonGlow;
+        ctx.beginPath();
+        ctx.arc(mx, my, moonR * 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        var moonBody = ctx.createRadialGradient(mx - moonR * 0.35, my - moonR * 0.35, 0, mx, my, moonR * 1.2);
+        moonBody.addColorStop(0, '#f4f4f6');
+        moonBody.addColorStop(1, '#9ca3ad');
+        ctx.fillStyle = moonBody;
+        ctx.beginPath();
+        ctx.arc(mx, my, moonR, 0, Math.PI * 2);
+        ctx.fill();
+
+        // ISS orbit (simulated)
+        var issOrbit = er * 2.7;
+        var issA = now * 0.0012;
+        var ix = ex + Math.cos(issA) * issOrbit;
+        var iy = ey + Math.sin(issA) * issOrbit * 0.68;
+
+        ctx.strokeStyle = 'rgba(200,230,255,0.20)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.ellipse(ex, ey, issOrbit, issOrbit * 0.68, 0, 0, Math.PI * 2);
+        ctx.stroke();
+
+        var blink = 0.6 + 0.4 * Math.sin(now * 0.006);
+        var ig = ctx.createRadialGradient(ix, iy, 0, ix, iy, 10);
+        ig.addColorStop(0, 'rgba(235,245,255,' + (0.5 * blink).toFixed(3) + ')');
+        ig.addColorStop(1, 'rgba(235,245,255,0)');
+        ctx.fillStyle = ig;
+        ctx.beginPath();
+        ctx.arc(ix, iy, 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = 'rgba(255,255,255,' + (0.88 * blink).toFixed(3) + ')';
+        ctx.fillRect(ix - 1.1, iy - 0.75, 2.2, 1.5);
+        ctx.fillRect(ix - 4.0, iy - 0.42, 2.2, 0.84);
+        ctx.fillRect(ix + 1.8, iy - 0.42, 2.2, 0.84);
+    }
+
+    function drawPlanets(scroll, now) {
         var vmin = Math.min(W, H);
         var S = journeyEnd;
+        visiblePlanets.length = 0;
+        earthState.visible = false;
+
         for (var i = 0; i < PLANETS.length; i++) {
             var p = PLANETS[i];
             var r = p.r * vmin;
             var worldY = H * 0.55 + p.s0 * S * p.pf;
             var y = worldY - scroll * p.pf;
+            var x = p.px * W;
             if (y < -r * 3 || y > H + r * 3) continue;
-            drawPlanet(p, p.px * W, y, r);
+
+            drawPlanet(p, x, y, r);
+            visiblePlanets.push({ idx: i, x: x, y: y, r: r });
+
+            if (p.earth) {
+                earthState.visible = true;
+                earthState.x = x;
+                earthState.y = y;
+                earthState.r = r;
+            }
         }
+
+        drawEarthSystem(now);
     }
 
-    // Statisk opstilling naar reduced motion er slaaet til
-    function drawPlanetsStatic() {
+    function drawPlanetsStatic(now) {
         var vmin = Math.min(W, H);
-        drawPlanet(PLANETS[5], W * 0.85, H * 0.20, 0.05 * vmin);  // Saturn
-        drawPlanet(PLANETS[3], W * 0.12, H * 0.72, 0.025 * vmin); // Mars
-        drawPlanet(PLANETS[2], W * 0.90, H * 0.82, 0.03 * vmin);  // Jorden
+        visiblePlanets.length = 0;
+        earthState.visible = true;
+        earthState.x = W * 0.90;
+        earthState.y = H * 0.82;
+        earthState.r = 0.03 * vmin;
+
+        drawPlanet(PLANETS[5], W * 0.85, H * 0.20, 0.05 * vmin);
+        drawPlanet(PLANETS[3], W * 0.12, H * 0.72, 0.025 * vmin);
+        drawPlanet(PLANETS[2], earthState.x, earthState.y, earthState.r);
+
+        visiblePlanets.push({ idx: 5, x: W * 0.85, y: H * 0.20, r: 0.05 * vmin });
+        visiblePlanets.push({ idx: 3, x: W * 0.12, y: H * 0.72, r: 0.025 * vmin });
+        visiblePlanets.push({ idx: 2, x: earthState.x, y: earthState.y, r: earthState.r });
+
+        drawEarthSystem(now);
     }
 
-    /* ============ Shooting stars + satellites + ISS ============ */
+    /* ============ Shooting stars + satellites (no live ISS) ============ */
     var shootingStars = [];
     var satellites = [];
     var nextShootAt = 0;
-    var nextISSAt = 0;
-
-    var ISS_ENDPOINT = 'https://api.wheretheiss.at/v1/satellites/25544';
-    var liveISS = {
-        ok: false,
-        x: 0,
-        y: 0,
-        targetX: 0,
-        targetY: 0,
-        fetchedAt: 0,
-        nextFetchAt: 0
-    };
-
-    function clamp(n, min, max) {
-        return Math.max(min, Math.min(max, n));
-    }
-
-    function lonToX(lon) {
-        return ((lon + 180) / 360) * W;
-    }
-
-    function latToY(lat) {
-        return ((90 - lat) / 180) * H;
-    }
-
-    function fetchLiveISS(now) {
-        if (now < liveISS.nextFetchAt) return;
-        liveISS.nextFetchAt = now + 10000;
-
-        fetch(ISS_ENDPOINT, { cache: 'no-store' })
-            .then(function (res) {
-                if (!res.ok) throw new Error('ISS fetch failed: ' + res.status);
-                return res.json();
-            })
-            .then(function (data) {
-                var lat = Number(data.latitude);
-                var lon = Number(data.longitude);
-                if (!isFinite(lat) || !isFinite(lon)) throw new Error('Invalid ISS coordinates');
-
-                liveISS.targetX = clamp(lonToX(lon), 0, W);
-                liveISS.targetY = clamp(latToY(lat), 0, H);
-
-                if (!liveISS.ok) {
-                    liveISS.x = liveISS.targetX;
-                    liveISS.y = liveISS.targetY;
-                }
-
-                liveISS.ok = true;
-                liveISS.fetchedAt = now;
-            })
-            .catch(function () {
-                liveISS.ok = false;
-            });
-    }
-
-    function drawLiveISSLabel() {
-        ctx.save();
-        ctx.globalAlpha = 0.8;
-        ctx.fillStyle = 'rgba(200,230,255,0.95)';
-        ctx.font = '700 10px "Space Mono", monospace';
-        ctx.fillText('LIVE ISS', clamp(liveISS.x + 10, 6, W - 68), clamp(liveISS.y - 8, 12, H - 6));
-        ctx.restore();
-    }
 
     function scheduleNextShoot(now) {
-        var delay = reduced
-            ? 12000 + Math.random() * 10000
-            : 1800 + Math.random() * 4700;
+        var delay = reduced ? 12000 + Math.random() * 10000 : 1800 + Math.random() * 4700;
         nextShootAt = now + delay;
     }
 
@@ -242,14 +295,9 @@
         var len = 90 + Math.random() * 120;
         var angle = (25 + Math.random() * 20) * (Math.PI / 180);
         shootingStars.push({
-            x: startX,
-            y: startY,
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed,
-            life: 0,
-            ttl: 700 + Math.random() * 450,
-            len: len,
-            width: 1 + Math.random() * 1.2
+            x: startX, y: startY,
+            vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+            life: 0, ttl: 700 + Math.random() * 450, len: len, width: 1 + Math.random() * 1.2
         });
     }
 
@@ -258,15 +306,12 @@
             spawnShootingStar();
             scheduleNextShoot(now);
         }
-
         for (var i = shootingStars.length - 1; i >= 0; i--) {
             var s = shootingStars[i];
             s.life += dt;
             s.x += s.vx * (dt / 1000);
             s.y += s.vy * (dt / 1000);
-            if (s.life > s.ttl || s.x > W + s.len || s.y > H + s.len) {
-                shootingStars.splice(i, 1);
-            }
+            if (s.life > s.ttl || s.x > W + s.len || s.y > H + s.len) shootingStars.splice(i, 1);
         }
     }
 
@@ -277,12 +322,10 @@
             var n = Math.hypot(s.vx, s.vy) || 1;
             var tailX = s.x - (s.vx / n) * s.len;
             var tailY = s.y - (s.vy / n) * s.len;
-
             var grad = ctx.createLinearGradient(s.x, s.y, tailX, tailY);
             grad.addColorStop(0, 'rgba(255,255,255,' + (0.95 * p).toFixed(3) + ')');
             grad.addColorStop(0.35, 'rgba(180,220,255,' + (0.45 * p).toFixed(3) + ')');
             grad.addColorStop(1, 'rgba(180,220,255,0)');
-
             ctx.strokeStyle = grad;
             ctx.lineWidth = s.width;
             ctx.beginPath();
@@ -292,130 +335,88 @@
         }
     }
 
-    function createSatellite(isISS) {
+    function createSatellite() {
         var fromLeft = Math.random() > 0.5;
-        var yBand = isISS
-            ? H * (0.22 + Math.random() * 0.2)
-            : H * (0.1 + Math.random() * 0.45);
-
-        var baseSpeed = isISS
-            ? 46 + Math.random() * 18
-            : 18 + Math.random() * 26;
-
+        var yBand = H * (0.1 + Math.random() * 0.45);
+        var baseSpeed = 18 + Math.random() * 26;
         return {
-            isISS: !!isISS,
-            x: fromLeft ? -40 : W + 40,
-            y: yBand,
-            vx: fromLeft ? baseSpeed : -baseSpeed,
-            vy: (Math.random() - 0.5) * (isISS ? 3 : 2.2),
-            size: isISS ? 2.2 : 1.3 + Math.random() * 1.1,
+            x: fromLeft ? -40 : W + 40, y: yBand,
+            vx: fromLeft ? baseSpeed : -baseSpeed, vy: (Math.random() - 0.5) * 2.2,
+            size: 1.3 + Math.random() * 1.1,
             blinkPhase: Math.random() * Math.PI * 2,
-            blinkSpeed: isISS ? 0.003 : 0.006 + Math.random() * 0.005,
-            glow: isISS ? 0.9 : 0.55 + Math.random() * 0.25
+            blinkSpeed: 0.006 + Math.random() * 0.005,
+            glow: 0.55 + Math.random() * 0.25
         };
     }
 
     function initSatellites() {
         satellites.length = 0;
         var count = reduced ? 2 : 5;
-        for (var i = 0; i < count; i++) satellites.push(createSatellite(false));
-    }
-
-    function scheduleISS(now) {
-        var delay = reduced
-            ? 150000 + Math.random() * 90000
-            : 45000 + Math.random() * 45000;
-        nextISSAt = now + delay;
+        for (var i = 0; i < count; i++) satellites.push(createSatellite());
     }
 
     function updateSatellites(dt, now) {
-        fetchLiveISS(now);
-
-        var hasISS = satellites.some(function (s) { return s.isISS; });
-        if (!liveISS.ok && !hasISS && now >= nextISSAt) {
-            satellites.push(createSatellite(true));
-            scheduleISS(now);
-        }
-
         for (var i = satellites.length - 1; i >= 0; i--) {
             var s = satellites[i];
             s.x += s.vx * (dt / 1000);
             s.y += s.vy * (dt / 1000);
-            s.y += Math.sin((now + s.blinkPhase * 2000) * 0.00035) * (s.isISS ? 0.04 : 0.02);
-
+            s.y += Math.sin((now + s.blinkPhase * 2000) * 0.00035) * 0.02;
             var out = s.x < -80 || s.x > W + 80 || s.y < -40 || s.y > H + 40;
-            if (out) {
-                if (s.isISS) satellites.splice(i, 1);
-                else satellites[i] = createSatellite(false);
-            }
-        }
-
-        if (liveISS.ok) {
-            liveISS.x += (liveISS.targetX - liveISS.x) * 0.12;
-            liveISS.y += (liveISS.targetY - liveISS.y) * 0.12;
+            if (out) satellites[i] = createSatellite();
         }
     }
 
-    function drawSatelliteDot(s, now) {
-        var blink = 0.55 + 0.45 * Math.sin(now * s.blinkSpeed + s.blinkPhase);
-        var alpha = s.glow * blink;
-
-        var g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.size * 6);
-        g.addColorStop(0, 'rgba(220,240,255,' + (0.45 * alpha).toFixed(3) + ')');
-        g.addColorStop(1, 'rgba(220,240,255,0)');
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.size * 6, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = s.isISS
-            ? 'rgba(255,255,255,' + Math.min(1, alpha + 0.2).toFixed(3) + ')'
-            : 'rgba(210,230,255,' + alpha.toFixed(3) + ')';
-
-        if (s.isISS) {
-            ctx.fillRect(s.x - 1.2, s.y - 0.8, 2.4, 1.6);
-            ctx.fillRect(s.x - 4.4, s.y - 0.45, 2.5, 0.9);
-            ctx.fillRect(s.x + 1.9, s.y - 0.45, 2.5, 0.9);
-        } else {
+    function drawSatellites(now) {
+        for (var i = 0; i < satellites.length; i++) {
+            var s = satellites[i];
+            var blink = 0.55 + 0.45 * Math.sin(now * s.blinkSpeed + s.blinkPhase);
+            var alpha = s.glow * blink;
+            var g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.size * 6);
+            g.addColorStop(0, 'rgba(220,240,255,' + (0.45 * alpha).toFixed(3) + ')');
+            g.addColorStop(1, 'rgba(220,240,255,0)');
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size * 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'rgba(210,230,255,' + alpha.toFixed(3) + ')';
             ctx.beginPath();
             ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
             ctx.fill();
         }
     }
 
-    function drawLiveISS(now) {
-        var blink = 0.6 + 0.4 * Math.sin(now * 0.004);
-        var glow = ctx.createRadialGradient(liveISS.x, liveISS.y, 0, liveISS.x, liveISS.y, 14);
-        glow.addColorStop(0, 'rgba(235,245,255,' + (0.55 * blink).toFixed(3) + ')');
-        glow.addColorStop(1, 'rgba(235,245,255,0)');
-        ctx.fillStyle = glow;
-        ctx.beginPath();
-        ctx.arc(liveISS.x, liveISS.y, 14, 0, Math.PI * 2);
-        ctx.fill();
+    function updateCanvasInteractions() {
+        if (!mouse.inside) {
+            hoveredPlanetIndex = -1;
+            if (!reduced) canvas.style.cursor = '';
+            return;
+        }
 
-        ctx.fillStyle = 'rgba(255,255,255,' + (0.9 * blink).toFixed(3) + ')';
-        ctx.fillRect(liveISS.x - 1.2, liveISS.y - 0.8, 2.4, 1.6);
-        ctx.fillRect(liveISS.x - 4.4, liveISS.y - 0.45, 2.5, 0.9);
-        ctx.fillRect(liveISS.x + 1.9, liveISS.y - 0.45, 2.5, 0.9);
+        var best = -1;
+        for (var i = visiblePlanets.length - 1; i >= 0; i--) {
+            var p = visiblePlanets[i];
+            var dx = mouse.x - p.x;
+            var dy = mouse.y - p.y;
+            if (dx * dx + dy * dy <= p.r * p.r) { best = p.idx; break; }
+        }
+        hoveredPlanetIndex = best;
 
-        drawLiveISSLabel();
+        if (!reduced) canvas.style.cursor = hoveredPlanetIndex >= 0 ? 'pointer' : '';
     }
 
-    function drawSatellites(now) {
-        for (var i = 0; i < satellites.length; i++) drawSatelliteDot(satellites[i], now);
-        if (liveISS.ok) drawLiveISS(now);
-    }
+    canvas.addEventListener('click', function () {
+        if (hoveredPlanetIndex < 0) return;
+        showToast(PLANETS[hoveredPlanetIndex].msg);
+    });
 
     function drawStars(scroll, time) {
         ctx.clearRect(0, 0, W, H);
+
         for (var li = 0; li < layers.length; li++) {
-            var layer = layers[li];
-            var def = layer.def;
-            var offset = scroll * def.parallax;
+            var layer = layers[li], def = layer.def, offset = scroll * def.parallax;
             for (var i = 0; i < layer.stars.length; i++) {
                 var st = layer.stars[i];
-                var y = (st.y - offset) % H;
-                if (y < 0) y += H;
+                var y = (st.y - offset) % H; if (y < 0) y += H;
                 var tw = reduced ? 1 : 0.65 + 0.35 * Math.sin(time * 0.001 * st.speed + st.phase);
                 ctx.globalAlpha = def.alpha * tw;
                 ctx.fillStyle = '#ffffff';
@@ -432,33 +433,34 @@
             updateShootingStars(dt, time);
             drawShootingStars();
         }
-
         updateSatellites(dt, time);
         drawSatellites(time);
 
-        drawStars._lastTime = time;
+        if (reduced) drawPlanetsStatic(time);
+        else drawPlanets(scroll, time);
 
-        if (reduced) {
-            drawPlanetsStatic();
-        } else {
-            drawPlanets(scroll);
+        updateCanvasInteractions();
+
+        if (toastEl && toastHideAt && time > toastHideAt) {
+            toastHideAt = 0;
+            toastEl.style.opacity = '0';
+            toastEl.style.transform = 'translateX(-50%) translateY(12px)';
         }
+
+        drawStars._lastTime = time;
     }
 
     /* ============ Bogstav-rejsen ============ */
     var journey = document.querySelector('.journey');
     var hint = document.getElementById('hint');
     var contact = document.getElementById('contact');
+    var stageName = document.getElementById('stageName');
     var letters = [];
     var journeyEnd = 1;
     var lastContactT = -1;
+    var stageParallaxMax = 38; // px
 
-    // Scroll-vinduer pr. ord (andel af rejsen)
-    var WINDOWS = [
-        [0.03, 0.30],
-        [0.36, 0.62],
-        [0.68, 0.90]
-    ];
+    var WINDOWS = [[0.03, 0.30], [0.36, 0.62], [0.68, 0.90]];
 
     function splitLetters() {
         var words = document.querySelectorAll('#stageName .word');
@@ -472,10 +474,8 @@
                 span.className = 'ltr';
                 span.textContent = ch;
                 word.appendChild(span);
-                var w0 = WINDOWS[wi][0], w1 = WINDOWS[wi][1];
-                var range = w1 - w0;
-                var seed = idx * 13 + 5;
-                var angle = rand(seed + 1) * Math.PI * 2;
+                var w0 = WINDOWS[wi][0], w1 = WINDOWS[wi][1], range = w1 - w0;
+                var seed = idx * 13 + 5, angle = rand(seed + 1) * Math.PI * 2;
                 var vmax = Math.max(window.innerWidth, window.innerHeight);
                 letters.push({
                     el: span,
@@ -489,32 +489,33 @@
                 });
                 idx++;
             });
-            // Ordet var skjult indtil bogstaverne er splittet
             word.style.visibility = 'visible';
         });
     }
 
-    function easeOutCubic(t) {
-        return 1 - Math.pow(1 - t, 3);
-    }
+    function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 
     function updateLetters(p) {
         for (var i = 0; i < letters.length; i++) {
             var l = letters[i];
-            var t = (p - l.t0) / l.dur;
-            t = t < 0 ? 0 : t > 1 ? 1 : t;
+            var t = (p - l.t0) / l.dur; t = t < 0 ? 0 : t > 1 ? 1 : t;
             if (t === l.last) continue;
             l.last = t;
-            var e = easeOutCubic(t);
-            var inv = 1 - e;
+            var e = easeOutCubic(t), inv = 1 - e;
             l.el.style.transform = 'translate3d(' + (l.dx * inv).toFixed(1) + 'px,' +
-                (l.dy * inv).toFixed(1) + 'px,0) rotate(' + (l.rot * inv).toFixed(2) + 'deg) scale(' +
-                (l.scale + (1 - l.scale) * e).toFixed(3) + ')';
+                (l.dy * inv).toFixed(1) + 'px,0) rotate(' + (l.rot * inv).toFixed(2) +
+                'deg) scale(' + (l.scale + (1 - l.scale) * e).toFixed(3) + ')';
             l.el.style.opacity = Math.min(1, e * 1.8).toFixed(3);
         }
+
+        // B-mode: parallax resolves to centered at end (p=1 => y=0)
+        if (stageName) {
+            var y = (1 - p) * stageParallaxMax;
+            stageName.style.transform = 'translate3d(0,' + y.toFixed(1) + 'px,0)';
+        }
+
         if (hint) hint.style.opacity = p > 0.02 ? '0' : '1';
 
-        // Kontakten toner frem naar navnet er fanget (p 0.92-0.99)
         var ct = (p - 0.92) / 0.07;
         ct = ct < 0 ? 0 : ct > 1 ? 1 : ct;
         if (contact && ct !== lastContactT) {
@@ -526,58 +527,40 @@
         }
     }
 
-    /* ============ Loop (rAF, passive scroll) ============ */
+    /* ============ Loop ============ */
     var scrollPos = window.scrollY || 0;
     var dirty = true;
 
     function measure() {
         dpr = Math.min(window.devicePixelRatio || 1, 2);
-        W = window.innerWidth;
-        H = window.innerHeight;
+        W = window.innerWidth; H = window.innerHeight;
         canvas.width = Math.round(W * dpr);
         canvas.height = Math.round(H * dpr);
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         buildStars();
         initSatellites();
         scheduleNextShoot(performance.now());
-        scheduleISS(performance.now());
         if (journey) journeyEnd = Math.max(1, journey.offsetHeight - H);
         dirty = true;
     }
 
-    window.addEventListener('scroll', function () {
-        scrollPos = window.scrollY;
-        dirty = true;
-    }, { passive: true });
-
+    window.addEventListener('scroll', function () { scrollPos = window.scrollY; dirty = true; }, { passive: true });
     window.addEventListener('resize', measure, { passive: true });
-
     measure();
-
-    // Birthday footer easter egg (Jan 12)
-    if (isBirthdayJan12()) {
-        var footerLink = document.querySelector('footer a');
-        if (footerLink) footerLink.textContent = 'servicedesign.dk • launch window open';
-    }
 
     /* ============ UFO-cursor ============ */
     var ufo = document.getElementById('ufo');
     var finePointer = window.matchMedia('(pointer: fine)').matches;
     var ufoX = -100, ufoY = -100, targetX = -100, targetY = -100, ufoTilt = 0;
-    var pillsExpandMargin = 80; // 80px expansion on top and bottom
+    var pillsExpandMargin = 80;
 
     if (!reduced && finePointer && ufo) {
         document.documentElement.classList.add('ufo-on');
         document.addEventListener('mousemove', function (e) {
-            targetX = e.clientX;
-            targetY = e.clientY;
-            if (!ufo.classList.contains('live')) {
-                ufoX = targetX; ufoY = targetY;
-                ufo.classList.add('live');
-            }
+            targetX = e.clientX; targetY = e.clientY;
+            if (!ufo.classList.contains('live')) { ufoX = targetX; ufoY = targetY; ufo.classList.add('live'); }
         }, { passive: true });
 
-        // Tractor beam over links
         document.querySelectorAll('a').forEach(function (el) {
             el.addEventListener('mouseenter', function () { ufo.classList.add('zap'); });
             el.addEventListener('mouseleave', function () { ufo.classList.remove('zap'); });
@@ -586,42 +569,25 @@
 
     function updateUfo() {
         var dx = targetX - ufoX;
-        ufoX += dx * 0.18;
-        ufoY += (targetY - ufoY) * 0.18;
+        ufoX += dx * 0.18; ufoY += (targetY - ufoY) * 0.18;
         var tilt = Math.max(-22, Math.min(22, dx * 0.6));
         ufoTilt += (tilt - ufoTilt) * 0.15;
-        ufo.style.transform = 'translate3d(' + (ufoX - 24).toFixed(1) + 'px,' +
-            (ufoY - 18).toFixed(1) + 'px,0) rotate(' + ufoTilt.toFixed(2) + 'deg)';
+        ufo.style.transform = 'translate3d(' + (ufoX - 24).toFixed(1) + 'px,' + (ufoY - 18).toFixed(1) + 'px,0) rotate(' + ufoTilt.toFixed(2) + 'deg)';
 
-        // Check if UFO is within expanded hover zone of any pill
         var pillsList = document.querySelector('.pills');
         if (pillsList) {
-            var pills = pillsList.querySelectorAll('.pill');
-            var inPillZone = false;
+            var pills = pillsList.querySelectorAll('.pill'), inPillZone = false;
             for (var i = 0; i < pills.length; i++) {
                 var rect = pills[i].getBoundingClientRect();
-                // Expand the hover area vertically by pillsExpandMargin on top and bottom
-                var expandedTop = rect.top - pillsExpandMargin;
-                var expandedBottom = rect.bottom + pillsExpandMargin;
-                var expandedLeft = rect.left;
-                var expandedRight = rect.right;
-
-                if (ufoX + 24 >= expandedLeft && ufoX + 24 <= expandedRight &&
-                    ufoY + 18 >= expandedTop && ufoY + 18 <= expandedBottom) {
-                    inPillZone = true;
-                    break;
-                }
+                var expandedTop = rect.top - pillsExpandMargin, expandedBottom = rect.bottom + pillsExpandMargin;
+                var expandedLeft = rect.left, expandedRight = rect.right;
+                if (ufoX + 24 >= expandedLeft && ufoX + 24 <= expandedRight && ufoY + 18 >= expandedTop && ufoY + 18 <= expandedBottom) { inPillZone = true; break; }
             }
-            if (inPillZone) {
-                ufo.classList.add('zap');
-            } else {
-                ufo.classList.remove('zap');
-            }
+            if (inPillZone) ufo.classList.add('zap'); else ufo.classList.remove('zap');
         }
     }
 
     if (reduced) {
-        // Statisk: ét frame, ingen bevægelse, ingen rejse (skjult via CSS)
         drawStars(0, 0);
         window.addEventListener('resize', function () { drawStars(0, 0); }, { passive: true });
     } else {
