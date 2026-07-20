@@ -147,6 +147,164 @@
         drawPlanet(PLANETS[2], W * 0.90, H * 0.82, 0.03 * vmin);  // Jorden
     }
 
+    /* ============ Shooting stars + satellites + ISS ============ */
+    var shootingStars = [];
+    var satellites = [];
+    var nextShootAt = 0;
+    var nextISSAt = 0;
+
+    function scheduleNextShoot(now) {
+        var delay = reduced
+            ? 12000 + Math.random() * 10000
+            : 1800 + Math.random() * 4700;
+        nextShootAt = now + delay;
+    }
+
+    function spawnShootingStar() {
+        var startX = Math.random() * W * 0.6 - W * 0.2;
+        var startY = Math.random() * H * 0.35;
+        var speed = 650 + Math.random() * 550;
+        var len = 90 + Math.random() * 120;
+        var angle = (25 + Math.random() * 20) * (Math.PI / 180);
+        shootingStars.push({
+            x: startX,
+            y: startY,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: 0,
+            ttl: 700 + Math.random() * 450,
+            len: len,
+            width: 1 + Math.random() * 1.2
+        });
+    }
+
+    function updateShootingStars(dt, now) {
+        if (now >= nextShootAt && shootingStars.length < (reduced ? 1 : 3)) {
+            spawnShootingStar();
+            scheduleNextShoot(now);
+        }
+
+        for (var i = shootingStars.length - 1; i >= 0; i--) {
+            var s = shootingStars[i];
+            s.life += dt;
+            s.x += s.vx * (dt / 1000);
+            s.y += s.vy * (dt / 1000);
+            if (s.life > s.ttl || s.x > W + s.len || s.y > H + s.len) {
+                shootingStars.splice(i, 1);
+            }
+        }
+    }
+
+    function drawShootingStars() {
+        for (var i = 0; i < shootingStars.length; i++) {
+            var s = shootingStars[i];
+            var p = 1 - s.life / s.ttl;
+            var n = Math.hypot(s.vx, s.vy) || 1;
+            var tailX = s.x - (s.vx / n) * s.len;
+            var tailY = s.y - (s.vy / n) * s.len;
+
+            var grad = ctx.createLinearGradient(s.x, s.y, tailX, tailY);
+            grad.addColorStop(0, 'rgba(255,255,255,' + (0.95 * p).toFixed(3) + ')');
+            grad.addColorStop(0.35, 'rgba(180,220,255,' + (0.45 * p).toFixed(3) + ')');
+            grad.addColorStop(1, 'rgba(180,220,255,0)');
+
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = s.width;
+            ctx.beginPath();
+            ctx.moveTo(s.x, s.y);
+            ctx.lineTo(tailX, tailY);
+            ctx.stroke();
+        }
+    }
+
+    function createSatellite(isISS) {
+        var fromLeft = Math.random() > 0.5;
+        var yBand = isISS
+            ? H * (0.22 + Math.random() * 0.2)
+            : H * (0.1 + Math.random() * 0.45);
+
+        var baseSpeed = isISS
+            ? 46 + Math.random() * 18
+            : 18 + Math.random() * 26;
+
+        return {
+            isISS: !!isISS,
+            x: fromLeft ? -40 : W + 40,
+            y: yBand,
+            vx: fromLeft ? baseSpeed : -baseSpeed,
+            vy: (Math.random() - 0.5) * (isISS ? 3 : 2.2),
+            size: isISS ? 2.2 : 1.3 + Math.random() * 1.1,
+            blinkPhase: Math.random() * Math.PI * 2,
+            blinkSpeed: isISS ? 0.003 : 0.006 + Math.random() * 0.005,
+            glow: isISS ? 0.9 : 0.55 + Math.random() * 0.25
+        };
+    }
+
+    function initSatellites() {
+        satellites.length = 0;
+        var count = reduced ? 2 : 5;
+        for (var i = 0; i < count; i++) satellites.push(createSatellite(false));
+    }
+
+    function scheduleISS(now) {
+        var delay = reduced
+            ? 150000 + Math.random() * 90000
+            : 45000 + Math.random() * 45000;
+        nextISSAt = now + delay;
+    }
+
+    function updateSatellites(dt, now) {
+        var hasISS = satellites.some(function (s) { return s.isISS; });
+        if (!hasISS && now >= nextISSAt) {
+            satellites.push(createSatellite(true));
+            scheduleISS(now);
+        }
+
+        for (var i = satellites.length - 1; i >= 0; i--) {
+            var s = satellites[i];
+            s.x += s.vx * (dt / 1000);
+            s.y += s.vy * (dt / 1000);
+            s.y += Math.sin((now + s.blinkPhase * 2000) * 0.00035) * (s.isISS ? 0.04 : 0.02);
+
+            var out = s.x < -80 || s.x > W + 80 || s.y < -40 || s.y > H + 40;
+            if (out) {
+                if (s.isISS) satellites.splice(i, 1);
+                else satellites[i] = createSatellite(false);
+            }
+        }
+    }
+
+    function drawSatelliteDot(s, now) {
+        var blink = 0.55 + 0.45 * Math.sin(now * s.blinkSpeed + s.blinkPhase);
+        var alpha = s.glow * blink;
+
+        var g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.size * 6);
+        g.addColorStop(0, 'rgba(220,240,255,' + (0.45 * alpha).toFixed(3) + ')');
+        g.addColorStop(1, 'rgba(220,240,255,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size * 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = s.isISS
+            ? 'rgba(255,255,255,' + Math.min(1, alpha + 0.2).toFixed(3) + ')'
+            : 'rgba(210,230,255,' + alpha.toFixed(3) + ')';
+
+        if (s.isISS) {
+            ctx.fillRect(s.x - 1.2, s.y - 0.8, 2.4, 1.6);
+            ctx.fillRect(s.x - 4.4, s.y - 0.45, 2.5, 0.9);
+            ctx.fillRect(s.x + 1.9, s.y - 0.45, 2.5, 0.9);
+        } else {
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    function drawSatellites(now) {
+        for (var i = 0; i < satellites.length; i++) drawSatelliteDot(satellites[i], now);
+    }
+
     function drawStars(scroll, time) {
         ctx.clearRect(0, 0, W, H);
         for (var li = 0; li < layers.length; li++) {
@@ -166,6 +324,17 @@
             }
         }
         ctx.globalAlpha = 1;
+
+        if (!reduced || Math.random() < 0.35) {
+            updateShootingStars(Math.min(64, time - (drawStars._lastTime || time)), time);
+            drawShootingStars();
+        }
+
+        updateSatellites(Math.min(64, time - (drawStars._lastTime || time)), time);
+        drawSatellites(time);
+
+        drawStars._lastTime = time;
+
         if (reduced) {
             drawPlanetsStatic();
         } else {
@@ -266,6 +435,9 @@
         canvas.height = Math.round(H * dpr);
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         buildStars();
+        initSatellites();
+        scheduleNextShoot(performance.now());
+        scheduleISS(performance.now());
         if (journey) journeyEnd = Math.max(1, journey.offsetHeight - H);
         dirty = true;
     }
