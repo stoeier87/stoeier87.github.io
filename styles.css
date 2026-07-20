@@ -219,7 +219,7 @@ html.js-anim #stageName .word { visibility: hidden; }
 footer {
     position: relative;
     z-index: 2;
-    padding: 2rem 1.25rem 2.5rem;
+    padding: 1.1rem 1.25rem;
     text-align: center;
     font-size: 0.65rem;
     letter-spacing: 0.22em;
