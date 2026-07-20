@@ -53,6 +53,11 @@
         { name: 'NEPTUN',  r: 0.046, s0: 0.92, px: 0.15, pf: 0.60, hi: '#6a8ce8', lo: '#2a3f9c' }
     ];
 
+    function isBirthdayJan12() {
+        var now = new Date();
+        return now.getMonth() === 0 && now.getDate() === 12;
+    }
+
     function drawPlanet(p, x, y, r) {
         // Svag glow
         var glow = ctx.createRadialGradient(x, y, r * 0.5, x, y, r * 2);
@@ -111,6 +116,14 @@
                 ctx.beginPath();
                 ctx.ellipse(x + r * 0.1, y - r * 0.8, r * 0.35, r * 0.18, 0, 0, 6.2832);
                 ctx.fill();
+
+                if (isBirthdayJan12()) {
+                    ctx.strokeStyle = 'rgba(224, 62, 47, 0.9)';
+                    ctx.lineWidth = Math.max(1.2, r * 0.08);
+                    ctx.beginPath();
+                    ctx.arc(x, y, r * 1.12, 0, 6.2832);
+                    ctx.stroke();
+                }
             }
             ctx.restore();
         }
@@ -152,6 +165,68 @@
     var satellites = [];
     var nextShootAt = 0;
     var nextISSAt = 0;
+
+    var ISS_ENDPOINT = 'https://api.wheretheiss.at/v1/satellites/25544';
+    var liveISS = {
+        ok: false,
+        x: 0,
+        y: 0,
+        targetX: 0,
+        targetY: 0,
+        fetchedAt: 0,
+        nextFetchAt: 0
+    };
+
+    function clamp(n, min, max) {
+        return Math.max(min, Math.min(max, n));
+    }
+
+    function lonToX(lon) {
+        return ((lon + 180) / 360) * W;
+    }
+
+    function latToY(lat) {
+        return ((90 - lat) / 180) * H;
+    }
+
+    function fetchLiveISS(now) {
+        if (now < liveISS.nextFetchAt) return;
+        liveISS.nextFetchAt = now + 10000;
+
+        fetch(ISS_ENDPOINT, { cache: 'no-store' })
+            .then(function (res) {
+                if (!res.ok) throw new Error('ISS fetch failed: ' + res.status);
+                return res.json();
+            })
+            .then(function (data) {
+                var lat = Number(data.latitude);
+                var lon = Number(data.longitude);
+                if (!isFinite(lat) || !isFinite(lon)) throw new Error('Invalid ISS coordinates');
+
+                liveISS.targetX = clamp(lonToX(lon), 0, W);
+                liveISS.targetY = clamp(latToY(lat), 0, H);
+
+                if (!liveISS.ok) {
+                    liveISS.x = liveISS.targetX;
+                    liveISS.y = liveISS.targetY;
+                }
+
+                liveISS.ok = true;
+                liveISS.fetchedAt = now;
+            })
+            .catch(function () {
+                liveISS.ok = false;
+            });
+    }
+
+    function drawLiveISSLabel() {
+        ctx.save();
+        ctx.globalAlpha = 0.8;
+        ctx.fillStyle = 'rgba(200,230,255,0.95)';
+        ctx.font = '700 10px "Space Mono", monospace';
+        ctx.fillText('LIVE ISS', clamp(liveISS.x + 10, 6, W - 68), clamp(liveISS.y - 8, 12, H - 6));
+        ctx.restore();
+    }
 
     function scheduleNextShoot(now) {
         var delay = reduced
@@ -254,8 +329,10 @@
     }
 
     function updateSatellites(dt, now) {
+        fetchLiveISS(now);
+
         var hasISS = satellites.some(function (s) { return s.isISS; });
-        if (!hasISS && now >= nextISSAt) {
+        if (!liveISS.ok && !hasISS && now >= nextISSAt) {
             satellites.push(createSatellite(true));
             scheduleISS(now);
         }
@@ -271,6 +348,11 @@
                 if (s.isISS) satellites.splice(i, 1);
                 else satellites[i] = createSatellite(false);
             }
+        }
+
+        if (liveISS.ok) {
+            liveISS.x += (liveISS.targetX - liveISS.x) * 0.12;
+            liveISS.y += (liveISS.targetY - liveISS.y) * 0.12;
         }
     }
 
@@ -301,8 +383,27 @@
         }
     }
 
+    function drawLiveISS(now) {
+        var blink = 0.6 + 0.4 * Math.sin(now * 0.004);
+        var glow = ctx.createRadialGradient(liveISS.x, liveISS.y, 0, liveISS.x, liveISS.y, 14);
+        glow.addColorStop(0, 'rgba(235,245,255,' + (0.55 * blink).toFixed(3) + ')');
+        glow.addColorStop(1, 'rgba(235,245,255,0)');
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(liveISS.x, liveISS.y, 14, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = 'rgba(255,255,255,' + (0.9 * blink).toFixed(3) + ')';
+        ctx.fillRect(liveISS.x - 1.2, liveISS.y - 0.8, 2.4, 1.6);
+        ctx.fillRect(liveISS.x - 4.4, liveISS.y - 0.45, 2.5, 0.9);
+        ctx.fillRect(liveISS.x + 1.9, liveISS.y - 0.45, 2.5, 0.9);
+
+        drawLiveISSLabel();
+    }
+
     function drawSatellites(now) {
         for (var i = 0; i < satellites.length; i++) drawSatelliteDot(satellites[i], now);
+        if (liveISS.ok) drawLiveISS(now);
     }
 
     function drawStars(scroll, time) {
@@ -325,12 +426,14 @@
         }
         ctx.globalAlpha = 1;
 
+        var dt = Math.min(64, time - (drawStars._lastTime || time));
+
         if (!reduced || Math.random() < 0.35) {
-            updateShootingStars(Math.min(64, time - (drawStars._lastTime || time)), time);
+            updateShootingStars(dt, time);
             drawShootingStars();
         }
 
-        updateSatellites(Math.min(64, time - (drawStars._lastTime || time)), time);
+        updateSatellites(dt, time);
         drawSatellites(time);
 
         drawStars._lastTime = time;
@@ -450,6 +553,12 @@
     window.addEventListener('resize', measure, { passive: true });
 
     measure();
+
+    // Birthday footer easter egg (Jan 12)
+    if (isBirthdayJan12()) {
+        var footerLink = document.querySelector('footer a');
+        if (footerLink) footerLink.textContent = 'servicedesign.dk • launch window open';
+    }
 
     /* ============ UFO-cursor ============ */
     var ufo = document.getElementById('ufo');
