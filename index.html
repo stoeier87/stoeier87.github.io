@@ -619,6 +619,7 @@
         var ufo = document.getElementById('ufo');
         var finePointer = window.matchMedia('(pointer: fine)').matches;
         var ufoX = -100, ufoY = -100, targetX = -100, targetY = -100, ufoTilt = 0;
+        var pillsExpandMargin = 80; // 80px expansion on top and bottom
 
         if (!reduced && finePointer && ufo) {
             document.documentElement.classList.add('ufo-on');
@@ -646,6 +647,32 @@
             ufoTilt += (tilt - ufoTilt) * 0.15;
             ufo.style.transform = 'translate3d(' + (ufoX - 24).toFixed(1) + 'px,' +
                 (ufoY - 18).toFixed(1) + 'px,0) rotate(' + ufoTilt.toFixed(2) + 'deg)';
+
+            // Check if UFO is within expanded hover zone of any pill
+            var pillsList = document.querySelector('.pills');
+            if (pillsList) {
+                var pills = pillsList.querySelectorAll('.pill');
+                var inPillZone = false;
+                for (var i = 0; i < pills.length; i++) {
+                    var rect = pills[i].getBoundingClientRect();
+                    // Expand the hover area vertically by pillsExpandMargin on top and bottom
+                    var expandedTop = rect.top - pillsExpandMargin;
+                    var expandedBottom = rect.bottom + pillsExpandMargin;
+                    var expandedLeft = rect.left;
+                    var expandedRight = rect.right;
+
+                    if (ufoX + 24 >= expandedLeft && ufoX + 24 <= expandedRight &&
+                        ufoY + 18 >= expandedTop && ufoY + 18 <= expandedBottom) {
+                        inPillZone = true;
+                        break;
+                    }
+                }
+                if (inPillZone) {
+                    ufo.classList.add('zap');
+                } else {
+                    ufo.classList.remove('zap');
+                }
+            }
         }
 
         if (reduced) {
