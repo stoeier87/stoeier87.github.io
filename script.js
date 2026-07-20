@@ -401,7 +401,7 @@
         }
         hoveredPlanetIndex = best;
 
-        if (!reduced) canvas.style.cursor = hoveredPlanetIndex >= 0 ? 'pointer' : '';
+        if (!reduced) canvas.style.cursor = hoveredPlanetIndex >= 0 ? '' : '';
     }
 
     canvas.addEventListener('click', function () {
