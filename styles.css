@@ -1,0 +1,264 @@
+:root {
+    --bg: #0d1424;
+    --ink: #ffffff;
+    --red: #e03a2f;
+    --ink-muted: rgba(255, 255, 255, 0.6);
+    --ink-dim: rgba(255, 255, 255, 0.35);
+    --mono: 'Space Mono', ui-monospace, monospace;
+    --display: 'Archivo Black', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--mono);
+    background: var(--bg);
+    color: var(--ink);
+    overflow-x: hidden;
+}
+
+/* UFO-cursor: aktiveres kun via JS paa fine pointers uden reduced motion */
+html.ufo-on, html.ufo-on a { cursor: none; }
+
+.ufo {
+    position: fixed;
+    left: 0; top: 0;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0;
+    will-change: transform;
+}
+html.ufo-on .ufo.live { opacity: 1; }
+
+.ufo .beam {
+    position: absolute;
+    left: 50%;
+    top: 22px;
+    width: 0; height: 0;
+    transform: translateX(-50%);
+    border-left: 14px solid transparent;
+    border-right: 14px solid transparent;
+    border-bottom: 34px solid rgba(224, 58, 47, 0.28);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+.ufo.zap .beam { opacity: 1; }
+
+.ufo .light { animation: ufolight 0.9s linear infinite; }
+.ufo .light:nth-child(2) { animation-delay: 0.3s; }
+.ufo .light:nth-child(3) { animation-delay: 0.6s; }
+
+@keyframes ufolight {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+}
+
+/* Subtil dot-grid over starfield, under indhold */
+.dotgrid {
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
+    background-size: 32px 32px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+#starfield {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    display: block;
+}
+
+/* ---- Topbar ---- */
+.topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 20;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.6em;
+    flex-wrap: wrap;
+    padding: 1.1rem 1.25rem;
+    font-size: clamp(0.6rem, 1.6vw, 0.72rem);
+    letter-spacing: 0.14em;
+    text-align: center;
+    background: linear-gradient(to bottom, var(--bg) 20%, transparent);
+}
+
+.topbar .value { color: var(--ink-muted); }
+.topbar .value::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--red);
+    margin-right: 0.6em;
+    vertical-align: 6%;
+    animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--red); }
+    50% { opacity: 0.35; box-shadow: none; }
+}
+
+/* ---- Scroll-rejsen ---- */
+.journey {
+    position: relative;
+    height: 650vh;
+    z-index: 2;
+}
+
+.stage {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: clamp(2rem, 5vh, 4rem);
+    overflow: hidden;
+}
+
+/* Kontakt-pills toner frem til sidst paa rejsen — samme scroll-motor */
+html.js-anim .contact {
+    opacity: 0;
+    transform: translateY(40px);
+    pointer-events: none;
+}
+
+.name {
+    font-family: var(--display);
+    text-transform: uppercase;
+    text-align: center;
+    line-height: 0.92;
+    letter-spacing: -0.02em;
+    font-size: clamp(2.6rem, 12vw, 10.5rem);
+}
+
+.name .word { display: block; white-space: nowrap; }
+.name .word.red { color: var(--red); }
+
+/* Ordene i rejsen er skjult til JS har splittet dem i bogstaver,
+   saa navnet aldrig staar statisk fra start */
+html.js-anim #stageName .word { visibility: hidden; }
+
+.stage .word .ltr {
+    display: inline-block;
+    opacity: 0;
+    will-change: transform, opacity;
+}
+
+.hint {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    transition: opacity 0.4s ease;
+}
+.hint .arrow { color: var(--red); }
+
+.pills {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    max-width: 60rem;
+}
+
+.pill {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: clamp(0.7rem, 1.8vw, 0.85rem);
+    letter-spacing: 0.08em;
+    color: var(--ink);
+    text-decoration: none;
+    padding: 0.85rem 1.4rem;
+    border: 1.5px solid rgba(255, 255, 255, 0.4);
+    border-radius: 100px;
+    background: rgba(13, 20, 36, 0.6);
+    transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
+    animation: float 5s ease-in-out infinite;
+}
+
+.pills li:nth-child(2) .pill { animation-delay: -1.1s; }
+.pills li:nth-child(3) .pill { animation-delay: -2.3s; }
+.pills li:nth-child(4) .pill { animation-delay: -3.2s; }
+.pills li:nth-child(5) .pill { animation-delay: -4.1s; }
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-7px); }
+}
+
+.pill:hover {
+    border-color: var(--red);
+    background: rgba(224, 58, 47, 0.12);
+}
+
+.pill:focus-visible {
+    outline: 2px solid var(--red);
+    outline-offset: 4px;
+    border-color: var(--red);
+}
+
+.pill .arrow { color: var(--red); margin-right: 0.4em; }
+
+/* ---- Footer ---- */
+footer {
+    position: relative;
+    z-index: 2;
+    padding: 2rem 1.25rem 2.5rem;
+    text-align: center;
+    font-size: 0.65rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+}
+
+footer a {
+    color: inherit;
+    text-decoration: none;
+}
+footer a:hover { color: var(--ink-muted); }
+footer a:focus-visible {
+    outline: 2px solid var(--red);
+    outline-offset: 4px;
+}
+
+.prevent-select {
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
+}
+
+/* ---- Reduced motion: alt statisk samlet ---- */
+@media (prefers-reduced-motion: reduce) {
+    .journey { height: auto; }
+    .stage {
+        position: static;
+        height: auto;
+        min-height: 100vh;
+        min-height: 100svh;
+        padding: 7rem 1rem 3rem;
+    }
+    .hint { display: none; }
+    .pill { animation: none; }
+    .topbar .value::before { animation: none; }
+}
+
+@media (max-width: 600px) {
+    .name { letter-spacing: -0.01em; }
+    .pills { flex-direction: column; align-items: center; }
+}
