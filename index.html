@@ -248,6 +248,12 @@
             outline-offset: 4px;
         }
 
+        .prevent-select {
+          -webkit-user-select: none; /* Safari */
+          -ms-user-select: none; /* IE 10 and IE 11 */
+          user-select: none; /* Standard syntax */
+        }
+
         /* ---- Reduced motion: alt statisk samlet ---- */
         @media (prefers-reduced-motion: reduce) {
             .journey { height: auto; }
@@ -296,7 +302,7 @@
     </div>
 
     <header class="topbar">
-        <span class="value">Principal Digital Strategist @ Comwell Hotels</span>
+        <span class="value">Principal Digital Strategist</span>
     </header>
 
     <main>
@@ -304,12 +310,12 @@
              og kontakten toner frem under det til sidst -->
         <div class="journey">
             <div class="stage">
-                <h1 class="name" id="stageName">
+                <h1 class="name prevent-select" id="stageName">
                     <span class="word" data-word="0">TOBIAS</span>
                     <span class="word red" data-word="1">FULLERTON</span>
                     <span class="word" data-word="2">STØIER</span>
                 </h1>
-                <nav class="contact" id="contact" aria-label="Kontakt">
+                <nav class="contact prevent-select" id="contact" aria-label="Kontakt">
                     <ul class="pills">
                         <li><a class="pill" href="mailto:tobias@stoeier.dk"><span class="arrow">→</span>tobias@stoeier.dk</a></li>
                         <li><a class="pill" href="https://dk.linkedin.com/in/stoeier" target="_blank" rel="noopener"><span class="arrow">→</span>LinkedIn</a></li>
