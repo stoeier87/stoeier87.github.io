@@ -544,6 +544,38 @@
         dirty = true;
     }
 
+    var titleSats = [];
+    function initTitleSats() {
+      var stage = document.querySelector('.stage');
+      for (var i = 0; i < 4; i++) {
+        var el = document.createElement('span');
+        el.className = 'title-sat';
+        stage.appendChild(el);
+        titleSats.push({
+          el: el,
+          a: Math.random() * Math.PI * 2,
+          speed: 0.0006 + Math.random() * 0.0007,
+          rx: 140 + Math.random() * 120,
+          ry: 45 + Math.random() * 40
+        });
+      }
+    }
+    
+    function updateTitleSats(time) {
+      if (!stageName) return;
+      var r = stageName.getBoundingClientRect();
+      var cx = r.left + r.width / 2;
+      var cy = r.top + r.height / 2;
+    
+      for (var i = 0; i < titleSats.length; i++) {
+        var s = titleSats[i];
+        var ang = s.a + time * s.speed;
+        var x = cx + Math.cos(ang) * s.rx;
+        var y = cy + Math.sin(ang) * s.ry;
+        s.el.style.transform = 'translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,0)';
+      }
+    }
+
     window.addEventListener('scroll', function () { scrollPos = window.scrollY; dirty = true; }, { passive: true });
     window.addEventListener('resize', measure, { passive: true });
     measure();
