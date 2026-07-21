@@ -96,6 +96,9 @@ header p {
   opacity: 0.6;
 }
 footer {
+  display: flex;
+  gap: 0 3rem;
+  justify-content: center;
   text-align: center;
   margin-top: 1.5rem;
 }
