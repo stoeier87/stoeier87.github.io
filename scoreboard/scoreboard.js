@@ -15,8 +15,13 @@ const firebaseConfig = globalThis.ARCADE_FIREBASE_CONFIG;
 // Add/edit games here
 const GAMES = [
   { key: "orbit-runner", label: "Orbit Runner" },
-  { key: "moon-lander", label: "Moon Lander" },
+  { key: "meteor-dodge", label: "Meteor Dodge" },
   { key: "iss-docking", label: "ISS Docking" },
+  { key: "phobos-lander", label: "Phobos Lander" },
+  { key: "comet-pong", label: "Comet Pong" },
+  { key: "star-memory", label: "Star Memory" },
+  { key: "nebula-trail", label: "Nebula Trail" },
+  { key: "asteroid-breaker", label: "Asteroid Breaker" },
 ];
 
 const app = firebaseConfig ? initializeApp(firebaseConfig) : null;

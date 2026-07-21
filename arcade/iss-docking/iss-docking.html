@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ISS Docking</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="iss-docking.css" />
+  </head>
+  <body>
+    <canvas id="game"></canvas>
+    <div class="hud">
+      <a href="../index.html">← Arcade</a>
+      <div>Score: <span id="score">0</span></div>
+      <div>Best: <span id="best">0</span></div>
+    </div>
+    <div class="controls" id="controls">
+      <div class="dpad">
+        <button id="up" aria-label="Thrust up">▲</button>
+        <div class="dpad-row">
+          <button id="left" aria-label="Thrust left">◀</button>
+          <button id="down" aria-label="Thrust down">▼</button>
+          <button id="right" aria-label="Thrust right">▶</button>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="iss-docking.js"></script>
+  </body>
+</html>
