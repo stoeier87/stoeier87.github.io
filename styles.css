@@ -110,6 +110,7 @@ html.ufo-on .ufo.live { opacity: 1; }
 .journey {
     position: relative;
     height: 650vh;
+    z-index: 3;
 }
 
 .stage {
