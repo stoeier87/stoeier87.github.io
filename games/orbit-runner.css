@@ -50,3 +50,24 @@ canvas {
 .hud a:hover{
   border-color:var(--red)
 }
+
+/* existing styles stay as-is; add this block */
+
+.restart-btn{
+  position: fixed;
+  left: 50%;
+  top: 62%;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+  padding: 12px 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.35);
+  background: rgba(10,14,24,.78);
+  color: #fff;
+  font: 700 14px "Space Mono", monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  display: none;
+  touch-action: manipulation;
+  cursor: pointer;
+}
