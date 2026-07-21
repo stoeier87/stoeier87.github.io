@@ -4,16 +4,22 @@
   const scoreEl = document.getElementById('score');
   const bestEl = document.getElementById('best');
 
-  // Portrait-native fixed world (prevents stretch)
-  const BASE_W = 720;
-  const BASE_H = 1280;
+  // Dual world presets:
+  // - desktop: fills wide screens
+  // - mobile: portrait-native
+  const DESKTOP_W = 1600;
+  const DESKTOP_H = 900;   // 16:9
+  const MOBILE_W  = 720;
+  const MOBILE_H  = 1280;  // 9:16
+
+  let BASE_W = MOBILE_W;
+  let BASE_H = MOBILE_H;
 
   let W=0,H=0,dpr=1,last=0,score=0,spawnT=0,beamCd=0,gameOver=false;
   let stars=[],debris=[],beams=[];
   let pointer={x:0,y:0,down:false,seen:false,id:null};
   let restartBtn = null;
 
-  // View transform (screen <-> world)
   let viewScale = 1;
   let viewOffX = 0;
   let viewOffY = 0;
@@ -28,13 +34,26 @@
   function worldW(){ return BASE_W; }
   function worldH(){ return BASE_H; }
 
+  function isMobileLike(){
+    return window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 900;
+  }
+
+  function setWorldPreset(){
+    if(isMobileLike()){
+      BASE_W = MOBILE_W;
+      BASE_H = MOBILE_H;
+    }else{
+      BASE_W = DESKTOP_W;
+      BASE_H = DESKTOP_H;
+    }
+  }
+
   function updateRestartBtn(){
     if(!restartBtn) return;
     restartBtn.style.display = gameOver ? 'block' : 'none';
   }
 
   function getViewportSize(){
-    // visualViewport is the reliable mobile visible area
     const vv = window.visualViewport;
     if (vv) return { w: Math.round(vv.width), h: Math.round(vv.height) };
     return { w: window.innerWidth, h: window.innerHeight };
@@ -64,6 +83,22 @@
     pointer.seen = true;
   }
 
+  function initStars(){
+    stars = [...Array(Math.max(90,Math.round(worldW()*worldH()/13000)))].map(()=>({
+      x:Math.random()*worldW(),
+      y:Math.random()*worldH(),
+      r:Math.random()*1.5+.4,
+      s:Math.random()*0.8+.2
+    }));
+  }
+
+  function placeCoreObjects(){
+    ufo.x = worldW()*0.5;
+    ufo.y = worldH()*0.78;
+    planet.x = worldW()*0.5;
+    planet.y = worldH()*0.5;
+  }
+
   function resize(){
     dpr = Math.min(window.devicePixelRatio||1,2);
 
@@ -71,30 +106,17 @@
     W = vp.w;
     H = vp.h;
 
-    // lock CSS size to actual viewport px to avoid vh bugs
+    setWorldPreset();
+
     canvas.style.width = `${W}px`;
     canvas.style.height = `${H}px`;
-
     canvas.width = Math.round(W*dpr);
     canvas.height = Math.round(H*dpr);
-
-    // reset to CSS-pixel coordinate system
     ctx.setTransform(dpr,0,0,dpr,0,0);
 
     updateView();
-
-    // initialize positions
-    ufo.x = worldW()*0.5;
-    ufo.y = worldH()*0.78;
-    planet.x = worldW()*0.5;
-    planet.y = worldH()*0.5;
-
-    stars = [...Array(Math.max(90,Math.round(worldW()*worldH()/13000)))].map(()=>({
-      x:Math.random()*worldW(),
-      y:Math.random()*worldH(),
-      r:Math.random()*1.5+.4,
-      s:Math.random()*0.8+.2
-    }));
+    placeCoreObjects();
+    initStars();
   }
 
   addEventListener('resize', resize, { passive:true });
@@ -157,6 +179,7 @@
 
   function reset(){
     score=0; debris.length=0; beams.length=0; gameOver=false; spawnT=0;
+    placeCoreObjects();
     updateRestartBtn();
   }
 
