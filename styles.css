@@ -251,6 +251,17 @@ footer a:focus-visible {
   user-select: none; /* Standard syntax */
 }
 
+.title-sat {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(210,230,255,.95);
+  box-shadow: 0 0 12px rgba(210,230,255,.55);
+  pointer-events: none;
+  z-index: 6; /* above title letters */
+}
+
 /* ---- Reduced motion: alt statisk samlet ---- */
 @media (prefers-reduced-motion: reduce) {
     .journey { height: auto; }
