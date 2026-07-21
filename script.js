@@ -569,10 +569,12 @@
   let journey = document.querySelector(".journey");
   let hint = document.getElementById("hint");
   let contact = document.getElementById("contact");
+  let arcadePills = document.getElementById("arcadePills");
   let stageName = document.getElementById("stageName");
   let letters = [];
   let journeyEnd = 1;
   let lastContactT = -1;
+  let lastArcadePillsT = -1;
   let stageParallaxMax = 38; // px
 
   let WINDOWS = [
@@ -651,6 +653,16 @@
 
     let ct = (p - 0.92) / 0.07;
     ct = ct < 0 ? 0 : ct > 1 ? 1 : ct;
+
+    if (arcadePills && ct !== lastArcadePillsT) {
+      lastArcadePillsT = ct;
+      let ce = easeOutCubic(ct);
+      arcadePills.style.opacity = ce.toFixed(3);
+      arcadePills.style.transform =
+        "translateY(" + (-40 * (1 - ce)).toFixed(1) + "px)";
+      arcadePills.style.pointerEvents = ct > 0.5 ? "auto" : "none";
+    }
+
     if (contact && ct !== lastContactT) {
       lastContactT = ct;
       let ce = easeOutCubic(ct);

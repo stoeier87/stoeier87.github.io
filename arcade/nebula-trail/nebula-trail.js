@@ -28,7 +28,7 @@ import {
   let dir = { x: 1, y: 0 };
   let nextDir = { x: 1, y: 0 };
   let food = { x: 0, y: 0 };
-  let keys = { left: false, right: false };
+  let keys = { north: false, south: false, east: false, west: false };
   let moveT = 0;
   const moveInterval = 0.12;
 
@@ -103,15 +103,12 @@ import {
     }
   }
 
-  function turn(left) {
-    if (dir.x === 1 && dir.y === 0)
-      nextDir = left ? { x: 0, y: -1 } : { x: 0, y: 1 };
-    else if (dir.x === -1 && dir.y === 0)
-      nextDir = left ? { x: 0, y: 1 } : { x: 0, y: -1 };
-    else if (dir.x === 0 && dir.y === 1)
-      nextDir = left ? { x: 1, y: 0 } : { x: -1, y: 0 };
-    else if (dir.x === 0 && dir.y === -1)
-      nextDir = left ? { x: -1, y: 0 } : { x: 1, y: 0 };
+  function setDirection(newDir) {
+    // Ignore if already moving in that direction
+    if (newDir.x === dir.x && newDir.y === dir.y) return;
+    // Ignore if opposite direction (180 turn)
+    if (newDir.x === -dir.x && newDir.y === -dir.y) return;
+    nextDir = newDir;
   }
 
   function step(ts) {
@@ -125,13 +122,21 @@ import {
     }
 
     if (!gameOver) {
-      if (keys.left) {
-        turn(true);
-        keys.left = false;
+      if (keys.north) {
+        setDirection({ x: 0, y: -1 });
+        keys.north = false;
       }
-      if (keys.right) {
-        turn(false);
-        keys.right = false;
+      if (keys.south) {
+        setDirection({ x: 0, y: 1 });
+        keys.south = false;
+      }
+      if (keys.east) {
+        setDirection({ x: 1, y: 0 });
+        keys.east = false;
+      }
+      if (keys.west) {
+        setDirection({ x: -1, y: 0 });
+        keys.west = false;
       }
 
       moveT += dt;
@@ -191,7 +196,6 @@ import {
       viewOffX + (BASE_W * viewScale) / 2,
       viewOffY + (BASE_H * viewScale) / 2,
     );
-    ctx.rotate(-Math.PI / 6);
     ctx.translate((-BASE_W * viewScale) / 2, (-BASE_H * viewScale) / 2);
     ctx.scale(viewScale, viewScale);
 
@@ -243,19 +247,31 @@ import {
   }
 
   addEventListener("keydown", (e) => {
-    if (e.code === "ArrowLeft" || e.code === "KeyA") turn(true);
-    if (e.code === "ArrowRight" || e.code === "KeyD") turn(false);
+    if (e.code === "ArrowUp" || e.code === "KeyW") keys.north = true;
+    if (e.code === "ArrowDown" || e.code === "KeyS") keys.south = true;
+    if (e.code === "ArrowRight" || e.code === "KeyD") keys.east = true;
+    if (e.code === "ArrowLeft" || e.code === "KeyA") keys.west = true;
     if (gameOver && e.code === "KeyR") reset();
+  });
+
+  addEventListener("keyup", (e) => {
+    if (e.code === "ArrowUp" || e.code === "KeyW") keys.north = false;
+    if (e.code === "ArrowDown" || e.code === "KeyS") keys.south = false;
+    if (e.code === "ArrowRight" || e.code === "KeyD") keys.east = false;
+    if (e.code === "ArrowLeft" || e.code === "KeyA") keys.west = false;
   });
 
   const leftBtn = document.getElementById("left");
   const rightBtn = document.getElementById("right");
-  const addTouch = (el, left) => {
+  const addTouch = (el, dir) => {
+    const setKey = (val) => {
+      keys[dir] = val;
+    };
     el.addEventListener(
       "touchstart",
       (e) => {
         e.preventDefault();
-        keys[left ? "left" : "right"] = true;
+        setKey(true);
       },
       { passive: false },
     );
@@ -263,25 +279,25 @@ import {
       "touchend",
       (e) => {
         e.preventDefault();
-        keys[left ? "left" : "right"] = false;
+        setKey(false);
       },
       { passive: false },
     );
     el.addEventListener("mousedown", (e) => {
       e.preventDefault();
-      keys[left ? "left" : "right"] = true;
+      setKey(true);
     });
     el.addEventListener("mouseup", (e) => {
       e.preventDefault();
-      keys[left ? "left" : "right"] = false;
+      setKey(false);
     });
     el.addEventListener("mouseleave", (e) => {
       e.preventDefault();
-      keys[left ? "left" : "right"] = false;
+      setKey(false);
     });
   };
-  addTouch(leftBtn, true);
-  addTouch(rightBtn, false);
+  addTouch(leftBtn, "west");
+  addTouch(rightBtn, "east");
 
   const restartBtn = document.createElement("button");
   restartBtn.className = "restart-btn";
@@ -298,6 +314,6 @@ import {
   );
   document.body.appendChild(restartBtn);
 
-  randomFood();
+  reset();
   requestAnimationFrame(step);
 })();
