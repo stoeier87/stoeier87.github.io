@@ -45,7 +45,7 @@
     if (beamCd>0 || gameOver) return;
     beamCd = 120; // ms
     const centerY = H*0.5;
-    const shootDown = ufo.y < centerY; // requested rule
+    const shootDown = ufo.y < centerY;
     beams.push({
       x:ufo.x,
       y:ufo.y + (shootDown ? ufo.r : -ufo.r),
@@ -61,7 +61,7 @@
 
   canvas.addEventListener('pointerdown',()=>{
     pointer.down=true;
-    if(gameOver) return; // restart is handled by on-screen button (or R key)
+    if(gameOver) return;
     fireBeam();
   },{passive:true});
 
@@ -78,7 +78,6 @@
     const dt=Math.min(33,ts-last); last=ts;
     if (beamCd>0) beamCd-=dt;
 
-    // stars
     for(const s of stars){ s.y+=s.s*dt*0.05; if(s.y>H) s.y=-2; }
 
     if(!gameOver){
@@ -93,7 +92,6 @@
         ufo.y += (pointer.y-ufo.y)*0.18;
       }
 
-      // debris physics with simple gravity
       for(const d of debris){
         const dx=planet.x-d.x, dy=planet.y-d.y;
         const dist=Math.hypot(dx,dy)||1;
@@ -103,13 +101,11 @@
         d.x += d.vx*dt*0.001; d.y += d.vy*dt*0.001;
       }
 
-      // beams
       for(const b of beams){
         b.x += b.vx*dt*0.001; b.y += b.vy*dt*0.001;
       }
       beams = beams.filter(b => b.y>-30 && b.y<H+30);
 
-      // collisions beam->debris
       for(const b of beams){
         for(const d of debris){
           if(!d.alive) continue;
@@ -122,7 +118,6 @@
       }
       debris = debris.filter(d=>d.alive);
 
-      // collisions debris->ufo
       for(const d of debris){
         const dx=d.x-ufo.x, dy=d.y-ufo.y;
         if(dx*dx+dy*dy < (d.r+ufo.r)*(d.r+ufo.r)){
@@ -140,25 +135,21 @@
   function draw(){
     ctx.clearRect(0,0,W,H);
 
-    // stars
     for(const s of stars){
       ctx.globalAlpha=.5;
       ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
     }
     ctx.globalAlpha=1;
 
-    // planet
     const g=ctx.createRadialGradient(planet.x-14,planet.y-14,8,planet.x,planet.y,planet.r*1.2);
     g.addColorStop(0,'#7bc2f2'); g.addColorStop(1,'#1d4f8d');
     ctx.fillStyle=g; ctx.beginPath(); ctx.arc(planet.x,planet.y,planet.r,0,Math.PI*2); ctx.fill();
 
-    // debris
     for(const d of debris){
       ctx.fillStyle='#bfc9d6';
       ctx.beginPath(); ctx.arc(d.x,d.y,d.r,0,Math.PI*2); ctx.fill();
     }
 
-    // beams
     for(const b of beams){
       const grad=ctx.createLinearGradient(b.x,b.y,b.x,b.y-(b.vy>0?-24:24));
       grad.addColorStop(0,'rgba(224,58,47,.95)');
@@ -170,13 +161,11 @@
       ctx.stroke();
     }
 
-    // ufo
     ctx.fillStyle='#dfe6f2';
     ctx.beginPath(); ctx.ellipse(ufo.x,ufo.y,18,7,0,0,Math.PI*2); ctx.fill();
     ctx.fillStyle='rgba(180,220,255,.8)';
     ctx.beginPath(); ctx.ellipse(ufo.x,ufo.y-5,8,6,0,0,Math.PI*2); ctx.fill();
 
-    // center line hint
     ctx.strokeStyle='rgba(255,255,255,.12)';
     ctx.setLineDash([5,6]);
     ctx.beginPath(); ctx.moveTo(0,H*0.5); ctx.lineTo(W,H*0.5); ctx.stroke();
@@ -192,27 +181,10 @@
     }
   }
 
-  // on-screen restart button (mobile + desktop)
   restartBtn = document.createElement('button');
+  restartBtn.className = 'restart-btn';
+  restartBtn.type = 'button';
   restartBtn.textContent = 'Restart';
-  Object.assign(restartBtn.style, {
-    position: 'fixed',
-    left: '50%',
-    top: '62%',
-    transform: 'translate(-50%, -50%)',
-    zIndex: '20',
-    padding: '12px 18px',
-    borderRadius: '10px',
-    border: '1px solid rgba(255,255,255,.35)',
-    background: 'rgba(10,14,24,.78)',
-    color: '#fff',
-    font: '700 14px "Space Mono", monospace',
-    letterSpacing: '.08em',
-    textTransform: 'uppercase',
-    display: 'none',
-    touchAction: 'manipulation',
-    cursor: 'pointer'
-  });
   restartBtn.addEventListener('click', reset);
   restartBtn.addEventListener('touchstart', (e) => { e.preventDefault(); reset(); }, { passive: false });
   document.body.appendChild(restartBtn);
