@@ -261,4 +261,5 @@ footer a:focus-visible {
 @media (max-width: 600px) {
     .name { letter-spacing: -0.01em; }
     .pills { flex-direction: column; align-items: center; }
+    #starfield { z-index: 2; }
 }
