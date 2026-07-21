@@ -1,3 +1,5 @@
+import { submitScoreOnGameOver } from './shared/score-submit.js';
+
 (() => {
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
@@ -19,6 +21,7 @@
   let stars=[],debris=[],beams=[];
   let pointer={x:0,y:0,down:false,seen:false,id:null};
   let restartBtn = null;
+  let scoreSubmissionStarted = false;
 
   let viewScale = 1;
   let viewOffX = 0;
@@ -179,6 +182,7 @@
 
   function reset(){
     score=0; debris.length=0; beams.length=0; gameOver=false; spawnT=0;
+    scoreSubmissionStarted=false;
     placeCoreObjects();
     updateRestartBtn();
   }
@@ -234,6 +238,18 @@
           gameOver=true;
           updateRestartBtn();
           if(score>best){ best=Math.floor(score); localStorage.setItem(bestKey,String(best)); bestEl.textContent=best; }
+
+          if(!scoreSubmissionStarted){
+            scoreSubmissionStarted = true;
+            setTimeout(() => {
+              submitScoreOnGameOver({
+                gameKey: 'orbit-runner',
+                gameLabel: 'Orbit Runner',
+                score: Math.floor(score),
+                ask: true,
+              });
+            }, 60);
+          }
         }
       }
     }

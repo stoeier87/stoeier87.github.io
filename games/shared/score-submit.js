@@ -1,0 +1,113 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDTebLTN13VnxG6tKoN5XsSk0OEg49Yz4s",
+  authDomain: "servicedesign-e1fe5.firebaseapp.com",
+  projectId: "servicedesign-e1fe5",
+  storageBucket: "servicedesign-e1fe5.firebasestorage.app",
+  messagingSenderId: "485465422440",
+  appId: "1:485465422440:web:2c8a02a1a9794b773419dd",
+  measurementId: "G-9M0GB4HHY0",
+  databaseURL: "https://servicedesign-e1fe5-default-rtdb.europe-west1.firebasedatabase.app/",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const DEFAULTS = {
+  minNameLength: 2,
+  maxNameLength: 20,
+  minScore: 0,
+};
+
+function normalizeOptions(options) {
+  return {
+    gameKey: options?.gameKey ?? "",
+    gameLabel: options?.gameLabel ?? options?.gameKey ?? "Game",
+    score: Number(options?.score ?? NaN),
+    ask: options?.ask !== false,
+    defaultName: String(options?.defaultName ?? localStorage.getItem("arcade_player_name") ?? "").trim(),
+    minNameLength: Number(options?.minNameLength ?? DEFAULTS.minNameLength),
+    maxNameLength: Number(options?.maxNameLength ?? DEFAULTS.maxNameLength),
+    minScore: Number(options?.minScore ?? DEFAULTS.minScore),
+  };
+}
+
+function promptForName(defaultName, gameLabel, score) {
+  const text = `Game over! Submit your score to ${gameLabel} leaderboard?\nScore: ${score}`;
+  if (!window.confirm(text)) return null;
+
+  const name = window.prompt("Enter your player name:", defaultName || "") ?? "";
+  return name.trim();
+}
+
+function validatePayload({ gameKey, score, name, minNameLength, maxNameLength, minScore }) {
+  if (!gameKey) {
+    return { ok: false, reason: "Missing game key." };
+  }
+  if (!Number.isFinite(score) || score < minScore) {
+    return { ok: false, reason: "Invalid score." };
+  }
+  if (!name || name.length < minNameLength) {
+    return { ok: false, reason: `Name must be at least ${minNameLength} characters.` };
+  }
+  return { ok: true, safeName: name.slice(0, maxNameLength), safeScore: Math.floor(score) };
+}
+
+export async function submitScoreOnGameOver(options = {}) {
+  const cfg = normalizeOptions(options);
+
+  let name = cfg.defaultName;
+  if (cfg.ask) {
+    const prompted = promptForName(cfg.defaultName, cfg.gameLabel, Math.floor(cfg.score));
+    if (prompted === null) {
+      return { submitted: false, cancelled: true, reason: "User declined submission." };
+    }
+    name = prompted;
+  }
+
+  const validation = validatePayload({
+    gameKey: cfg.gameKey,
+    score: cfg.score,
+    name,
+    minNameLength: cfg.minNameLength,
+    maxNameLength: cfg.maxNameLength,
+    minScore: cfg.minScore,
+  });
+
+  if (!validation.ok) {
+    return { submitted: false, cancelled: false, reason: validation.reason };
+  }
+
+  try {
+    const scoresRef = ref(db, `arcade/scores/${cfg.gameKey}`);
+    await push(scoresRef, {
+      game: cfg.gameKey,
+      name: validation.safeName,
+      score: validation.safeScore,
+      createdAt: Date.now(),
+    });
+
+    localStorage.setItem("arcade_player_name", validation.safeName);
+
+    return {
+      submitted: true,
+      cancelled: false,
+      reason: "Score submitted.",
+      payload: {
+        game: cfg.gameKey,
+        name: validation.safeName,
+        score: validation.safeScore,
+      },
+    };
+  } catch (err) {
+    console.error(err);
+    return {
+      submitted: false,
+      cancelled: false,
+      reason: "Could not save score. Check Firebase config/rules.",
+      error: err,
+    };
+  }
+}
