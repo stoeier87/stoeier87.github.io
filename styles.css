@@ -142,14 +142,18 @@ html.js-anim .contact {
     font-size: clamp(2.6rem, 12vw, 10.5rem);
 }
 
-.name .word { display: block; white-space: nowrap; z-index:5:position: relative }
+.name .word { 
+    display: block;
+    white-space: nowrap;
+    z-index:5;
+    position: relative; 
+}
+
 .name .word.red { color: var(--red); }
 
 /* Ordene i rejsen er skjult til JS har splittet dem i bogstaver,
    saa navnet aldrig staar statisk fra start */
 html.js-anim #stageName .word { visibility: hidden; }
-
-#
 
 .stage .word .ltr {
     display: inline-block;
