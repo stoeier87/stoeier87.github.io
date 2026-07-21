@@ -142,7 +142,7 @@ html.js-anim .contact {
     font-size: clamp(2.6rem, 12vw, 10.5rem);
 }
 
-.name .word { display: block; white-space: nowrap; z-index:5 }
+.name .word { display: block; white-space: nowrap; z-index:5:position: relative }
 .name .word.red { color: var(--red); }
 
 /* Ordene i rejsen er skjult til JS har splittet dem i bogstaver,
@@ -178,6 +178,7 @@ html.js-anim #stageName .word { visibility: hidden; }
     gap: 0.75rem;
     max-width: 60rem;
     z-index: 4;
+    position: relative;
 }
 
 .pill {
