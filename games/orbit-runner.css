@@ -15,7 +15,13 @@ body {
   background:var(--bg);
   color:var(--ink);
   font-family:var(--mono);
-  overflow:hidden
+  overflow-x:hidden;
+}
+
+@media (max-width: 600px) {
+  body {
+    overflow-y:scroll;
+  }
 }
 
 canvas {
@@ -52,7 +58,6 @@ canvas {
 }
 
 /* existing styles stay as-is; add this block */
-
 .restart-btn{
   position: fixed;
   left: 50%;
