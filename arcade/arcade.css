@@ -50,50 +50,131 @@ header p {
   color: var(--muted);
   margin-top: 0.35rem;
 }
-.grid {
-  max-width: 1000px;
+.solar-system {
+  max-width: 1100px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1rem;
   width: 100%;
 }
-.cabinet {
+.planet-card {
   border: 1.5px solid rgba(255, 255, 255, 0.28);
-  border-radius: 16px;
+  border-radius: 18px;
   padding: 1rem;
   background: rgba(13, 20, 36, 0.72);
   text-decoration: none;
   color: inherit;
   display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  min-height: 180px;
+  align-items: center;
+  gap: 0.9rem;
+  min-height: 120px;
   transition:
     0.2s transform,
-    0.2s border-color;
+    0.2s border-color,
+    0.2s background;
 }
-.cabinet h2 {
+.planet-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--red);
+  background: rgba(20, 30, 52, 0.82);
+}
+.planet {
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  box-shadow: inset -8px -6px 14px rgba(0, 0, 0, 0.55),
+    0 0 18px rgba(255, 255, 255, 0.08);
+  position: relative;
+}
+.planet::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 30% 25%,
+    rgba(255, 255, 255, 0.35) 0%,
+    rgba(255, 255, 255, 0) 45%
+  );
+}
+.planet.merkur {
+  background: radial-gradient(circle at 30% 30%, #b8c4cc, #5f6b73);
+}
+.planet.venus {
+  background: radial-gradient(circle at 30% 30%, #f5d79a, #c78d46);
+}
+.planet.jorden {
+  background: radial-gradient(circle at 30% 30%, #4aa3df, #1e5f2f);
+}
+.planet.mars {
+  background: radial-gradient(circle at 30% 30%, #e07a5f, #8a3324);
+}
+.planet.jupiter {
+  background: linear-gradient(
+    180deg,
+    #c48b6a 0%,
+    #e3c6a9 18%,
+    #a86d4c 38%,
+    #d4a882 58%,
+    #8f533b 78%,
+    #c48b6a 100%
+  );
+}
+.planet.saturn {
+  background: radial-gradient(circle at 30% 30%, #e6d7a3, #bfa76f);
+}
+.planet.saturn::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 92px;
+  height: 92px;
+  transform: translate(-50%, -50%) rotate(22deg);
+  border: 8px solid rgba(214, 196, 145, 0.75);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.planet.uranus {
+  background: radial-gradient(circle at 30% 30%, #9de3e6, #4fa3a6);
+}
+.planet.neptun {
+  background: radial-gradient(circle at 30% 30%, #5b8bd8, #2a4d8a);
+}
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+.info h2 {
   font-family: var(--display);
-  font-size: 1.2rem;
+  font-size: 1.15rem;
+  letter-spacing: 0.03em;
 }
-.cabinet p {
-  color: var(--muted);
+.info .game {
+  font-weight: 700;
+  color: #fff;
   font-size: 0.9rem;
 }
-.cabinet span {
-  margin-top: auto;
-  font-size: 0.75rem;
+.info .tagline {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+.badge {
+  margin-top: 0.35rem;
+  font-size: 0.7rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--red);
+  align-self: flex-start;
 }
-.cabinet.live:hover {
-  transform: translateY(-4px);
-  border-color: var(--red);
-}
-.cabinet.soon {
-  opacity: 0.6;
+.planet-card.locked {
+  opacity: 0.55;
+  pointer-events: none;
 }
 footer {
   display: flex;
@@ -101,6 +182,10 @@ footer {
   justify-content: center;
   text-align: center;
   margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
 }
 footer a {
   color: var(--muted);
@@ -108,4 +193,12 @@ footer a {
 }
 footer a:hover {
   color: #fff;
+}
+@media (max-width: 520px) {
+  .solar-system {
+    grid-template-columns: 1fr;
+  }
+  .planet-card {
+    min-height: auto;
+  }
 }

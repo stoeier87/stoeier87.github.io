@@ -1,8 +1,16 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
+import {
+  getDatabase,
+  ref,
+  push,
+  query,
+  orderByChild,
+  limitToLast,
+  get,
+} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
 import { ARCADE_FIREBASE_CONFIG } from "./firebase-config.js";
 
-const app = initializeApp(ARCADE_FIREBASE_CONFIG, 'arcade-game');
+const app = initializeApp(ARCADE_FIREBASE_CONFIG, "arcade-game");
 const db = getDatabase(app);
 
 const DEFAULTS = {
@@ -17,7 +25,9 @@ function normalizeOptions(options) {
     gameLabel: options?.gameLabel ?? options?.gameKey ?? "Game",
     score: Number(options?.score ?? NaN),
     ask: options?.ask !== false,
-    defaultName: String(options?.defaultName ?? localStorage.getItem("arcade_player_name") ?? "").trim(),
+    defaultName: String(
+      options?.defaultName ?? localStorage.getItem("arcade_player_name") ?? "",
+    ).trim(),
     minNameLength: Number(options?.minNameLength ?? DEFAULTS.minNameLength),
     maxNameLength: Number(options?.maxNameLength ?? DEFAULTS.maxNameLength),
     minScore: Number(options?.minScore ?? DEFAULTS.minScore),
@@ -28,11 +38,19 @@ function promptForName(defaultName, gameLabel, score) {
   const text = `Game over! Submit your score to ${gameLabel} leaderboard?\nScore: ${score}`;
   if (!window.confirm(text)) return null;
 
-  const name = window.prompt("Enter your player name:", defaultName || "") ?? "";
+  const name =
+    window.prompt("Enter your player name:", defaultName || "") ?? "";
   return name.trim();
 }
 
-function validatePayload({ gameKey, score, name, minNameLength, maxNameLength, minScore }) {
+function validatePayload({
+  gameKey,
+  score,
+  name,
+  minNameLength,
+  maxNameLength,
+  minScore,
+}) {
   if (!gameKey) {
     return { ok: false, reason: "Missing game key." };
   }
@@ -40,9 +58,16 @@ function validatePayload({ gameKey, score, name, minNameLength, maxNameLength, m
     return { ok: false, reason: "Invalid score." };
   }
   if (!name || name.length < minNameLength) {
-    return { ok: false, reason: `Name must be at least ${minNameLength} characters.` };
+    return {
+      ok: false,
+      reason: `Name must be at least ${minNameLength} characters.`,
+    };
   }
-  return { ok: true, safeName: name.slice(0, maxNameLength), safeScore: Math.floor(score) };
+  return {
+    ok: true,
+    safeName: name.slice(0, maxNameLength),
+    safeScore: Math.floor(score),
+  };
 }
 
 /**
@@ -67,7 +92,14 @@ export async function submitScore(db, options = {}) {
     minScore = DEFAULTS.minScore,
   } = options;
 
-  const validation = validatePayload({ gameKey, score: Number(score), name: String(name).trim(), minNameLength, maxNameLength, minScore });
+  const validation = validatePayload({
+    gameKey,
+    score: Number(score),
+    name: String(name).trim(),
+    minNameLength,
+    maxNameLength,
+    minScore,
+  });
   if (!validation.ok) {
     return { submitted: false, cancelled: false, reason: validation.reason };
   }
@@ -85,11 +117,20 @@ export async function submitScore(db, options = {}) {
       submitted: true,
       cancelled: false,
       reason: "Score submitted.",
-      payload: { game: gameKey, name: validation.safeName, score: validation.safeScore },
+      payload: {
+        game: gameKey,
+        name: validation.safeName,
+        score: validation.safeScore,
+      },
     };
   } catch (err) {
     console.error(err);
-    return { submitted: false, cancelled: false, reason: "Could not save score. Check Firebase config/rules.", error: err };
+    return {
+      submitted: false,
+      cancelled: false,
+      reason: "Could not save score. Check Firebase config/rules.",
+      error: err,
+    };
   }
 }
 
@@ -98,9 +139,17 @@ export async function submitScoreOnGameOver(options = {}) {
 
   let name = cfg.defaultName;
   if (cfg.ask) {
-    const prompted = promptForName(cfg.defaultName, cfg.gameLabel, Math.floor(cfg.score));
+    const prompted = promptForName(
+      cfg.defaultName,
+      cfg.gameLabel,
+      Math.floor(cfg.score),
+    );
     if (prompted === null) {
-      return { submitted: false, cancelled: true, reason: "User declined submission." };
+      return {
+        submitted: false,
+        cancelled: true,
+        reason: "User declined submission.",
+      };
     }
     name = prompted;
   }
@@ -119,4 +168,27 @@ export async function submitScoreOnGameOver(options = {}) {
   }
 
   return result;
+}
+
+/**
+ * Fetches the global best (highest) score for a game from Firebase.
+ * Falls back to 0 on error.
+ *
+ * @param {string} gameKey
+ * @returns {Promise<number>}
+ */
+export async function fetchGlobalBest(gameKey) {
+  try {
+    const scoresRef = ref(db, `arcade/scores/${gameKey}`);
+    const top1 = query(scoresRef, orderByChild("score"), limitToLast(1));
+    const snapshot = await get(top1);
+    let best = 0;
+    snapshot.forEach((child) => {
+      const s = Number(child.val()?.score ?? 0);
+      if (s > best) best = s;
+    });
+    return best;
+  } catch {
+    return 0;
+  }
 }

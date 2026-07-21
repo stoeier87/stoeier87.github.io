@@ -4,85 +4,75 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Arcade Scoreboard</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link href="/css/all.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
+    <canvas id="bg" aria-hidden="true"></canvas>
+
     <main class="wrap">
       <header>
-        <h1>🕹️ Arcade Scoreboard</h1>
-        <p class="sub">Live top 10 per game</p>
+        <h1><i class="fa-solid fa-ranking-star"></i> Scoreboard</h1>
+        <p class="sub">Top scores across the solar arcade</p>
       </header>
 
-      <section class="content">
-        <div class="panel">
-          <h2>Submit score</h2>
-          <form id="scoreForm">
-            <div class="form-group">
-              <label for="game">Game</label>
-              <select id="game" name="game" required></select>
-            </div>
-            <div class="form-group">
-              <label for="name">Name</label>
-              <input
-                id="name"
-                type="text"
-                maxlength="20"
-                placeholder="Player name"
-                label="Player name"
-                required
-              />
-            </div>
-            <div class="form-group">
-              <label for="score">Score</label>
-              <input
-                id="score"
-                type="number"
-                min="0"
-                max="9999999"
-                autocomplete="off"
-                placeholder="Score"
-                required
-              />
-            </div>
-            <div class="form-group">
-              <label for="save" class="aria-hidden" aria-hidden="true"
-                >&nbsp;</label
-              >
-              <button name="save" type="submit">Save</button>
-            </div>
-          </form>
-          <div id="msg" class="msg"></div>
-          <div class="tiny">Tip: Keep names short and fun (max 20 chars).</div>
-        </div>
-
-        <div class="panel">
-          <h2>
-            Leaderboard: <span id="currentGameLabel" class="game-title"></span>
-          </h2>
-          <table>
-            <thead>
-              <tr>
-                <th class="rank">#</th>
-                <th>Name</th>
-                <th class="score">Score</th>
-              </tr>
-            </thead>
-            <tbody id="boardBody">
-              <tr>
-                <td colspan="3">Loading…</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <div id="boards" class="boards"></div>
 
       <footer>
-        <a href="../index.html">← Back to homepage</a>
+        <a href="../arcade/">← Back to arcade</a>
+        <a href="../">← Homepage</a>
       </footer>
     </main>
 
-    <script src="./firebase-config.js"></script>
     <script type="module" src="./scoreboard.js"></script>
+    <script>
+      (() => {
+        const c = document.getElementById("bg");
+        const x = c.getContext("2d");
+        let w = 0,
+          h = 0,
+          dpr = 1,
+          stars = [];
+        function rs() {
+          dpr = Math.min(devicePixelRatio || 1, 2);
+          w = innerWidth;
+          h = innerHeight;
+          c.width = w * dpr;
+          c.height = h * dpr;
+          x.setTransform(dpr, 0, 0, dpr, 0, 0);
+          stars = [...Array(Math.max(80, Math.round((w * h) / 14000)))].map(
+            () => ({
+              x: Math.random() * w,
+              y: Math.random() * h,
+              r: Math.random() * 1.6 + 0.4,
+              s: Math.random() * 0.5 + 0.1,
+            }),
+          );
+        }
+        addEventListener("resize", rs, { passive: true });
+        rs();
+        function f(t) {
+          x.clearRect(0, 0, w, h);
+          for (const s of stars) {
+            s.y += s.s;
+            if (s.y > h) s.y = -2;
+            x.globalAlpha = 0.4 + Math.sin(t * 0.0008 + s.x) * 0.4;
+            x.beginPath();
+            x.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+            x.fillStyle = "#fff";
+            x.fill();
+          }
+          x.globalAlpha = 1;
+          requestAnimationFrame(f);
+        }
+        requestAnimationFrame(f);
+      })();
+    </script>
   </body>
 </html>

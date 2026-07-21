@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Arcade — stoeier.dk</title>
-    <meta name="description" content="Arcade Hall on stoeier.dk" />
+    <meta name="description" content="Solar System Arcade on stoeier.dk" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -18,28 +18,122 @@
     <canvas id="bg" aria-hidden="true"></canvas>
     <main class="hall">
       <header>
-        <h1>ARCADE HALL</h1>
-        <p>Choose your mission.</p>
+        <h1>SOLAR ARCADE</h1>
+        <p>Pick a planet. Start your mission.</p>
       </header>
 
-      <section class="grid">
-        <a class="cabinet live" href="orbit-runner/orbit-runner.html">
-          <h2>Orbit Runner</h2>
-          <p>Dodge debris, bend gravity, fire beam.</p>
-          <span>Play</span>
+      <section class="solar-system" id="solarSystem">
+        <a
+          class="planet-card live"
+          href="orbit-runner/orbit-runner.html"
+          data-planet="merkur"
+        >
+          <span class="planet merkur" aria-hidden="true"></span>
+          <div class="info">
+            <h2>Orbit Runner</h2>
+            <p class="game">Merkur</p>
+            <p class="tagline">Dodge debris, bend gravity, fire beam.</p>
+            <span class="badge">Play</span>
+          </div>
         </a>
 
-        <article class="cabinet soon">
-          <h2>Moon Lander</h2>
-          <p>Coming soon</p>
-          <span>Locked</span>
-        </article>
+        <a
+          class="planet-card live"
+          href="meteor-dodge/meteor-dodge.html"
+          data-planet="venus"
+        >
+          <span class="planet venus" aria-hidden="true"></span>
+          <div class="info">
+            <h2>Meteor Dodge</h2>
+            <p class="game">Venus</p>
+            <p class="tagline">Weave through a burning meteor shower.</p>
+            <span class="badge">Play</span>
+          </div>
+        </a>
 
-        <article class="cabinet soon">
-          <h2>ISS Docking</h2>
-          <p>Coming soon</p>
-          <span>Locked</span>
-        </article>
+        <a
+          class="planet-card live"
+          href="iss-docking/iss-docking.html"
+          data-planet="jorden"
+        >
+          <span class="planet jorden" aria-hidden="true"></span>
+          <div class="info">
+            <h2>ISS Docking</h2>
+            <p class="game">Jorden</p>
+            <p class="tagline">Match rotation and dock with the station.</p>
+            <span class="badge">Play</span>
+          </div>
+        </a>
+
+        <a
+          class="planet-card live"
+          href="phobos-lander/phobos-lander.html"
+          data-planet="mars"
+        >
+          <span class="planet mars" aria-hidden="true"></span>
+          <div class="info">
+            <h2>Phobos Lander</h2>
+            <p class="game">Mars</p>
+            <p class="tagline">Land softly on Phobos with limited fuel.</p>
+            <span class="badge">Play</span>
+          </div>
+        </a>
+
+        <a
+          class="planet-card live"
+          href="comet-pong/comet-pong.html"
+          data-planet="jupiter"
+        >
+          <span class="planet jupiter" aria-hidden="true"></span>
+          <div class="info">
+            <h2>Comet Pong</h2>
+            <p class="game">Jupiter</p>
+            <p class="tagline">Bat a comet through Jupiter's storm bands.</p>
+            <span class="badge">Play</span>
+          </div>
+        </a>
+
+        <a
+          class="planet-card live"
+          href="star-memory/star-memory.html"
+          data-planet="saturn"
+        >
+          <span class="planet saturn" aria-hidden="true"></span>
+          <div class="info">
+            <h2>Star Memory</h2>
+            <p class="game">Saturn</p>
+            <p class="tagline">Match constellations around the rings.</p>
+            <span class="badge">Play</span>
+          </div>
+        </a>
+
+        <a
+          class="planet-card live"
+          href="nebula-trail/nebula-trail.html"
+          data-planet="uranus"
+        >
+          <span class="planet uranus" aria-hidden="true"></span>
+          <div class="info">
+            <h2>Nebula Trail</h2>
+            <p class="game">Uranus</p>
+            <p class="tagline">A tilted Snake through an icy nebula.</p>
+            <span class="badge">Play</span>
+          </div>
+        </a>
+
+        <a
+          class="planet-card live"
+          href="asteroid-breaker/asteroid-breaker.html"
+          data-planet="neptun"
+        >
+          <span class="planet neptun" aria-hidden="true"></span>
+          <div class="info">
+            <h2>Asteroid Breaker</h2>
+            <p class="game">Neptun</p>
+            <p class="tagline">Smash asteroids in deep blue space.</p>
+            <span class="badge">Play</span>
+          </div>
+        </a>
       </section>
 
       <footer>
