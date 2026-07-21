@@ -6,7 +6,7 @@
 
   let W=0,H=0,dpr=1,last=0,score=0,spawnT=0,beamCd=0,gameOver=false;
   let stars=[],debris=[],beams=[];
-  let pointer={x:0,y:0,down:false,seen:false};
+  let pointer={x:0,y:0,down:false,seen:false,id:null};
   let restartBtn = null;
 
   const bestKey = 'orbit_runner_best_v1';
@@ -19,6 +19,13 @@
   function updateRestartBtn(){
     if(!restartBtn) return;
     restartBtn.style.display = gameOver ? 'block' : 'none';
+  }
+
+  function setPointerFromEvent(e){
+    const r = canvas.getBoundingClientRect();
+    pointer.x = e.clientX - r.left;
+    pointer.y = e.clientY - r.top;
+    pointer.seen = true;
   }
 
   function resize(){
@@ -55,18 +62,48 @@
   }
 
   canvas.addEventListener('pointermove',e=>{
-    const r=canvas.getBoundingClientRect();
-    pointer.x=e.clientX-r.left; pointer.y=e.clientY-r.top; pointer.seen=true;
-  },{passive:true});
+    if(pointer.id !== null && e.pointerId !== pointer.id) return;
+    setPointerFromEvent(e);
+    if(pointer.down) e.preventDefault();
+  },{passive:false});
 
-  canvas.addEventListener('pointerdown',()=>{
-    pointer.down=true;
+  canvas.addEventListener('pointerdown',e=>{
+    e.preventDefault();
+
+    // restart button handles restart; ignore game input when game over
     if(gameOver) return;
+
+    pointer.down = true;
+    pointer.id = e.pointerId;
+    setPointerFromEvent(e);
+
+    // keep getting pointer events even if finger moves off-canvas
+    if(canvas.setPointerCapture){
+      try { canvas.setPointerCapture(e.pointerId); } catch(_) {}
+    }
+
     fireBeam();
+  },{passive:false});
+
+  canvas.addEventListener('pointerup',e=>{
+    if(pointer.id !== null && e.pointerId !== pointer.id) return;
+    pointer.down=false;
+    if(canvas.releasePointerCapture){
+      try { canvas.releasePointerCapture(e.pointerId); } catch(_) {}
+    }
+    pointer.id = null;
   },{passive:true});
 
-  canvas.addEventListener('pointerup',()=>pointer.down=false,{passive:true});
-  addEventListener('keydown',e=>{ if(e.code==='Space') fireBeam(); if(gameOver && e.code==='KeyR') reset(); });
+  canvas.addEventListener('pointercancel',e=>{
+    if(pointer.id !== null && e.pointerId !== pointer.id) return;
+    pointer.down=false;
+    pointer.id = null;
+  },{passive:true});
+
+  addEventListener('keydown',e=>{
+    if(e.code==='Space') fireBeam();
+    if(gameOver && e.code==='KeyR') reset();
+  });
 
   function reset(){
     score=0; debris.length=0; beams.length=0; gameOver=false; spawnT=0;
@@ -88,8 +125,9 @@
       if(spawnT<=0){ spawnDebris(); spawnT = 500 + Math.random()*500; }
 
       if(pointer.seen){
-        ufo.x += (pointer.x-ufo.x)*0.18;
-        ufo.y += (pointer.y-ufo.y)*0.18;
+        // slightly snappier on touch
+        ufo.x += (pointer.x-ufo.x)*0.22;
+        ufo.y += (pointer.y-ufo.y)*0.22;
       }
 
       for(const d of debris){
@@ -123,7 +161,11 @@
         if(dx*dx+dy*dy < (d.r+ufo.r)*(d.r+ufo.r)){
           gameOver=true;
           updateRestartBtn();
-          if(score>best){ best=Math.floor(score); localStorage.setItem(bestKey,String(best)); bestEl.textContent=best; }
+          if(score>best){
+            best=Math.floor(score);
+            localStorage.setItem(bestKey,String(best));
+            bestEl.textContent=best;
+          }
         }
       }
     }
