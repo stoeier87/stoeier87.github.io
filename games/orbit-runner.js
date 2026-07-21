@@ -7,6 +7,7 @@
   let W=0,H=0,dpr=1,last=0,score=0,spawnT=0,beamCd=0,gameOver=false;
   let stars=[],debris=[],beams=[];
   let pointer={x:0,y:0,down:false,seen:false};
+  let restartBtn = null;
 
   const bestKey = 'orbit_runner_best_v1';
   let best = Number(localStorage.getItem(bestKey)||0);
@@ -14,6 +15,11 @@
 
   const ufo = { x:0,y:0,r:14 };
   const planet = { x:0,y:0,r:52,mass:18000 };
+
+  function updateRestartBtn(){
+    if(!restartBtn) return;
+    restartBtn.style.display = gameOver ? 'block' : 'none';
+  }
 
   function resize(){
     dpr=Math.min(devicePixelRatio||1,2);
@@ -52,12 +58,19 @@
     const r=canvas.getBoundingClientRect();
     pointer.x=e.clientX-r.left; pointer.y=e.clientY-r.top; pointer.seen=true;
   },{passive:true});
-  canvas.addEventListener('pointerdown',()=>{pointer.down=true;fireBeam();},{passive:true});
+
+  canvas.addEventListener('pointerdown',()=>{
+    pointer.down=true;
+    if(gameOver) return; // restart is handled by on-screen button (or R key)
+    fireBeam();
+  },{passive:true});
+
   canvas.addEventListener('pointerup',()=>pointer.down=false,{passive:true});
   addEventListener('keydown',e=>{ if(e.code==='Space') fireBeam(); if(gameOver && e.code==='KeyR') reset(); });
 
   function reset(){
     score=0; debris.length=0; beams.length=0; gameOver=false; spawnT=0;
+    updateRestartBtn();
   }
 
   function step(ts){
@@ -114,6 +127,7 @@
         const dx=d.x-ufo.x, dy=d.y-ufo.y;
         if(dx*dx+dy*dy < (d.r+ufo.r)*(d.r+ufo.r)){
           gameOver=true;
+          updateRestartBtn();
           if(score>best){ best=Math.floor(score); localStorage.setItem(bestKey,String(best)); bestEl.textContent=best; }
         }
       }
@@ -174,9 +188,34 @@
       ctx.font='700 30px "Archivo Black", sans-serif';
       ctx.fillText('MISSION FAILED',W/2,H/2-20);
       ctx.font='400 14px "Space Mono", monospace';
-      ctx.fillText('Press R to restart',W/2,H/2+14);
+      ctx.fillText('Tap Restart (or press R)',W/2,H/2+14);
     }
   }
+
+  // on-screen restart button (mobile + desktop)
+  restartBtn = document.createElement('button');
+  restartBtn.textContent = 'Restart';
+  Object.assign(restartBtn.style, {
+    position: 'fixed',
+    left: '50%',
+    top: '62%',
+    transform: 'translate(-50%, -50%)',
+    zIndex: '20',
+    padding: '12px 18px',
+    borderRadius: '10px',
+    border: '1px solid rgba(255,255,255,.35)',
+    background: 'rgba(10,14,24,.78)',
+    color: '#fff',
+    font: '700 14px "Space Mono", monospace',
+    letterSpacing: '.08em',
+    textTransform: 'uppercase',
+    display: 'none',
+    touchAction: 'manipulation',
+    cursor: 'pointer'
+  });
+  restartBtn.addEventListener('click', reset);
+  restartBtn.addEventListener('touchstart', (e) => { e.preventDefault(); reset(); }, { passive: false });
+  document.body.appendChild(restartBtn);
 
   requestAnimationFrame(step);
 })();
