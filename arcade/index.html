@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arcade Scoreboard</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>🕹️ Arcade Scoreboard</h1>
+      <p class="sub">Live top 10 per game</p>
+    </header>
+
+    <section class="content">
+      <div class="panel">
+        <h2>Submit score</h2>
+        <form id="scoreForm">
+          <select id="game" required></select>
+          <input id="name" type="text" maxlength="20" placeholder="Player name" required />
+          <input id="score" type="number" min="0" max="9999999" placeholder="Score" required />
+          <button type="submit">Save</button>
+        </form>
+        <div id="msg" class="msg"></div>
+        <div class="tiny">Tip: Keep names short and fun (max 20 chars).</div>
+      </div>
+
+      <div class="panel">
+        <h2>Leaderboard: <span id="currentGameLabel" class="game-title"></span></h2>
+        <table>
+          <thead>
+            <tr>
+              <th class="rank">#</th>
+              <th>Name</th>
+              <th class="score">Score</th>
+            </tr>
+          </thead>
+          <tbody id="boardBody">
+            <tr><td colspan="3">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
