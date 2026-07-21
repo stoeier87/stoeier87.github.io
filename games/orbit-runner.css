@@ -1,152 +1,92 @@
-/* games/orbit-runner.css */
-
-:root{
-  --hud-pad: 12px;
-}
+:root{ --hud-pad: 12px; }
 
 *,
 *::before,
-*::after{
-  box-sizing: border-box;
-}
+*::after{ box-sizing: border-box; }
 
 html, body{
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: #070b14;
-  color: #fff;
-  font-family: "Space Mono", monospace;
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
+  margin:0;
+  padding:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#070b14;
+  color:#fff;
+  font-family:"Space Mono", monospace;
+  -webkit-user-select:none;
+  user-select:none;
+  -webkit-touch-callout:none;
 }
 
 body{
-  position: relative;
+  position:relative;
 }
 
+/* key change: fixed edges + dynamic viewport units */
 #game{
-  display: block;
-  width: 100vw;
-  height: 100vh;
-  touch-action: none; /* critical for mobile controls */
+  position:fixed;
+  inset:0;
+  width:100vw;
+  height:100dvh; /* modern mobile */
+  display:block;
+  touch-action:none;
 }
 
-/* HUD */
+@supports not (height: 100dvh){
+  #game{ height:100vh; } /* fallback */
+}
+
 .hud{
-  position: fixed;
-  top: var(--hud-pad);
-  left: var(--hud-pad);
-  right: var(--hud-pad);
-  z-index: 15;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-
-  pointer-events: none; /* allow gameplay touches through empty HUD areas */
+  position:fixed;
+  top:var(--hud-pad);
+  left:var(--hud-pad);
+  right:var(--hud-pad);
+  z-index:15;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  pointer-events:none;
 }
 
 .hud > *{
-  pointer-events: auto;
-  background: rgba(10,14,24,.55);
-  border: 1px solid rgba(255,255,255,.16);
-  border-radius: 10px;
-  padding: 8px 10px;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  pointer-events:auto;
+  background:rgba(10,14,24,.55);
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:10px;
+  padding:8px 10px;
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
 }
 
 .hud a{
-  color: #dfe9ff;
-  text-decoration: none;
-  font-weight: 700;
-}
-
-.hud a:active{
-  transform: translateY(1px);
+  color:#dfe9ff;
+  text-decoration:none;
+  font-weight:700;
 }
 
 .hud div{
-  color: #eef3ff;
-  font-size: 13px;
-  line-height: 1;
+  color:#eef3ff;
+  font-size:13px;
+  line-height:1;
 }
 
-/* Restart button injected by JS */
 .restart-btn{
-  position: fixed;
-  left: 50%;
-  top: 62%;
-  transform: translate(-50%, -50%);
-  z-index: 20;
-
-  padding: 12px 18px;
-  min-width: 132px;
-
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,.35);
-  background: rgba(10,14,24,.78);
-  color: #fff;
-
-  font: 700 14px "Space Mono", monospace;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-
-  display: none;
-  touch-action: manipulation;
-  cursor: pointer;
-}
-
-.restart-btn:hover{
-  background: rgba(18,24,40,.88);
-}
-
-.restart-btn:active{
-  transform: translate(-50%, -50%) scale(.98);
-}
-
-/* Small phones */
-@media (max-width: 420px){
-  :root{ --hud-pad: 10px; }
-
-  .hud{
-    gap: 8px;
-  }
-
-  .hud > *{
-    padding: 7px 9px;
-    border-radius: 9px;
-  }
-
-  .hud div{
-    font-size: 12px;
-  }
-
-  .restart-btn{
-    top: 64%;
-    padding: 11px 16px;
-    font-size: 13px;
-  }
-}
-
-/* Very short landscape screens (if rotated) */
-@media (max-height: 500px) and (orientation: landscape){
-  .hud{
-    top: 8px;
-    left: 8px;
-    right: 8px;
-  }
-
-  .hud > *{
-    padding: 6px 8px;
-  }
-
-  .restart-btn{
-    top: 70%;
-  }
+  position:fixed;
+  left:50%;
+  top:62%;
+  transform:translate(-50%, -50%);
+  z-index:20;
+  padding:12px 18px;
+  min-width:132px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.35);
+  background:rgba(10,14,24,.78);
+  color:#fff;
+  font:700 14px "Space Mono", monospace;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  display:none;
+  touch-action:manipulation;
+  cursor:pointer;
 }

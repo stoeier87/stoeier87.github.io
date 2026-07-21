@@ -33,8 +33,14 @@
     restartBtn.style.display = gameOver ? 'block' : 'none';
   }
 
+  function getViewportSize(){
+    // visualViewport is the reliable mobile visible area
+    const vv = window.visualViewport;
+    if (vv) return { w: Math.round(vv.width), h: Math.round(vv.height) };
+    return { w: window.innerWidth, h: window.innerHeight };
+  }
+
   function updateView(){
-    // fit BASE_W x BASE_H into viewport with letterboxing
     viewScale = Math.min(W / BASE_W, H / BASE_H);
     viewOffX = (W - BASE_W * viewScale) * 0.5;
     viewOffY = (H - BASE_H * viewScale) * 0.5;
@@ -46,8 +52,6 @@
     const sy = clientY - r.top;
     let wx = (sx - viewOffX) / viewScale;
     let wy = (sy - viewOffY) / viewScale;
-
-    // clamp to world bounds
     wx = Math.max(0, Math.min(BASE_W, wx));
     wy = Math.max(0, Math.min(BASE_H, wy));
     return { x: wx, y: wy };
@@ -61,15 +65,25 @@
   }
 
   function resize(){
-    dpr = Math.min(devicePixelRatio||1,2);
-    W = innerWidth; H = innerHeight;
+    dpr = Math.min(window.devicePixelRatio||1,2);
+
+    const vp = getViewportSize();
+    W = vp.w;
+    H = vp.h;
+
+    // lock CSS size to actual viewport px to avoid vh bugs
+    canvas.style.width = `${W}px`;
+    canvas.style.height = `${H}px`;
+
     canvas.width = Math.round(W*dpr);
     canvas.height = Math.round(H*dpr);
+
+    // reset to CSS-pixel coordinate system
     ctx.setTransform(dpr,0,0,dpr,0,0);
 
     updateView();
 
-    // keep entities in world coordinates
+    // initialize positions
     ufo.x = worldW()*0.5;
     ufo.y = worldH()*0.78;
     planet.x = worldW()*0.5;
@@ -82,7 +96,12 @@
       s:Math.random()*0.8+.2
     }));
   }
-  addEventListener('resize',resize,{passive:true});
+
+  addEventListener('resize', resize, { passive:true });
+  if (window.visualViewport){
+    window.visualViewport.addEventListener('resize', resize, { passive:true });
+    window.visualViewport.addEventListener('scroll', resize, { passive:true });
+  }
   resize();
 
   function spawnDebris(){
@@ -99,12 +118,7 @@
     beamCd = 120;
     const centerY = worldH()*0.5;
     const shootDown = ufo.y < centerY;
-    beams.push({
-      x:ufo.x,
-      y:ufo.y + (shootDown ? ufo.r : -ufo.r),
-      vx:0,
-      vy:shootDown ? 560 : -560
-    });
+    beams.push({ x:ufo.x, y:ufo.y + (shootDown ? ufo.r : -ufo.r), vx:0, vy:shootDown ? 560 : -560 });
   }
 
   canvas.addEventListener('pointermove',e=>{
@@ -116,24 +130,17 @@
   canvas.addEventListener('pointerdown',e=>{
     e.preventDefault();
     if(gameOver) return;
-
     pointer.down = true;
     pointer.id = e.pointerId;
     setPointerFromEvent(e);
-
-    if(canvas.setPointerCapture){
-      try { canvas.setPointerCapture(e.pointerId); } catch(_) {}
-    }
-
+    if(canvas.setPointerCapture){ try { canvas.setPointerCapture(e.pointerId); } catch(_) {} }
     fireBeam();
   },{passive:false});
 
   canvas.addEventListener('pointerup',e=>{
     if(pointer.id !== null && e.pointerId !== pointer.id) return;
     pointer.down=false;
-    if(canvas.releasePointerCapture){
-      try { canvas.releasePointerCapture(e.pointerId); } catch(_) {}
-    }
+    if(canvas.releasePointerCapture){ try { canvas.releasePointerCapture(e.pointerId); } catch(_) {} }
     pointer.id=null;
   },{passive:true});
 
@@ -174,7 +181,6 @@
         ufo.y += (pointer.y-ufo.y)*0.22;
       }
 
-      // clamp ufo in world
       ufo.x = Math.max(10, Math.min(WW-10, ufo.x));
       ufo.y = Math.max(10, Math.min(HH-10, ufo.y));
 
@@ -187,19 +193,14 @@
         d.x += d.vx*dt*0.001; d.y += d.vy*dt*0.001;
       }
 
-      for(const b of beams){
-        b.x += b.vx*dt*0.001; b.y += b.vy*dt*0.001;
-      }
+      for(const b of beams){ b.x += b.vx*dt*0.001; b.y += b.vy*dt*0.001; }
       beams = beams.filter(b => b.y>-30 && b.y<HH+30);
 
       for(const b of beams){
         for(const d of debris){
           if(!d.alive) continue;
           const dx=b.x-d.x, dy=b.y-d.y;
-          if(dx*dx+dy*dy < (d.r+4)*(d.r+4)){
-            d.alive=false;
-            score += 12;
-          }
+          if(dx*dx+dy*dy < (d.r+4)*(d.r+4)){ d.alive=false; score += 12; }
         }
       }
       debris = debris.filter(d=>d.alive);
@@ -209,11 +210,7 @@
         if(dx*dx+dy*dy < (d.r+ufo.r)*(d.r+ufo.r)){
           gameOver=true;
           updateRestartBtn();
-          if(score>best){
-            best=Math.floor(score);
-            localStorage.setItem(bestKey,String(best));
-            bestEl.textContent=best;
-          }
+          if(score>best){ best=Math.floor(score); localStorage.setItem(bestKey,String(best)); bestEl.textContent=best; }
         }
       }
     }
@@ -223,22 +220,16 @@
   }
 
   function draw(){
-    // clear full screen (including letterbox area)
     ctx.setTransform(dpr,0,0,dpr,0,0);
     ctx.clearRect(0,0,W,H);
-
-    // draw letterbox background
     ctx.fillStyle = '#070b14';
     ctx.fillRect(0,0,W,H);
 
-    // draw world through transform
     ctx.save();
     ctx.translate(viewOffX, viewOffY);
     ctx.scale(viewScale, viewScale);
 
     const WW = worldW(), HH = worldH();
-
-    // gameplay background panel
     ctx.fillStyle = '#0b1020';
     ctx.fillRect(0,0,WW,HH);
 
@@ -252,20 +243,14 @@
     g.addColorStop(0,'#7bc2f2'); g.addColorStop(1,'#1d4f8d');
     ctx.fillStyle=g; ctx.beginPath(); ctx.arc(planet.x,planet.y,planet.r,0,Math.PI*2); ctx.fill();
 
-    for(const d of debris){
-      ctx.fillStyle='#bfc9d6';
-      ctx.beginPath(); ctx.arc(d.x,d.y,d.r,0,Math.PI*2); ctx.fill();
-    }
+    for(const d of debris){ ctx.fillStyle='#bfc9d6'; ctx.beginPath(); ctx.arc(d.x,d.y,d.r,0,Math.PI*2); ctx.fill(); }
 
     for(const b of beams){
       const grad=ctx.createLinearGradient(b.x,b.y,b.x,b.y-(b.vy>0?-24:24));
       grad.addColorStop(0,'rgba(224,58,47,.95)');
       grad.addColorStop(1,'rgba(224,58,47,0)');
       ctx.strokeStyle=grad; ctx.lineWidth=3;
-      ctx.beginPath();
-      ctx.moveTo(b.x,b.y);
-      ctx.lineTo(b.x,b.y-(b.vy>0?-28:28));
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(b.x,b.y); ctx.lineTo(b.x,b.y-(b.vy>0?-28:28)); ctx.stroke();
     }
 
     ctx.fillStyle='#dfe6f2';
