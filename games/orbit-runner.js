@@ -44,9 +44,7 @@
       x:ufo.x,
       y:ufo.y + (shootDown ? ufo.r : -ufo.r),
       vx:0,
-      vy:shootDown ? 560 : -560,
-      life:0,
-      max:650
+      vy:shootDown ? 560 : -560
     });
   }
 
@@ -94,9 +92,9 @@
 
       // beams
       for(const b of beams){
-        b.x += b.vx*dt*0.001; b.y += b.vy*dt*0.001; b.life += dt;
+        b.x += b.vx*dt*0.001; b.y += b.vy*dt*0.001;
       }
-      beams = beams.filter(b => b.life < b.max && b.y>-30 && b.y<H+30);
+      beams = beams.filter(b => b.y>-30 && b.y<H+30);
 
       // collisions beam->debris
       for(const b of beams){
