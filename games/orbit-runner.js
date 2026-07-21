@@ -4,10 +4,19 @@
   const scoreEl = document.getElementById('score');
   const bestEl = document.getElementById('best');
 
+  // Portrait-native fixed world (prevents stretch)
+  const BASE_W = 720;
+  const BASE_H = 1280;
+
   let W=0,H=0,dpr=1,last=0,score=0,spawnT=0,beamCd=0,gameOver=false;
   let stars=[],debris=[],beams=[];
   let pointer={x:0,y:0,down:false,seen:false,id:null};
   let restartBtn = null;
+
+  // View transform (screen <-> world)
+  let viewScale = 1;
+  let viewOffX = 0;
+  let viewOffY = 0;
 
   const bestKey = 'orbit_runner_best_v1';
   let best = Number(localStorage.getItem(bestKey)||0);
@@ -16,42 +25,79 @@
   const ufo = { x:0,y:0,r:14 };
   const planet = { x:0,y:0,r:52,mass:18000 };
 
+  function worldW(){ return BASE_W; }
+  function worldH(){ return BASE_H; }
+
   function updateRestartBtn(){
     if(!restartBtn) return;
     restartBtn.style.display = gameOver ? 'block' : 'none';
   }
 
-  function setPointerFromEvent(e){
+  function updateView(){
+    // fit BASE_W x BASE_H into viewport with letterboxing
+    viewScale = Math.min(W / BASE_W, H / BASE_H);
+    viewOffX = (W - BASE_W * viewScale) * 0.5;
+    viewOffY = (H - BASE_H * viewScale) * 0.5;
+  }
+
+  function screenToWorld(clientX, clientY){
     const r = canvas.getBoundingClientRect();
-    pointer.x = e.clientX - r.left;
-    pointer.y = e.clientY - r.top;
+    const sx = clientX - r.left;
+    const sy = clientY - r.top;
+    let wx = (sx - viewOffX) / viewScale;
+    let wy = (sy - viewOffY) / viewScale;
+
+    // clamp to world bounds
+    wx = Math.max(0, Math.min(BASE_W, wx));
+    wy = Math.max(0, Math.min(BASE_H, wy));
+    return { x: wx, y: wy };
+  }
+
+  function setPointerFromEvent(e){
+    const p = screenToWorld(e.clientX, e.clientY);
+    pointer.x = p.x;
+    pointer.y = p.y;
     pointer.seen = true;
   }
 
   function resize(){
-    dpr=Math.min(devicePixelRatio||1,2);
-    W=innerWidth;H=innerHeight;
-    canvas.width=W*dpr; canvas.height=H*dpr;
+    dpr = Math.min(devicePixelRatio||1,2);
+    W = innerWidth; H = innerHeight;
+    canvas.width = Math.round(W*dpr);
+    canvas.height = Math.round(H*dpr);
     ctx.setTransform(dpr,0,0,dpr,0,0);
-    ufo.x=W*0.5; ufo.y=H*0.78;
-    planet.x=W*0.5; planet.y=H*0.5;
-    stars=[...Array(Math.max(90,Math.round(W*H/13000)))].map(()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.5+.4,s:Math.random()*0.8+.2}));
+
+    updateView();
+
+    // keep entities in world coordinates
+    ufo.x = worldW()*0.5;
+    ufo.y = worldH()*0.78;
+    planet.x = worldW()*0.5;
+    planet.y = worldH()*0.5;
+
+    stars = [...Array(Math.max(90,Math.round(worldW()*worldH()/13000)))].map(()=>({
+      x:Math.random()*worldW(),
+      y:Math.random()*worldH(),
+      r:Math.random()*1.5+.4,
+      s:Math.random()*0.8+.2
+    }));
   }
   addEventListener('resize',resize,{passive:true});
   resize();
 
   function spawnDebris(){
-    const side=Math.random()<0.5?-30:W+30;
-    const y=Math.random()*H*0.7+20;
-    const vx=side<0?(50+Math.random()*90):-(50+Math.random()*90);
-    const vy=(Math.random()-.5)*40;
+    const WW = worldW(), HH = worldH();
+    const side = Math.random()<0.5 ? -30 : WW+30;
+    const y = Math.random()*HH*0.7+20;
+    const vx = side<0 ? (50+Math.random()*90) : -(50+Math.random()*90);
+    const vy = (Math.random()-.5)*40;
     debris.push({x:side,y,vx,vy,r:8+Math.random()*9,alive:true});
   }
 
   function fireBeam(){
     if (beamCd>0 || gameOver) return;
-    beamCd = 120; // ms
-    const centerY = H*0.5;
+    beamCd = 120;
+    const centerY = worldH()*0.5;
     const shootDown = ufo.y < centerY;
     beams.push({
       x:ufo.x,
@@ -69,15 +115,12 @@
 
   canvas.addEventListener('pointerdown',e=>{
     e.preventDefault();
-
-    // restart button handles restart; ignore game input when game over
     if(gameOver) return;
 
     pointer.down = true;
     pointer.id = e.pointerId;
     setPointerFromEvent(e);
 
-    // keep getting pointer events even if finger moves off-canvas
     if(canvas.setPointerCapture){
       try { canvas.setPointerCapture(e.pointerId); } catch(_) {}
     }
@@ -91,13 +134,13 @@
     if(canvas.releasePointerCapture){
       try { canvas.releasePointerCapture(e.pointerId); } catch(_) {}
     }
-    pointer.id = null;
+    pointer.id=null;
   },{passive:true});
 
   canvas.addEventListener('pointercancel',e=>{
     if(pointer.id !== null && e.pointerId !== pointer.id) return;
     pointer.down=false;
-    pointer.id = null;
+    pointer.id=null;
   },{passive:true});
 
   addEventListener('keydown',e=>{
@@ -115,7 +158,9 @@
     const dt=Math.min(33,ts-last); last=ts;
     if (beamCd>0) beamCd-=dt;
 
-    for(const s of stars){ s.y+=s.s*dt*0.05; if(s.y>H) s.y=-2; }
+    const WW = worldW(), HH = worldH();
+
+    for(const s of stars){ s.y+=s.s*dt*0.05; if(s.y>HH) s.y=-2; }
 
     if(!gameOver){
       score += dt*0.01;
@@ -125,10 +170,13 @@
       if(spawnT<=0){ spawnDebris(); spawnT = 500 + Math.random()*500; }
 
       if(pointer.seen){
-        // slightly snappier on touch
         ufo.x += (pointer.x-ufo.x)*0.22;
         ufo.y += (pointer.y-ufo.y)*0.22;
       }
+
+      // clamp ufo in world
+      ufo.x = Math.max(10, Math.min(WW-10, ufo.x));
+      ufo.y = Math.max(10, Math.min(HH-10, ufo.y));
 
       for(const d of debris){
         const dx=planet.x-d.x, dy=planet.y-d.y;
@@ -142,7 +190,7 @@
       for(const b of beams){
         b.x += b.vx*dt*0.001; b.y += b.vy*dt*0.001;
       }
-      beams = beams.filter(b => b.y>-30 && b.y<H+30);
+      beams = beams.filter(b => b.y>-30 && b.y<HH+30);
 
       for(const b of beams){
         for(const d of debris){
@@ -175,7 +223,24 @@
   }
 
   function draw(){
+    // clear full screen (including letterbox area)
+    ctx.setTransform(dpr,0,0,dpr,0,0);
     ctx.clearRect(0,0,W,H);
+
+    // draw letterbox background
+    ctx.fillStyle = '#070b14';
+    ctx.fillRect(0,0,W,H);
+
+    // draw world through transform
+    ctx.save();
+    ctx.translate(viewOffX, viewOffY);
+    ctx.scale(viewScale, viewScale);
+
+    const WW = worldW(), HH = worldH();
+
+    // gameplay background panel
+    ctx.fillStyle = '#0b1020';
+    ctx.fillRect(0,0,WW,HH);
 
     for(const s of stars){
       ctx.globalAlpha=.5;
@@ -210,17 +275,19 @@
 
     ctx.strokeStyle='rgba(255,255,255,.12)';
     ctx.setLineDash([5,6]);
-    ctx.beginPath(); ctx.moveTo(0,H*0.5); ctx.lineTo(W,H*0.5); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,HH*0.5); ctx.lineTo(WW,HH*0.5); ctx.stroke();
     ctx.setLineDash([]);
 
     if(gameOver){
-      ctx.fillStyle='rgba(0,0,0,.45)'; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle='rgba(0,0,0,.45)'; ctx.fillRect(0,0,WW,HH);
       ctx.fillStyle='#fff'; ctx.textAlign='center';
       ctx.font='700 30px "Archivo Black", sans-serif';
-      ctx.fillText('MISSION FAILED',W/2,H/2-20);
+      ctx.fillText('MISSION FAILED',WW/2,HH/2-20);
       ctx.font='400 14px "Space Mono", monospace';
-      ctx.fillText('Tap Restart (or press R)',W/2,H/2+14);
+      ctx.fillText('Tap Restart (or press R)',WW/2,HH/2+14);
     }
+
+    ctx.restore();
   }
 
   restartBtn = document.createElement('button');
