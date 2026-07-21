@@ -4,6 +4,11 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--mono);background:var(--bg);color:var(--ink);min-height:100vh;overflow:hidden}
+@media (max-width: 600px) {
+  body {
+    overflow-y:scroll;
+  }
+}
 #bg{position:fixed;inset:0;z-index:0}
 .hall{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:2rem 1rem}
 header{text-align:center;margin-bottom:1.6rem}
