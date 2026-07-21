@@ -7,7 +7,7 @@ import {
   limitToLast,
   onValue,
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
-import { submitScore } from "../games/shared/score-submit.js";
+import { submitScore } from "../arcade/shared/score-submit.js";
 
 // Paste your Firebase config here
 const firebaseConfig = globalThis.ARCADE_FIREBASE_CONFIG;
