@@ -12,7 +12,7 @@ const firebaseConfig = {
   databaseURL: "https://servicedesign-e1fe5-default-rtdb.europe-west1.firebasedatabase.app/",
 };
 
-const app = initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig, 'arcade-game');
 const db = getDatabase(app);
 
 const DEFAULTS = {
@@ -55,6 +55,54 @@ function validatePayload({ gameKey, score, name, minNameLength, maxNameLength, m
   return { ok: true, safeName: name.slice(0, maxNameLength), safeScore: Math.floor(score) };
 }
 
+/**
+ * Low-level submit: validates the entry and pushes it to the given Realtime
+ * Database instance.  No prompts are shown — callers are responsible for
+ * collecting name/score before calling this function.
+ *
+ * @param {import("firebase/database").Database} db
+ * @param {{ gameKey: string, name: string, score: number,
+ *           minNameLength?: number, maxNameLength?: number,
+ *           minScore?: number }} options
+ * @returns {Promise<{ submitted: boolean, cancelled: boolean, reason: string,
+ *                     payload?: object, error?: unknown }>}
+ */
+export async function submitScore(db, options = {}) {
+  const {
+    gameKey = "",
+    name = "",
+    score = NaN,
+    minNameLength = DEFAULTS.minNameLength,
+    maxNameLength = DEFAULTS.maxNameLength,
+    minScore = DEFAULTS.minScore,
+  } = options;
+
+  const validation = validatePayload({ gameKey, score: Number(score), name: String(name).trim(), minNameLength, maxNameLength, minScore });
+  if (!validation.ok) {
+    return { submitted: false, cancelled: false, reason: validation.reason };
+  }
+
+  try {
+    const scoresRef = ref(db, `arcade/scores/${gameKey}`);
+    await push(scoresRef, {
+      game: gameKey,
+      name: validation.safeName,
+      score: validation.safeScore,
+      createdAt: Date.now(),
+    });
+
+    return {
+      submitted: true,
+      cancelled: false,
+      reason: "Score submitted.",
+      payload: { game: gameKey, name: validation.safeName, score: validation.safeScore },
+    };
+  } catch (err) {
+    console.error(err);
+    return { submitted: false, cancelled: false, reason: "Could not save score. Check Firebase config/rules.", error: err };
+  }
+}
+
 export async function submitScoreOnGameOver(options = {}) {
   const cfg = normalizeOptions(options);
 
@@ -67,47 +115,18 @@ export async function submitScoreOnGameOver(options = {}) {
     name = prompted;
   }
 
-  const validation = validatePayload({
+  const result = await submitScore(db, {
     gameKey: cfg.gameKey,
-    score: cfg.score,
     name,
+    score: cfg.score,
     minNameLength: cfg.minNameLength,
     maxNameLength: cfg.maxNameLength,
     minScore: cfg.minScore,
   });
 
-  if (!validation.ok) {
-    return { submitted: false, cancelled: false, reason: validation.reason };
+  if (result.submitted) {
+    localStorage.setItem("arcade_player_name", result.payload.name);
   }
 
-  try {
-    const scoresRef = ref(db, `arcade/scores/${cfg.gameKey}`);
-    await push(scoresRef, {
-      game: cfg.gameKey,
-      name: validation.safeName,
-      score: validation.safeScore,
-      createdAt: Date.now(),
-    });
-
-    localStorage.setItem("arcade_player_name", validation.safeName);
-
-    return {
-      submitted: true,
-      cancelled: false,
-      reason: "Score submitted.",
-      payload: {
-        game: cfg.gameKey,
-        name: validation.safeName,
-        score: validation.safeScore,
-      },
-    };
-  } catch (err) {
-    console.error(err);
-    return {
-      submitted: false,
-      cancelled: false,
-      reason: "Could not save score. Check Firebase config/rules.",
-      error: err,
-    };
-  }
+  return result;
 }

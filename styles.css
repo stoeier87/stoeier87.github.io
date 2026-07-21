@@ -70,6 +70,7 @@ html.ufo-on .ufo.live { opacity: 1; }
     height: 100%;
     z-index: 3;
     display: block;
+    pointer-events: none;
 }
 
 /* ---- Topbar ---- */
