@@ -2,12 +2,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/fireba
 import {
   getDatabase,
   ref,
-  push,
   query,
   orderByChild,
   limitToLast,
   onValue,
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
+import { submitScore } from "../games/shared/score-submit.js";
 
 // Paste your Firebase config here
 const firebaseConfig = globalThis.ARCADE_FIREBASE_CONFIG;
@@ -125,24 +125,10 @@ form.addEventListener("submit", async (e) => {
     setMsg("Invalid game selected.", "bad");
     return;
   }
-  if (!name || name.length < 2) {
-    setMsg("Name must be at least 2 characters.", "bad");
-    return;
-  }
-  if (!Number.isFinite(score) || score < 0) {
-    setMsg("Score must be a positive number.", "bad");
-    return;
-  }
 
-  try {
-    const scoresRef = ref(db, `arcade/scores/${gameKey}`);
-    await push(scoresRef, {
-      game: gameKey,
-      name: name.slice(0, 20),
-      score: Math.floor(score),
-      createdAt: Date.now(),
-    });
+  const result = await submitScore(db, { gameKey, name, score });
 
+  if (result.submitted) {
     lastSubmitAt = now;
     setMsg(
       `Score saved for ${GAMES.find((g) => g.key === gameKey)?.label || gameKey}!`,
@@ -151,9 +137,8 @@ form.addEventListener("submit", async (e) => {
     form.reset();
     gameSelect.value = gameKey;
     nameInput.focus();
-  } catch (err) {
-    console.error(err);
-    setMsg("Could not save score. Check Firebase config/rules.", "bad");
+  } else {
+    setMsg(result.reason, "bad");
   }
 });
 

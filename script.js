@@ -57,19 +57,9 @@
     // Earth system (moon + ISS orbit) - no live API fetch
     var earthState = { visible: false, x: 0, y: 0, r: 0 };
 
-    // Mouse
+    // Mouse — listeners are registered below, after the toast helpers,
+    // on document rather than the canvas (canvas has pointer-events: none).
     var mouse = { x: -9999, y: -9999, inside: false };
-    canvas.addEventListener('mousemove', function (e) {
-        var rect = canvas.getBoundingClientRect();
-        mouse.x = e.clientX - rect.left;
-        mouse.y = e.clientY - rect.top;
-        mouse.inside = true;
-    }, { passive: true });
-    canvas.addEventListener('mouseleave', function () {
-        mouse.inside = false;
-        hoveredPlanetIndex = -1;
-        if (!reduced) canvas.style.cursor = '';
-    }, { passive: true });
 
     // Simple toast
     var toastEl = null;
@@ -95,6 +85,22 @@
         toastEl.style.pointerEvents = 'none';
         document.body.appendChild(toastEl);
     }
+
+    // Mouse — listen on document so pointer-events: none on the canvas
+    // doesn't break planet hover/click interaction.
+    document.addEventListener('mousemove', function (e) {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+        mouse.inside = true;
+    }, { passive: true });
+    document.addEventListener('mouseleave', function () {
+        mouse.inside = false;
+        hoveredPlanetIndex = -1;
+    }, { passive: true });
+    document.addEventListener('click', function () {
+        if (hoveredPlanetIndex < 0) return;
+        showToast(PLANETS[hoveredPlanetIndex].msg);
+    });
     function showToast(text) {
         ensureToast();
         toastEl.textContent = text;
@@ -388,7 +394,6 @@
     function updateCanvasInteractions() {
         if (!mouse.inside) {
             hoveredPlanetIndex = -1;
-            if (!reduced) canvas.style.cursor = '';
             return;
         }
 
@@ -400,14 +405,7 @@
             if (dx * dx + dy * dy <= p.r * p.r) { best = p.idx; break; }
         }
         hoveredPlanetIndex = best;
-
-        if (!reduced) canvas.style.cursor = hoveredPlanetIndex >= 0 ? '' : '';
     }
-
-    canvas.addEventListener('click', function () {
-        if (hoveredPlanetIndex < 0) return;
-        showToast(PLANETS[hoveredPlanetIndex].msg);
-    });
 
     function drawStars(scroll, time) {
         ctx.clearRect(0, 0, W, H);
@@ -624,6 +622,7 @@
         window.addEventListener('resize', function () { drawStars(0, 0); }, { passive: true });
     } else {
         splitLetters();
+        initTitleSats();
         updateLetters(0);
         var ufoActive = finePointer && ufo;
         (function frame(time) {
@@ -633,6 +632,7 @@
                 var p = scrollPos / journeyEnd;
                 updateLetters(p < 0 ? 0 : p > 1 ? 1 : p);
             }
+            updateTitleSats(time);
             if (ufoActive) updateUfo();
             requestAnimationFrame(frame);
         })(0);
