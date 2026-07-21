@@ -10,6 +10,13 @@
   margin:0;
   padding:0
 }
+/* Keep your existing orbit-runner.css content, and make sure these rules exist */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* prevents page scroll while playing */
+}
 
 body {
   background:var(--bg);
@@ -51,7 +58,16 @@ canvas {
   border-color:var(--red)
 }
 
-/* existing styles stay as-is; add this block */
+#game {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  touch-action: none;       /* critical for mobile pointer control */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
 .restart-btn{
   position: fixed;
   left: 50%;
