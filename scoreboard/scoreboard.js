@@ -151,7 +151,7 @@ if (!db) {
   form.querySelector("button[type='submit']").disabled = true;
   boardBody.innerHTML = `<tr><td colspan="3">Scoreboard not configured.</td></tr>`;
   setMsg(
-    "Add arcade/firebase-config.js (see arcade/firebase-config.example.js).",
+    "Add scoreboard/firebase-config.js (see scoreboard/firebase-example-config.js).",
     "bad",
   );
 } else {
