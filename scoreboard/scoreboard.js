@@ -1,29 +1,26 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 import {
-  getDatabase, ref, push, query, orderByChild, limitToLast, onValue
+  getDatabase,
+  ref,
+  push,
+  query,
+  orderByChild,
+  limitToLast,
+  onValue,
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
 
 // Paste your Firebase config here
-const firebaseConfig = {
-  apiKey: "AIzaSyDTebLTN13VnxG6tKoN5XsSk0OEg49Yz4s",
-  authDomain: "servicedesign-e1fe5.firebaseapp.com",
-  projectId: "servicedesign-e1fe5",
-  storageBucket: "servicedesign-e1fe5.firebasestorage.app",
-  messagingSenderId: "485465422440",
-  appId: "1:485465422440:web:2c8a02a1a9794b773419dd",
-  measurementId: "G-9M0GB4HHY0",
-  databaseURL: "https://servicedesign-e1fe5-default-rtdb.europe-west1.firebasedatabase.app/",
-};
+const firebaseConfig = globalThis.ARCADE_FIREBASE_CONFIG;
 
 // Add/edit games here
 const GAMES = [
   { key: "orbit-runner", label: "Orbit Runner" },
   { key: "moon-lander", label: "Moon Lander" },
-  { key: "iss-docking", label: "ISS Docking" }
+  { key: "iss-docking", label: "ISS Docking" },
 ];
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+const app = firebaseConfig ? initializeApp(firebaseConfig) : null;
+const db = app ? getDatabase(app) : null;
 
 const form = document.getElementById("scoreForm");
 const gameSelect = document.getElementById("game");
@@ -52,18 +49,19 @@ function escapeHtml(str) {
 }
 
 function populateGames() {
-  gameSelect.innerHTML = GAMES
-    .map(g => `<option value="${g.key}">${g.label}</option>`)
-    .join("");
+  gameSelect.innerHTML = GAMES.map(
+    (g) => `<option value="${g.key}">${g.label}</option>`,
+  ).join("");
 
   const gameFromUrl = new URLSearchParams(location.search).get("game");
-  if (gameFromUrl && GAMES.some(g => g.key === gameFromUrl)) {
+  if (gameFromUrl && GAMES.some((g) => g.key === gameFromUrl)) {
     gameSelect.value = gameFromUrl;
   }
 }
 
 function listenToGameBoard(gameKey) {
-  const gameMeta = GAMES.find(g => g.key === gameKey);
+  if (!db) return;
+  const gameMeta = GAMES.find((g) => g.key === gameKey);
   currentGameLabel.textContent = gameMeta ? gameMeta.label : gameKey;
   boardBody.innerHTML = `<tr><td colspan="3">Loading…</td></tr>`;
 
@@ -83,13 +81,17 @@ function listenToGameBoard(gameKey) {
       return;
     }
 
-    boardBody.innerHTML = rows.map((r, i) => `
+    boardBody.innerHTML = rows
+      .map(
+        (r, i) => `
       <tr>
         <td class="rank">${i + 1}</td>
         <td>${escapeHtml(r.name ?? "Unknown")}</td>
         <td class="score">${Number(r.score ?? 0).toLocaleString()}</td>
       </tr>
-    `).join("");
+    `,
+      )
+      .join("");
   });
 }
 
@@ -104,6 +106,11 @@ gameSelect.addEventListener("change", () => {
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
+  if (!db) {
+    setMsg("Scoreboard is not configured.", "bad");
+    return;
+  }
+
   const now = Date.now();
   if (now - lastSubmitAt < COOLDOWN_MS) {
     setMsg("Please wait a few seconds before submitting again.", "bad");
@@ -114,7 +121,7 @@ form.addEventListener("submit", async (e) => {
   const name = nameInput.value.trim();
   const score = Number(scoreInput.value);
 
-  if (!GAMES.some(g => g.key === gameKey)) {
+  if (!GAMES.some((g) => g.key === gameKey)) {
     setMsg("Invalid game selected.", "bad");
     return;
   }
@@ -133,11 +140,14 @@ form.addEventListener("submit", async (e) => {
       game: gameKey,
       name: name.slice(0, 20),
       score: Math.floor(score),
-      createdAt: Date.now()
+      createdAt: Date.now(),
     });
 
     lastSubmitAt = now;
-    setMsg(`Score saved for ${GAMES.find(g => g.key === gameKey)?.label || gameKey}!`, "good");
+    setMsg(
+      `Score saved for ${GAMES.find((g) => g.key === gameKey)?.label || gameKey}!`,
+      "good",
+    );
     form.reset();
     gameSelect.value = gameKey;
     nameInput.focus();
@@ -149,4 +159,16 @@ form.addEventListener("submit", async (e) => {
 
 // init
 populateGames();
-listenToGameBoard(gameSelect.value);
+if (!db) {
+  gameSelect.disabled = true;
+  nameInput.disabled = true;
+  scoreInput.disabled = true;
+  form.querySelector("button[type='submit']").disabled = true;
+  boardBody.innerHTML = `<tr><td colspan="3">Scoreboard not configured.</td></tr>`;
+  setMsg(
+    "Add arcade/firebase-config.js (see arcade/firebase-config.example.js).",
+    "bad",
+  );
+} else {
+  listenToGameBoard(gameSelect.value);
+}

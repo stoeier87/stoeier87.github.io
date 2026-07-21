@@ -1,105 +1,160 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="da">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tobias Fullerton Støier — Principal Digital Strategist</title>
-    <meta name="description" content="Tobias Fullerton Støier — Principal Digital Strategist">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://kit.fontawesome.com/0007cca0f9.js" crossorigin="anonymous"></script>
-</head>
-<body>
+    <meta
+      name="description"
+      content="Tobias Fullerton Støier — Principal Digital Strategist"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script
+      src="https://kit.fontawesome.com/0007cca0f9.js"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body>
     <canvas id="starfield" aria-hidden="true"></canvas>
     <div class="dotgrid" aria-hidden="true"></div>
 
     <div class="ufo" id="ufo" aria-hidden="true">
-        <div class="beam"></div>
-        <svg width="48" height="34" viewBox="0 0 48 34" fill="none">
-            <defs>
-                <linearGradient id="dome" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stop-color="rgba(200,230,255,0.85)"/>
-                    <stop offset="1" stop-color="rgba(120,170,220,0.35)"/>
-                </linearGradient>
-                <linearGradient id="saucer" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stop-color="#e8edf5"/>
-                    <stop offset="0.55" stop-color="#9aa7bd"/>
-                    <stop offset="1" stop-color="#5c6a85"/>
-                </linearGradient>
-            </defs>
-            <ellipse cx="24" cy="12" rx="9" ry="8.5" fill="url(#dome)"/>
-            <ellipse cx="24" cy="18.5" rx="21" ry="7.5" fill="url(#saucer)"/>
-            <circle class="light" cx="10" cy="21" r="2" fill="#e03a2f"/>
-            <circle class="light" cx="24" cy="23" r="2" fill="#e03a2f"/>
-            <circle class="light" cx="38" cy="21" r="2" fill="#e03a2f"/>
-        </svg>
+      <div class="beam"></div>
+      <svg width="48" height="34" viewBox="0 0 48 34" fill="none">
+        <defs>
+          <linearGradient id="dome" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="rgba(200,230,255,0.85)" />
+            <stop offset="1" stop-color="rgba(120,170,220,0.35)" />
+          </linearGradient>
+          <linearGradient id="saucer" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#e8edf5" />
+            <stop offset="0.55" stop-color="#9aa7bd" />
+            <stop offset="1" stop-color="#5c6a85" />
+          </linearGradient>
+        </defs>
+        <ellipse cx="24" cy="12" rx="9" ry="8.5" fill="url(#dome)" />
+        <ellipse cx="24" cy="18.5" rx="21" ry="7.5" fill="url(#saucer)" />
+        <circle class="light" cx="10" cy="21" r="2" fill="#e03a2f" />
+        <circle class="light" cx="24" cy="23" r="2" fill="#e03a2f" />
+        <circle class="light" cx="38" cy="21" r="2" fill="#e03a2f" />
+      </svg>
     </div>
 
     <header class="topbar">
-        <span class="value">Principal Digital Strategist</span>
+      <span class="value">Principal Digital Strategist</span>
     </header>
 
     <main>
-        <!-- Scroll-rejsen: bogstaverne flyver ind og samler navnet,
+      <!-- Scroll-rejsen: bogstaverne flyver ind og samler navnet,
              og kontakten toner frem under det til sidst -->
-        <div class="journey">
-            <div class="stage">
-                <h1 class="name prevent-select" id="stageName">
-                    <span class="word" data-word="0">TOBIAS</span>
-                    <span class="word red" data-word="1">FULLERTON</span>
-                    <span class="word" data-word="2">STØIER</span>
-                </h1>
-                <nav class="contact prevent-select" id="contact" aria-label="Kontakt">
-                    <ul class="pills">
-                        <li>
-                            <a class="pill" href="mailto:tobias@stoeier.dk">
-                                <span class="arrow"><i class="fa-regular fa-envelope" style="color: #e03a2f;"></i></span>
-                                Email
-                            </a>
-                        </li>
-                        <li>
-                            <a class="pill" href="https://dk.linkedin.com/in/stoeier" target="_blank" rel="noopener">
-                                <span class="arrow"><i class="fa-brands fa-linkedin-in" style="color: #e03a2f;"></i></span>
-                                LinkedIn
-                            </a>
-                        </li>
-                        <li>
-                            <a class="pill" href="https://instagram.com/stoeier" target="_blank" rel="noopener">
-                                <span class="arrow"><i class="fa-brands fa-instagram" style="color: #e03a2f;"></i></span>
-                                Instagram
-                            </a>
-                        </li>
-                        <li>
-                            <a class="pill" href="https://x.com/stoeier" target="_blank" rel="noopener">
-                                <span class="arrow"><i class="fa-brands fa-x-twitter" style="color: #e03a2f;"></i></span>
-                                X
-                            </a>
-                        </li>
-                        <li>
-                            <a class="pill" href="https://open.spotify.com/artist/1OrUsE9Nua3bqJKM6lPnDW" target="_blank" rel="noopener">
-                                <span class="arrow"><i class="fa-brands fa-spotify" style="color: #e03a2f;"></i></span>
-                                Spotify
-                            </a>
-                        </li>
-                        <li>
-                          <a class="pill" href="arcade.html">
-                            <span class="arrow"><i class="fa-solid fa-gamepad" style="color: #e03a2f;"></i></span>
-                            Arcade
-                          </a>
-                        </li>
-                    </ul>
-                </nav>
-                <p class="hint" id="hint"><span class="arrow">↓</span> Scroll</p>
-            </div>
+      <div class="journey">
+        <div class="stage">
+          <h1 class="name prevent-select" id="stageName">
+            <span class="word" data-word="0">TOBIAS</span>
+            <span class="word red" data-word="1">FULLERTON</span>
+            <span class="word" data-word="2">STØIER</span>
+          </h1>
+          <nav class="contact prevent-select" id="contact" aria-label="Kontakt">
+            <ul class="pills">
+              <li>
+                <a class="pill" href="mailto:tobias@stoeier.dk">
+                  <span class="arrow"
+                    ><i
+                      class="fa-regular fa-envelope"
+                      style="color: #e03a2f"
+                    ></i
+                  ></span>
+                  Email
+                </a>
+              </li>
+              <li>
+                <a
+                  class="pill"
+                  href="https://dk.linkedin.com/in/stoeier"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  <span class="arrow"
+                    ><i
+                      class="fa-brands fa-linkedin-in"
+                      style="color: #e03a2f"
+                    ></i
+                  ></span>
+                  LinkedIn
+                </a>
+              </li>
+              <li>
+                <a
+                  class="pill"
+                  href="https://instagram.com/stoeier"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  <span class="arrow"
+                    ><i
+                      class="fa-brands fa-instagram"
+                      style="color: #e03a2f"
+                    ></i
+                  ></span>
+                  Instagram
+                </a>
+              </li>
+              <li>
+                <a
+                  class="pill"
+                  href="https://x.com/stoeier"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  <span class="arrow"
+                    ><i
+                      class="fa-brands fa-x-twitter"
+                      style="color: #e03a2f"
+                    ></i
+                  ></span>
+                  X
+                </a>
+              </li>
+              <li>
+                <a
+                  class="pill"
+                  href="https://open.spotify.com/artist/1OrUsE9Nua3bqJKM6lPnDW"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  <span class="arrow"
+                    ><i class="fa-brands fa-spotify" style="color: #e03a2f"></i
+                  ></span>
+                  Spotify
+                </a>
+              </li>
+              <li>
+                <a class="pill" href="arcade/index.html">
+                  <span class="arrow"
+                    ><i class="fa-solid fa-gamepad" style="color: #e03a2f"></i
+                  ></span>
+                  Arcade
+                </a>
+              </li>
+            </ul>
+          </nav>
+          <p class="hint" id="hint"><span class="arrow">↓</span> Scroll</p>
         </div>
+      </div>
     </main>
 
     <footer>
-        <a href="https://servicedesign.dk" target="_blank" rel="noopener">servicedesign.dk</a>
+      <a href="https://servicedesign.dk" target="_blank" rel="noopener"
+        >servicedesign.dk</a
+      >
     </footer>
 
     <script src="script.js"></script>
-</body>
+  </body>
 </html>

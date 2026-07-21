@@ -1,49 +1,58 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Arcade Scoreboard</title>
-  <link rel="stylesheet" href="./style.css" />
+  <title>Arcade — stoeier.dk</title>
+  <meta name="description" content="Arcade Hall on stoeier.dk" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="arcade.css" />
 </head>
 <body>
-  <main class="wrap">
+  <canvas id="bg" aria-hidden="true"></canvas>
+  <main class="hall">
     <header>
-      <h1>🕹️ Arcade Scoreboard</h1>
-      <p class="sub">Live top 10 per game</p>
+      <h1>ARCADE HALL</h1>
+      <p>Choose your mission.</p>
     </header>
 
-    <section class="content">
-      <div class="panel">
-        <h2>Submit score</h2>
-        <form id="scoreForm">
-          <select id="game" required></select>
-          <input id="name" type="text" maxlength="20" placeholder="Player name" required />
-          <input id="score" type="number" min="0" max="9999999" placeholder="Score" required />
-          <button type="submit">Save</button>
-        </form>
-        <div id="msg" class="msg"></div>
-        <div class="tiny">Tip: Keep names short and fun (max 20 chars).</div>
-      </div>
+    <section class="grid">
+      <a class="cabinet live" href="games/orbit-runner.html">
+        <h2>Orbit Runner</h2>
+        <p>Dodge debris, bend gravity, fire beam.</p>
+        <span>Play</span>
+      </a>
 
-      <div class="panel">
-        <h2>Leaderboard: <span id="currentGameLabel" class="game-title"></span></h2>
-        <table>
-          <thead>
-            <tr>
-              <th class="rank">#</th>
-              <th>Name</th>
-              <th class="score">Score</th>
-            </tr>
-          </thead>
-          <tbody id="boardBody">
-            <tr><td colspan="3">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
+      <article class="cabinet soon">
+        <h2>Moon Lander</h2>
+        <p>Coming soon</p>
+        <span>Locked</span>
+      </article>
+
+      <article class="cabinet soon">
+        <h2>ISS Docking</h2>
+        <p>Coming soon</p>
+        <span>Locked</span>
+      </article>
     </section>
+
+    <footer>
+      <a href="index.html">← Back to homepage</a>
+    </footer>
   </main>
 
-  <script type="module" src="./scoreboard.js"></script>
+  <script>
+    (() => {
+      const c = document.getElementById('bg');
+      const x = c.getContext('2d');
+      let w=0,h=0,dpr=1,stars=[];
+      function rs(){dpr=Math.min(devicePixelRatio||1,2);w=innerWidth;h=innerHeight;c.width=w*dpr;c.height=h*dpr;x.setTransform(dpr,0,0,dpr,0,0);stars=[...Array(Math.max(80,Math.round(w*h/14000)))].map(()=>({x:Math.random()*w,y:Math.random()*h,r:Math.random()*1.6+.4,s:Math.random()*0.6+.2}));}
+      addEventListener('resize',rs,{passive:true});rs();
+      function f(t){x.clearRect(0,0,w,h);for(const s of stars){s.y+=s.s;if(s.y>h)s.y=-2;x.globalAlpha=.5+Math.sin(t*0.001+s.x)*.5;x.beginPath();x.arc(s.x,s.y,s.r,0,Math.PI*2);x.fillStyle='#fff';x.fill()}x.globalAlpha=1;requestAnimationFrame(f)}
+      requestAnimationFrame(f);
+    })();
+  </script>
 </body>
 </html>
