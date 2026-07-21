@@ -1,4 +1,7 @@
-import { submitScoreOnGameOver } from "../shared/score-submit.js";
+import {
+  submitScoreOnGameOver,
+  fetchGlobalBest,
+} from "../shared/score-submit.js";
 
 (() => {
   const canvas = document.getElementById("game");
@@ -9,8 +12,17 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
   const BASE_W = 900;
   const BASE_H = 900;
 
-  let W = 0, H = 0, dpr = 1, viewScale = 1, viewOffX = 0, viewOffY = 0;
-  let score = 0, best = 0, last = 0, gameOver = false, scoreSubmitted = false;
+  let W = 0,
+    H = 0,
+    dpr = 1,
+    viewScale = 1,
+    viewOffX = 0,
+    viewOffY = 0;
+  let score = 0,
+    best = 0,
+    last = 0,
+    gameOver = false,
+    scoreSubmitted = false;
   let stars = [];
   let snake = [];
   let dir = { x: 1, y: 0 };
@@ -20,9 +32,10 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
   let moveT = 0;
   const moveInterval = 0.12;
 
-  const bestKey = "nebula_trail_best_v1";
-  best = Number(localStorage.getItem(bestKey) || 0);
-  bestEl.textContent = best;
+  fetchGlobalBest("nebula-trail").then((b) => {
+    best = Math.max(best, b);
+    bestEl.textContent = best;
+  });
 
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -73,7 +86,7 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
     gameOver = true;
     if (score > best) {
       best = score;
-      localStorage.setItem(bestKey, String(best));
+
       bestEl.textContent = best;
     }
     restartBtn.style.display = "block";
@@ -91,10 +104,14 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
   }
 
   function turn(left) {
-    if (dir.x === 1 && dir.y === 0) nextDir = left ? { x: 0, y: -1 } : { x: 0, y: 1 };
-    else if (dir.x === -1 && dir.y === 0) nextDir = left ? { x: 0, y: 1 } : { x: 0, y: -1 };
-    else if (dir.x === 0 && dir.y === 1) nextDir = left ? { x: 1, y: 0 } : { x: -1, y: 0 };
-    else if (dir.x === 0 && dir.y === -1) nextDir = left ? { x: -1, y: 0 } : { x: 1, y: 0 };
+    if (dir.x === 1 && dir.y === 0)
+      nextDir = left ? { x: 0, y: -1 } : { x: 0, y: 1 };
+    else if (dir.x === -1 && dir.y === 0)
+      nextDir = left ? { x: 0, y: 1 } : { x: 0, y: -1 };
+    else if (dir.x === 0 && dir.y === 1)
+      nextDir = left ? { x: 1, y: 0 } : { x: -1, y: 0 };
+    else if (dir.x === 0 && dir.y === -1)
+      nextDir = left ? { x: -1, y: 0 } : { x: 1, y: 0 };
   }
 
   function step(ts) {
@@ -108,8 +125,14 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
     }
 
     if (!gameOver) {
-      if (keys.left) { turn(true); keys.left = false; }
-      if (keys.right) { turn(false); keys.right = false; }
+      if (keys.left) {
+        turn(true);
+        keys.left = false;
+      }
+      if (keys.right) {
+        turn(false);
+        keys.right = false;
+      }
 
       moveT += dt;
       if (moveT >= moveInterval) {
@@ -121,12 +144,20 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
           y: snake[0].y + dir.y * stepSize,
         };
 
-        if (head.x < 12 || head.x > BASE_W - 12 || head.y < 12 || head.y > BASE_H - 12) {
+        if (
+          head.x < 12 ||
+          head.x > BASE_W - 12 ||
+          head.y < 12 ||
+          head.y > BASE_H - 12
+        ) {
           endGame();
         }
         for (let i = 0; i < snake.length; i++) {
           const seg = snake[i];
-          if (i > 0 && Math.hypot(head.x - seg.x, head.y - seg.y) < stepSize * 0.8) {
+          if (
+            i > 0 &&
+            Math.hypot(head.x - seg.x, head.y - seg.y) < stepSize * 0.8
+          ) {
             endGame();
             break;
           }
@@ -156,9 +187,12 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
     ctx.fillRect(0, 0, W, H);
 
     ctx.save();
-    ctx.translate(viewOffX + BASE_W * viewScale / 2, viewOffY + BASE_H * viewScale / 2);
+    ctx.translate(
+      viewOffX + (BASE_W * viewScale) / 2,
+      viewOffY + (BASE_H * viewScale) / 2,
+    );
     ctx.rotate(-Math.PI / 6);
-    ctx.translate(-BASE_W * viewScale / 2, -BASE_H * viewScale / 2);
+    ctx.translate((-BASE_W * viewScale) / 2, (-BASE_H * viewScale) / 2);
     ctx.scale(viewScale, viewScale);
 
     ctx.fillStyle = "#0b1020";
@@ -217,11 +251,34 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
   const leftBtn = document.getElementById("left");
   const rightBtn = document.getElementById("right");
   const addTouch = (el, left) => {
-    el.addEventListener("touchstart", (e) => { e.preventDefault(); keys[left ? "left" : "right"] = true; }, { passive: false });
-    el.addEventListener("touchend", (e) => { e.preventDefault(); keys[left ? "left" : "right"] = false; }, { passive: false });
-    el.addEventListener("mousedown", (e) => { e.preventDefault(); keys[left ? "left" : "right"] = true; });
-    el.addEventListener("mouseup", (e) => { e.preventDefault(); keys[left ? "left" : "right"] = false; });
-    el.addEventListener("mouseleave", (e) => { e.preventDefault(); keys[left ? "left" : "right"] = false; });
+    el.addEventListener(
+      "touchstart",
+      (e) => {
+        e.preventDefault();
+        keys[left ? "left" : "right"] = true;
+      },
+      { passive: false },
+    );
+    el.addEventListener(
+      "touchend",
+      (e) => {
+        e.preventDefault();
+        keys[left ? "left" : "right"] = false;
+      },
+      { passive: false },
+    );
+    el.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      keys[left ? "left" : "right"] = true;
+    });
+    el.addEventListener("mouseup", (e) => {
+      e.preventDefault();
+      keys[left ? "left" : "right"] = false;
+    });
+    el.addEventListener("mouseleave", (e) => {
+      e.preventDefault();
+      keys[left ? "left" : "right"] = false;
+    });
   };
   addTouch(leftBtn, true);
   addTouch(rightBtn, false);
@@ -231,7 +288,14 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
   restartBtn.type = "button";
   restartBtn.textContent = "Restart";
   restartBtn.addEventListener("click", reset);
-  restartBtn.addEventListener("touchstart", (e) => { e.preventDefault(); reset(); }, { passive: false });
+  restartBtn.addEventListener(
+    "touchstart",
+    (e) => {
+      e.preventDefault();
+      reset();
+    },
+    { passive: false },
+  );
   document.body.appendChild(restartBtn);
 
   randomFood();

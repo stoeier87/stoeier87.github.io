@@ -1,4 +1,7 @@
-import { submitScoreOnGameOver } from "../shared/score-submit.js";
+import {
+  submitScoreOnGameOver,
+  fetchGlobalBest,
+} from "../shared/score-submit.js";
 
 (() => {
   const canvas = document.getElementById("game");
@@ -9,8 +12,16 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
   const BASE_W = 720;
   const BASE_H = 1280;
 
-  let W = 0, H = 0, dpr = 1, viewScale = 1, viewOffX = 0, viewOffY = 0;
-  let score = 0, best = 0, gameOver = false, scoreSubmitted = false;
+  let W = 0,
+    H = 0,
+    dpr = 1,
+    viewScale = 1,
+    viewOffX = 0,
+    viewOffY = 0;
+  let score = 0,
+    best = 0,
+    gameOver = false,
+    scoreSubmitted = false;
   let stars = [];
   let cards = [];
   let flipped = [];
@@ -18,9 +29,10 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
   let lock = false;
   let lastTime = 0;
 
-  const bestKey = "star_memory_best_v1";
-  best = Number(localStorage.getItem(bestKey) || 0);
-  bestEl.textContent = best;
+  fetchGlobalBest("star-memory").then((b) => {
+    best = Math.max(best, b);
+    bestEl.textContent = best;
+  });
 
   const symbols = ["★", "☆", "✦", "✧", "✶", "✷", "✹", "✺"];
 
@@ -67,7 +79,8 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
     const cardH = 160;
     const gap = 20;
     const startX = (BASE_W - (cols * cardW + (cols - 1) * gap)) / 2 + cardW / 2;
-    const startY = (BASE_H - (rows * cardH + (rows - 1) * gap)) / 2 + cardH / 2 - 40;
+    const startY =
+      (BASE_H - (rows * cardH + (rows - 1) * gap)) / 2 + cardH / 2 - 40;
     for (let i = 0; i < deck.length; i++) {
       const col = i % cols;
       const row = Math.floor(i / cols);
@@ -101,7 +114,7 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
     gameOver = true;
     if (score > best) {
       best = score;
-      localStorage.setItem(bestKey, String(best));
+
       bestEl.textContent = best;
     }
     restartBtn.style.display = "block";
@@ -137,7 +150,9 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
       }, 700);
     }
     flipped = [];
-    setTimeout(() => { lock = false; }, 750);
+    setTimeout(() => {
+      lock = false;
+    }, 750);
     scoreEl.textContent = score;
   }
 
@@ -150,9 +165,12 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
     const wy = (sy - viewOffY) / viewScale;
     for (const c of cards) {
       if (
-        !c.open && !c.matched &&
-        wx >= c.x - c.w / 2 && wx <= c.x + c.w / 2 &&
-        wy >= c.y - c.h / 2 && wy <= c.y + c.h / 2
+        !c.open &&
+        !c.matched &&
+        wx >= c.x - c.w / 2 &&
+        wx <= c.x + c.w / 2 &&
+        wy >= c.y - c.h / 2 &&
+        wy <= c.y + c.h / 2
       ) {
         c.open = true;
         flipped.push(c);
@@ -165,9 +183,13 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
     }
   }
 
-  canvas.addEventListener("pointerdown", (e) => {
-    onTap(e.clientX, e.clientY);
-  }, { passive: true });
+  canvas.addEventListener(
+    "pointerdown",
+    (e) => {
+      onTap(e.clientX, e.clientY);
+    },
+    { passive: true },
+  );
 
   addEventListener("keydown", (e) => {
     if (gameOver && e.code === "KeyR") reset();
@@ -223,8 +245,10 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
       ctx.save();
       ctx.translate(c.x, c.y);
       ctx.scale(c.scale, c.scale);
-      ctx.fillStyle = c.open || c.matched ? "rgba(20,30,52,.9)" : "rgba(10,14,24,.85)";
-      ctx.strokeStyle = c.open || c.matched ? "#d6c491" : "rgba(255,255,255,.25)";
+      ctx.fillStyle =
+        c.open || c.matched ? "rgba(20,30,52,.9)" : "rgba(10,14,24,.85)";
+      ctx.strokeStyle =
+        c.open || c.matched ? "#d6c491" : "rgba(255,255,255,.25)";
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.roundRect(-c.w / 2, -c.h / 2, c.w, c.h, 12);
@@ -264,7 +288,14 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
   restartBtn.type = "button";
   restartBtn.textContent = "Restart";
   restartBtn.addEventListener("click", reset);
-  restartBtn.addEventListener("touchstart", (e) => { e.preventDefault(); reset(); }, { passive: false });
+  restartBtn.addEventListener(
+    "touchstart",
+    (e) => {
+      e.preventDefault();
+      reset();
+    },
+    { passive: false },
+  );
   document.body.appendChild(restartBtn);
 
   requestAnimationFrame(step);

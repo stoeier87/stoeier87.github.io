@@ -7,13 +7,11 @@ import {
   limitToLast,
   onValue,
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
-import { submitScore } from "../arcade/shared/score-submit.js";
 import { ARCADE_FIREBASE_CONFIG } from "../arcade/shared/firebase-config.js";
 
 const app = initializeApp(ARCADE_FIREBASE_CONFIG, "arcade-scoreboard");
 const db = getDatabase(app);
 
-// Add/edit games here
 const GAMES = [
   { key: "orbit-runner", label: "Orbit Runner" },
   { key: "meteor-dodge", label: "Meteor Dodge" },
@@ -25,22 +23,7 @@ const GAMES = [
   { key: "asteroid-breaker", label: "Asteroid Breaker" },
 ];
 
-const form = document.getElementById("scoreForm");
-const gameSelect = document.getElementById("game");
-const currentGameLabel = document.getElementById("currentGameLabel");
-const nameInput = document.getElementById("name");
-const scoreInput = document.getElementById("score");
-const msg = document.getElementById("msg");
-const boardBody = document.getElementById("boardBody");
-
-let unsubscribeBoard = null;
-let lastSubmitAt = 0;
-const COOLDOWN_MS = 3000;
-
-function setMsg(text, type = "") {
-  msg.textContent = text;
-  msg.className = "msg" + (type ? ` ${type}` : "");
-}
+const PREVIEW = 5;
 
 function escapeHtml(str) {
   return String(str)
@@ -51,100 +34,110 @@ function escapeHtml(str) {
     .replaceAll("'", "&#039;");
 }
 
-function populateGames() {
-  gameSelect.innerHTML = GAMES.map(
-    (g) => `<option value="${g.key}">${g.label}</option>`,
-  ).join("");
-
-  const gameFromUrl = new URLSearchParams(location.search).get("game");
-  if (gameFromUrl && GAMES.some((g) => g.key === gameFromUrl)) {
-    gameSelect.value = gameFromUrl;
-  }
+function renderRows(rows, expanded) {
+  const visible = expanded ? rows : rows.slice(0, PREVIEW);
+  return visible
+    .map(
+      (r, i) => `
+    <tr data-rank="${i + 1}">
+      <td class="rank">${i + 1}</td>
+      <td>${escapeHtml(r.name ?? "Unknown")}</td>
+      <td class="col-score">${Number(r.score ?? 0).toLocaleString()}</td>
+    </tr>`,
+    )
+    .join("");
 }
 
-function listenToGameBoard(gameKey) {
-  if (!db) return;
-  const gameMeta = GAMES.find((g) => g.key === gameKey);
-  currentGameLabel.textContent = gameMeta ? gameMeta.label : gameKey;
-  boardBody.innerHTML = `<tr><td colspan="3">Loading…</td></tr>`;
+function createCard(game) {
+  const card = document.createElement("div");
+  card.className = "board-card is-loading";
+  card.innerHTML = `
+    <div class="board-card-header">
+      <h2>${escapeHtml(game.label)}</h2>
+      <span class="top-score">—</span>
+    </div>
+    <div class="board-card-body">
+      <table>
+        <thead><tr><th class="rank">#</th><th>Name</th><th class="col-score">Score</th></tr></thead>
+        <tbody class="board-tbody"><tr class="loading-row"><td colspan="3">Loading…</td></tr></tbody>
+      </table>
+    </div>`;
 
-  const scoresRef = ref(db, `arcade/scores/${gameKey}`);
-  const topQuery = query(scoresRef, orderByChild("score"), limitToLast(10));
+  let expanded = false;
+  let allRows = [];
 
-  if (unsubscribeBoard) unsubscribeBoard();
+  const topScoreEl = card.querySelector(".top-score");
+  const tbody = card.querySelector(".board-tbody");
 
-  unsubscribeBoard = onValue(topQuery, (snapshot) => {
-    const rows = [];
-    snapshot.forEach((child) => rows.push(child.val()));
+  const scoresRef = ref(db, `arcade/scores/${game.key}`);
+  const topQuery = query(scoresRef, orderByChild("score"), limitToLast(50));
 
-    console.log(
-      `[Scoreboard] Query returned ${rows.length} records for ${gameKey}`,
-      rows,
-    );
+  onValue(
+    topQuery,
+    (snapshot) => {
+      allRows = [];
+      snapshot.forEach((child) => {
+        allRows.push(child.val());
+      });
+      allRows.sort((a, b) => b.score - a.score || a.createdAt - b.createdAt);
 
-    rows.sort((a, b) => b.score - a.score || a.createdAt - b.createdAt);
+      console.log(
+        `[${game.key}] exists:${snapshot.exists()} size:${snapshot.size} rows:${allRows.length}`,
+        snapshot.val(),
+      );
+      card.classList.remove("is-loading");
 
-    if (!rows.length) {
-      boardBody.innerHTML = `<tr><td colspan="3">No scores yet — be the first!</td></tr>`;
+      if (!allRows.length) {
+        card.style.display = "none";
+        return;
+      }
+
+      card.style.display = "";
+      topScoreEl.textContent = Number(allRows[0].score).toLocaleString();
+
+      // Update expand button if needed
+      updateExpandBtn();
+      const html = renderRows(allRows, expanded);
+      console.log(
+        `[${game.key}] rendering ${allRows.length} rows, html length: ${html.length}, preview rows in html: ${(html.match(/<tr/g) || []).length}`,
+      );
+      tbody.innerHTML = html;
+    },
+    (err) => {
+      card.classList.remove("is-loading");
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="3">Error: ${escapeHtml(err.message)}</td></tr>`;
+    },
+  );
+
+  function updateExpandBtn() {
+    const header = card.querySelector(".board-card-header");
+    let btn = header.querySelector(".expand-btn");
+
+    if (allRows.length <= PREVIEW) {
+      if (btn) btn.remove();
       return;
     }
 
-    boardBody.innerHTML = rows
-      .map(
-        (r, i) => `
-      <tr>
-        <td class="rank">${i + 1}</td>
-        <td>${escapeHtml(r.name ?? "Unknown")}</td>
-        <td class="score">${Number(r.score ?? 0).toLocaleString()}</td>
-      </tr>
-    `,
-      )
-      .join("");
-  });
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.className = "expand-btn";
+      header.appendChild(btn);
+      btn.addEventListener("click", () => {
+        expanded = !expanded;
+        tbody.innerHTML = renderRows(allRows, expanded);
+        btn.textContent = expanded
+          ? `▲ Top ${PREVIEW}`
+          : `▼ All ${allRows.length}`;
+      });
+    }
+
+    btn.textContent = expanded ? `▲ Top ${PREVIEW}` : `▼ All ${allRows.length}`;
+  }
+
+  return card;
 }
 
-gameSelect.addEventListener("change", () => {
-  const gameKey = gameSelect.value;
-  const url = new URL(location.href);
-  url.searchParams.set("game", gameKey);
-  history.replaceState({}, "", url);
-  listenToGameBoard(gameKey);
-});
-
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const now = Date.now();
-  if (now - lastSubmitAt < COOLDOWN_MS) {
-    setMsg("Please wait a few seconds before submitting again.", "bad");
-    return;
-  }
-
-  const gameKey = gameSelect.value;
-  const name = nameInput.value.trim();
-  const score = Number(scoreInput.value);
-
-  if (!GAMES.some((g) => g.key === gameKey)) {
-    setMsg("Invalid game selected.", "bad");
-    return;
-  }
-
-  const result = await submitScore(db, { gameKey, name, score });
-
-  if (result.submitted) {
-    lastSubmitAt = now;
-    setMsg(
-      `Score saved for ${GAMES.find((g) => g.key === gameKey)?.label || gameKey}!`,
-      "good",
-    );
-    form.reset();
-    gameSelect.value = gameKey;
-    nameInput.focus();
-  } else {
-    setMsg(result.reason, "bad");
-  }
-});
-
-// init
-populateGames();
-listenToGameBoard(gameSelect.value);
+const boardsEl = document.getElementById("boards");
+for (const game of GAMES) {
+  boardsEl.appendChild(createCard(game));
+}

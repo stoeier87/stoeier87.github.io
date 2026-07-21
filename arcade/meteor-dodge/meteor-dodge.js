@@ -1,4 +1,7 @@
-import { submitScoreOnGameOver } from "../shared/score-submit.js";
+import {
+  submitScoreOnGameOver,
+  fetchGlobalBest,
+} from "../shared/score-submit.js";
 
 (() => {
   const canvas = document.getElementById("game");
@@ -9,15 +12,27 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
   const BASE_W = 720;
   const BASE_H = 1280;
 
-  let W = 0, H = 0, dpr = 1, viewScale = 1, viewOffX = 0, viewOffY = 0;
-  let score = 0, best = 0, last = 0, spawnT = 0, gameOver = false, scoreSubmitted = false;
-  let stars = [], meteors = [];
+  let W = 0,
+    H = 0,
+    dpr = 1,
+    viewScale = 1,
+    viewOffX = 0,
+    viewOffY = 0;
+  let score = 0,
+    best = 0,
+    last = 0,
+    spawnT = 0,
+    gameOver = false,
+    scoreSubmitted = false;
+  let stars = [],
+    meteors = [];
   let ship = { x: BASE_W / 2, y: BASE_H - 140, w: 44, h: 52, vx: 0 };
   let keys = { left: false, right: false };
 
-  const bestKey = "meteor_dodge_best_v1";
-  best = Number(localStorage.getItem(bestKey) || 0);
-  bestEl.textContent = best;
+  fetchGlobalBest("meteor-dodge").then((b) => {
+    best = Math.max(best, b);
+    bestEl.textContent = best;
+  });
 
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -78,7 +93,7 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
     gameOver = true;
     if (score > best) {
       best = Math.floor(score);
-      localStorage.setItem(bestKey, String(best));
+
       bestEl.textContent = best;
     }
     restartBtn.style.display = "block";
@@ -170,7 +185,14 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
       ctx.save();
       ctx.translate(m.x, m.y);
       ctx.rotate(m.rot);
-      const g = ctx.createRadialGradient(-m.r * 0.3, -m.r * 0.3, m.r * 0.2, 0, 0, m.r);
+      const g = ctx.createRadialGradient(
+        -m.r * 0.3,
+        -m.r * 0.3,
+        m.r * 0.2,
+        0,
+        0,
+        m.r,
+      );
       g.addColorStop(0, "#f5d79a");
       g.addColorStop(0.5, "#c78d46");
       g.addColorStop(1, "#5a3a22");
@@ -201,7 +223,15 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
     ctx.fill();
     ctx.fillStyle = "rgba(180,220,255,.8)";
     ctx.beginPath();
-    ctx.ellipse(0, -ship.h * 0.15, ship.w * 0.25, ship.h * 0.22, 0, 0, Math.PI * 2);
+    ctx.ellipse(
+      0,
+      -ship.h * 0.15,
+      ship.w * 0.25,
+      ship.h * 0.22,
+      0,
+      0,
+      Math.PI * 2,
+    );
     ctx.fill();
     if (keys.left || keys.right) {
       ctx.fillStyle = "#e03a2f";
@@ -242,29 +272,64 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
     if (e.code === "ArrowRight" || e.code === "KeyD") setKey("right", false);
   });
 
-  canvas.addEventListener("pointerdown", (e) => {
-    if (gameOver) return;
-    const wx = worldX(e.clientX);
-    if (wx < ship.x) setKey("left", true);
-    else setKey("right", true);
-  }, { passive: true });
-  canvas.addEventListener("pointerup", () => {
-    setKey("left", false);
-    setKey("right", false);
-  }, { passive: true });
-  canvas.addEventListener("pointercancel", () => {
-    setKey("left", false);
-    setKey("right", false);
-  }, { passive: true });
+  canvas.addEventListener(
+    "pointerdown",
+    (e) => {
+      if (gameOver) return;
+      const wx = worldX(e.clientX);
+      if (wx < ship.x) setKey("left", true);
+      else setKey("right", true);
+    },
+    { passive: true },
+  );
+  canvas.addEventListener(
+    "pointerup",
+    () => {
+      setKey("left", false);
+      setKey("right", false);
+    },
+    { passive: true },
+  );
+  canvas.addEventListener(
+    "pointercancel",
+    () => {
+      setKey("left", false);
+      setKey("right", false);
+    },
+    { passive: true },
+  );
 
   const leftBtn = document.getElementById("left");
   const rightBtn = document.getElementById("right");
   const addTouch = (el, dir) => {
-    el.addEventListener("touchstart", (e) => { e.preventDefault(); setKey(dir, true); }, { passive: false });
-    el.addEventListener("touchend", (e) => { e.preventDefault(); setKey(dir, false); }, { passive: false });
-    el.addEventListener("mousedown", (e) => { e.preventDefault(); setKey(dir, true); });
-    el.addEventListener("mouseup", (e) => { e.preventDefault(); setKey(dir, false); });
-    el.addEventListener("mouseleave", (e) => { e.preventDefault(); setKey(dir, false); });
+    el.addEventListener(
+      "touchstart",
+      (e) => {
+        e.preventDefault();
+        setKey(dir, true);
+      },
+      { passive: false },
+    );
+    el.addEventListener(
+      "touchend",
+      (e) => {
+        e.preventDefault();
+        setKey(dir, false);
+      },
+      { passive: false },
+    );
+    el.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      setKey(dir, true);
+    });
+    el.addEventListener("mouseup", (e) => {
+      e.preventDefault();
+      setKey(dir, false);
+    });
+    el.addEventListener("mouseleave", (e) => {
+      e.preventDefault();
+      setKey(dir, false);
+    });
   };
   addTouch(leftBtn, "left");
   addTouch(rightBtn, "right");
@@ -274,7 +339,14 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
   restartBtn.type = "button";
   restartBtn.textContent = "Restart";
   restartBtn.addEventListener("click", reset);
-  restartBtn.addEventListener("touchstart", (e) => { e.preventDefault(); reset(); }, { passive: false });
+  restartBtn.addEventListener(
+    "touchstart",
+    (e) => {
+      e.preventDefault();
+      reset();
+    },
+    { passive: false },
+  );
   document.body.appendChild(restartBtn);
 
   requestAnimationFrame(step);

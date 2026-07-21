@@ -1,4 +1,7 @@
-import { submitScoreOnGameOver } from "../shared/score-submit.js";
+import {
+  submitScoreOnGameOver,
+  fetchGlobalBest,
+} from "../shared/score-submit.js";
 
 (() => {
   const canvas = document.getElementById("game");
@@ -9,17 +12,27 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
   const BASE_W = 720;
   const BASE_H = 1280;
 
-  let W = 0, H = 0, dpr = 1, viewScale = 1, viewOffX = 0, viewOffY = 0;
-  let score = 0, best = 0, last = 0, gameOver = false, scoreSubmitted = false;
+  let W = 0,
+    H = 0,
+    dpr = 1,
+    viewScale = 1,
+    viewOffX = 0,
+    viewOffY = 0;
+  let score = 0,
+    best = 0,
+    last = 0,
+    gameOver = false,
+    scoreSubmitted = false;
   let stars = [];
   let paddle = { x: BASE_W / 2, y: BASE_H - 110, w: 110, h: 14 };
   let ball = { x: BASE_W / 2, y: BASE_H / 2, r: 9, vx: 0, vy: 0 };
   let asteroids = [];
   let targetX = BASE_W / 2;
 
-  const bestKey = "asteroid_breaker_best_v1";
-  best = Number(localStorage.getItem(bestKey) || 0);
-  bestEl.textContent = best;
+  fetchGlobalBest("asteroid-breaker").then((b) => {
+    best = Math.max(best, b);
+    bestEl.textContent = best;
+  });
 
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -96,7 +109,7 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
     gameOver = true;
     if (score > best) {
       best = score;
-      localStorage.setItem(bestKey, String(best));
+
       bestEl.textContent = best;
     }
     restartBtn.style.display = "block";
@@ -125,14 +138,26 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
 
     if (!gameOver) {
       paddle.x += (targetX - paddle.x) * 0.18;
-      paddle.x = Math.max(paddle.w / 2, Math.min(BASE_W - paddle.w / 2, paddle.x));
+      paddle.x = Math.max(
+        paddle.w / 2,
+        Math.min(BASE_W - paddle.w / 2, paddle.x),
+      );
 
       ball.x += ball.vx * dt;
       ball.y += ball.vy * dt;
 
-      if (ball.x < ball.r) { ball.x = ball.r; ball.vx *= -1; }
-      if (ball.x > BASE_W - ball.r) { ball.x = BASE_W - ball.r; ball.vx *= -1; }
-      if (ball.y < ball.r) { ball.y = ball.r; ball.vy *= -1; }
+      if (ball.x < ball.r) {
+        ball.x = ball.r;
+        ball.vx *= -1;
+      }
+      if (ball.x > BASE_W - ball.r) {
+        ball.x = BASE_W - ball.r;
+        ball.vx *= -1;
+      }
+      if (ball.y < ball.r) {
+        ball.y = ball.r;
+        ball.vy *= -1;
+      }
 
       if (
         ball.y + ball.r >= paddle.y - paddle.h / 2 &&
@@ -219,10 +244,20 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
     }
 
     ctx.fillStyle = "rgba(255,255,255,.12)";
-    ctx.fillRect(paddle.x - paddle.w / 2, paddle.y - paddle.h / 2, paddle.w, paddle.h);
+    ctx.fillRect(
+      paddle.x - paddle.w / 2,
+      paddle.y - paddle.h / 2,
+      paddle.w,
+      paddle.h,
+    );
     ctx.strokeStyle = "#fff";
     ctx.lineWidth = 2;
-    ctx.strokeRect(paddle.x - paddle.w / 2, paddle.y - paddle.h / 2, paddle.w, paddle.h);
+    ctx.strokeRect(
+      paddle.x - paddle.w / 2,
+      paddle.y - paddle.h / 2,
+      paddle.w,
+      paddle.h,
+    );
 
     ctx.fillStyle = "#9de3e6";
     ctx.shadowColor = "#9de3e6";
@@ -252,12 +287,20 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
     targetX = (sx - viewOffX) / viewScale;
   }
 
-  canvas.addEventListener("pointermove", (e) => {
-    if (!gameOver) setTarget(e.clientX);
-  }, { passive: true });
-  canvas.addEventListener("pointerdown", (e) => {
-    if (!gameOver) setTarget(e.clientX);
-  }, { passive: true });
+  canvas.addEventListener(
+    "pointermove",
+    (e) => {
+      if (!gameOver) setTarget(e.clientX);
+    },
+    { passive: true },
+  );
+  canvas.addEventListener(
+    "pointerdown",
+    (e) => {
+      if (!gameOver) setTarget(e.clientX);
+    },
+    { passive: true },
+  );
 
   addEventListener("keydown", (e) => {
     if (e.code === "ArrowLeft" || e.code === "KeyA") targetX -= 70;
@@ -270,7 +313,14 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
   restartBtn.type = "button";
   restartBtn.textContent = "Restart";
   restartBtn.addEventListener("click", reset);
-  restartBtn.addEventListener("touchstart", (e) => { e.preventDefault(); reset(); }, { passive: false });
+  restartBtn.addEventListener(
+    "touchstart",
+    (e) => {
+      e.preventDefault();
+      reset();
+    },
+    { passive: false },
+  );
   document.body.appendChild(restartBtn);
 
   launchBall();

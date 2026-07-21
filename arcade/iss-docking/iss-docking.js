@@ -1,4 +1,7 @@
-import { submitScoreOnGameOver } from "../shared/score-submit.js";
+import {
+  submitScoreOnGameOver,
+  fetchGlobalBest,
+} from "../shared/score-submit.js";
 
 (() => {
   const canvas = document.getElementById("game");
@@ -9,16 +12,27 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
   const BASE_W = 900;
   const BASE_H = 900;
 
-  let W = 0, H = 0, dpr = 1, viewScale = 1, viewOffX = 0, viewOffY = 0;
-  let score = 0, best = 0, last = 0, gameOver = false, scoreSubmitted = false, docked = false;
+  let W = 0,
+    H = 0,
+    dpr = 1,
+    viewScale = 1,
+    viewOffX = 0,
+    viewOffY = 0;
+  let score = 0,
+    best = 0,
+    last = 0,
+    gameOver = false,
+    scoreSubmitted = false,
+    docked = false;
   let stars = [];
   let capsule = { x: 120, y: 120, vx: 0, vy: 0, r: 14, angle: 0 };
   let station = { x: BASE_W / 2, y: BASE_H / 2, r: 46, angle: 0, av: 0.4 };
   let keys = { up: false, down: false, left: false, right: false };
 
-  const bestKey = "iss_docking_best_v1";
-  best = Number(localStorage.getItem(bestKey) || 0);
-  bestEl.textContent = best;
+  fetchGlobalBest("iss-docking").then((b) => {
+    best = Math.max(best, b);
+    bestEl.textContent = best;
+  });
 
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -51,6 +65,10 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
     docked = false;
     gameOver = false;
     scoreSubmitted = false;
+    keys.up = false;
+    keys.down = false;
+    keys.left = false;
+    keys.right = false;
     capsule.x = 120;
     capsule.y = 120;
     capsule.vx = 0;
@@ -65,7 +83,7 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
     gameOver = true;
     if (score > best) {
       best = Math.floor(score);
-      localStorage.setItem(bestKey, String(best));
+
       bestEl.textContent = best;
     }
     restartBtn.style.display = "block";
@@ -96,7 +114,7 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
       score += dt * 5;
       scoreEl.textContent = Math.floor(score);
 
-      station.angle += station.av * dt * 60;
+      station.angle += station.av * dt;
 
       const thrust = 260;
       if (keys.up) capsule.vy -= thrust * dt;
@@ -119,9 +137,15 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
 
       const dockAngle = station.angle % (Math.PI * 2);
       const portAngle = Math.atan2(dy, dx);
-      const angleDiff = Math.abs(((dockAngle - portAngle + Math.PI) % (Math.PI * 2)) - Math.PI);
+      const angleDiff = Math.abs(
+        ((dockAngle - portAngle + Math.PI) % (Math.PI * 2)) - Math.PI,
+      );
 
-      if (dist < station.r + capsule.r + 4 && approachSpeed < 90 && angleDiff < 0.55) {
+      if (
+        dist < station.r + capsule.r + 4 &&
+        approachSpeed < 90 &&
+        angleDiff < 0.55
+      ) {
         docked = true;
         score += 500;
         endGame(true);
@@ -210,7 +234,11 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
       ctx.fillStyle = "#fff";
       ctx.textAlign = "center";
       ctx.font = '700 32px "Archivo Black", sans-serif';
-      ctx.fillText(docked ? "DOCKED!" : "DOCKING FAILED", BASE_W / 2, BASE_H / 2 - 20);
+      ctx.fillText(
+        docked ? "DOCKED!" : "DOCKING FAILED",
+        BASE_W / 2,
+        BASE_H / 2 - 20,
+      );
       ctx.font = '400 14px "Space Mono", monospace';
       ctx.fillText("Tap Restart (or press R)", BASE_W / 2, BASE_H / 2 + 16);
     }
@@ -238,11 +266,34 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
 
   const bindBtn = (id, dir) => {
     const el = document.getElementById(id);
-    el.addEventListener("touchstart", (e) => { e.preventDefault(); setKey(dir, true); }, { passive: false });
-    el.addEventListener("touchend", (e) => { e.preventDefault(); setKey(dir, false); }, { passive: false });
-    el.addEventListener("mousedown", (e) => { e.preventDefault(); setKey(dir, true); });
-    el.addEventListener("mouseup", (e) => { e.preventDefault(); setKey(dir, false); });
-    el.addEventListener("mouseleave", (e) => { e.preventDefault(); setKey(dir, false); });
+    el.addEventListener(
+      "touchstart",
+      (e) => {
+        e.preventDefault();
+        setKey(dir, true);
+      },
+      { passive: false },
+    );
+    el.addEventListener(
+      "touchend",
+      (e) => {
+        e.preventDefault();
+        setKey(dir, false);
+      },
+      { passive: false },
+    );
+    el.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      setKey(dir, true);
+    });
+    el.addEventListener("mouseup", (e) => {
+      e.preventDefault();
+      setKey(dir, false);
+    });
+    el.addEventListener("mouseleave", (e) => {
+      e.preventDefault();
+      setKey(dir, false);
+    });
   };
   bindBtn("up", "up");
   bindBtn("down", "down");
@@ -254,7 +305,14 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
   restartBtn.type = "button";
   restartBtn.textContent = "Restart";
   restartBtn.addEventListener("click", reset);
-  restartBtn.addEventListener("touchstart", (e) => { e.preventDefault(); reset(); }, { passive: false });
+  restartBtn.addEventListener(
+    "touchstart",
+    (e) => {
+      e.preventDefault();
+      reset();
+    },
+    { passive: false },
+  );
   document.body.appendChild(restartBtn);
 
   requestAnimationFrame(step);

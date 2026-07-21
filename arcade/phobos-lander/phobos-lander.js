@@ -1,4 +1,7 @@
-import { submitScoreOnGameOver } from "../shared/score-submit.js";
+import {
+  submitScoreOnGameOver,
+  fetchGlobalBest,
+} from "../shared/score-submit.js";
 
 (() => {
   const canvas = document.getElementById("game");
@@ -9,8 +12,18 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
   const BASE_W = 720;
   const BASE_H = 1280;
 
-  let W = 0, H = 0, dpr = 1, viewScale = 1, viewOffX = 0, viewOffY = 0;
-  let score = 0, best = 0, last = 0, gameOver = false, scoreSubmitted = false, landed = false;
+  let W = 0,
+    H = 0,
+    dpr = 1,
+    viewScale = 1,
+    viewOffX = 0,
+    viewOffY = 0;
+  let score = 0,
+    best = 0,
+    last = 0,
+    gameOver = false,
+    scoreSubmitted = false,
+    landed = false;
   let stars = [];
   let lander = { x: BASE_W / 2, y: 140, vx: 0, vy: 0, angle: 0, fuel: 100 };
   let keys = { thrust: false, left: false, right: false };
@@ -79,7 +92,6 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
     gameOver = true;
     if (score > best) {
       best = Math.floor(score);
-      localStorage.setItem(bestKey, String(best));
     }
     restartBtn.style.display = "block";
     if (!scoreSubmitted) {
@@ -132,9 +144,12 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
       }
 
       const speed = Math.hypot(lander.vx, lander.vy);
-      const onPad = pads.find((p) =>
-        lander.x > p.x && lander.x < p.x + p.w &&
-        lander.y + 14 >= p.y && lander.y + 14 <= p.y + p.h + 8
+      const onPad = pads.find(
+        (p) =>
+          lander.x > p.x &&
+          lander.x < p.x + p.w &&
+          lander.y + 14 >= p.y &&
+          lander.y + 14 <= p.y + p.h + 8,
       );
 
       if (onPad) {
@@ -231,7 +246,11 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
       ctx.fillStyle = "#fff";
       ctx.textAlign = "center";
       ctx.font = '700 32px "Archivo Black", sans-serif';
-      ctx.fillText(landed ? "TOUCHDOWN!" : "CRASHED", BASE_W / 2, BASE_H / 2 - 20);
+      ctx.fillText(
+        landed ? "TOUCHDOWN!" : "CRASHED",
+        BASE_W / 2,
+        BASE_H / 2 - 20,
+      );
       ctx.font = '400 14px "Space Mono", monospace';
       ctx.fillText("Tap Restart (or press R)", BASE_W / 2, BASE_H / 2 + 16);
     }
@@ -244,24 +263,49 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
   }
 
   addEventListener("keydown", (e) => {
-    if (e.code === "ArrowUp" || e.code === "Space" || e.code === "KeyW") setKey("thrust", true);
+    if (e.code === "ArrowUp" || e.code === "Space" || e.code === "KeyW")
+      setKey("thrust", true);
     if (e.code === "ArrowLeft" || e.code === "KeyA") setKey("left", true);
     if (e.code === "ArrowRight" || e.code === "KeyD") setKey("right", true);
     if (gameOver && e.code === "KeyR") reset();
   });
   addEventListener("keyup", (e) => {
-    if (e.code === "ArrowUp" || e.code === "Space" || e.code === "KeyW") setKey("thrust", false);
+    if (e.code === "ArrowUp" || e.code === "Space" || e.code === "KeyW")
+      setKey("thrust", false);
     if (e.code === "ArrowLeft" || e.code === "KeyA") setKey("left", false);
     if (e.code === "ArrowRight" || e.code === "KeyD") setKey("right", false);
   });
 
   const bindBtn = (id, dir) => {
     const el = document.getElementById(id);
-    el.addEventListener("touchstart", (e) => { e.preventDefault(); setKey(dir, true); }, { passive: false });
-    el.addEventListener("touchend", (e) => { e.preventDefault(); setKey(dir, false); }, { passive: false });
-    el.addEventListener("mousedown", (e) => { e.preventDefault(); setKey(dir, true); });
-    el.addEventListener("mouseup", (e) => { e.preventDefault(); setKey(dir, false); });
-    el.addEventListener("mouseleave", (e) => { e.preventDefault(); setKey(dir, false); });
+    el.addEventListener(
+      "touchstart",
+      (e) => {
+        e.preventDefault();
+        setKey(dir, true);
+      },
+      { passive: false },
+    );
+    el.addEventListener(
+      "touchend",
+      (e) => {
+        e.preventDefault();
+        setKey(dir, false);
+      },
+      { passive: false },
+    );
+    el.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      setKey(dir, true);
+    });
+    el.addEventListener("mouseup", (e) => {
+      e.preventDefault();
+      setKey(dir, false);
+    });
+    el.addEventListener("mouseleave", (e) => {
+      e.preventDefault();
+      setKey(dir, false);
+    });
   };
   bindBtn("thrust", "thrust");
   bindBtn("left", "left");
@@ -272,7 +316,14 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
   restartBtn.type = "button";
   restartBtn.textContent = "Restart";
   restartBtn.addEventListener("click", reset);
-  restartBtn.addEventListener("touchstart", (e) => { e.preventDefault(); reset(); }, { passive: false });
+  restartBtn.addEventListener(
+    "touchstart",
+    (e) => {
+      e.preventDefault();
+      reset();
+    },
+    { passive: false },
+  );
   document.body.appendChild(restartBtn);
 
   requestAnimationFrame(step);

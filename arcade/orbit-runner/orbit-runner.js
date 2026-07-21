@@ -1,4 +1,7 @@
-import { submitScoreOnGameOver } from "../shared/score-submit.js";
+import {
+  submitScoreOnGameOver,
+  fetchGlobalBest,
+} from "../shared/score-submit.js";
 
 (() => {
   const canvas = document.getElementById("game");
@@ -36,9 +39,12 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
   let viewOffX = 0;
   let viewOffY = 0;
 
-  const bestKey = "orbit_runner_best_v1";
-  let best = Number(localStorage.getItem(bestKey) || 0);
+  let best = 0;
   bestEl.textContent = best;
+  fetchGlobalBest("orbit-runner").then((b) => {
+    best = Math.max(best, b);
+    bestEl.textContent = best;
+  });
 
   const ufo = { x: 0, y: 0, r: 14 };
   const planet = { x: 0, y: 0, r: 52, mass: 18000 };
@@ -308,7 +314,6 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
           updateRestartBtn();
           if (score > best) {
             best = Math.floor(score);
-            localStorage.setItem(bestKey, String(best));
             bestEl.textContent = best;
           }
 
