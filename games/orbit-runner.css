@@ -18,12 +18,6 @@ body {
   overflow-x:hidden;
 }
 
-@media (max-width: 600px) {
-  body {
-    overflow-y:scroll;
-  }
-}
-
 canvas {
   position:fixed;
   inset:0;
