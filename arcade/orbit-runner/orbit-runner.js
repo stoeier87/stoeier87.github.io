@@ -61,8 +61,8 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
       BASE_W = MOBILE_W;
       BASE_H = MOBILE_H;
     } else {
-      BASE_W = DESKTOP_W;
-      BASE_H = DESKTOP_H;
+      BASE_W = W;
+      BASE_H = H;
     }
   }
 
