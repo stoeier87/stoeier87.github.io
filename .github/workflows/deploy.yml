@@ -54,7 +54,7 @@ jobs:
             exit 1
           fi
 
-      - name: Generate scoreboard Firebase config
+      - name: Generate Firebase config
         env:
           FIREBASE_API_KEY: ${{ vars.FIREBASE_API_KEY }}
           FIREBASE_AUTH_DOMAIN: ${{ vars.FIREBASE_AUTH_DOMAIN }}
@@ -65,8 +65,8 @@ jobs:
           FIREBASE_MEASUREMENT_ID: ${{ vars.FIREBASE_MEASUREMENT_ID }}
           FIREBASE_DATABASE_URL: ${{ vars.FIREBASE_DATABASE_URL }}
         run: |
-          cat <<EOF > scoreboard/firebase-config.js
-          window.ARCADE_FIREBASE_CONFIG = {
+          cat <<EOF > arcade/shared/firebase-config.js
+          export const ARCADE_FIREBASE_CONFIG = {
             apiKey: "${FIREBASE_API_KEY}",
             authDomain: "${FIREBASE_AUTH_DOMAIN}",
             projectId: "${FIREBASE_PROJECT_ID}",
@@ -78,13 +78,24 @@ jobs:
           };
           EOF
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build with Vite
+        run: npm run build
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: dist/
 
       - name: Deploy to GitHub Pages
         id: deployment

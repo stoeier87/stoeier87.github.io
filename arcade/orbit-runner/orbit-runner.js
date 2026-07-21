@@ -314,13 +314,14 @@ import { submitScoreOnGameOver } from "../shared/score-submit.js";
 
           if (!scoreSubmissionStarted) {
             scoreSubmissionStarted = true;
-            setTimeout(() => {
-              submitScoreOnGameOver({
+            setTimeout(async () => {
+              const result = await submitScoreOnGameOver({
                 gameKey: "orbit-runner",
                 gameLabel: "Orbit Runner",
                 score: Math.floor(score),
                 ask: true,
               });
+              console.log("[Orbit Runner] Score submission result:", result);
             }, 60);
           }
         }

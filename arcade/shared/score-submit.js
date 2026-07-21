@@ -1,18 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
+import { ARCADE_FIREBASE_CONFIG } from "./firebase-config.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDTebLTN13VnxG6tKoN5XsSk0OEg49Yz4s",
-  authDomain: "servicedesign-e1fe5.firebaseapp.com",
-  projectId: "servicedesign-e1fe5",
-  storageBucket: "servicedesign-e1fe5.firebasestorage.app",
-  messagingSenderId: "485465422440",
-  appId: "1:485465422440:web:2c8a02a1a9794b773419dd",
-  measurementId: "G-9M0GB4HHY0",
-  databaseURL: "https://servicedesign-e1fe5-default-rtdb.europe-west1.firebasedatabase.app/",
-};
-
-const app = initializeApp(firebaseConfig, 'arcade-game');
+const app = initializeApp(ARCADE_FIREBASE_CONFIG, 'arcade-game');
 const db = getDatabase(app);
 
 const DEFAULTS = {

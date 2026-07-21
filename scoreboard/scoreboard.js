@@ -8,9 +8,10 @@ import {
   onValue,
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
 import { submitScore } from "../arcade/shared/score-submit.js";
+import { ARCADE_FIREBASE_CONFIG } from "../arcade/shared/firebase-config.js";
 
-// Paste your Firebase config here
-const firebaseConfig = globalThis.ARCADE_FIREBASE_CONFIG;
+const app = initializeApp(ARCADE_FIREBASE_CONFIG, "arcade-scoreboard");
+const db = getDatabase(app);
 
 // Add/edit games here
 const GAMES = [
@@ -23,9 +24,6 @@ const GAMES = [
   { key: "nebula-trail", label: "Nebula Trail" },
   { key: "asteroid-breaker", label: "Asteroid Breaker" },
 ];
-
-const app = firebaseConfig ? initializeApp(firebaseConfig) : null;
-const db = app ? getDatabase(app) : null;
 
 const form = document.getElementById("scoreForm");
 const gameSelect = document.getElementById("game");
@@ -79,6 +77,11 @@ function listenToGameBoard(gameKey) {
     const rows = [];
     snapshot.forEach((child) => rows.push(child.val()));
 
+    console.log(
+      `[Scoreboard] Query returned ${rows.length} records for ${gameKey}`,
+      rows,
+    );
+
     rows.sort((a, b) => b.score - a.score || a.createdAt - b.createdAt);
 
     if (!rows.length) {
@@ -110,11 +113,6 @@ gameSelect.addEventListener("change", () => {
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
-
-  if (!db) {
-    setMsg("Scoreboard is not configured.", "bad");
-    return;
-  }
 
   const now = Date.now();
   if (now - lastSubmitAt < COOLDOWN_MS) {
@@ -149,16 +147,4 @@ form.addEventListener("submit", async (e) => {
 
 // init
 populateGames();
-if (!db) {
-  gameSelect.disabled = true;
-  nameInput.disabled = true;
-  scoreInput.disabled = true;
-  form.querySelector("button[type='submit']").disabled = true;
-  boardBody.innerHTML = `<tr><td colspan="3">Scoreboard not configured.</td></tr>`;
-  setMsg(
-    "Add scoreboard/firebase-config.js (see scoreboard/firebase-example-config.js).",
-    "bad",
-  );
-} else {
-  listenToGameBoard(gameSelect.value);
-}
+listenToGameBoard(gameSelect.value);
