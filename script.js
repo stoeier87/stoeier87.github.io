@@ -133,9 +133,41 @@
   // Earth system (moon + ISS orbit) - no live API fetch
   let earthState = { visible: false, x: 0, y: 0, r: 0 };
 
-  // Mouse — listeners are registered below on document rather than the canvas
-  // (canvas has pointer-events: none).
+  // Mouse — listeners are registered below, after the toast helpers,
+  // on document rather than the canvas (canvas has pointer-events: none).
   let mouse = { x: -9999, y: -9999, inside: false };
+
+  // Simple toast helpers (kept for future use, not initialized here)
+  let toastEl = null;
+  let toastHideAt = 0;
+  function ensureToast() {
+    if (toastEl) return;
+    toastEl = document.createElement("div");
+    toastEl.style.position = "fixed";
+    toastEl.style.left = "50%";
+    toastEl.style.bottom = "1.2rem";
+    toastEl.style.transform = "translateX(-50%) translateY(12px)";
+    toastEl.style.padding = "0.55rem 0.9rem";
+    toastEl.style.border = "1px solid rgba(255,255,255,0.35)";
+    toastEl.style.borderRadius = "999px";
+    toastEl.style.background = "rgba(13,20,36,0.88)";
+    toastEl.style.color = "#fff";
+    toastEl.style.fontFamily = "'Space Mono', ui-monospace, monospace";
+    toastEl.style.fontSize = "0.72rem";
+    toastEl.style.letterSpacing = "0.06em";
+    toastEl.style.zIndex = "120";
+    toastEl.style.opacity = "0";
+    toastEl.style.transition = "opacity .2s ease, transform .2s ease";
+    toastEl.style.pointerEvents = "none";
+    document.body.appendChild(toastEl);
+  }
+  function showToast(text) {
+    ensureToast();
+    toastEl.textContent = text;
+    toastEl.style.opacity = "1";
+    toastEl.style.transform = "translateX(-50%) translateY(0)";
+    toastHideAt = performance.now() + 1400;
+  }
 
   // Mouse — listen on document so pointer-events: none on the canvas
   // doesn't break planet hover/click interaction.
