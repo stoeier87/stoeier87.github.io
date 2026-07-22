@@ -49,7 +49,7 @@
       pf: 0.42,
       hi: "#b8b0a8",
       lo: "#5c554e",
-      msg: "Swift little MERKUR ⚡",
+      link: "arcade/orbit-runner/orbit-runner.html",
     },
     {
       name: "VENUS",
@@ -59,7 +59,7 @@
       pf: 0.5,
       hi: "#e8cfa0",
       lo: "#a67c48",
-      msg: "Cloud queen VENUS ☁️",
+      link: "arcade/meteor-dodge/meteor-dodge.html",
     },
     {
       name: "JORDEN",
@@ -70,7 +70,7 @@
       hi: "#6fb6e8",
       lo: "#1c4e8a",
       earth: true,
-      msg: "Home signal: JORDEN 🌍",
+      link: "arcade/iss-docking/iss-docking.html",
     },
     {
       name: "MARS",
@@ -80,7 +80,7 @@
       pf: 0.46,
       hi: "#e0704a",
       lo: "#8a3520",
-      msg: "Red frontier MARS 🔴",
+      link: "arcade/phobos-lander/phobos-lander.html",
     },
     {
       name: "JUPITER",
@@ -91,7 +91,7 @@
       hi: "#d9b48a",
       lo: "#8a6238",
       bands: true,
-      msg: "Giant JUPITER says hi 🌀",
+      link: "arcade/comet-pong/comet-pong.html",
     },
     {
       name: "SATURN",
@@ -102,7 +102,7 @@
       hi: "#e3c68f",
       lo: "#9c7a48",
       ring: true,
-      msg: "Rings online: SATURN 💍",
+      link: "arcade/star-memory/star-memory.html",
     },
     {
       name: "URANUS",
@@ -112,7 +112,7 @@
       pf: 0.48,
       hi: "#a8e0e8",
       lo: "#4a98a8",
-      msg: "Cool drift: URANUS 🧊",
+      link: "arcade/nebula-trail/nebula-trail.html",
     },
     {
       name: "NEPTUN",
@@ -122,7 +122,7 @@
       pf: 0.6,
       hi: "#6a8ce8",
       lo: "#2a3f9c",
-      msg: "Deep blue NEPTUN 🌊",
+      link: "arcade/asteroid-breaker/asteroid-breaker.html",
     },
   ];
 
@@ -133,34 +133,9 @@
   // Earth system (moon + ISS orbit) - no live API fetch
   let earthState = { visible: false, x: 0, y: 0, r: 0 };
 
-  // Mouse — listeners are registered below, after the toast helpers,
-  // on document rather than the canvas (canvas has pointer-events: none).
+  // Mouse — listeners are registered below on document rather than the canvas
+  // (canvas has pointer-events: none).
   let mouse = { x: -9999, y: -9999, inside: false };
-
-  // Simple toast
-  let toastEl = null;
-  let toastHideAt = 0;
-  function ensureToast() {
-    if (toastEl) return;
-    toastEl = document.createElement("div");
-    toastEl.style.position = "fixed";
-    toastEl.style.left = "50%";
-    toastEl.style.bottom = "1.2rem";
-    toastEl.style.transform = "translateX(-50%) translateY(12px)";
-    toastEl.style.padding = "0.55rem 0.9rem";
-    toastEl.style.border = "1px solid rgba(255,255,255,0.35)";
-    toastEl.style.borderRadius = "999px";
-    toastEl.style.background = "rgba(13,20,36,0.88)";
-    toastEl.style.color = "#fff";
-    toastEl.style.fontFamily = "'Space Mono', ui-monospace, monospace";
-    toastEl.style.fontSize = "0.72rem";
-    toastEl.style.letterSpacing = "0.06em";
-    toastEl.style.zIndex = "120";
-    toastEl.style.opacity = "0";
-    toastEl.style.transition = "opacity .2s ease, transform .2s ease";
-    toastEl.style.pointerEvents = "none";
-    document.body.appendChild(toastEl);
-  }
 
   // Mouse — listen on document so pointer-events: none on the canvas
   // doesn't break planet hover/click interaction.
@@ -183,15 +158,9 @@
   );
   document.addEventListener("click", function () {
     if (hoveredPlanetIndex < 0) return;
-    showToast(PLANETS[hoveredPlanetIndex].msg);
+    let link = PLANETS[hoveredPlanetIndex].link;
+    if (link) window.location.href = link;
   });
-  function showToast(text) {
-    ensureToast();
-    toastEl.textContent = text;
-    toastEl.style.opacity = "1";
-    toastEl.style.transform = "translateX(-50%) translateY(0)";
-    toastHideAt = performance.now() + 1400;
-  }
 
   function drawPlanet(p, x, y, r) {
     let glow = ctx.createRadialGradient(x, y, r * 0.5, x, y, r * 2);
@@ -555,12 +524,6 @@
     drawPlanets(scroll, time);
 
     updateCanvasInteractions();
-
-    if (toastEl && toastHideAt && time > toastHideAt) {
-      toastHideAt = 0;
-      toastEl.style.opacity = "0";
-      toastEl.style.transform = "translateX(-50%) translateY(12px)";
-    }
 
     drawStars._lastTime = time;
   }
