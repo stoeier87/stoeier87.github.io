@@ -1,3 +1,5 @@
+import { drawPlanet } from "./starfield.js";
+
 export default function createIssBackground(opts = {}) {
   let baseW = opts.BASE_W || 900;
   let baseH = opts.BASE_H || 900;
@@ -29,49 +31,16 @@ export default function createIssBackground(opts = {}) {
     octx.fillStyle = g;
     octx.fillRect(0, 0, baseW, baseH);
 
-    // Earth - smaller, anchored bottom-left proportionally
+    // Earth - use shared drawPlanet to match frontpage style
     const earthRadius = baseW * 0.42;
     const earthX = -earthRadius * 0.15;
     const earthY = baseH - earthRadius * 0.52;
 
-    const eg = octx.createRadialGradient(
-      earthX - earthRadius * 0.18,
-      earthY - earthRadius * 0.28,
-      earthRadius * 0.08,
-      earthX,
-      earthY,
-      earthRadius,
-    );
-    eg.addColorStop(0, "#2b6aa2");
-    eg.addColorStop(0.7, "#143a5f");
-    eg.addColorStop(1, "#071929");
-    octx.beginPath();
-    octx.arc(earthX, earthY, earthRadius, 0, Math.PI * 2);
-    octx.fillStyle = eg;
-    octx.fill();
+    const p = { earth: true, hi: "#4a9fd8", lo: "#2d5a7a" };
+    // drawPlanet expects radius in pixels and handles gradient + land/cloud shapes
+    drawPlanet(octx, p, earthX, earthY, earthRadius);
 
-    // atmosphere rim
-    octx.beginPath();
-    octx.arc(earthX, earthY, earthRadius + 6, 0, Math.PI * 2);
-    octx.strokeStyle = "rgba(140,200,255,0.06)";
-    octx.lineWidth = 12;
-    octx.stroke();
-
-    // clouds: pre-rendered translucent blobs
-    octx.save();
-    octx.globalAlpha = 0.12;
-    octx.fillStyle = "#fff";
-    for (let i = 0; i < 10; i++) {
-      const angle = (i * 37) * (Math.PI / 180);
-      const rx = earthX + Math.cos(angle) * earthRadius * (0.12 + (i % 3) * 0.06);
-      const ry = earthY + Math.sin(angle) * earthRadius * (0.16 + (i % 4) * 0.04);
-      octx.beginPath();
-      octx.ellipse(rx, ry, earthRadius * 0.14, earthRadius * 0.07, angle * 0.5, 0, Math.PI * 2);
-      octx.fill();
-    }
-    octx.restore();
-
-    // subtle terminator shadow
+    // subtle terminator shadow overlay (multiply)
     octx.save();
     octx.globalCompositeOperation = "multiply";
     const shadowGrad = octx.createLinearGradient(
@@ -116,6 +85,19 @@ export default function createIssBackground(opts = {}) {
       octx.arc(cx, cy, moonRadius * c.s, 0, Math.PI * 2);
       octx.fill();
     }
+
+    // small static starfield can be part of static (optional)
+    for (let i = 0; i < 80; i++) {
+      const sx = Math.random() * baseW;
+      const sy = Math.random() * baseH;
+      const sr = Math.random() * 1.2 + 0.2;
+      octx.globalAlpha = 0.6;
+      octx.beginPath();
+      octx.fillStyle = "#fff";
+      octx.arc(sx, sy, sr, 0, Math.PI * 2);
+      octx.fill();
+      octx.globalAlpha = 1;
+    }
   }
 
   function init() {
@@ -128,15 +110,36 @@ export default function createIssBackground(opts = {}) {
     buildStatic();
   }
 
-  function draw(ctx, state, ts) {
+  // Draw the background to fill the full screen (canvas pixel dims)
+  function drawFullscreen(ctx, screenW, screenH, ts) {
     if (!staticCanvas) buildStatic();
-    // parallax small offsets
+    // scale staticCanvas (virtual baseW/baseH) to screenW/screenH
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0); // draw in device pixels
+    ctx.drawImage(staticCanvas, 0, 0, staticCanvas.width, staticCanvas.height, 0, 0, screenW, screenH);
+    ctx.restore();
+
+    // subtle animated overlay (cloud shimmer) across whole screen
+    const t = (ts || performance.now()) * 0.00007;
+    ctx.save();
+    ctx.globalAlpha = 0.02 + Math.sin(t) * 0.01;
+    const overlay = ctx.createLinearGradient(0, 0, screenW, screenH);
+    overlay.addColorStop(0, "rgba(255,255,255,0.02)");
+    overlay.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = overlay;
+    ctx.fillRect(0, 0, screenW, screenH);
+    ctx.restore();
+  }
+
+  // Keep legacy draw for virtual-space composition if needed
+  function draw(ctx, state, ts) {
+    // small parallax offsets based on virtual coords
+    if (!staticCanvas) buildStatic();
     const px = (state.capsule.x - state.BASE_W / 2) * 0.02;
     const py = (state.capsule.y - state.BASE_H / 2) * 0.01;
-
     ctx.drawImage(staticCanvas, px, py);
 
-    // subtle animated overlay: slight cloud shimmer using a low-alpha rotating gradient
+    // light overlay in virtual coords
     const t = (ts || performance.now()) * 0.00007;
     ctx.save();
     ctx.globalAlpha = 0.035;
@@ -148,5 +151,5 @@ export default function createIssBackground(opts = {}) {
     ctx.restore();
   }
 
-  return { init, resize, draw };
+  return { init, resize, draw, drawFullscreen };
 }
