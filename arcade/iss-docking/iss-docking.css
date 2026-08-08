@@ -178,6 +178,40 @@ a.stat:hover{ border-color:rgba(255,255,255,.3); }
 }
 .restart-btn:hover{ border-color:rgba(255,255,255,.55); }
 
+/* Invisible N/S/E/W thrust zones (touch devices only).
+   z-index 5 keeps this below .approach (15), .gameover (20) and .topbar (25),
+   so the Arcade/BEST links and the Restart button still receive their own taps. */
+#touchZones{
+  position:fixed; inset:0;
+  z-index:5;
+  display:none;
+  overflow:hidden;
+  touch-action:none;
+}
+html.touch-zones #touchZones{ display:block; }
+
+/* Soft radial cue at the touch point — a background hint, not a control */
+.touch-glow{
+  position:absolute;
+  width:210px; height:210px;
+  margin:0; padding:0;
+  border-radius:50%;
+  pointer-events:none;
+  transform:translate(-50%, -50%);
+  background:radial-gradient(
+    circle closest-side,
+    rgba(255,255,255,.16) 0%,
+    rgba(180,220,255,.09) 42%,
+    rgba(180,220,255,0) 72%
+  );
+  opacity:0;
+  transition:opacity .18s ease;
+}
+.touch-glow.on{ opacity:1; }
+
+/* The zones replace the d-pad where they're active */
+html.touch-zones .controls{ display:none; }
+
 /* Touch controls */
 .controls{
   position:fixed; bottom:18px; left:0; right:0;

@@ -69,7 +69,10 @@
     <button id="restartBtn" class="restart-btn" type="button">Restart</button>
     -->
 
-    <!-- Touch controls -->
+    <!-- Invisible N/S/E/W thrust zones (touch devices only; glows injected here) -->
+    <div id="touchZones" aria-hidden="true"></div>
+
+    <!-- Touch controls (d-pad fallback; hidden when the touch zones are live) -->
     <div class="controls" id="controls">
       <div class="dpad">
         <button id="up" aria-label="Thrust up">▲</button>

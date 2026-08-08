@@ -51,6 +51,16 @@ import {
   let keys = { up: false, down: false, left: false, right: false };
   let bgCanvas = null;
 
+  // Touch thrust zones: keyboard always drives at full strength (kbKeys),
+  // while touch-held directions ramp in over ~180ms (touchStart timestamps).
+  // `keys` (above) stays the OR of both sources, used for the exhaust flame.
+  const kbKeys = { up: false, down: false, left: false, right: false };
+  const touchStart = { up: 0, down: 0, left: 0, right: 0 };
+  const TOUCH_RAMP_MS = 180;
+  const activeTouches = new Map(); // touch.identifier -> { dir, glow }
+  const isTouchDevice =
+    matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
+
   fetchGlobalBest("iss-docking").then((b) => {
     best = Math.max(best, b);
     bestEl.textContent = best;
@@ -354,12 +364,26 @@ import {
     introEl.style.transform = "translateX(-50%) translateY(-10px)";
   }
 
+  // Keyboard + d-pad: instant full-strength thrust (unchanged behavior).
   function press(dir) {
+    kbKeys[dir] = true;
     keys[dir] = true;
     hideIntro();
   }
   function release(dir) {
-    keys[dir] = false;
+    kbKeys[dir] = false;
+    if (!touchStart[dir]) keys[dir] = false;
+  }
+
+  // Invisible touch zones: thrust ramps in via touchStart timestamps (see step()).
+  function pressTouchDir(dir) {
+    if (!touchStart[dir]) touchStart[dir] = performance.now();
+    keys[dir] = true;
+    hideIntro();
+  }
+  function releaseTouchDir(dir) {
+    touchStart[dir] = 0;
+    if (!kbKeys[dir]) keys[dir] = false;
   }
 
   function roundRectPath(c, x, y, w, h, r) {
@@ -386,10 +410,17 @@ import {
     if (!gameOver) {
       station.angle += station.av * dt;
       const thrust = set.thrust;
-      if (keys.up) capsule.vy -= thrust * dt;
-      if (keys.down) capsule.vy += thrust * dt;
-      if (keys.left) capsule.vx -= thrust * dt;
-      if (keys.right) capsule.vx += thrust * dt;
+      // Keyboard thrust is always full strength (unchanged from before);
+      // touch thrust ramps in over TOUCH_RAMP_MS so it doesn't snap on contact.
+      const thrustFactor = (dir) => {
+        if (kbKeys[dir]) return 1;
+        if (!touchStart[dir]) return 0;
+        return Math.min(1, (performance.now() - touchStart[dir]) / TOUCH_RAMP_MS);
+      };
+      if (keys.up) capsule.vy -= thrust * thrustFactor("up") * dt;
+      if (keys.down) capsule.vy += thrust * thrustFactor("down") * dt;
+      if (keys.left) capsule.vx -= thrust * thrustFactor("left") * dt;
+      if (keys.right) capsule.vx += thrust * thrustFactor("right") * dt;
       capsule.vx *= Math.pow(0.96, dt * 60);
       capsule.vy *= Math.pow(0.96, dt * 60);
       capsule.x += capsule.vx * dt;
@@ -715,6 +746,87 @@ import {
   bindBtn("down", "down");
   bindBtn("left", "left");
   bindBtn("right", "right");
+
+  // Touch zones: invisible N/S/E/W directional areas split along viewport diagonals.
+  // Only activate on touch-capable devices.
+  if (isTouchDevice) {
+    document.documentElement.classList.add("touch-zones");
+    const touchZonesEl = document.getElementById("touchZones");
+    if (touchZonesEl) {
+      const resolveDir = (x, y) => {
+        const cx = W / 2,
+          cy = H / 2;
+        const nx = (x - cx) / (W / 2),
+          ny = (y - cy) / (H / 2);
+        return Math.abs(nx) > Math.abs(ny)
+          ? nx > 0
+            ? "right"
+            : "left"
+          : ny > 0
+            ? "down"
+            : "up";
+      };
+
+      const createGlow = (x, y) => {
+        const glow = document.createElement("div");
+        glow.className = "touch-glow";
+        glow.style.left = x + "px";
+        glow.style.top = y + "px";
+        touchZonesEl.appendChild(glow);
+        setTimeout(() => glow.classList.add("on"), 0);
+        return glow;
+      };
+
+      const fadeOutGlow = (glow) => {
+        glow.classList.remove("on");
+        glow.addEventListener(
+          "transitionend",
+          () => glow.remove(),
+          { once: true }
+        );
+      };
+
+      touchZonesEl.addEventListener(
+        "touchstart",
+        (e) => {
+          e.preventDefault();
+          for (const t of e.touches) {
+            if (activeTouches.has(t.identifier)) continue;
+            const dir = resolveDir(t.clientX, t.clientY);
+            const glow = createGlow(t.clientX, t.clientY);
+            activeTouches.set(t.identifier, { dir, glow });
+            pressTouchDir(dir);
+          }
+        },
+        { passive: false }
+      );
+
+      touchZonesEl.addEventListener("touchmove", (e) => {
+        for (const t of e.touches) {
+          const entry = activeTouches.get(t.identifier);
+          if (entry) {
+            entry.glow.style.left = t.clientX + "px";
+            entry.glow.style.top = t.clientY + "px";
+          }
+        }
+      });
+
+      const handleTouchEnd = (e) => {
+        for (const t of e.changedTouches) {
+          const entry = activeTouches.get(t.identifier);
+          if (entry) {
+            const { dir, glow } = entry;
+            activeTouches.delete(t.identifier);
+            fadeOutGlow(glow);
+            releaseTouchDir(dir);
+          }
+        }
+      };
+
+      touchZonesEl.addEventListener("touchend", handleTouchEnd);
+      touchZonesEl.addEventListener("touchcancel", handleTouchEnd);
+    }
+  }
 
   gameOverRestart.addEventListener("click", reset);
   gameOverRestart.addEventListener(
