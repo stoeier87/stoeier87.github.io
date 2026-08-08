@@ -60,6 +60,8 @@ html, body{
 }
 .stat strong{ color:#fff; margin-left:6px; font-size:13px; }
 .stat strong.best-val{ color:#e03a2f; }
+a.stat{ text-decoration:none; cursor:pointer; }
+a.stat:hover{ border-color:rgba(255,255,255,.3); }
 
 /* Approach telemetry panel */
 .approach{
@@ -114,11 +116,42 @@ html, body{
 }
 .intro-body{ font-size:11.5px; line-height:1.5; color:rgba(255,255,255,.65); }
 
-/* Restart button */
-.restart-btn{
-  position:fixed; left:50%; top:56%;
-  transform:translate(-50%, -50%);
+/* Game over sign */
+@keyframes issPopIn{
+  from{ opacity:0; transform:translateY(10px) scale(.94); }
+  to{ opacity:1; transform:translateY(0) scale(1); }
+}
+.gameover{
+  position:fixed; inset:0;
   z-index:20;
+  display:none;
+  align-items:center; justify-content:center;
+  background:rgba(4,7,14,.62);
+}
+.gameover.show{ display:flex; }
+.gameover-card{
+  display:flex; flex-direction:column; align-items:center; gap:14px;
+  min-width:280px; max-width:min(88vw, 360px);
+  padding:26px 30px;
+  border-radius:14px;
+  border:1.5px solid rgba(224,58,47,.6);
+  background:rgba(10,14,24,.9);
+  text-align:center;
+  animation:issPopIn .3s ease;
+}
+.gameover-card.docked{ border-color:rgba(63,214,122,.6); }
+.gameover-card.failed{ border-color:rgba(224,58,47,.6); }
+.gameover-title{
+  font-family:"Archivo Black", sans-serif;
+  font-size:26px; letter-spacing:.02em;
+  color:#e03a2f;
+}
+.gameover-card.docked .gameover-title{ color:#3fd67a; }
+.gameover-card.failed .gameover-title{ color:#e03a2f; }
+.gameover-sub{ font-size:13px; color:rgba(255,255,255,.65); }
+
+/* Restart button (lives inside the game over sign) */
+.restart-btn{
   padding:12px 22px; min-width:140px;
   border-radius:10px;
   border:1px solid rgba(255,255,255,.35);
@@ -126,9 +159,9 @@ html, body{
   color:#fff;
   font:700 13px "Space Mono", monospace;
   letter-spacing:.1em; text-transform:uppercase;
-  display:none;
   touch-action:manipulation; cursor:pointer;
 }
+.restart-btn:hover{ border-color:rgba(255,255,255,.55); }
 
 /* Touch controls */
 .controls{
