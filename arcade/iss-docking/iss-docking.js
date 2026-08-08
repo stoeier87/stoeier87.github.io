@@ -32,7 +32,7 @@ import createIssBackground from "../shared/backgrounds-iss.js";
   let keys = { up: false, down: false, left: false, right: false };
 
   // Scoring / tuning constants (easy to tweak)
-  const MAX_TIME = 30; // seconds used for time-based scoring
+  const MAX_TIME = 60; // countdown start + seconds used for time-based scoring
   const POINTS_PER_SEC = 50; // points per remaining second
   const DOCKING_BONUS = 500;
 
@@ -99,7 +99,7 @@ import createIssBackground from "../shared/backgrounds-iss.js";
     capsule.angle = 0;
     station.angle = 0;
     startTime = performance.now();
-    scoreEl.textContent = "0";
+    scoreEl.textContent = MAX_TIME;
     restartBtn.style.display = "none";
   }
 
@@ -170,9 +170,10 @@ import createIssBackground from "../shared/backgrounds-iss.js";
 
       const angleDiffToPort = angleDiff(dockAngle, portAngle);
 
-      // live HUD: show elapsed seconds in score element (player feedback)
+      // live HUD: count down from MAX_TIME so faster docking = higher score
       const elapsed = (ts - startTime) * 0.001; // seconds
-      scoreEl.textContent = Math.floor(elapsed);
+      const timeLeft = Math.max(0, MAX_TIME - elapsed);
+      scoreEl.textContent = Math.ceil(timeLeft);
 
       // thresholds used for display and logic
       const DIST_MARGIN = station.r + capsule.r + DIST_MARGIN_EXTRA;
