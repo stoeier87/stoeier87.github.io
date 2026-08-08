@@ -113,10 +113,23 @@ export default function createIssBackground(opts = {}) {
   // Draw the background to fill the full screen (canvas pixel dims)
   function drawFullscreen(ctx, screenW, screenH, ts) {
     if (!staticCanvas) buildStatic();
-    // scale staticCanvas (virtual baseW/baseH) to screenW/screenH
+
+    const srcW = staticCanvas.width;
+    const srcH = staticCanvas.height;
+
+    // cover scale (so background always fills screen)
+    const scale = Math.max(screenW / srcW, screenH / srcH);
+    const dstW = Math.round(srcW * scale);
+    const dstH = Math.round(srcH * scale);
+
+    const dx = Math.round((screenW - dstW) * 0.5);
+    const dy = Math.round((screenH - dstH) * 0.5);
+
     ctx.save();
-    ctx.setTransform(1, 0, 0, 1, 0, 0); // draw in device pixels
-    ctx.drawImage(staticCanvas, 0, 0, staticCanvas.width, staticCanvas.height, 0, 0, screenW, screenH);
+    ctx.setTransform(1, 0, 0, 1, 0, 0); // device-pixel space
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(staticCanvas, 0, 0, srcW, srcH, dx, dy, dstW, dstH);
     ctx.restore();
 
     // subtle animated overlay (cloud shimmer) across whole screen
