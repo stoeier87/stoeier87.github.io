@@ -29,6 +29,20 @@ import {
   let station = { x: BASE_W / 2, y: BASE_H / 2, r: 46, angle: 0, av: 0.4 };
   let keys = { up: false, down: false, left: false, right: false };
 
+  // Scoring / tuning constants (easy to tweak)
+  const MAX_TIME = 30; // seconds used for time-based scoring
+  const POINTS_PER_SEC = 50; // points per remaining second
+  const DOCKING_BONUS = 500;
+
+  // Dock thresholds (tuneable)
+  const DIST_MARGIN_EXTRA = 8; // added to station.r + capsule.r
+  const SPEED_THRESHOLD = 140; // allowed approach speed
+  const ANGLE_THRESHOLD = 0.9; // radians (~52deg)
+
+  // Debug / HUD
+  let startTime = 0;
+  let showDebug = false; // toggled with 'D'
+
   fetchGlobalBest("iss-docking").then((b) => {
     best = Math.max(best, b);
     bestEl.textContent = best;
@@ -75,6 +89,7 @@ import {
     capsule.vy = 0;
     capsule.angle = 0;
     station.angle = 0;
+    startTime = performance.now();
     scoreEl.textContent = "0";
     restartBtn.style.display = "none";
   }
@@ -111,9 +126,7 @@ import {
     }
 
     if (!gameOver) {
-      score += dt * 5;
-      scoreEl.textContent = Math.floor(score);
-
+      // update station rotation
       station.angle += station.av * dt;
 
       const thrust = 260;
@@ -130,28 +143,47 @@ import {
       capsule.x = Math.max(capsule.r, Math.min(BASE_W - capsule.r, capsule.x));
       capsule.y = Math.max(capsule.r, Math.min(BASE_H - capsule.r, capsule.y));
 
+      // compute approach geometry
       const dx = station.x - capsule.x;
       const dy = station.y - capsule.y;
       const dist = Math.hypot(dx, dy);
       const approachSpeed = Math.hypot(capsule.vx, capsule.vy);
 
-      const dockAngle = station.angle % (Math.PI * 2);
+      // direction from capsule TO station
       const portAngle = Math.atan2(dy, dx);
-      const angleDiff = Math.abs(
-        ((dockAngle - portAngle + Math.PI) % (Math.PI * 2)) - Math.PI,
-      );
+      // visible docking port sits on the station's +X; the approach vector to match is opposite
+      const dockAngle = (station.angle + Math.PI) % (Math.PI * 2);
 
-      if (
-        dist < station.r + capsule.r + 4 &&
-        approachSpeed < 90 &&
-        angleDiff < 0.55
-      ) {
+      // helper for smallest-angle difference
+      function angleDiff(a, b) {
+        return Math.abs(((a - b + Math.PI) % (Math.PI * 2)) - Math.PI);
+      }
+
+      const angleDiffToPort = angleDiff(dockAngle, portAngle);
+
+      // live HUD: show elapsed seconds in score element (player feedback)
+      const elapsed = (ts - startTime) * 0.001; // seconds
+      scoreEl.textContent = Math.floor(elapsed);
+
+      // thresholds used for display and logic
+      const DIST_MARGIN = station.r + capsule.r + DIST_MARGIN_EXTRA;
+      const SPEED_THRESH = SPEED_THRESHOLD;
+      const ANGLE_THRESH = ANGLE_THRESHOLD;
+
+      if (dist < DIST_MARGIN && approachSpeed < SPEED_THRESH && angleDiffToPort < ANGLE_THRESH) {
         docked = true;
-        score += 500;
+        // compute final score rewarding speed (lower elapsed => higher points)
+        const remaining = Math.max(0, MAX_TIME - elapsed);
+        const timeScore = Math.floor(remaining * POINTS_PER_SEC);
+        score = timeScore + DOCKING_BONUS;
+        scoreEl.textContent = score;
         endGame(true);
       } else if (dist < station.r + capsule.r + 2) {
         endGame(false);
       }
+
+      // store diagnostic values on capsule for HUD draw
+      capsule._debug = { dist, approachSpeed, angleDiffToPort, DIST_MARGIN, SPEED_THRESH, ANGLE_THRESH };
     }
 
     draw();
@@ -228,6 +260,30 @@ import {
     ctx.stroke();
     ctx.setLineDash([]);
 
+    // debug / status overlay (always show key diagnostics; toggle shows extra detail)
+    const hudX = 12;
+    const hudY = 18;
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.font = '400 12px "Space Mono", monospace';
+    ctx.textAlign = "left";
+
+    const d = capsule._debug || { dist: 0, approachSpeed: 0, angleDiffToPort: 0, DIST_MARGIN: station.r + capsule.r + DIST_MARGIN_EXTRA, SPEED_THRESH: SPEED_THRESHOLD, ANGLE_THRESH: ANGLE_THRESHOLD };
+
+    ctx.fillText(`dist: ${d.dist.toFixed(1)} (need < ${d.DIST_MARGIN.toFixed(1)})`, hudX, hudY);
+    ctx.fillText(`speed: ${d.approachSpeed.toFixed(1)} (need < ${d.SPEED_THRESH})`, hudX, hudY + 16);
+    ctx.fillText(`angleΔ: ${d.angleDiffToPort.toFixed(2)}rad (need < ${d.ANGLE_THRESH.toFixed(2)})`, hudX, hudY + 32);
+
+    if (showDebug) {
+      ctx.fillStyle = "rgba(255,255,255,0.75)";
+      ctx.fillText(`DEBUG ON — Press D to toggle`, hudX, hudY + 52);
+      // extra tips
+      ctx.fillText(`Tips: line capsule with the red arc on the station; slow down before approach.`, hudX, hudY + 68);
+      ctx.fillText(`Scoring: faster docks score higher (MAX ${MAX_TIME * POINTS_PER_SEC + DOCKING_BONUS})`, hudX, hudY + 84);
+    } else {
+      ctx.fillStyle = "rgba(255,255,255,0.5)";
+      ctx.fillText(`Press D to toggle debug`, hudX, hudY + 52);
+    }
+
     if (gameOver) {
       ctx.fillStyle = "rgba(0,0,0,.5)";
       ctx.fillRect(0, 0, BASE_W, BASE_H);
@@ -255,6 +311,10 @@ import {
     if (e.code === "ArrowDown" || e.code === "KeyS") setKey("down", true);
     if (e.code === "ArrowLeft" || e.code === "KeyA") setKey("left", true);
     if (e.code === "ArrowRight" || e.code === "KeyD") setKey("right", true);
+    if (e.code === "KeyD") {
+      // toggle debug
+      showDebug = !showDebug;
+    }
     if (gameOver && e.code === "KeyR") reset();
   });
   addEventListener("keyup", (e) => {
@@ -315,5 +375,7 @@ import {
   );
   document.body.appendChild(restartBtn);
 
+  // initialize
+  reset();
   requestAnimationFrame(step);
 })();
