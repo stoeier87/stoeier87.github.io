@@ -26,7 +26,7 @@
       </div>
       <div class="topbar-group">
         <div class="pill stat">SCORE <strong id="score">60</strong></div>
-        <div class="pill stat">BEST <strong id="best" class="best-val">0</strong></div>
+        <a class="pill stat" href="/scoreboard/">BEST <strong id="best" class="best-val">0</strong></a>
       </div>
     </div>
 
@@ -56,8 +56,18 @@
       </div>
     </div>
 
-    <!-- Restart -->
+    <!-- Game over sign (restart lives inside it) -->
+    <div id="gameOver" class="gameover">
+      <div class="gameover-card">
+        <div id="gameOverTitle" class="gameover-title">DOCKED</div>
+        <div class="gameover-sub">Press R to restart</div>
+        <button id="gameOverRestart" class="restart-btn" type="button">Restart</button>
+      </div>
+    </div>
+
+    <!-- Restart button now lives inside the #gameOver sign above
     <button id="restartBtn" class="restart-btn" type="button">Restart</button>
+    -->
 
     <!-- Touch controls -->
     <div class="controls" id="controls">

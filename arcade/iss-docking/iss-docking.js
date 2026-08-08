@@ -14,7 +14,10 @@ import {
   const speedFill = document.getElementById("speedFill");
   const angleFill = document.getElementById("angleFill");
   const introEl = document.getElementById("intro");
-  const restartBtn = document.getElementById("restartBtn");
+  const gameOverEl = document.getElementById("gameOver");
+  const gameOverCard = gameOverEl.querySelector(".gameover-card");
+  const gameOverTitle = document.getElementById("gameOverTitle");
+  const gameOverRestart = document.getElementById("gameOverRestart");
 
   const BASE_W = 900;
   const BASE_H = 900;
@@ -316,7 +319,7 @@ import {
     station.angle = 0;
     startTime = performance.now();
     scoreEl.textContent = MAX_TIME;
-    restartBtn.style.display = "none";
+    gameOverEl.classList.remove("show");
   }
 
   function endGame(won) {
@@ -326,7 +329,10 @@ import {
       best = Math.floor(score);
       bestEl.textContent = best;
     }
-    restartBtn.style.display = "block";
+    gameOverTitle.textContent = won ? "DOCKED" : "DOCKING FAILED";
+    gameOverCard.classList.toggle("docked", won);
+    gameOverCard.classList.toggle("failed", !won);
+    gameOverEl.classList.add("show");
     if (!scoreSubmitted) {
       scoreSubmitted = true;
       setTimeout(() => {
@@ -671,28 +677,7 @@ import {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    if (gameOver) {
-      ctx.fillStyle = "rgba(4,7,14,.62)";
-      ctx.fillRect(0, 0, BASE_W, BASE_H);
-      const bw = 340,
-        bh = 120,
-        bx = BASE_W / 2 - bw / 2,
-        by = BASE_H / 2 - bh / 2;
-      ctx.fillStyle = "rgba(10,14,24,.9)";
-      roundRectPath(ctx, bx, by, bw, bh, 14);
-      ctx.fill();
-      ctx.strokeStyle = docked ? "rgba(63,214,122,.6)" : "rgba(224,58,47,.6)";
-      ctx.lineWidth = 1.5;
-      roundRectPath(ctx, bx, by, bw, bh, 14);
-      ctx.stroke();
-      ctx.fillStyle = docked ? "#3fd67a" : "#e03a2f";
-      ctx.textAlign = "center";
-      ctx.font = '700 26px "Archivo Black", sans-serif';
-      ctx.fillText(docked ? "DOCKED" : "DOCKING FAILED", BASE_W / 2, BASE_H / 2 - 8);
-      ctx.fillStyle = "rgba(255,255,255,.65)";
-      ctx.font = '400 13px "Space Mono", monospace';
-      ctx.fillText("Tap Restart, or press R", BASE_W / 2, BASE_H / 2 + 26);
-    }
+    // Game-over sign is an HTML overlay (#gameOver), not drawn on the canvas.
     ctx.restore();
   }
 
@@ -731,8 +716,8 @@ import {
   bindBtn("left", "left");
   bindBtn("right", "right");
 
-  restartBtn.addEventListener("click", reset);
-  restartBtn.addEventListener(
+  gameOverRestart.addEventListener("click", reset);
+  gameOverRestart.addEventListener(
     "touchstart",
     (e) => {
       e.preventDefault();
