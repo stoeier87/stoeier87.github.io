@@ -115,6 +115,93 @@ import {
     }
   }
 
+  // Background renderer for ISS scene (Earth + Moon with subtle parallax)
+  function drawBackground(ctx, ts) {
+    // ts is the timestamp from requestAnimationFrame (optional) for animation
+    // Sky gradient
+    const g = ctx.createLinearGradient(0, 0, 0, BASE_H);
+    g.addColorStop(0, "#050617");
+    g.addColorStop(0.6, "#071025");
+    g.addColorStop(1, "#02030a");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, BASE_W, BASE_H);
+
+    // compute small parallax offsets using capsule position and a slow time-based wobble
+    const t = (ts || performance.now()) * 0.0001;
+    const px = (capsule.x - BASE_W / 2) * 0.03; // small parallax
+    const py = (capsule.y - BASE_H / 2) * 0.02;
+
+    // Earth - large, bottom-left
+    const earthRadius = BASE_W * 0.58; // big background planet
+    const earthX = -earthRadius * 0.25 + px; // slightly off-screen to left
+    const earthY = BASE_H - earthRadius * 0.55 + py;
+    // Earth base
+    const eg = ctx.createRadialGradient(earthX - earthRadius * 0.25, earthY - earthRadius * 0.35, earthRadius * 0.1, earthX, earthY, earthRadius);
+    eg.addColorStop(0, "#2b6aa2"); // bright sea
+    eg.addColorStop(0.6, "#143a5f"); // deeper
+    eg.addColorStop(1, "#071929"); // dark rim
+    ctx.beginPath();
+    ctx.arc(earthX, earthY, earthRadius, 0, Math.PI * 2);
+    ctx.fillStyle = eg;
+    ctx.fill();
+
+    // Earth rim highlight (atmosphere glow)
+    ctx.beginPath();
+    ctx.arc(earthX, earthY, earthRadius + 6, 0, Math.PI * 2);
+    ctx.strokeStyle = "rgba(140,200,255,0.06)";
+    ctx.lineWidth = 12;
+    ctx.stroke();
+
+    // Clouds - semi-random translucent blobs, slightly shifting over time
+    ctx.save();
+    ctx.globalAlpha = 0.12;
+    ctx.fillStyle = "#fff";
+    for (let i = 0; i < 12; i++) {
+      const angle = (i * 23 + t * 40) * (Math.PI / 180);
+      const rx = earthX + Math.cos(angle) * earthRadius * (0.15 + (i % 3) * 0.08);
+      const ry = earthY + Math.sin(angle) * earthRadius * (0.18 + (i % 4) * 0.06);
+      ctx.beginPath();
+      ctx.ellipse(rx, ry, earthRadius * 0.16, earthRadius * 0.08, angle * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // Shadow over earth (terminator) to give depth — rotate slowly with time
+    ctx.save();
+    ctx.globalCompositeOperation = "multiply";
+    const shadowGrad = ctx.createLinearGradient(earthX - earthRadius, earthY - earthRadius, earthX + earthRadius, earthY + earthRadius);
+    shadowGrad.addColorStop(0, "rgba(0,0,0,0.0)");
+    shadowGrad.addColorStop(0.6, "rgba(0,0,0,0.35)");
+    shadowGrad.addColorStop(1, "rgba(0,0,0,0.65)");
+    ctx.fillStyle = shadowGrad;
+    ctx.beginPath();
+    ctx.arc(earthX, earthY, earthRadius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Moon - small, top-right-ish with slight parallax
+    const moonRadius = BASE_W * 0.08;
+    const moonX = BASE_W * 0.8 + px * 0.6 + Math.cos(t * 1.2) * 8;
+    const moonY = BASE_H * 0.18 + py * 0.6 + Math.sin(t * 1.6) * 6;
+    const mg = ctx.createRadialGradient(moonX - moonRadius * 0.2, moonY - moonRadius * 0.2, moonRadius * 0.1, moonX, moonY, moonRadius);
+    mg.addColorStop(0, "#f2f2f2");
+    mg.addColorStop(1, "#cfcfcf");
+    ctx.beginPath();
+    ctx.arc(moonX, moonY, moonRadius, 0, Math.PI * 2);
+    ctx.fillStyle = mg;
+    ctx.fill();
+    // moon craters (simple dots)
+    ctx.fillStyle = "rgba(0,0,0,0.12)";
+    for (let i = 0; i < 6; i++) {
+      const a = i * 47 + t * 40;
+      const mx = moonX + Math.cos(a) * moonRadius * (0.45 + (i % 2) * 0.1);
+      const my = moonY + Math.sin(a) * moonRadius * (0.25 + (i % 3) * 0.12);
+      ctx.beginPath();
+      ctx.arc(mx, my, moonRadius * (0.08 + (i % 2) * 0.03), 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
   function step(ts) {
     if (!last) last = ts;
     const dt = Math.min(33, ts - last) * 0.001;
@@ -200,9 +287,10 @@ import {
     ctx.translate(viewOffX, viewOffY);
     ctx.scale(viewScale, viewScale);
 
-    ctx.fillStyle = "#0b1020";
-    ctx.fillRect(0, 0, BASE_W, BASE_H);
+    // draw themed background (earth + moon)
+    drawBackground(ctx, performance.now());
 
+    // stars
     for (const s of stars) {
       ctx.globalAlpha = 0.6;
       ctx.beginPath();
@@ -212,25 +300,52 @@ import {
     }
     ctx.globalAlpha = 1;
 
+    // station (polished)
     ctx.save();
     ctx.translate(station.x, station.y);
     ctx.rotate(station.angle);
+
+    // soft back glow for the station
+    ctx.beginPath();
+    ctx.arc(0, 0, station.r + 34, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(4,12,22,0.4)";
+    ctx.fill();
+
+    // cross structure (existing)
     ctx.fillStyle = "#dfe6f2";
     ctx.fillRect(-52, -10, 104, 20);
     ctx.fillRect(-10, -52, 20, 104);
+
+    // central module
     ctx.fillStyle = "#9aa7bd";
     ctx.fillRect(-34, -34, 68, 68);
-    ctx.fillStyle = "#e03a2f";
+
+    // docking port highlight (where the red arc sits)
+    ctx.save();
+    ctx.translate(46, 0);
     ctx.beginPath();
-    ctx.arc(46, 0, 7, 0, Math.PI * 2);
+    ctx.arc(0, 0, 14, -0.6, 0.6);
+    ctx.fillStyle = "rgba(224,58,47,0.18)";
     ctx.fill();
-    ctx.strokeStyle = "rgba(224,58,47,.5)";
+    ctx.strokeStyle = "#e03a2f";
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(46, 0, 14, -0.6, 0.6);
+    ctx.arc(0, 0, 7, 0, Math.PI * 2);
+    ctx.fillStyle = "#e03a2f";
+    ctx.fill();
     ctx.stroke();
     ctx.restore();
 
+    // inner ring to help read docking orientation
+    ctx.strokeStyle = "rgba(255,255,255,0.06)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, station.r + 18, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.restore();
+
+    // capsule
     ctx.save();
     ctx.translate(capsule.x, capsule.y);
     ctx.rotate(Math.atan2(capsule.vy, capsule.vx) || 0);
