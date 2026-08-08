@@ -154,7 +154,7 @@ a.stat:hover{ border-color:rgba(255,255,255,.3); }
 .restart-btn{
   padding:12px 22px; min-width:140px;
   border-radius:10px;
-  border:1px solid rgba(255,255,255,.35);
+  border:2px solid #3fd67a99;
   background:rgba(10,14,24,.82);
   color:#fff;
   font:700 13px "Space Mono", monospace;
