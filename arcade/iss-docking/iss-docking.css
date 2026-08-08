@@ -152,7 +152,7 @@ a.stat:hover{ border-color:rgba(255,255,255,.3); }
 .gameover-card.docked .restart-btn{ border-color:#3fd67a; }
 .gameover-card.failed .restart-btn{ border-color:#e03a2f; }
 
-.gameover-sub{ font-size:13px; color:rgba(255,255,255,.65); }
+.gameover-sub{ font-size:13px; color:rgba(255,255,255,.65); margin-bottom: 28px }
 
 /* Restart button (lives inside the game over sign) */
 .restart-btn{
