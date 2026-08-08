@@ -76,6 +76,14 @@ a.stat:hover{ border-color:rgba(255,255,255,.3); }
   display:flex; flex-direction:column; gap:8px;
   pointer-events:none;
 }
+@media (max-width: 430px){
+  .approach{
+    top:12px;
+    right:12px;
+    bottom: unset;
+    left: unset;
+  }
+}
 .approach-title{
   font-size:10px; letter-spacing:.14em;
   color:rgba(255,255,255,.4); margin-bottom:2px;
@@ -190,5 +198,5 @@ a.stat:hover{ border-color:rgba(255,255,255,.3); }
 .dpad button:active{ background:rgba(224,58,47,.35); }
 
 @media (min-width: 900px){
-  #controls{ display:none; }
+  #controls{ display:none; } 
 }
