@@ -78,6 +78,7 @@ a.stat:hover{ border-color:rgba(255,255,255,.3); }
 }
 @media (max-width: 430px){
   .approach{
+    width: 158px;
     top:12px;
     right:12px;
     bottom: unset;
