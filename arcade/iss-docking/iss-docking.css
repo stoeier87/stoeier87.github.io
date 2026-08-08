@@ -1,5 +1,3 @@
-:root{ --hud-pad: 12px; }
-
 *, *::before, *::after{ box-sizing: border-box; }
 
 html, body{
@@ -7,9 +5,10 @@ html, body{
   overflow:hidden;
   background:#070b14;
   color:#fff;
-  font-family:"Space Mono", monospace;
+  font-family:"Space Mono", ui-monospace, monospace;
   -webkit-user-select:none; user-select:none;
   -webkit-touch-callout:none;
+  -webkit-tap-highlight-color:transparent;
 }
 
 #game{
@@ -20,25 +19,118 @@ html, body{
 
 @supports not (height: 100dvh){ #game{ height:100vh; } }
 
-.hud{
-  position:fixed;
-  top:var(--hud-pad); left:var(--hud-pad); right:var(--hud-pad);
-  z-index:15;
-  display:flex; align-items:center; justify-content:space-between; gap:10px;
-  pointer-events:none;
-}
-.hud > *{
-  pointer-events:auto;
-  background:rgba(10,14,24,.55);
+@keyframes issBlink{ 0%,100%{ opacity:1 } 50%{ opacity:.25 } }
+@keyframes issFadeIn{ from{ opacity:0; transform:translateY(8px) } to{ opacity:1; transform:translateY(0) } }
+
+/* Shared pill styling for the top bar chips */
+.pill{
+  background:rgba(10,14,24,.6);
   border:1px solid rgba(255,255,255,.16);
   border-radius:10px;
-  padding:8px 10px;
+  padding:8px 12px;
   backdrop-filter:blur(4px);
   -webkit-backdrop-filter:blur(4px);
 }
-.hud a{ color:#dfe9ff; text-decoration:none; font-weight:700; }
-.hud div{ color:#eef3ff; font-size:13px; line-height:1; }
 
+/* Top bar */
+.topbar{
+  position:fixed;
+  top:12px; left:12px; right:12px;
+  z-index:15;
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  pointer-events:none;
+  flex-wrap:wrap;
+}
+.topbar-group{ display:flex; gap:8px; align-items:center; pointer-events:auto; }
+
+.link{ color:#dfe9ff; text-decoration:none; font-weight:700; font-size:13px; letter-spacing:.04em; }
+
+.badge{
+  font-weight:700; font-size:13px; letter-spacing:.04em;
+  display:flex; align-items:center; gap:8px;
+}
+.beacon{
+  width:7px; height:7px; border-radius:50%;
+  background:#e03a2f; display:inline-block;
+  animation:issBlink 1.6s ease-in-out infinite;
+}
+
+.stat{
+  font-size:12px; color:rgba(255,255,255,.6); letter-spacing:.06em;
+}
+.stat strong{ color:#fff; margin-left:6px; font-size:13px; }
+.stat strong.best-val{ color:#e03a2f; }
+
+/* Approach telemetry panel */
+.approach{
+  position:fixed; left:12px; bottom:14px;
+  z-index:15;
+  background:rgba(10,14,24,.6);
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:10px;
+  padding:11px 13px; width:176px;
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+  display:flex; flex-direction:column; gap:8px;
+  pointer-events:none;
+}
+.approach-title{
+  font-size:10px; letter-spacing:.14em;
+  color:rgba(255,255,255,.4); margin-bottom:2px;
+}
+.approach-row{ display:flex; align-items:center; gap:8px; }
+.approach-label{
+  width:44px; flex:none; font-size:10px; letter-spacing:.05em;
+  color:rgba(255,255,255,.55);
+}
+.bar{
+  flex:1; height:5px;
+  background:rgba(255,255,255,.12);
+  border-radius:3px; overflow:hidden;
+}
+.bar-fill{
+  height:100%; width:0%;
+  background:#e03a2f;
+  transition:background .15s linear;
+}
+
+/* Intro card */
+.intro{
+  position:fixed; left:50%; top:14%;
+  transform:translateX(-50%);
+  z-index:16; text-align:center;
+  background:rgba(10,14,24,.62);
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:12px;
+  padding:14px 20px;
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+  animation:issFadeIn .5s ease;
+  max-width:min(88vw, 420px);
+}
+.intro-title{
+  font-family:"Archivo Black", sans-serif;
+  font-size:15px; letter-spacing:.02em; margin-bottom:6px;
+}
+.intro-body{ font-size:11.5px; line-height:1.5; color:rgba(255,255,255,.65); }
+
+/* Restart button */
+.restart-btn{
+  position:fixed; left:50%; top:56%;
+  transform:translate(-50%, -50%);
+  z-index:20;
+  padding:12px 22px; min-width:140px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.35);
+  background:rgba(10,14,24,.82);
+  color:#fff;
+  font:700 13px "Space Mono", monospace;
+  letter-spacing:.1em; text-transform:uppercase;
+  display:none;
+  touch-action:manipulation; cursor:pointer;
+}
+
+/* Touch controls */
 .controls{
   position:fixed; bottom:18px; left:0; right:0;
   z-index:20;
@@ -48,31 +140,16 @@ html, body{
 .dpad{ pointer-events:auto; display:flex; flex-direction:column; align-items:center; gap:6px; }
 .dpad-row{ display:flex; gap:6px; }
 .dpad button{
-  width:58px; height:58px;
+  width:56px; height:56px;
   border-radius:12px;
   border:1px solid rgba(255,255,255,.25);
-  background:rgba(10,14,24,.55);
+  background:rgba(10,14,24,.6);
   color:#fff;
-  font-size:20px;
+  font-size:19px;
   touch-action:manipulation;
 }
 .dpad button:active{ background:rgba(224,58,47,.35); }
 
 @media (min-width: 900px){
-  .controls{ display:none; }
-}
-
-.restart-btn{
-  position:fixed; left:50%; top:58%;
-  transform:translate(-50%, -50%);
-  z-index:25;
-  padding:12px 18px; min-width:132px;
-  border-radius:10px;
-  border:1px solid rgba(255,255,255,.35);
-  background:rgba(10,14,24,.78);
-  color:#fff;
-  font:700 14px "Space Mono", monospace;
-  letter-spacing:.08em; text-transform:uppercase;
-  display:none;
-  touch-action:manipulation; cursor:pointer;
+  #controls{ display:none; }
 }
