@@ -13,12 +13,53 @@
     <link rel="stylesheet" href="iss-docking.css" />
   </head>
   <body>
-    <canvas id="game"></canvas>
-    <div class="hud">
-      <a href="../index.html">← Arcade</a>
-      <div>Score: <span id="score">0</span></div>
-      <div>Best: <span id="best">0</span></div>
+    <canvas id="game" aria-hidden="true"></canvas>
+
+    <!-- Top bar: back link + title badge (left), score + best (right) -->
+    <div class="topbar">
+      <div class="topbar-group">
+        <a href="../index.html" class="pill link">← Arcade</a>
+        <div class="pill badge">
+          <span class="beacon"></span>
+          ISS DOCKING
+        </div>
+      </div>
+      <div class="topbar-group">
+        <div class="pill stat">SCORE <strong id="score">60</strong></div>
+        <div class="pill stat">BEST <strong id="best" class="best-val">0</strong></div>
+      </div>
     </div>
+
+    <!-- Approach telemetry -->
+    <div class="approach" id="approach">
+      <div class="approach-title">APPROACH</div>
+      <div class="approach-row">
+        <span class="approach-label">DIST</span>
+        <div class="bar"><div class="bar-fill" id="distFill"></div></div>
+      </div>
+      <div class="approach-row">
+        <span class="approach-label">SPEED</span>
+        <div class="bar"><div class="bar-fill" id="speedFill"></div></div>
+      </div>
+      <div class="approach-row">
+        <span class="approach-label">ALIGN</span>
+        <div class="bar"><div class="bar-fill" id="angleFill"></div></div>
+      </div>
+    </div>
+
+    <!-- Intro card -->
+    <div class="intro" id="intro">
+      <div class="intro-title">MATCH &amp; DOCK</div>
+      <div class="intro-body">
+        Arrows / WASD to thrust. Line up with the red port, match the station's
+        spin, and drift in slow.
+      </div>
+    </div>
+
+    <!-- Restart -->
+    <button id="restartBtn" class="restart-btn" type="button">Restart</button>
+
+    <!-- Touch controls -->
     <div class="controls" id="controls">
       <div class="dpad">
         <button id="up" aria-label="Thrust up">▲</button>
@@ -29,6 +70,7 @@
         </div>
       </div>
     </div>
+
     <script type="module" src="iss-docking.js"></script>
   </body>
 </html>
