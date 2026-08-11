@@ -51,13 +51,17 @@ import {
   let keys = { up: false, down: false, left: false, right: false };
   let bgCanvas = null;
 
-  // Touch thrust zones: keyboard always drives at full strength (kbKeys),
-  // while touch-held directions ramp in over ~180ms (touchStart timestamps).
-  // `keys` (above) stays the OR of both sources, used for the exhaust flame.
-  const kbKeys = { up: false, down: false, left: false, right: false };
-  const touchStart = { up: 0, down: 0, left: 0, right: 0 };
-  const TOUCH_RAMP_MS = 180;
-  const activeTouches = new Map(); // touch.identifier -> { dir, glow }
+  // Touch control: a floating virtual stick. The touch-down point becomes the
+  // origin, and dragging away from it gives a full 360 degree thrust vector whose
+  // magnitude scales with the drag distance, so the capsule can be feathered in
+  // instead of only ever thrusting at full power along an axis.
+  const TOUCH_RAMP_MS = 180; // thrust eases in over this long, so contact isn't a jolt
+  const DEAD_PX = 12; // below this the touch is a tap, not a drag
+  const fullPx = () => Math.min(90, Math.min(W, H) * 0.22);
+  const touchVec = { x: 0, y: 0 }; // -1..1 per axis, already scaled by magnitude
+  const touchOrigin = { x: 0, y: 0 };
+  let touchStartTs = 0;
+  let activeTouchId = null;
   const isTouchDevice =
     matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
 
@@ -320,6 +324,8 @@ import {
     gameOver = false;
     scoreSubmitted = false;
     keys = { up: false, down: false, left: false, right: false };
+    touchVec.x = 0;
+    touchVec.y = 0;
     capsule.x = 120;
     capsule.y = 120;
     capsule.vx = 0;
@@ -364,26 +370,24 @@ import {
     introEl.style.transform = "translateX(-50%) translateY(-10px)";
   }
 
-  // Keyboard + d-pad: instant full-strength thrust (unchanged behavior).
   function press(dir) {
-    kbKeys[dir] = true;
     keys[dir] = true;
     hideIntro();
   }
   function release(dir) {
-    kbKeys[dir] = false;
-    if (!touchStart[dir]) keys[dir] = false;
+    keys[dir] = false;
   }
 
-  // Invisible touch zones: thrust ramps in via touchStart timestamps (see step()).
-  function pressTouchDir(dir) {
-    if (!touchStart[dir]) touchStart[dir] = performance.now();
-    keys[dir] = true;
-    hideIntro();
-  }
-  function releaseTouchDir(dir) {
-    touchStart[dir] = 0;
-    if (!kbKeys[dir]) keys[dir] = false;
+  // Combined thrust direction, for rendering the exhaust plume only — the physics
+  // in step() applies the keyboard and touch terms separately.
+  function thrustVector() {
+    let x = touchVec.x,
+      y = touchVec.y;
+    if (keys.left) x -= 1;
+    if (keys.right) x += 1;
+    if (keys.up) y -= 1;
+    if (keys.down) y += 1;
+    return { x, y };
   }
 
   function roundRectPath(c, x, y, w, h, r) {
@@ -410,17 +414,17 @@ import {
     if (!gameOver) {
       station.angle += station.av * dt;
       const thrust = set.thrust;
-      // Keyboard thrust is always full strength (unchanged from before);
-      // touch thrust ramps in over TOUCH_RAMP_MS so it doesn't snap on contact.
-      const thrustFactor = (dir) => {
-        if (kbKeys[dir]) return 1;
-        if (!touchStart[dir]) return 0;
-        return Math.min(1, (performance.now() - touchStart[dir]) / TOUCH_RAMP_MS);
-      };
-      if (keys.up) capsule.vy -= thrust * thrustFactor("up") * dt;
-      if (keys.down) capsule.vy += thrust * thrustFactor("down") * dt;
-      if (keys.left) capsule.vx -= thrust * thrustFactor("left") * dt;
-      if (keys.right) capsule.vx += thrust * thrustFactor("right") * dt;
+      // Keyboard / d-pad: full strength per axis, exactly as before.
+      if (keys.up) capsule.vy -= thrust * dt;
+      if (keys.down) capsule.vy += thrust * dt;
+      if (keys.left) capsule.vx -= thrust * dt;
+      if (keys.right) capsule.vx += thrust * dt;
+      // Touch stick: analog, added as its own term so the keyboard math above
+      // keeps its original (deliberately stronger) diagonal behaviour.
+      if (touchVec.x || touchVec.y) {
+        capsule.vx += thrust * touchVec.x * dt;
+        capsule.vy += thrust * touchVec.y * dt;
+      }
       capsule.vx *= Math.pow(0.96, dt * 60);
       capsule.vy *= Math.pow(0.96, dt * 60);
       capsule.x += capsule.vx * dt;
@@ -635,9 +639,27 @@ import {
     c.restore();
   }
 
-  function drawCapsule(c, cap, k) {
+  function drawCapsule(c, cap, tv) {
     c.save();
     c.translate(cap.x, cap.y);
+
+    // RCS plume: fires opposite the thrust vector (to push right, jet left), so it
+    // reads as thrusters rather than as a tail-pipe chasing the velocity vector.
+    const tmag = Math.min(1, Math.hypot(tv.x, tv.y));
+    if (tmag > 0.001) {
+      c.save();
+      c.rotate(Math.atan2(tv.y, tv.x));
+      const len = 10 + 14 * tmag;
+      c.fillStyle = `rgba(224,58,47,${0.45 + 0.55 * tmag})`;
+      c.beginPath();
+      c.moveTo(-12, -4 * tmag - 1.5);
+      c.lineTo(-12, 4 * tmag + 1.5);
+      c.lineTo(-12 - len - Math.random() * 7 * tmag, 0);
+      c.closePath();
+      c.fill();
+      c.restore();
+    }
+
     const heading = Math.atan2(cap.vy, cap.vx) || 0;
     c.rotate(heading);
     c.fillStyle = "#123a5e";
@@ -665,15 +687,6 @@ import {
     c.lineWidth = 1;
     roundRectPath(c, -14, -9, 22, 18, 6);
     c.stroke();
-    if (k.up || k.down || k.left || k.right) {
-      c.fillStyle = "#e03a2f";
-      c.beginPath();
-      c.moveTo(-14, -4);
-      c.lineTo(-14, 4);
-      c.lineTo(-24 - Math.random() * 7, 0);
-      c.closePath();
-      c.fill();
-    }
     c.restore();
   }
 
@@ -699,7 +712,7 @@ import {
     ctx.globalAlpha = 1;
 
     drawISS(ctx, station, t);
-    drawCapsule(ctx, capsule, keys);
+    drawCapsule(ctx, capsule, thrustVector());
 
     ctx.strokeStyle = "rgba(255,255,255,.08)";
     ctx.setLineDash([6, 8]);
@@ -747,78 +760,101 @@ import {
   bindBtn("left", "left");
   bindBtn("right", "right");
 
-  // Touch zones: invisible N/S/E/W directional areas split along viewport diagonals.
-  // Only activate on touch-capable devices.
+  // Floating virtual stick: touch anywhere to set the origin, drag to aim + throttle.
   if (isTouchDevice) {
     document.documentElement.classList.add("touch-zones");
     const touchZonesEl = document.getElementById("touchZones");
     if (touchZonesEl) {
-      const resolveDir = (x, y) => {
-        const cx = W / 2,
-          cy = H / 2;
-        const nx = (x - cx) / (W / 2),
-          ny = (y - cy) / (H / 2);
-        return Math.abs(nx) > Math.abs(ny)
-          ? nx > 0
-            ? "right"
-            : "left"
-          : ny > 0
-            ? "down"
-            : "up";
+      let originEl = null;
+      let knobEl = null;
+
+      const showCue = (ox, oy) => {
+        originEl = document.createElement("div");
+        originEl.className = "touch-origin";
+        originEl.style.left = ox + "px";
+        originEl.style.top = oy + "px";
+        touchZonesEl.appendChild(originEl);
+
+        knobEl = document.createElement("div");
+        knobEl.className = "touch-knob";
+        knobEl.style.left = ox + "px";
+        knobEl.style.top = oy + "px";
+        touchZonesEl.appendChild(knobEl);
+
+        requestAnimationFrame(() => {
+          if (originEl) originEl.classList.add("on");
+          if (knobEl) knobEl.classList.add("on");
+        });
       };
 
-      const createGlow = (x, y) => {
-        const glow = document.createElement("div");
-        glow.className = "touch-glow";
-        glow.style.left = x + "px";
-        glow.style.top = y + "px";
-        touchZonesEl.appendChild(glow);
-        setTimeout(() => glow.classList.add("on"), 0);
-        return glow;
+      const hideCue = () => {
+        const fadeOut = (el) => {
+          if (!el) return;
+          el.classList.remove("on");
+          el.addEventListener("transitionend", () => el.remove(), { once: true });
+        };
+        fadeOut(originEl);
+        fadeOut(knobEl);
+        originEl = null;
+        knobEl = null;
       };
 
-      const fadeOutGlow = (glow) => {
-        glow.classList.remove("on");
-        glow.addEventListener(
-          "transitionend",
-          () => glow.remove(),
-          { once: true }
-        );
+      const updateVec = (x, y) => {
+        const dx = x - touchOrigin.x,
+          dy = y - touchOrigin.y;
+        const d = Math.hypot(dx, dy);
+        const FP = fullPx();
+        const rawMag = d < DEAD_PX ? 0 : Math.min(1, (d - DEAD_PX) / (FP - DEAD_PX));
+        const ramp = touchStartTs
+          ? Math.min(1, (performance.now() - touchStartTs) / TOUCH_RAMP_MS)
+          : 1;
+        const mag = rawMag * ramp;
+        touchVec.x = d > 0.001 ? (dx / d) * mag : 0;
+        touchVec.y = d > 0.001 ? (dy / d) * mag : 0;
+
+        if (knobEl) {
+          const clamp = Math.min(d, FP);
+          const kx = d > 0.001 ? touchOrigin.x + (dx / d) * clamp : touchOrigin.x;
+          const ky = d > 0.001 ? touchOrigin.y + (dy / d) * clamp : touchOrigin.y;
+          knobEl.style.left = kx + "px";
+          knobEl.style.top = ky + "px";
+        }
       };
 
       touchZonesEl.addEventListener(
         "touchstart",
         (e) => {
           e.preventDefault();
-          for (const t of e.touches) {
-            if (activeTouches.has(t.identifier)) continue;
-            const dir = resolveDir(t.clientX, t.clientY);
-            const glow = createGlow(t.clientX, t.clientY);
-            activeTouches.set(t.identifier, { dir, glow });
-            pressTouchDir(dir);
-          }
+          if (activeTouchId !== null) return;
+          const t = e.changedTouches[0];
+          activeTouchId = t.identifier;
+          touchOrigin.x = t.clientX;
+          touchOrigin.y = t.clientY;
+          touchStartTs = performance.now();
+          touchVec.x = 0;
+          touchVec.y = 0;
+          showCue(t.clientX, t.clientY);
+          hideIntro();
         },
         { passive: false }
       );
 
       touchZonesEl.addEventListener("touchmove", (e) => {
-        for (const t of e.touches) {
-          const entry = activeTouches.get(t.identifier);
-          if (entry) {
-            entry.glow.style.left = t.clientX + "px";
-            entry.glow.style.top = t.clientY + "px";
+        for (const t of e.changedTouches) {
+          if (t.identifier === activeTouchId) {
+            updateVec(t.clientX, t.clientY);
           }
         }
       });
 
       const handleTouchEnd = (e) => {
         for (const t of e.changedTouches) {
-          const entry = activeTouches.get(t.identifier);
-          if (entry) {
-            const { dir, glow } = entry;
-            activeTouches.delete(t.identifier);
-            fadeOutGlow(glow);
-            releaseTouchDir(dir);
+          if (t.identifier === activeTouchId) {
+            activeTouchId = null;
+            touchVec.x = 0;
+            touchVec.y = 0;
+            touchStartTs = 0;
+            hideCue();
           }
         }
       };

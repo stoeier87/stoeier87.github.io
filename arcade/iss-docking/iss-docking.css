@@ -181,24 +181,29 @@ a.stat:hover{ border-color:rgba(255,255,255,.3); }
 }
 html.touch-zones #touchZones{ display:block; }
 
-/* Soft radial cue at the touch point — a background hint, not a control */
-.touch-glow{
+/* Virtual-stick cues: faint ring at the touch-down origin + small dot at the finger */
+.touch-origin, .touch-knob{
   position:absolute;
-  width:210px; height:210px;
-  margin:0; padding:0;
-  border-radius:50%;
   pointer-events:none;
   transform:translate(-50%, -50%);
-  background:radial-gradient(
-    circle closest-side,
-    rgba(255,255,255,.16) 0%,
-    rgba(180,220,255,.09) 42%,
-    rgba(180,220,255,0) 72%
-  );
+  border-radius:50%;
   opacity:0;
   transition:opacity .18s ease;
 }
-.touch-glow.on{ opacity:1; }
+.touch-origin{
+  width:64px; height:64px;
+  border:1.5px solid rgba(255,255,255,.18);
+}
+.touch-knob{
+  width:34px; height:34px;
+  background:radial-gradient(
+    circle closest-side,
+    rgba(255,255,255,.28) 0%,
+    rgba(180,220,255,.12) 50%,
+    rgba(180,220,255,0) 100%
+  );
+}
+.touch-origin.on, .touch-knob.on{ opacity:1; }
 
 /* The zones replace the d-pad where they're active */
 html.touch-zones .controls{ display:none; }
