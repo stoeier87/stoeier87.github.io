@@ -366,7 +366,7 @@ a { color: inherit; text-decoration: none; }
   }
   .filters { gap: 0.4rem; flex-wrap: nowrap; }
   .bubble { font-size: 0.8rem; max-width: 70vw; }
-  .alien svg { width: 64px; height: 60px; }
+  .alien svg { width: 54px; height: 50px; }
   .host { bottom: calc(3.9rem + env(safe-area-inset-bottom, 0px)); }
   .no-id { bottom: 10.5rem; font-size: 0.5rem; letter-spacing: 0.2em; }
   .star .label { font-size: 0.55rem; }
