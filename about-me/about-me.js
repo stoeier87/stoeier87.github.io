@@ -69,6 +69,30 @@
     }
   }
 
+  /* ---- Shared: draw cactus silhouette ---- */
+  function drawCactus(x, baseY, width, height, color) {
+    ctx.fillStyle = color;
+    var trunkW = width * 0.32;
+    var armW = trunkW * 0.8;
+    var armH = height * 0.42;
+    var armY = baseY - height * 0.62;
+    ctx.beginPath();
+    ctx.roundRect(x - trunkW / 2, baseY - height, trunkW, height, trunkW * 0.5);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.roundRect(x - width * 0.5, armY - armH, armW, armH, armW * 0.5);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.roundRect(x - width * 0.5, armY - armH * 0.55, width * 0.5 - trunkW / 2 + armW, armW, armW * 0.5);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.roundRect(x + width * 0.5 - armW, armY - armH * 1.45, armW, armH * 1.15, armW * 0.5);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.roundRect(x + trunkW / 2 - armW, armY - armH * 0.55, width * 0.5 - trunkW / 2 + armW, armW, armW * 0.5);
+    ctx.fill();
+  }
+
   /* ---- Shared: draw rock shape ---- */
   function drawRock(x, baseY, width, height, color) {
     ctx.fillStyle = color;
@@ -108,21 +132,20 @@
   forest.auroraRibbons = [];
 
   forest.initAurora = function () {
-    var mobile = isMobile();
-    var count = mobile ? 2 : 4;
-    forest.auroraRibbons = [];
-    for (var i = 0; i < count; i++) {
-      forest.auroraRibbons.push({
-        yBase: 0.12 + i * 0.08,
-        amplitude: 20 + Math.random() * 30,
-        waveLen: 0.003 + Math.random() * 0.002,
-        speed: 0.0002 + Math.random() * 0.0003,
-        phase: Math.random() * Math.PI * 2,
-        width: 40 + Math.random() * 50,
-        hue: i % 3,
-      });
-    }
+    var ribbons = [
+      { color: "74,222,128", amp: h * 0.06, base: h * 0.14, sp1: 0.05, sp2: -0.033, sp3: 0.021, alpha: 0.32, thick: h * 0.18, ph: 0 },
+      { color: "45,212,191", amp: h * 0.045, base: h * 0.23, sp1: 0.037, sp2: 0.024, sp3: -0.017, alpha: 0.24, thick: h * 0.13, ph: 2.1 },
+      { color: "167,139,250", amp: h * 0.07, base: h * 0.07, sp1: 0.029, sp2: -0.019, sp3: 0.013, alpha: 0.22, thick: h * 0.15, ph: 4.6 },
+    ];
+    forest.auroraRibbons = isMobile() ? ribbons.slice(0, 2) : ribbons;
   };
+
+  /* Three stacked sine octaves — the ribbon's vertical offset at x */
+  function auroraWave(rb, x, ts) {
+    return Math.sin(x * 0.0035 + ts * rb.sp1 + rb.ph) * rb.amp
+      + Math.sin(x * 0.0021 + ts * rb.sp2 + rb.ph * 1.3) * rb.amp * 0.6
+      + Math.sin(x * 0.0012 + ts * rb.sp3 + rb.ph * 0.7) * rb.amp * 0.35;
+  }
 
   forest.initStars = function () {
     var count = isMobile() ? 40 : 80;
@@ -181,33 +204,30 @@
   };
 
   forest.drawAurora = function (t) {
-    var colors = [
-      [74, 222, 128],
-      [45, 212, 191],
-      [167, 139, 250],
-    ];
+    var ts = t * 0.001;
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
+    ctx.filter = "blur(10px)";
     for (var ri = 0; ri < forest.auroraRibbons.length; ri++) {
       var rb = forest.auroraRibbons[ri];
-      var col = colors[rb.hue];
-      var baseY = rb.yBase * h;
-      for (var x = 0; x < w; x += 3) {
-        var wave = Math.sin(x * rb.waveLen + t * rb.speed + rb.phase);
-        var wave2 = Math.sin(x * rb.waveLen * 1.7 + t * rb.speed * 0.6 + rb.phase * 2.3);
-        var y = baseY + wave * rb.amplitude + wave2 * rb.amplitude * 0.4;
-        var intensityWave = (Math.sin(x * 0.004 + t * 0.0004 + rb.phase) + 1) * 0.5;
-        var alpha = 0.04 + intensityWave * 0.08;
-        var grad = ctx.createLinearGradient(x, y - rb.width, x, y + rb.width);
-        grad.addColorStop(0, "rgba(" + col[0] + "," + col[1] + "," + col[2] + ",0)");
-        grad.addColorStop(0.3, "rgba(" + col[0] + "," + col[1] + "," + col[2] + "," + (alpha * 0.6).toFixed(4) + ")");
-        grad.addColorStop(0.5, "rgba(" + col[0] + "," + col[1] + "," + col[2] + "," + alpha.toFixed(4) + ")");
-        grad.addColorStop(0.7, "rgba(" + col[0] + "," + col[1] + "," + col[2] + "," + (alpha * 0.6).toFixed(4) + ")");
-        grad.addColorStop(1, "rgba(" + col[0] + "," + col[1] + "," + col[2] + ",0)");
-        ctx.fillStyle = grad;
-        ctx.fillRect(x, y - rb.width, 4, rb.width * 2);
+      var flicker = 0.85 + Math.sin(ts * 0.11 + rb.ph) * 0.15;
+      ctx.beginPath();
+      for (var x = 0; x <= w; x += 16) {
+        var y = rb.base + auroraWave(rb, x, ts);
+        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
+      for (var x2 = w; x2 >= 0; x2 -= 16) {
+        ctx.lineTo(x2, rb.base + rb.thick + auroraWave(rb, x2, ts));
+      }
+      ctx.closePath();
+      var grad = ctx.createLinearGradient(0, rb.base, 0, rb.base + rb.thick);
+      grad.addColorStop(0, "rgba(" + rb.color + "," + (rb.alpha * flicker).toFixed(3) + ")");
+      grad.addColorStop(0.5, "rgba(" + rb.color + "," + (rb.alpha * 1.2 * flicker).toFixed(3) + ")");
+      grad.addColorStop(1, "rgba(" + rb.color + ",0)");
+      ctx.fillStyle = grad;
+      ctx.fill();
     }
+    ctx.filter = "none";
     ctx.restore();
   };
 
@@ -326,7 +346,7 @@
   sunny.clouds = [];
   sunny.birds = [];
   sunny.rocks = [];
-  sunny.trees = [];
+  sunny.cacti = [];
   sunny.smoke = [];
 
   sunny.resize = function () {
@@ -338,7 +358,7 @@
       return { x: Math.random() * w, y: h * (0.14 + Math.random() * 0.12), speed: 8 + Math.random() * 6, phase: Math.random() * Math.PI * 2 };
     });
     sunny.rocks = makeRow(mobile ? 3 : 5, h * 0.08, h * 0.16, 160);
-    sunny.trees = makeRow(mobile ? 4 : 7, h * 0.22, h * 0.36, 150);
+    sunny.cacti = makeRow(mobile ? 4 : 7, h * 0.22, h * 0.36, 150);
     sunny.smoke = Array.from({ length: 14 }, function (_, i) {
       return { t: i / 14, r: 6 + Math.random() * 10, ox: (Math.random() - 0.5) * 14 };
     });
@@ -439,11 +459,13 @@
 
     /* Smoke */
     if (descend > 0.55) {
+      var groundY = h * 0.86;
       var smokeAlpha = Math.min(1, (descend - 0.55) / 0.3);
       for (var si = 0; si < sunny.smoke.length; si++) {
         var sm = sunny.smoke[si];
         var life = (tSec * 0.6 + sm.t) % 1;
         var sy = rocketY + 70 * scale + life * 60;
+        if (sy > groundY) continue;
         var sx = rocketX + sm.ox * (1 + life * 2);
         ctx.beginPath();
         ctx.arc(sx, sy, sm.r * (0.5 + life), 0, Math.PI * 2);
@@ -452,8 +474,8 @@
       }
     }
 
-    /* Trees */
-    drawRow(sunny.trees, h * 0.82, drawPine, "#3a5f3a", 0.1, scrollY);
+    /* Cacti */
+    drawRow(sunny.cacti, h * 0.82, drawCactus, "#5a8f4f", 0.1, scrollY);
 
     /* Ground */
     ctx.fillStyle = "#4f7a4a";
