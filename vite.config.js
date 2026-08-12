@@ -32,6 +32,29 @@ function directoryIndexRedirect() {
   };
 }
 
+// Vite's `base` rewrites bundled asset URLs, but hand-authored absolute-path
+// attributes like <a href="/arcade/"> stay as-is and would 404 under a subpath
+// deploy (staging at /staging/). Prepend the base to href/src/action values
+// that start with a single `/`, skipping protocol-relative URLs and paths
+// already under the base.
+function rewriteAbsolutePathsPlugin(base) {
+  const normalized = base.endsWith("/") ? base.slice(0, -1) : base;
+  if (!normalized) return { name: "rewrite-absolute-paths-noop" };
+  return {
+    name: "rewrite-absolute-paths",
+    apply: "build",
+    transformIndexHtml(html) {
+      return html.replace(
+        /(\s(?:href|src|action)=")(\/[^\/"][^"]*)"/g,
+        (match, prefix, path) => {
+          if (path.startsWith(normalized + "/") || path === normalized) return match;
+          return `${prefix}${normalized}${path}"`;
+        }
+      );
+    },
+  };
+}
+
 function getInputs() {
   const files = globSync("**/*.html", { ignore: "node_modules/**" });
   const inputs = {};
@@ -51,9 +74,15 @@ function gtagPlugin() {
   };
 }
 
+const DEPLOY_BASE = process.env.DEPLOY_BASE ?? "/";
+
 export default defineConfig({
-  plugins: [tailwindcss(), directoryIndexRedirect()
-    // , gtagPlugin()
+  base: DEPLOY_BASE,
+  plugins: [
+    tailwindcss(),
+    directoryIndexRedirect(),
+    rewriteAbsolutePathsPlugin(DEPLOY_BASE),
+    // gtagPlugin(),
   ],
   server: {
     port: 3000,

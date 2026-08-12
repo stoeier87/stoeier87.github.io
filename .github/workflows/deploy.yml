@@ -2,29 +2,56 @@ name: Deploy GitHub Pages
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "staging"]
   pull_request:
     branches: ["main"]
   workflow_dispatch:
+    inputs:
+      target:
+        description: "Which environment to deploy to"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - prod
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
-concurrency:
-  group: pages
-  cancel-in-progress: false
-
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      target: ${{ steps.pick.outputs.target }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Pick deploy target
+        id: pick
+        env:
+          REF: ${{ github.ref }}
+          EVENT: ${{ github.event_name }}
+          INPUT_TARGET: ${{ inputs.target }}
+        run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            target="$INPUT_TARGET"
+          elif [ "$REF" = "refs/heads/main" ]; then
+            target="prod"
+          elif [ "$REF" = "refs/heads/staging" ]; then
+            target="staging"
+          else
+            target="none"
+          fi
+          echo "target=$target" >> "$GITHUB_OUTPUT"
+          echo "Deploy target: $target"
+
       - name: Validate Firebase config variables
         env:
+          TARGET: ${{ steps.pick.outputs.target }}
           FIREBASE_API_KEY: ${{ vars.FIREBASE_API_KEY }}
           FIREBASE_AUTH_DOMAIN: ${{ vars.FIREBASE_AUTH_DOMAIN }}
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
@@ -32,9 +59,21 @@ jobs:
           FIREBASE_MESSAGING_SENDER_ID: ${{ vars.FIREBASE_MESSAGING_SENDER_ID }}
           FIREBASE_APP_ID: ${{ vars.FIREBASE_APP_ID }}
           FIREBASE_DATABASE_URL: ${{ vars.FIREBASE_DATABASE_URL }}
+          STAGING_FIREBASE_API_KEY: ${{ vars.STAGING_FIREBASE_API_KEY }}
+          STAGING_FIREBASE_AUTH_DOMAIN: ${{ vars.STAGING_FIREBASE_AUTH_DOMAIN }}
+          STAGING_FIREBASE_PROJECT_ID: ${{ vars.STAGING_FIREBASE_PROJECT_ID }}
+          STAGING_FIREBASE_STORAGE_BUCKET: ${{ vars.STAGING_FIREBASE_STORAGE_BUCKET }}
+          STAGING_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.STAGING_FIREBASE_MESSAGING_SENDER_ID }}
+          STAGING_FIREBASE_APP_ID: ${{ vars.STAGING_FIREBASE_APP_ID }}
+          STAGING_FIREBASE_DATABASE_URL: ${{ vars.STAGING_FIREBASE_DATABASE_URL }}
         run: |
+          if [ "$TARGET" = "staging" ]; then
+            prefix="STAGING_"
+          else
+            prefix=""
+          fi
           missing=0
-          for key in \
+          for suffix in \
             FIREBASE_API_KEY \
             FIREBASE_AUTH_DOMAIN \
             FIREBASE_PROJECT_ID \
@@ -42,6 +81,7 @@ jobs:
             FIREBASE_MESSAGING_SENDER_ID \
             FIREBASE_APP_ID \
             FIREBASE_DATABASE_URL; do
+            key="${prefix}${suffix}"
             if [ -z "${!key}" ]; then
               echo "Missing required repository variable: $key"
               missing=1
@@ -53,6 +93,7 @@ jobs:
 
       - name: Generate Firebase config
         env:
+          TARGET: ${{ steps.pick.outputs.target }}
           FIREBASE_API_KEY: ${{ vars.FIREBASE_API_KEY }}
           FIREBASE_AUTH_DOMAIN: ${{ vars.FIREBASE_AUTH_DOMAIN }}
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
@@ -61,17 +102,44 @@ jobs:
           FIREBASE_APP_ID: ${{ vars.FIREBASE_APP_ID }}
           FIREBASE_MEASUREMENT_ID: ${{ vars.FIREBASE_MEASUREMENT_ID }}
           FIREBASE_DATABASE_URL: ${{ vars.FIREBASE_DATABASE_URL }}
+          STAGING_FIREBASE_API_KEY: ${{ vars.STAGING_FIREBASE_API_KEY }}
+          STAGING_FIREBASE_AUTH_DOMAIN: ${{ vars.STAGING_FIREBASE_AUTH_DOMAIN }}
+          STAGING_FIREBASE_PROJECT_ID: ${{ vars.STAGING_FIREBASE_PROJECT_ID }}
+          STAGING_FIREBASE_STORAGE_BUCKET: ${{ vars.STAGING_FIREBASE_STORAGE_BUCKET }}
+          STAGING_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.STAGING_FIREBASE_MESSAGING_SENDER_ID }}
+          STAGING_FIREBASE_APP_ID: ${{ vars.STAGING_FIREBASE_APP_ID }}
+          STAGING_FIREBASE_MEASUREMENT_ID: ${{ vars.STAGING_FIREBASE_MEASUREMENT_ID }}
+          STAGING_FIREBASE_DATABASE_URL: ${{ vars.STAGING_FIREBASE_DATABASE_URL }}
         run: |
+          if [ "$TARGET" = "staging" ]; then
+            api_key="$STAGING_FIREBASE_API_KEY"
+            auth_domain="$STAGING_FIREBASE_AUTH_DOMAIN"
+            project_id="$STAGING_FIREBASE_PROJECT_ID"
+            storage_bucket="$STAGING_FIREBASE_STORAGE_BUCKET"
+            messaging_sender_id="$STAGING_FIREBASE_MESSAGING_SENDER_ID"
+            app_id="$STAGING_FIREBASE_APP_ID"
+            measurement_id="$STAGING_FIREBASE_MEASUREMENT_ID"
+            database_url="$STAGING_FIREBASE_DATABASE_URL"
+          else
+            api_key="$FIREBASE_API_KEY"
+            auth_domain="$FIREBASE_AUTH_DOMAIN"
+            project_id="$FIREBASE_PROJECT_ID"
+            storage_bucket="$FIREBASE_STORAGE_BUCKET"
+            messaging_sender_id="$FIREBASE_MESSAGING_SENDER_ID"
+            app_id="$FIREBASE_APP_ID"
+            measurement_id="$FIREBASE_MEASUREMENT_ID"
+            database_url="$FIREBASE_DATABASE_URL"
+          fi
           cat <<EOF > arcade/shared/firebase-config.js
           export const ARCADE_FIREBASE_CONFIG = {
-            apiKey: "${FIREBASE_API_KEY}",
-            authDomain: "${FIREBASE_AUTH_DOMAIN}",
-            projectId: "${FIREBASE_PROJECT_ID}",
-            storageBucket: "${FIREBASE_STORAGE_BUCKET}",
-            messagingSenderId: "${FIREBASE_MESSAGING_SENDER_ID}",
-            appId: "${FIREBASE_APP_ID}",
-            measurementId: "${FIREBASE_MEASUREMENT_ID}",
-            databaseURL: "${FIREBASE_DATABASE_URL}",
+            apiKey: "${api_key}",
+            authDomain: "${auth_domain}",
+            projectId: "${project_id}",
+            storageBucket: "${storage_bucket}",
+            messagingSenderId: "${messaging_sender_id}",
+            appId: "${app_id}",
+            measurementId: "${measurement_id}",
+            databaseURL: "${database_url}",
           };
           EOF
 
@@ -84,18 +152,31 @@ jobs:
         run: npm install
 
       - name: Build with Vite
+        env:
+          DEPLOY_BASE: ${{ steps.pick.outputs.target == 'staging' && '/staging/' || '/' }}
         run: npm run build
 
-      - name: Upload Pages artifact
-        if: github.ref == 'refs/heads/main'
+      - name: Upload Pages artifact (prod)
+        if: steps.pick.outputs.target == 'prod'
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist/
 
-  deploy:
-    if: github.ref == 'refs/heads/main'
+      - name: Upload dist artifact (staging)
+        if: steps.pick.outputs.target == 'staging'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-staging
+          path: dist/
+          retention-days: 7
+
+  deploy-prod:
+    if: needs.build.outputs.target == 'prod'
     needs: build
     runs-on: ubuntu-latest
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -106,3 +187,42 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Summary
+        run: |
+          echo "### Production deploy" >> "$GITHUB_STEP_SUMMARY"
+          echo "URL: ${{ steps.deployment.outputs.page_url }}" >> "$GITHUB_STEP_SUMMARY"
+
+  deploy-staging:
+    if: needs.build.outputs.target == 'staging'
+    needs: build
+    runs-on: ubuntu-latest
+    concurrency:
+      group: staging
+      cancel-in-progress: true
+    environment:
+      name: staging
+      url: https://stoeier87.github.io/staging/
+    steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-staging
+          path: dist
+
+      - name: Publish to stoeier87/staging
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          personal_token: ${{ secrets.STAGING_DEPLOY_TOKEN }}
+          external_repository: stoeier87/staging
+          publish_branch: main
+          publish_dir: ./dist
+          user_name: "github-actions[bot]"
+          user_email: "41898282+github-actions[bot]@users.noreply.github.com"
+          commit_message: "Deploy ${{ github.sha }} to staging"
+
+      - name: Summary
+        run: |
+          echo "### Staging deploy" >> "$GITHUB_STEP_SUMMARY"
+          echo "URL: https://stoeier87.github.io/staging/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Commit: ${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
