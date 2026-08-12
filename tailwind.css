@@ -94,3 +94,156 @@
 @keyframes hintBounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 @keyframes hintPulse { 0%,100% { opacity: .4; } 50% { opacity: 1; } }
 
+
+/* ─── Arcade shared UI components ──────────────────────── */
+
+@keyframes arcadeBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .25; }
+}
+
+@keyframes arcadePopIn {
+  from { opacity: 0; transform: translateY(10px) scale(.94); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.pill {
+  background: rgba(10, 14, 24, .6);
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 10px;
+  padding: 8px 12px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.topbar {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  pointer-events: none;
+  flex-wrap: wrap;
+}
+
+.topbar-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  pointer-events: auto;
+  @apply w-full md:w-auto;
+  @apply justify-between md:justify-center;
+}
+
+.link {
+  color: #dfe9ff;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: .04em;
+}
+
+.badge {
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: .04em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.beacon {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--game-accent, #9de3e6);
+  display: inline-block;
+  animation: arcadeBlink 1.6s ease-in-out infinite;
+}
+
+.stat {
+  font-size: 12px;
+  color: rgba(255, 255, 255, .6);
+  letter-spacing: .06em;
+}
+
+.stat strong {
+  color: var(--color-ink);
+  margin-left: 6px;
+  font-size: 13px;
+}
+
+.stat strong.best-val {
+  color: var(--game-accent, #9de3e6);
+}
+
+a.stat {
+  text-decoration: none;
+  cursor: pointer;
+}
+
+a.stat:hover {
+  border-color: rgba(255, 255, 255, .3);
+}
+
+.gameover {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(4, 7, 14, .62);
+}
+
+.gameover.show {
+  display: flex;
+}
+
+.gameover-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  min-width: 280px;
+  max-width: min(88vw, 360px);
+  padding: 26px 30px;
+  border-radius: 14px;
+  border: 1.5px solid var(--game-accent-dim, rgba(157, 227, 230, .6));
+  background: rgba(10, 14, 24, .9);
+  text-align: center;
+  animation: arcadePopIn .3s ease;
+}
+
+.gameover-title {
+  font-family: "Archivo Black", sans-serif;
+  font-size: 26px;
+  letter-spacing: .02em;
+  color: var(--game-accent, #9de3e6);
+}
+
+.gameover-sub {
+  @apply hidden md:visible text-small text-white/65 mb-3.5;
+}
+
+.restart-btn {
+  padding: 12px 22px;
+  min-width: 140px;
+  border-radius: 10px;
+  border: 2px solid var(--game-accent-dim, rgba(157, 227, 230, .6));
+  background: rgba(10, 14, 24, .82);
+  color: var(--color-ink);
+  font: 700 13px "Space Mono", monospace;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+.restart-btn:hover {
+  border-color: rgba(255, 255, 255, .55);
+}

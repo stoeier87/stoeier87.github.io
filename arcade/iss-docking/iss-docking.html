@@ -6,8 +6,8 @@
     <title>ISS Docking</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="iss-docking.css" />
     <link rel="stylesheet" href="/tailwind.css" />
+    <link rel="stylesheet" href="iss-docking.css" />
   </head>
   <body>
     <canvas id="game" aria-hidden="true"></canvas>
@@ -49,7 +49,7 @@
       <div class="intro" id="intro">
         <div class="intro-title">MATCH &amp; DOCK</div>
         <div class="intro-body">
-          Arrows / WASD to thrust. Line up with the red port, match the station's
+          Line up with the red port, match the station's
           spin, and drift in slow.
         </div>
       </div>
@@ -59,14 +59,11 @@
     <div id="gameOver" class="gameover">
       <div class="gameover-card">
         <div id="gameOverTitle" class="gameover-title">DOCKED</div>
-        <div class="gameover-sub">Press R to restart</div>
+        <div class="gameover-sub">Press R or Tap</div>
         <button id="gameOverRestart" class="restart-btn" type="button">Restart</button>
       </div>
     </div>
 
-    <!-- Restart button now lives inside the #gameOver sign above
-    <button id="restartBtn" class="restart-btn" type="button">Restart</button>
-    -->
 
     <!-- Invisible N/S/E/W thrust zones (touch devices only; glows injected here) -->
     <div id="touchZones" aria-hidden="true"></div>

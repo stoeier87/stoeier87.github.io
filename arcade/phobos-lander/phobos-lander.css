@@ -26,27 +26,15 @@ body {
 }
 
 @supports not (height: 100dvh) {
-  #game {
-    height: 100vh;
-  }
+  #game { height: 100vh; }
 }
 
-@keyframes phobosBlink {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: .25; }
+:root {
+  --game-accent: #e07a5f;
+  --game-accent-dim: rgba(224, 122, 95, .6);
 }
 
-/* Shared pill styling */
-.pill {
-  background: rgba(10, 14, 24, .6);
-  border: 1px solid rgba(255, 255, 255, .16);
-  border-radius: 10px;
-  padding: 8px 12px;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
-
-/* Top bar */
+/* Phobos uses a full-height column topbar for mobile layout */
 .topbar {
   position: relative;
   z-index: 25;
@@ -59,66 +47,6 @@ body {
   height: 100%;
   @apply px-3 pt-3 pb-28;
   @apply justify-between lg:justify-start;
-}
-
-.topbar-group {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  pointer-events: auto;
-  @apply w-full md:w-auto;
-  @apply justify-between md:justify-center;
-}
-
-.link {
-  color: #dfe9ff;
-  text-decoration: none;
-  font-weight: 700;
-  font-size: 13px;
-  letter-spacing: .04em;
-}
-
-.badge {
-  font-weight: 700;
-  font-size: 13px;
-  letter-spacing: .04em;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.beacon {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #e07a5f;
-  display: inline-block;
-  animation: phobosBlink 1.6s ease-in-out infinite;
-}
-
-.stat {
-  font-size: 12px;
-  color: rgba(255, 255, 255, .6);
-  letter-spacing: .06em;
-}
-
-.stat strong {
-  color: var(--color-ink);
-  margin-left: 6px;
-  font-size: 13px;
-}
-
-.stat strong.best-val {
-  color: #e07a5f;
-}
-
-a.stat {
-  text-decoration: none;
-  cursor: pointer;
-}
-
-a.stat:hover {
-  border-color: rgba(255, 255, 255, .3);
 }
 
 /* Intro card */
@@ -167,41 +95,7 @@ a.stat:hover {
   color: rgba(255, 255, 255, .65);
 }
 
-/* Game over sign */
-@keyframes phobosPopIn {
-  from { opacity: 0; transform: translateY(10px) scale(.94); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.gameover {
-  position: fixed;
-  inset: 0;
-  z-index: 20;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  background: rgba(4, 7, 14, .62);
-}
-
-.gameover.show {
-  display: flex;
-}
-
-.gameover-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  min-width: 280px;
-  max-width: min(88vw, 360px);
-  padding: 26px 30px;
-  border-radius: 14px;
-  border: 1.5px solid rgba(224, 122, 95, .6);
-  background: rgba(10, 14, 24, .9);
-  text-align: center;
-  animation: phobosPopIn .3s ease;
-}
-
+/* Game-state overrides for the gameover card */
 .gameover-card.landed {
   border-color: rgba(63, 214, 122, .6);
 }
@@ -210,61 +104,13 @@ a.stat:hover {
   border-color: rgba(224, 58, 47, .6);
 }
 
-.gameover-title {
-  font-family: "Archivo Black", sans-serif;
-  font-size: 26px;
-  letter-spacing: .02em;
-  color: #e07a5f;
-}
+.gameover-card.landed .gameover-title { color: #3fd67a; }
+.gameover-card.crashed .gameover-title { color: #e03a2f; }
 
-.gameover-card.landed .gameover-title {
-  color: #3fd67a;
-}
-
-.gameover-card.crashed .gameover-title {
-  color: #e03a2f;
-}
-
-.gameover-card.landed .restart-btn {
-  border-color: #3fd67a;
-}
-
-.gameover-card.landed .restart-btn:hover {
-  border-color: rgba(255, 255, 255, .55);
-}
-
-.gameover-card.crashed .restart-btn {
-  border-color: #e03a2f;
-}
-
-.gameover-card.crashed .restart-btn:hover {
-  border-color: rgba(255, 255, 255, .55);
-}
-
-.gameover-sub {
-  font-size: 13px;
-  color: rgba(255, 255, 255, .65);
-  margin-bottom: 14px;
-}
-
-/* Restart button */
-.restart-btn {
-  padding: 12px 22px;
-  min-width: 140px;
-  border-radius: 10px;
-  border: 2px solid rgba(224, 122, 95, .6);
-  background: rgba(10, 14, 24, .82);
-  color: var(--color-ink);
-  font: 700 13px "Space Mono", monospace;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  touch-action: manipulation;
-  cursor: pointer;
-}
-
-.restart-btn:hover {
-  border-color: rgba(255, 255, 255, .55);
-}
+.gameover-card.landed .restart-btn { border-color: #3fd67a; }
+.gameover-card.landed .restart-btn:hover { border-color: rgba(255, 255, 255, .55); }
+.gameover-card.crashed .restart-btn { border-color: #e03a2f; }
+.gameover-card.crashed .restart-btn:hover { border-color: rgba(255, 255, 255, .55); }
 
 /* Touch controls */
 .controls {
@@ -278,7 +124,6 @@ a.stat:hover {
   @apply px-3 md:px-0 md:pt-3;
   align-items: center;
   gap: 8px;
-  
   pointer-events: none;
 }
 
@@ -314,7 +159,5 @@ a.stat:hover {
 }
 
 @media (min-width: 900px) {
-  .controls {
-    display: none;
-  }
+  .controls { display: none; }
 }

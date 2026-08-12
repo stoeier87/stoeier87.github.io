@@ -6,8 +6,8 @@
     <title>Nebula Trail</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="nebula-trail.css" />
     <link rel="stylesheet" href="/tailwind.css" />
+    <link rel="stylesheet" href="nebula-trail.css" />
   </head>
   <body>
     <canvas id="game" aria-hidden="true"></canvas>
@@ -32,7 +32,7 @@
       <div class="intro" id="intro">
         <div class="intro-title">NEBULA TRAIL</div>
         <div class="intro-body">
-          Arrows / WASD or the d-pad to steer. Eat pellets to grow — the
+          Eat pellets to grow — the
           bigger the trail, the bigger the pellets. Grab the rare comet
           before it fades!
         </div>
@@ -43,7 +43,7 @@
     <div id="gameOver" class="gameover">
       <div class="gameover-card">
         <div id="gameOverTitle" class="gameover-title">TRAIL FADED</div>
-        <div class="gameover-sub">Press R to restart</div>
+        <div class="gameover-sub">Press R or Tap</div>
         <button id="gameOverRestart" class="restart-btn" type="button">Restart</button>
       </div>
     </div>
@@ -64,6 +64,11 @@
       </div>
     </div>
 
+    <!-- Hidden numpad input: focus it on mobile, then 1=left 9=right -->
+    <input id="numInput" type="number" inputmode="numeric"
+      style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+             width:1px;height:1px;opacity:0;pointer-events:none;border:none;"
+      autocomplete="off" aria-hidden="true" tabindex="-1">
     <script type="module" src="nebula-trail.js"></script>
   </body>
 </html>
