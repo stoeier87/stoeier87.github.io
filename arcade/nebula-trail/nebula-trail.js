@@ -23,6 +23,15 @@ import { PLANETS, drawPlanet } from "../shared/starfield.js";
   const RARE_CHANCE = 1 / 6;
   const RARE_TTL = 5.5;
 
+  // Background color palettes — interpolated based on score
+  const NEBULA_PALETTES = [
+    [[120, 90, 220], [80, 200, 210], [157, 227, 230]],   // 0: violet/cyan
+    [[160, 60, 200], [120, 80, 255], [180, 100, 255]],   // 1: deep violet
+    [[220, 60, 160], [140, 60, 220], [200, 80, 220]],    // 2: magenta
+    [[220, 120, 40], [180, 80, 180], [255, 180, 80]],    // 3: golden amber
+  ];
+  const SCORE_PER_THEME = 200;
+
   let W = 0,
     H = 0,
     dpr = 1,
@@ -42,8 +51,9 @@ import { PLANETS, drawPlanet } from "../shared/starfield.js";
   let dir = { x: 1, y: 0 };
   let nextDir = { x: 1, y: 0 };
   let food = { x: 0, y: 0 };
-  let rareDrop = null; // { x, y, spawnedAt, ttl }
-  let popups = []; // floating "+N" text: { x, y, text, t }
+  let rareDrop = null;
+  let popups = [];
+  let ripples = []; // { x, y, t, dur, color }
   let moveT = 0;
 
   fetchGlobalBest("nebula-trail").then((b) => {
@@ -63,23 +73,6 @@ import { PLANETS, drawPlanet } from "../shared/starfield.js";
     sky.addColorStop(1, "#050814");
     o.fillStyle = sky;
     o.fillRect(0, 0, W, H);
-
-    // Drifting nebula clouds — soft radial blobs in cyan/violet
-    const clouds = [
-      { x: W * 0.18, y: H * 0.24, r: Math.max(W, H) * 0.42, c: "120,90,220" },
-      { x: W * 0.82, y: H * 0.7, r: Math.max(W, H) * 0.38, c: "80,200,210" },
-      { x: W * 0.55, y: H * 0.08, r: Math.max(W, H) * 0.3, c: "157,227,230" },
-    ];
-    for (const cl of clouds) {
-      const g = o.createRadialGradient(cl.x, cl.y, 0, cl.x, cl.y, cl.r);
-      g.addColorStop(0, `rgba(${cl.c},0.16)`);
-      g.addColorStop(0.5, `rgba(${cl.c},0.05)`);
-      g.addColorStop(1, `rgba(${cl.c},0)`);
-      o.fillStyle = g;
-      o.beginPath();
-      o.arc(cl.x, cl.y, cl.r, 0, Math.PI * 2);
-      o.fill();
-    }
 
     // Distant planet — Uranus glimpsed in a corner (matches the arcade card)
     const uranus = PLANETS.find((p) => p.name === "Uranus");
@@ -103,6 +96,34 @@ import { PLANETS, drawPlanet } from "../shared/starfield.js";
     o.globalAlpha = 1;
 
     bgCanvas = c;
+  }
+
+  // Draw nebula clouds live so their colors can shift with score
+  function drawNebula() {
+    const phase = score / SCORE_PER_THEME;
+    const idx = Math.floor(phase) % NEBULA_PALETTES.length;
+    const next = (idx + 1) % NEBULA_PALETTES.length;
+    const t = phase - Math.floor(phase);
+    const colors = NEBULA_PALETTES[idx].map((c, i) =>
+      c.map((v, j) => Math.round(v + (NEBULA_PALETTES[next][i][j] - v) * t))
+    );
+    const cloudDefs = [
+      { x: W * 0.18, y: H * 0.24, r: Math.max(W, H) * 0.42 },
+      { x: W * 0.82, y: H * 0.7,  r: Math.max(W, H) * 0.38 },
+      { x: W * 0.55, y: H * 0.08, r: Math.max(W, H) * 0.3  },
+    ];
+    for (let i = 0; i < cloudDefs.length; i++) {
+      const cl = cloudDefs[i];
+      const cStr = colors[i].join(",");
+      const g = ctx.createRadialGradient(cl.x, cl.y, 0, cl.x, cl.y, cl.r);
+      g.addColorStop(0, `rgba(${cStr},0.18)`);
+      g.addColorStop(0.5, `rgba(${cStr},0.06)`);
+      g.addColorStop(1, `rgba(${cStr},0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(cl.x, cl.y, cl.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
   function resize() {
@@ -168,6 +189,11 @@ import { PLANETS, drawPlanet } from "../shared/starfield.js";
     popups.push({ x, y, text, t: 0 });
   }
 
+  function addRipple(x, y, color) {
+    ripples.push({ x, y, t: 0,     dur: 0.7, color });
+    ripples.push({ x, y, t: -0.18, dur: 0.7, color }); // second ring, delayed
+  }
+
   function reset() {
     score = 0;
     gameOver = false;
@@ -178,6 +204,7 @@ import { PLANETS, drawPlanet } from "../shared/starfield.js";
     moveT = 0;
     rareDrop = null;
     popups = [];
+    ripples = [];
     waiting = true;
     scoreEl.textContent = "0";
     randomFood();
@@ -222,15 +249,12 @@ import { PLANETS, drawPlanet } from "../shared/starfield.js";
     if (waiting) {
       waiting = false;
       hideIntro();
-      // Accept any direction that isn't directly opposite to starting dir
       if (!(newDir.x === -dir.x && newDir.y === -dir.y)) {
         nextDir = newDir;
       }
       return;
     }
-    // Ignore if already moving in that direction
     if (newDir.x === dir.x && newDir.y === dir.y) return;
-    // Ignore if opposite direction (180 turn)
     if (newDir.x === -dir.x && newDir.y === -dir.y) return;
     nextDir = newDir;
   }
@@ -247,6 +271,9 @@ import { PLANETS, drawPlanet } from "../shared/starfield.js";
 
     for (const p of popups) p.t += dt;
     popups = popups.filter((p) => p.t < 0.6);
+
+    for (const r of ripples) r.t += dt;
+    ripples = ripples.filter((r) => r.t < r.dur);
 
     if (rareDrop && (performance.now() - rareDrop.spawnedAt) / 1000 > rareDrop.ttl) {
       rareDrop = null;
@@ -290,6 +317,7 @@ import { PLANETS, drawPlanet } from "../shared/starfield.js";
             score += value;
             scoreEl.textContent = score;
             addPopup(food.x, food.y, `+${value}`);
+            addRipple(food.x, food.y, "157,227,230");
             randomFood();
             maybeSpawnRareDrop();
             grew = true;
@@ -300,6 +328,7 @@ import { PLANETS, drawPlanet } from "../shared/starfield.js";
             score += value;
             scoreEl.textContent = score;
             addPopup(rareDrop.x, rareDrop.y, `+${value}`);
+            addRipple(rareDrop.x, rareDrop.y, "255,209,102");
             rareDrop = null;
             grew = true;
           }
@@ -318,6 +347,7 @@ import { PLANETS, drawPlanet } from "../shared/starfield.js";
     ctx.clearRect(0, 0, W, H);
 
     if (bgCanvas) ctx.drawImage(bgCanvas, 0, 0, W, H);
+    drawNebula();
 
     ctx.save();
     ctx.translate(viewOffX, viewOffY);
@@ -335,6 +365,17 @@ import { PLANETS, drawPlanet } from "../shared/starfield.js";
     ctx.strokeStyle = "rgba(157,227,230,.25)";
     ctx.lineWidth = 2;
     ctx.strokeRect(12, 12, BASE_W - 24, BASE_H - 24);
+
+    // eat ripples
+    for (const r of ripples) {
+      if (r.t <= 0) continue;
+      const p = r.t / r.dur;
+      ctx.strokeStyle = `rgba(${r.color},${(1 - p) * 0.65})`;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, p * 80, 0, Math.PI * 2);
+      ctx.stroke();
+    }
 
     // food
     ctx.fillStyle = "#9de3e6";
@@ -392,13 +433,28 @@ import { PLANETS, drawPlanet } from "../shared/starfield.js";
     ctx.restore();
   }
 
+  const rotateLeft  = () => { const d = dir; setDirection({ x:  d.y, y: -d.x }); };
+  const rotateRight = () => { const d = dir; setDirection({ x: -d.y, y:  d.x }); };
+
   addEventListener("keydown", (e) => {
-    if (e.code === "ArrowUp" || e.code === "KeyW") setDirection({ x: 0, y: -1 });
-    if (e.code === "ArrowDown" || e.code === "KeyS") setDirection({ x: 0, y: 1 });
-    if (e.code === "ArrowRight" || e.code === "KeyD") setDirection({ x: 1, y: 0 });
-    if (e.code === "ArrowLeft" || e.code === "KeyA") setDirection({ x: -1, y: 0 });
+    if (e.code === "ArrowUp"    || e.code === "KeyW") setDirection({ x: 0, y: -1 });
+    if (e.code === "ArrowDown"  || e.code === "KeyS") setDirection({ x: 0, y:  1 });
+    if (e.code === "ArrowRight" || e.code === "KeyD") setDirection({ x: 1, y:  0 });
+    if (e.code === "ArrowLeft"  || e.code === "KeyA") setDirection({ x: -1, y: 0 });
+    if (e.code === "KeyQ") rotateLeft();
+    if (e.code === "KeyE") rotateRight();
     if (gameOver && e.code === "KeyR") reset();
   });
+
+  const numInput = document.getElementById("numInput");
+  if (numInput) {
+    numInput.addEventListener("input", () => {
+      const v = numInput.value;
+      numInput.value = "";
+      if (v === "1") rotateLeft();
+      if (v === "9") rotateRight();
+    });
+  }
 
   const bindBtn = (id, newDir) => {
     const el = document.getElementById(id);
@@ -414,19 +470,15 @@ import { PLANETS, drawPlanet } from "../shared/starfield.js";
   bindBtn("left", { x: -1, y: 0 });
   bindBtn("right", { x: 1, y: 0 });
 
-  const bindRotateBtn = (id, clockwise) => {
+  const bindRotateBtn = (id, fn) => {
     const el = document.getElementById(id);
     if (!el) return;
-    const press = (e) => {
-      e.preventDefault();
-      const d = dir;
-      setDirection(clockwise ? { x: -d.y, y: d.x } : { x: d.y, y: -d.x });
-    };
+    const press = (e) => { e.preventDefault(); fn(); };
     el.addEventListener("touchstart", press, { passive: false });
     el.addEventListener("mousedown", press);
   };
-  bindRotateBtn("rotateLeft", false);
-  bindRotateBtn("rotateRight", true);
+  bindRotateBtn("rotateLeft",  rotateLeft);
+  bindRotateBtn("rotateRight", rotateRight);
 
   gameOverRestart.addEventListener("click", reset);
   gameOverRestart.addEventListener(
