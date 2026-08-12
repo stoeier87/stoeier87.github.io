@@ -45,85 +45,103 @@ import {
   });
 
   function buildBackground() {
+    // Build at real screen size so it maps 1:1 regardless of virtual world aspect ratio.
     const c = document.createElement("canvas");
-    c.width = BASE_W;
-    c.height = BASE_H;
+    c.width = W;
+    c.height = H;
     const o = c.getContext("2d");
 
     // deep space gradient
-    const g = o.createLinearGradient(0, 0, 0, BASE_H);
-    g.addColorStop(0, "#050610");
-    g.addColorStop(0.6, "#080c1a");
-    g.addColorStop(1, "#020308");
+    const g = o.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "#020309");
+    g.addColorStop(1, "#080c18");
     o.fillStyle = g;
-    o.fillRect(0, 0, BASE_W, BASE_H);
+    o.fillRect(0, 0, W, H);
 
-    const lightAngle = -0.78;
+    // Mars — large dramatic planet anchored to upper-right.
+    // mY < 0 so only the lower arc of Mars shows, giving a "looming planet" feel.
+    const lightAngle = -0.85; // sun upper-left
+    const mR = Math.max(W, H) * 0.52;
+    const mX = W * 0.78;
+    const mY = -mR * 0.44;
 
-    // Mars — large reddish planet peeking in from the bottom
-    const mR = BASE_W * 0.55;
-    const mX = BASE_W * 0.5;
-    const mY = BASE_H + mR * 0.35;
-
-    // atmosphere rim
-    const rim = o.createRadialGradient(mX, mY, mR * 0.97, mX, mY, mR * 1.08);
-    rim.addColorStop(0, "rgba(200,100,60,0)");
-    rim.addColorStop(0.6, "rgba(200,100,60,0.28)");
-    rim.addColorStop(1, "rgba(200,100,60,0)");
-    o.fillStyle = rim;
+    // atmosphere glow
+    const atm = o.createRadialGradient(mX, mY, mR * 0.94, mX, mY, mR * 1.14);
+    atm.addColorStop(0, "rgba(200,90,40,0)");
+    atm.addColorStop(0.55, "rgba(210,100,45,0.26)");
+    atm.addColorStop(1, "rgba(200,80,30,0)");
+    o.fillStyle = atm;
     o.beginPath();
-    o.arc(mX, mY, mR * 1.08, 0, Math.PI * 2);
+    o.arc(mX, mY, mR * 1.14, 0, Math.PI * 2);
     o.fill();
 
-    // Mars body with sunlit highlight
+    // planet body — radial gradient lit from upper-left
     const body = o.createRadialGradient(
-      mX + Math.cos(lightAngle) * mR * 0.45,
-      mY + Math.sin(lightAngle) * mR * 0.45,
-      mR * 0.05,
+      mX + Math.cos(lightAngle) * mR * 0.42,
+      mY + Math.sin(lightAngle) * mR * 0.42,
+      mR * 0.04,
       mX, mY, mR * 1.02,
     );
-    body.addColorStop(0, "#e8a880");
-    body.addColorStop(0.25, "#c96040");
-    body.addColorStop(0.6, "#8a3020");
-    body.addColorStop(1, "#3c1008");
+    body.addColorStop(0,    "#f0b078");
+    body.addColorStop(0.18, "#d06438");
+    body.addColorStop(0.52, "#8c2e18");
+    body.addColorStop(1,    "#2a0a04");
     o.fillStyle = body;
     o.beginPath();
     o.arc(mX, mY, mR, 0, Math.PI * 2);
     o.fill();
 
-    // Mars surface detail — region blobs
+    // surface features, clipped to sphere
     o.save();
     o.beginPath();
     o.arc(mX, mY, mR, 0, Math.PI * 2);
     o.clip();
-    const blob = (pts) => {
-      const p = pts.map(([nx, ny]) => [mX + nx * mR, mY + ny * mR]);
-      const n = p.length;
+
+    // Valles Marineris — long curved rift valley
+    o.strokeStyle = "rgba(55,12,4,0.42)";
+    o.lineWidth = mR * 0.045;
+    o.lineCap = "round";
+    o.beginPath();
+    o.moveTo(mX - mR * 0.58, mY + mR * 0.12);
+    o.bezierCurveTo(
+      mX - mR * 0.22, mY + mR * 0.02,
+      mX + mR * 0.18, mY + mR * 0.14,
+      mX + mR * 0.52, mY + mR * 0.06,
+    );
+    o.stroke();
+
+    // Tharsis volcanic plateau — subtle dark patch
+    const tharsis = o.createRadialGradient(mX - mR * 0.32, mY - mR * 0.22, 0, mX - mR * 0.32, mY - mR * 0.22, mR * 0.35);
+    tharsis.addColorStop(0, "rgba(50,12,4,0.38)");
+    tharsis.addColorStop(1, "rgba(50,12,4,0)");
+    o.fillStyle = tharsis;
+    o.beginPath();
+    o.arc(mX - mR * 0.32, mY - mR * 0.22, mR * 0.35, 0, Math.PI * 2);
+    o.fill();
+
+    // three Tharsis volcanoes as small dark circles
+    for (const v of [{ x: -0.36, y: -0.28 }, { x: -0.2, y: -0.44 }, { x: -0.5, y: -0.16 }]) {
       o.beginPath();
-      o.moveTo((p[0][0] + p[n - 1][0]) / 2, (p[0][1] + p[n - 1][1]) / 2);
-      for (let i = 0; i < n; i++) {
-        const a = p[i], b = p[(i + 1) % n];
-        o.quadraticCurveTo(a[0], a[1], (a[0] + b[0]) / 2, (a[1] + b[1]) / 2);
-      }
-      o.closePath();
-    };
-    // darker volcanic plains
-    o.fillStyle = "rgba(90,30,10,0.5)";
-    blob([[-0.3, -0.7], [0.1, -0.75], [0.35, -0.5], [0.2, -0.2], [-0.1, -0.3], [-0.4, -0.5]]);
-    o.fill();
-    blob([[0.4, -0.3], [0.7, -0.4], [0.75, -0.1], [0.55, 0.15], [0.3, 0.05]]);
-    o.fill();
-    blob([[-0.55, -0.2], [-0.65, 0.1], [-0.45, 0.3], [-0.2, 0.1], [-0.3, -0.15]]);
-    o.fill();
+      o.arc(mX + v.x * mR, mY + v.y * mR, mR * 0.048, 0, Math.PI * 2);
+      o.fillStyle = "rgba(44,10,3,0.55)";
+      o.fill();
+      // caldera rim highlight
+      o.beginPath();
+      o.arc(mX + v.x * mR - mR * 0.01, mY + v.y * mR - mR * 0.01, mR * 0.028, 0, Math.PI * 2);
+      o.fillStyle = "rgba(180,90,50,0.22)";
+      o.fill();
+    }
+
     // polar ice cap (north)
-    const capN = o.createLinearGradient(mX, mY - mR, mX, mY - mR * 0.65);
-    capN.addColorStop(0, "rgba(240,220,200,0.9)");
-    capN.addColorStop(1, "rgba(240,220,200,0)");
-    o.fillStyle = capN;
-    o.fillRect(mX - mR, mY - mR, mR * 2, mR * 0.38);
+    const cap = o.createLinearGradient(mX, mY - mR, mX, mY - mR * 0.74);
+    cap.addColorStop(0, "rgba(238,218,205,0.92)");
+    cap.addColorStop(1, "rgba(238,218,205,0)");
+    o.fillStyle = cap;
+    o.fillRect(mX - mR, mY - mR, mR * 2, mR * 0.3);
+
     o.restore();
 
-    // terminator shadow
+    // terminator (day/night boundary)
     o.save();
     o.globalCompositeOperation = "multiply";
     const shadow = o.createLinearGradient(
@@ -132,22 +150,25 @@ import {
       mX + Math.cos(lightAngle) * mR,
       mY + Math.sin(lightAngle) * mR,
     );
-    shadow.addColorStop(0, "rgba(255,255,255,1)");
-    shadow.addColorStop(0.45, "rgba(120,100,90,0.4)");
-    shadow.addColorStop(0.75, "rgba(0,0,0,0.5)");
-    shadow.addColorStop(1, "rgba(0,0,0,0.7)");
+    shadow.addColorStop(0,    "rgba(255,255,255,1)");
+    shadow.addColorStop(0.40, "rgba(140,110,90,0.42)");
+    shadow.addColorStop(0.70, "rgba(0,0,0,0.50)");
+    shadow.addColorStop(1,    "rgba(0,0,0,0.72)");
     o.fillStyle = shadow;
     o.beginPath();
     o.arc(mX, mY, mR, 0, Math.PI * 2);
     o.fill();
     o.restore();
 
-    // stars
-    for (let i = 0; i < 120; i++) {
-      o.globalAlpha = 0.55 + Math.random() * 0.45;
+    // stars — skip inside Mars
+    for (let i = 0; i < 220; i++) {
+      const sx = Math.random() * W;
+      const sy = Math.random() * H;
+      if (Math.hypot(sx - mX, sy - mY) < mR * 1.02) continue;
+      o.globalAlpha = 0.35 + Math.random() * 0.65;
       o.beginPath();
       o.fillStyle = "#fff";
-      o.arc(Math.random() * BASE_W, Math.random() * BASE_H * 0.72, Math.random() * 1.2 + 0.2, 0, Math.PI * 2);
+      o.arc(sx, sy, Math.random() * 1.4 + 0.15, 0, Math.PI * 2);
       o.fill();
     }
     o.globalAlpha = 1;
@@ -310,31 +331,17 @@ import {
   function draw() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = "#050610";
-    ctx.fillRect(0, 0, W, H);
 
-    // draw background fullscreen (cover scale)
-    if (bgCanvas) {
-      const scale = Math.max(W / bgCanvas.width, H / bgCanvas.height);
-      const dstW = Math.round(bgCanvas.width * scale);
-      const dstH = Math.round(bgCanvas.height * scale);
-      const dx = Math.round((W - dstW) * 0.5);
-      const dy = Math.round((H - dstH) * 0.5);
-      ctx.save();
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = "high";
-      ctx.drawImage(bgCanvas, 0, 0, bgCanvas.width, bgCanvas.height, dx, dy, dstW, dstH);
-      ctx.restore();
-    }
+    // background is built at screen CSS-pixel size — draw it 1:1
+    if (bgCanvas) ctx.drawImage(bgCanvas, 0, 0, W, H);
 
     ctx.save();
     ctx.translate(viewOffX, viewOffY);
     ctx.scale(viewScale, viewScale);
 
-    // drifting star particles
+    // drifting parallax stars (subtle — bg already has static ones)
     for (const s of stars) {
-      ctx.globalAlpha = 0.4;
+      ctx.globalAlpha = 0.22;
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
       ctx.fillStyle = "#fff";
@@ -342,21 +349,45 @@ import {
     }
     ctx.globalAlpha = 1;
 
+    // Phobos surface — dark regolith strip at bottom
+    const grd = ctx.createLinearGradient(0, BASE_H - 80, 0, BASE_H);
+    grd.addColorStop(0, "#1c1410");
+    grd.addColorStop(1, "#141008");
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, BASE_H - 60, BASE_W, 60);
+    // uneven surface ridge
+    ctx.fillStyle = "#201814";
+    ctx.beginPath();
+    ctx.moveTo(0, BASE_H - 60);
+    for (let x = 0; x <= BASE_W; x += 40) {
+      ctx.lineTo(x, BASE_H - 60 + (Math.sin(x * 0.031) * 8 + Math.cos(x * 0.071) * 5));
+    }
+    ctx.lineTo(BASE_W, BASE_H);
+    ctx.lineTo(0, BASE_H);
+    ctx.closePath();
+    ctx.fill();
+
     // landing pads
     for (const p of pads) {
+      // support legs
+      ctx.strokeStyle = "rgba(180,160,140,0.7)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(p.x + 8, p.y + p.h);
+      ctx.lineTo(p.x + 4, p.y + p.h + 14);
+      ctx.moveTo(p.x + p.w - 8, p.y + p.h);
+      ctx.lineTo(p.x + p.w - 4, p.y + p.h + 14);
+      ctx.stroke();
+      // pad surface
       ctx.fillStyle = "#e07a5f";
       ctx.fillRect(p.x, p.y, p.w, p.h);
-      ctx.strokeStyle = "#fff";
+      ctx.strokeStyle = "rgba(255,255,255,0.8)";
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(p.x + 6, p.y + 5);
       ctx.lineTo(p.x + p.w - 6, p.y + 5);
       ctx.stroke();
     }
-
-    // ground line
-    ctx.fillStyle = "#5a2010";
-    ctx.fillRect(0, BASE_H - 30, BASE_W, 30);
 
     // lander
     ctx.save();
