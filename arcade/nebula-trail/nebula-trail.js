@@ -414,6 +414,20 @@ import { PLANETS, drawPlanet } from "../shared/starfield.js";
   bindBtn("left", { x: -1, y: 0 });
   bindBtn("right", { x: 1, y: 0 });
 
+  const bindRotateBtn = (id, clockwise) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const press = (e) => {
+      e.preventDefault();
+      const d = dir;
+      setDirection(clockwise ? { x: -d.y, y: d.x } : { x: d.y, y: -d.x });
+    };
+    el.addEventListener("touchstart", press, { passive: false });
+    el.addEventListener("mousedown", press);
+  };
+  bindRotateBtn("rotateLeft", false);
+  bindRotateBtn("rotateRight", true);
+
   gameOverRestart.addEventListener("click", reset);
   gameOverRestart.addEventListener(
     "touchstart",
