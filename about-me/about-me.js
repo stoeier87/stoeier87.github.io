@@ -329,6 +329,7 @@
   saturn.craters = [];
   saturn.horizon = 0;
   saturn.planet = { cx: 0, cy: 0, r: 0 };
+  saturn.eggBase = 0;
   saturn.eggs = null;
 
   /* Ring bands — mid-radius and thickness as multiples of the planet radius */
@@ -376,6 +377,9 @@
   saturn.resize = function () {
     var mobile = isMobile();
     saturn.horizon = h * (mobile ? 0.88 : 0.84);
+    /* Easter eggs size off this rather than min(w,h), which collapses on a
+       narrow screen and shrank them to near-invisible on mobile */
+    saturn.eggBase = Math.max(Math.min(w, h), 560);
 
     saturn.planet = {
       cx: w * (mobile ? 0.78 : 0.82),
@@ -410,9 +414,11 @@
     /* Built once — a resize must not reset the schedule */
     if (!saturn.eggs) {
       saturn.eggs = {
-        ufo: makeEgg(15000, 42000, 80000, 17000),
-        satellite: makeEgg(27000, 38000, 72000, 12000),
-        alien: makeEgg(39000, 48000, 95000, 7000),
+        /* Staggered so the three cycles interleave: something surfaces roughly
+           every 5-10s, and the first one lands within a couple of seconds */
+        ufo: makeEgg(2000, 12000, 22000, 10000),
+        satellite: makeEgg(4000, 10000, 20000, 7000),
+        alien: makeEgg(6000, 9000, 18000, 4500),
       };
     }
   };
@@ -499,7 +505,7 @@
     var ey = Math.sin(ang) * rr * RING_SQUASH;
     var x = pl.cx + ex * Math.cos(RING_TILT) - ey * Math.sin(RING_TILT);
     var y = pl.cy + ex * Math.sin(RING_TILT) + ey * Math.cos(RING_TILT);
-    var s = Math.min(w, h) * 0.009;
+    var s = saturn.eggBase * 0.011;
 
     ctx.save();
     ctx.globalAlpha = 0.9 * eggFade(p, 0.12);
@@ -519,10 +525,10 @@
     var span = w + 160;
     var x = dir > 0 ? -80 + p * span : w + 80 - p * span;
     var y = h * 0.11 + Math.sin(p * Math.PI * 3) * h * 0.018;
-    var s = Math.min(w, h) * 0.0022;
+    var s = saturn.eggBase * 0.0022;
 
     ctx.save();
-    ctx.globalAlpha = 0.45 * eggFade(p, 0.1);
+    ctx.globalAlpha = 0.55 * eggFade(p, 0.1);
     ctx.translate(x, y);
     ctx.scale(s * dir, s);
     ctx.fillStyle = "rgba(120,145,185,0.95)";
@@ -542,7 +548,7 @@
   saturn.drawAlien = function (p, seed) {
     var x = w * (seed > 0.5 ? 0.11 : 0.89);
     var base = surfaceY(x);
-    var s = Math.min(w, h) * 0.024;
+    var s = saturn.eggBase * 0.024;
 
     /* rise, hold, duck */
     var r = p < 0.18 ? p / 0.18 : (p > 0.82 ? (1 - p) / 0.18 : 1);
@@ -712,7 +718,9 @@
     var padY = surfaceY(landX);
     var scale = Math.min(w, h) * 0.00052;
     var restY = padY - 62 * scale;
-    var landY = h * 0.05 + descend * (restY - h * 0.05)
+    /* Starts clear of the top of the frame and flies in as you scroll */
+    var startY = -h * 0.25;
+    var landY = startY + descend * (restY - startY)
       + Math.sin(tSec * 1.4) * 3 * (1 - descend * 0.6);
 
     saturn.drawLander(landX, landY, tSec, descend);
