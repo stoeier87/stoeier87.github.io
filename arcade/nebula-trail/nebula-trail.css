@@ -261,11 +261,36 @@ a.stat:hover {
   @apply rounded-xl border border-white/25;
   @apply text-white text-xl font-bold;
   @apply touch-manipulation cursor-pointer;
-  touch-action: manipulation;
 }
 
-.dpad button:active, .dpad button:focus {
+.dpad button#rotateLeft, .dpad button#rotateRight {
+  @apply w-20 h-20;
+  @apply rounded-full border border-white/25;
+  @apply text-white text-xl font-bold;
+  @apply touch-manipulation cursor-pointer;
+}
+
+.dpad button:active, .dpad button:focus, .dpad button:focus-within {
   @apply border-2 border-white/75;
+}
+
+.rotate-row {
+  width: 288px; /* 3×80px buttons + 2×24px gaps — matches dpad-row width */
+  justify-content: space-between;
+}
+
+.rotate-row button {
+  border-radius: 50%;
+  font-size: 26px;
+  width: 80px;
+  height: 80px;
+  background: rgba(10, 14, 24, .6);
+}
+
+.dpad-spacer {
+  width: 80px;
+  height: 80px;
+  pointer-events: none;
 }
 
 @media (min-width: 900px) {
