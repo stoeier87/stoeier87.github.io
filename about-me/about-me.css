@@ -32,6 +32,12 @@ a { color: inherit; text-decoration: none; }
   );
 }
 
+/* header.topbar overrides the shared arcade .topbar pointer-events:none from
+   tailwind.css — without this the back arrow is not clickable */
+header.topbar {
+  pointer-events: auto;
+}
+
 .topbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 10;
   padding: 1.1rem 1.25rem;
@@ -105,14 +111,6 @@ main { position: relative; z-index: 2; }
 
 /* Hero */
 .bio-hero { margin-bottom: 3rem; }
-
-.eyebrow {
-  font-size: 0.7rem;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-  margin-bottom: 1rem;
-}
 
 .name {
   font-family: var(--display);
