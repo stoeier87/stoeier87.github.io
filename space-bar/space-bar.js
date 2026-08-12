@@ -337,7 +337,30 @@ $("recentreBtn").addEventListener("click", () => {
 /* ============================================================
    Black hole filtering
    ============================================================ */
-const OPENERS = ["Hold on.", "Watch this.", "One moment.", "Stand back."];
+/* The bartender's whole vocabulary. Nothing here counts anything. */
+const GREETINGS = [
+  "Evening. What are we drinking?",
+  "You made it. Pick a star, any star.",
+  "Bar's open. Pull up a moon.",
+];
+const FILTER_LINES = {
+  all: ["Everything we've got. Take your time.", "The whole sky. Good luck."],
+  strong: ["Good. The universe is cold.", "Say no more.", "Hope you're not flying the ship home."],
+  weird: ["Ah. A person of taste.", "These ones do things. Watch closely.", "Nothing here behaves normally."],
+  "zero-proof": ["Smart. Someone has to fly home.", "Respect. The stars look better sober anyway.", "All the theatre, none of the regret."],
+};
+
+/* Never the same line twice running, per pool */
+const lastSaid = {};
+function pick(key, lines) {
+  if (lines.length === 1) return lines[0];
+  let line;
+  do { line = lines[Math.floor(Math.random() * lines.length)]; }
+  while (line === lastSaid[key]);
+  lastSaid[key] = line;
+  return line;
+}
+
 let bhBusy = false;
 
 /* The point of the map currently under the middle of the screen. On a phone
@@ -443,12 +466,11 @@ async function applyFilter(key) {
   /* Fixed for the whole beat, so a pan mid-animation cannot move the target */
   const hub = viewportHub();
 
-  say(OPENERS[Math.floor(Math.random() * OPENERS.length)]);
+  say(pick(key, FILTER_LINES[key]));
 
   if (reduced()) {
     toHide.forEach((n) => suck(n, hub));
     toShow.forEach((n) => restore(n, hub));
-    setTimeout(() => say("Take your pick."), 400);
     return;
   }
 
@@ -461,7 +483,6 @@ async function applyFilter(key) {
     await blackholeClose();
     bhBusy = false;
     markNear();
-    say("Take your pick.");
   }, 700);
 }
 
@@ -565,7 +586,7 @@ function openBar() {
   buildStars();
   rocketAt = { x: field.w / 2, y: field.h / 2 };
   centreOn(field.w / 2, field.h / 2, false);
-  say("What are you drinking tonight?", 500);
+  say(pick("greeting", GREETINGS), 500);
   nudgeIdle();
 }
 

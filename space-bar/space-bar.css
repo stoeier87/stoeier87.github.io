@@ -173,7 +173,7 @@ a { color: inherit; text-decoration: none; }
 .host {
   position: fixed; z-index: 6;
   left: clamp(0.9rem, 3vw, 1.4rem);
-  bottom: calc(4.2rem + env(safe-area-inset-bottom, 0px));
+  bottom: calc(4.4rem + env(safe-area-inset-bottom, 0px));
   display: flex; flex-direction: column; align-items: flex-start;
   pointer-events: none;
 }
@@ -200,14 +200,14 @@ a { color: inherit; text-decoration: none; }
 
 .bubble {
   position: relative;
-  max-width: min(19rem, 62vw);
-  min-height: 2.4rem;
+  max-width: min(22rem, 68vw);
+  min-height: 2.7rem;
   background: var(--panel);
   border: 1px solid var(--edge);
   border-radius: 14px;
-  padding: 0.6rem 0.8rem;
-  font-size: 0.78rem; line-height: 1.5; color: var(--ink-body);
-  margin-bottom: 0.6rem;
+  padding: 0.72rem 0.95rem;
+  font-size: 0.87rem; line-height: 1.5; color: var(--ink-body);
+  margin-bottom: 0.7rem;
   opacity: 0; transform: translateY(6px);
   transition: opacity 0.25s ease, transform 0.25s ease;
 }
@@ -365,8 +365,8 @@ a { color: inherit; text-decoration: none; }
     letter-spacing: 0.03em;
   }
   .filters { gap: 0.4rem; flex-wrap: nowrap; }
-  .bubble { font-size: 0.74rem; max-width: 66vw; }
-  .alien svg { width: 46px; height: 43px; }
+  .bubble { font-size: 0.8rem; max-width: 70vw; }
+  .alien svg { width: 64px; height: 60px; }
   .host { bottom: calc(3.9rem + env(safe-area-inset-bottom, 0px)); }
   .no-id { bottom: 10.5rem; font-size: 0.5rem; letter-spacing: 0.2em; }
   .star .label { font-size: 0.55rem; }
