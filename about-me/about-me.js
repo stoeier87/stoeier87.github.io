@@ -348,17 +348,22 @@
   sunny.rocks = [];
   sunny.cacti = [];
   sunny.smoke = [];
+  sunny.horizon = 0;
 
   sunny.resize = function () {
     var mobile = isMobile();
+    /* Horizon sits near the bottom of the viewport so the sky→ground
+       transition never cuts across the middle of the text panel */
+    sunny.horizon = h * (mobile ? 0.93 : 0.89);
     sunny.clouds = Array.from({ length: mobile ? 3 : 5 }, function () {
       return { x: Math.random() * w, y: h * (0.08 + Math.random() * 0.2), s: 0.6 + Math.random() * 0.8, speed: 4 + Math.random() * 6 };
     });
     sunny.birds = Array.from({ length: mobile ? 0 : 3 }, function () {
       return { x: Math.random() * w, y: h * (0.14 + Math.random() * 0.12), speed: 8 + Math.random() * 6, phase: Math.random() * Math.PI * 2 };
     });
-    sunny.rocks = makeRow(mobile ? 3 : 5, h * 0.08, h * 0.16, 160);
-    sunny.cacti = makeRow(mobile ? 4 : 7, h * 0.22, h * 0.36, 150);
+    /* Shorter than before — tall cacti used to grow up through the body copy */
+    sunny.rocks = makeRow(mobile ? 3 : 5, h * 0.05, h * 0.1, 160);
+    sunny.cacti = makeRow(mobile ? 3 : 6, h * 0.1, h * 0.17, 130);
     sunny.smoke = Array.from({ length: 14 }, function (_, i) {
       return { t: i / 14, r: 6 + Math.random() * 10, ox: (Math.random() - 0.5) * 14 };
     });
@@ -369,14 +374,16 @@
     var docMax = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
     var scrollProgress = Math.min(1, scrollY / docMax);
 
-    /* Sky */
-    var sky = ctx.createLinearGradient(0, 0, 0, h);
+    /* Sky — the gradient now spans the whole sky band and only turns warm in
+       the last stretch above the horizon, so the content area sits on one tone */
+    var horizon = sunny.horizon;
+    var sky = ctx.createLinearGradient(0, 0, 0, horizon);
     sky.addColorStop(0, "#5ec2e8");
-    sky.addColorStop(0.45, "#a9dff2");
-    sky.addColorStop(0.75, "#f4e7b8");
-    sky.addColorStop(1, "#e8c887");
+    sky.addColorStop(0.55, "#8ed2ee");
+    sky.addColorStop(0.85, "#c6e4ef");
+    sky.addColorStop(1, "#eadfba");
     ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, w, h);
+    ctx.fillRect(0, 0, w, horizon + 1);
 
     /* Sun */
     var sunX = w * 0.78, sunY = h * 0.16, sunR = Math.min(w, h) * 0.07;
@@ -417,25 +424,27 @@
       ctx.stroke();
     }
 
-    /* Rocks */
-    drawRow(sunny.rocks, h * 0.66, drawRock, "#9c8264", 0.06, scrollY);
-
-    /* Cacti */
-    drawRow(sunny.cacti, h * 0.82, drawCactus, "#5a8f4f", 0.1, scrollY);
+    /* Terrain — held at low opacity so it reads as atmosphere behind the
+       text panel rather than competing with the copy */
+    ctx.save();
+    ctx.globalAlpha = 0.4;
+    drawRow(sunny.rocks, horizon - h * 0.04, drawRock, "#9c8264", 0.06, scrollY);
+    drawRow(sunny.cacti, horizon + h * 0.015, drawCactus, "#5a8f4f", 0.1, scrollY);
+    ctx.restore();
 
     /* Ground */
     ctx.fillStyle = "#4f7a4a";
-    ctx.fillRect(0, h * 0.86, w, h * 0.14);
+    ctx.fillRect(0, horizon, w, h - horizon);
     ctx.fillStyle = "#3f6a3d";
     ctx.beginPath();
-    ctx.moveTo(0, h * 0.86);
-    for (var x2 = 0; x2 <= w; x2 += 40) ctx.lineTo(x2, h * 0.86 + Math.sin(x2 * 0.01 + scrollY * 0.002) * 6);
+    ctx.moveTo(0, horizon);
+    for (var x2 = 0; x2 <= w; x2 += 40) ctx.lineTo(x2, horizon + Math.sin(x2 * 0.01 + scrollY * 0.002) * 6);
     ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
     ctx.fill();
 
     /* Rocket — drawn last so it sits above the ground and cacti */
     var tSec = t * 0.001;
-    var rocketBaseY = h * 0.86;
+    var rocketBaseY = horizon;
     var descend = scrollProgress;
     var rocketY = h * 0.06 + descend * (rocketBaseY - h * 0.06) + Math.sin(tSec * 1.4) * 3 * (1 - descend * 0.6);
     var rocketX = w * (5 / 6);
@@ -472,7 +481,7 @@
 
     /* Smoke */
     if (descend > 0.55) {
-      var groundY = h * 0.86;
+      var groundY = horizon;
       var smokeAlpha = Math.min(1, (descend - 0.55) / 0.3);
       for (var si = 0; si < sunny.smoke.length; si++) {
         var sm = sunny.smoke[si];

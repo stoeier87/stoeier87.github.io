@@ -2,10 +2,15 @@
   --bg: #0d1424;
   --ink: #ffffff;
   --red: #e03a2f;
+  --ink-body: rgba(255, 255, 255, 0.9);
   --ink-muted: rgba(255, 255, 255, 0.65);
+  --ink-label: rgba(255, 255, 255, 0.55);
   --ink-dim: rgba(255, 255, 255, 0.35);
   --mono: "Space Mono", ui-monospace, monospace;
   --display: "Archivo Black", sans-serif;
+  --panel: rgba(16, 20, 35, 0.85);
+  /* Echoes the pill radius without turning a tall panel into a stadium */
+  --radius-panel: 28px;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -19,10 +24,12 @@ a { color: inherit; text-decoration: none; }
 
 .scrim {
   position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  /* Even tone top-to-bottom — the old scrim dipped in the middle, which made
+     the sky/ground transition read as a hard band across the content */
   background: linear-gradient(to bottom,
-    rgba(5, 10, 18, 0.55),
-    rgba(5, 10, 18, 0.28) 38%,
-    rgba(5, 10, 18, 0.72) 100%
+    rgba(5, 10, 18, 0.42),
+    rgba(5, 10, 18, 0.36) 50%,
+    rgba(5, 10, 18, 0.5) 100%
   );
 }
 
@@ -66,6 +73,15 @@ main { position: relative; z-index: 2; }
   width: 100%;
 }
 
+/* Panel — sits above the illustration so contrast never depends on what the
+   scene happens to be drawing behind it */
+.bio-panel {
+  background: var(--panel);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: var(--radius-panel);
+  padding: 2rem;
+}
+
 /* Hero */
 .bio-hero { margin-bottom: 3rem; }
 
@@ -95,7 +111,7 @@ main { position: relative; z-index: 2; }
   color: var(--ink);
   padding-bottom: 2.75rem;
   margin-bottom: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
 }
 
 /* Tagged entries */
@@ -106,7 +122,7 @@ main { position: relative; z-index: 2; }
   grid-template-columns: 80px 1fr;
   gap: 2.25rem;
   padding: 1.75rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.11);
   /* start hidden; animated in once .bio-block.visible */
   opacity: 0;
   transform: translateY(12px);
@@ -125,11 +141,13 @@ main { position: relative; z-index: 2; }
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* White at reduced opacity — red disappeared against the bright sky, and it is
+   reserved for accents that always sit on dark (the name, the pill icons) */
 .bio-tag {
   font-size: 0.6rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--red);
+  color: var(--ink-label);
   padding-top: 0.28em;
   line-height: 1.6;
 }
@@ -137,7 +155,7 @@ main { position: relative; z-index: 2; }
 .bio-entry p {
   font-size: clamp(0.87rem, 1.75vw, 0.97rem);
   line-height: 1.9;
-  color: var(--ink-muted);
+  color: var(--ink-body);
 }
 
 /* Footer: CTA + pills */
@@ -158,12 +176,24 @@ main { position: relative; z-index: 2; }
   flex-wrap: wrap;
 }
 
-/* Mobile: stack tag above text */
-@media (max-width: 560px) {
+/* Narrow: label sits above the paragraph, full width — never squeezed beside it */
+@media (max-width: 640px) {
   .bio-entry {
     grid-template-columns: 1fr;
-    gap: 0.45rem;
-    padding: 1.4rem 0;
+    gap: 0.55rem;
+    padding: 1.5rem 0;
   }
   .bio-tag { padding-top: 0; }
+}
+
+@media (max-width: 560px) {
+  .bio-block {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  .bio-panel {
+    padding: 1.25rem;
+    border-radius: 20px;
+  }
+  .bio-hero { margin-bottom: 2.25rem; }
 }
