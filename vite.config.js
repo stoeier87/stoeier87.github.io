@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+import tailwindcss from "@tailwindcss/vite";
 import { globSync } from "glob";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -16,6 +17,7 @@ function getInputs() {
 }
 
 export default defineConfig({
+  plugins: [tailwindcss()],
   server: {
     port: 3000,
   },

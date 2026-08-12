@@ -8,7 +8,9 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
     "glob": "^13.0.6",
+    "tailwindcss": "^4.3.3",
     "vite": "^8.1.5"
   }
 }

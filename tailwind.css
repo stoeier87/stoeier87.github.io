@@ -1,12 +1,99 @@
-:root {
-  --bg: #0d1424;
-  --ink: #ffffff;
-  --red: #e03a2f;
-  --ink-muted: rgba(255, 255, 255, 0.6);
-  --ink-dim: rgba(255, 255, 255, 0.35);
-  --mono: "Space Mono", ui-monospace, monospace;
-  --display: "Archivo Black", sans-serif;
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Colors — base */
+  --color-bg: #0d1424;
+  --color-bg-deep: #070b14;
+  --color-ink: #ffffff;
+  --color-ink-muted: rgba(255,255,255,0.6);
+  --color-ink-dim: rgba(255,255,255,0.35);
+  --color-red: #e03a2f;
+  --color-red-tint: rgba(224,58,47,0.12);
+  --color-border: rgba(255,255,255,0.28);
+  --color-border-strong: rgba(255,255,255,0.4);
+  --color-border-hover: rgba(255,255,255,0.58);
+  --color-border-faint: rgba(255,255,255,0.12);
+  --color-card-bg: rgba(13,20,36,0.72);
+  --color-pill-bg: rgba(13,20,36,0.6);
+  --color-score-highlight: #c8ffdd;
+
+  /* Colors — rank/medal semantics */
+  --color-rank-gold: #ffd166;
+  --color-rank-silver: #b0bcd8;
+  --color-rank-bronze: #cd8b5a;
+
+  /* Colors — semantic aliases */
+  --color-surface-app: var(--color-bg);
+  --color-surface-card: var(--color-card-bg);
+  --color-surface-pill: var(--color-pill-bg);
+  --color-text-primary: var(--color-ink);
+  --color-text-muted: var(--color-ink-muted);
+  --color-text-dim: var(--color-ink-dim);
+  --color-accent: var(--color-red);
+  --color-accent-tint: var(--color-red-tint);
+  --color-border-default: var(--color-border);
+
+  /* Colors — scoreboard subsystem (isolated, drifted palette — see readme) */
+  --color-scoreboard-bg: #080b14;
+  --color-scoreboard-card: rgba(18,22,42,0.82);
+  --color-scoreboard-card-border: rgba(90,110,200,0.2);
+  --color-scoreboard-text: #eef0ff;
+  --color-scoreboard-muted: #8892b8;
+  --color-scoreboard-accent: #6e8fff;
+  --color-scoreboard-line: rgba(60,75,130,0.35);
+
+  /* Typography */
+  --font-display: "Archivo Black", sans-serif;
+  --font-mono: "Space Mono", ui-monospace, monospace;
+
+  --text-hero: clamp(2.6rem, 12vw, 10.5rem);
+  --text-h1: clamp(2rem, 8vw, 4.5rem);
+  --text-h2-card: 1.15rem;
+  --text-body: 0.9rem;
+  --text-small: 0.82rem;
+  --text-overline: clamp(0.6rem, 1.6vw, 0.72rem);
+
+  --tracking-tight: -0.02em;
+  --tracking-wide: 0.03em;
+  --tracking-wider: 0.06em;
+  --tracking-widest: 0.14em;
+  --tracking-loose: 0.22em;
+
+  --leading-display: 0.92;
+  --leading-body: 1.5;
+  --leading-tight: 1.35;
+
+  /* Spacing */
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-6: 24px;
+  --spacing-7: 32px;
+  --spacing-9: 64px;
+
+  /* Radii */
+  --radius-pill: 999px;
+  --radius-card: 18px;
+  --radius-board-card: 14px;
+  --radius-hud: 10px;
+
+  /* Motion */
+  --ease-standard: ease;
+  --ease-in-out: ease-in-out;
+  --animate-pulse-dot: pulseDot 1.6s ease-in-out infinite;
+  --animate-float-y: floatY 5s ease-in-out infinite;
+  --animate-hint-bounce: hintBounce 2s ease-in-out infinite;
+  --animate-hint-pulse: hintPulse 2s ease-in-out infinite;
 }
+
+@keyframes pulseDot { 0%,100% { opacity: 1; box-shadow: 0 0 8px var(--color-red); } 50% { opacity: .35; box-shadow: none; } }
+@keyframes floatY { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+@keyframes hintBounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes hintPulse { 0%,100% { opacity: .4; } 50% { opacity: 1; } }
+
+/* ===== Home page (index) styles — migrated from styles.css ===== */
 
 * {
   margin: 0;
@@ -15,9 +102,9 @@
 }
 
 body {
-  font-family: var(--mono);
-  background: var(--bg);
-  color: var(--ink);
+  font-family: var(--font-mono);
+  background: var(--color-bg);
+  color: var(--color-ink);
   overflow-x: hidden;
 }
 
@@ -120,13 +207,13 @@ html.ufo-on .ufo.live {
   flex-wrap: wrap;
   padding: 1.1rem 1.25rem;
   text-align: center;
-  background: linear-gradient(to bottom, var(--bg) 20%, transparent);
+  background: linear-gradient(to bottom, var(--color-bg) 20%, transparent);
 }
 
 .topbar .value {
   font-size: clamp(0.6rem, 1.6vw, 0.72rem);
   letter-spacing: 0.14em;
-  color: var(--ink-muted);
+  color: var(--color-ink-muted);
 }
 .topbar .value::before {
   content: "";
@@ -134,7 +221,7 @@ html.ufo-on .ufo.live {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--red);
+  background: var(--color-red);
   margin-right: 0.6em;
   vertical-align: 6%;
   animation: pulse 1.6s ease-in-out infinite;
@@ -144,7 +231,7 @@ html.ufo-on .ufo.live {
   0%,
   100% {
     opacity: 1;
-    box-shadow: 0 0 8px var(--red);
+    box-shadow: 0 0 8px var(--color-red);
   }
   50% {
     opacity: 0.35;
@@ -180,7 +267,7 @@ html.js-anim .contact {
 }
 
 .name {
-  font-family: var(--display);
+  font-family: var(--font-display);
   text-transform: uppercase;
   text-align: center;
   line-height: 0.92;
@@ -196,7 +283,7 @@ html.js-anim .contact {
 }
 
 .name .word.red {
-  color: var(--red);
+  color: var(--color-red);
 }
 
 /* Ordene i rejsen er skjult til JS har splittet dem i bogstaver,
@@ -221,19 +308,19 @@ html.js-anim #stageName .word {
   font-size: clamp(0.6rem, 1.6vw, 0.72rem);
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--ink-dim);
+  color: var(--color-ink-dim);
   transition: opacity 0.4s ease;
-  /* animation: hintBounce 2s ease-in-out infinite, hintPulse 2s ease-in-out infinite; */
+  /* animation: hintArrowBounce 2s ease-in-out infinite, hintArrowPulse 2s ease-in-out infinite; */
 }
 .hint .arrow {
-  color: var(--red);
+  color: var(--color-red);
   display: inline-block;
   animation:
-    hintBounce 2s ease-in-out infinite,
-    hintPulse 2s ease-in-out infinite;
+    hintArrowBounce 2s ease-in-out infinite,
+    hintArrowPulse 2s ease-in-out infinite;
 }
 
-@keyframes hintBounce {
+@keyframes hintArrowBounce {
   0% {
     transform: translateX(-50%) translateY(0);
   }
@@ -245,7 +332,7 @@ html.js-anim #stageName .word {
   }
 }
 
-@keyframes hintPulse {
+@keyframes hintArrowPulse {
   0%,
   100% {
     opacity: 0.4;
@@ -268,10 +355,10 @@ html.js-anim #stageName .word {
 
 .pill {
   display: inline-block;
-  font-family: var(--mono);
+  font-family: var(--font-mono);
   font-size: clamp(0.7rem, 1.8vw, 0.85rem);
   letter-spacing: 0.08em;
-  color: var(--ink);
+  color: var(--color-ink);
   text-decoration: none;
   padding: 0.85rem 1.4rem;
   border: 1.5px solid rgba(255, 255, 255, 0.4);
@@ -308,18 +395,18 @@ html.js-anim #stageName .word {
 }
 
 .pill:hover {
-  border-color: var(--red);
+  border-color: var(--color-red);
   background: rgba(224, 58, 47, 0.12);
 }
 
 .pill:focus-visible {
-  outline: 2px solid var(--red);
+  outline: 2px solid var(--color-red);
   outline-offset: 4px;
-  border-color: var(--red);
+  border-color: var(--color-red);
 }
 
 .pill .arrow {
-  color: var(--red);
+  color: var(--color-red);
   margin-right: 0.4em;
 }
 
@@ -332,7 +419,7 @@ footer {
   font-size: 0.65rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--ink-dim);
+  color: var(--color-ink-dim);
 }
 
 footer a {
@@ -340,10 +427,10 @@ footer a {
   text-decoration: none;
 }
 footer a:hover {
-  color: var(--ink-muted);
+  color: var(--color-ink-muted);
 }
 footer a:focus-visible {
-  outline: 2px solid var(--red);
+  outline: 2px solid var(--color-red);
   outline-offset: 4px;
 }
 
