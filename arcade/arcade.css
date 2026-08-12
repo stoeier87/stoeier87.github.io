@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -7,160 +9,105 @@ body {
   font-family: var(--font-mono);
   background: var(--color-bg);
   color: var(--color-ink);
-  min-height: 100vh;
-  overflow: hidden;
+  @apply min-h-screen overflow-hidden md:overflow-y-scroll;
 }
-@media (max-width: 600px) {
-  body {
-    overflow-y: scroll;
-  }
-}
+
 #bg {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
+  @apply fixed inset-0 z-0;
 }
 .hall {
-  position: relative;
-  z-index: 1;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 2rem 1rem;
+  @apply relative z-1 min-h-screen;
+  @apply flex flex-col items-center;
+  @apply justify-evenly xl:justify-center;
+  @apply gap-y-20 px-4 py-4;
 }
 header {
-  text-align: center;
-  margin-bottom: 1.6rem;
+  @apply text-center;
 }
 h1 {
   font-family: var(--font-display);
-  letter-spacing: 0.06em;
   font-size: clamp(2rem, 8vw, 4.5rem);
+  @apply tracking-[0.06em];
 }
 header p {
   color: var(--color-ink-muted);
-  margin-top: 0.35rem;
+  @apply mt-[0.35rem];
 }
 .solar-system {
-  max-width: 1280px;
-  margin: 0 auto;
-  display: grid;
+  @apply max-w-screen-xl mx-auto grid w-full;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 1.5rem;
-  width: 100%;
+  @apply gap-6;
+  @apply grid-cols-1 md:grid-cols-2 lg:grid-cols-3;
 }
 .planet-card {
-  border: 2px solid rgba(255, 255, 255, 0.28);
-  border-radius: 18px;
-  padding: 1.5rem 1.5rem 1.5rem 0.5rem;
+  @apply border-2 border-white/[0.28] rounded-[18px];
+  @apply p-6 pl-2;
   background: rgba(13, 20, 36, 0.72);
-  text-decoration: none;
-  color: inherit;
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  min-height: 120px;
-  transition:
-    0.2s transform,
-    0.2s border-color,
-    0.2s background;
-  position: relative;
-  overflow: hidden;
+  @apply no-underline text-inherit;
+  @apply flex items-center gap-[0.8rem];
+  @apply min-h-[auto] md:min-h-[120px] transition-[transform,border-color,background] duration-200;
+  @apply relative overflow-hidden;
+  
+  
 }
 
 .card-starfield {
-  position: absolute;
-  inset: 0;
-  border-radius: 18px;
-  z-index: -1;
+  @apply absolute inset-0 rounded-[18px] z-[-1];
 }
 
 .planet-canvas {
-  flex: 0 0 auto;
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  display: block;
-  overflow: visible;
-  transition: transform 0.2s ease;
+  @apply flex-none w-20 h-20 rounded-full block overflow-visible;
+  @apply transition-transform duration-200 ease-in-out;
 }
 
 .planet-card:hover {
-  border-color: rgba(255, 255, 255, 0.58);
+  @apply border-white/[0.58];
 }
 
 .planet-card:hover > .planet-canvas {
-  transform: scale(1.12);
+  @apply scale-[1.12];
 }
 .info {
-  display: flex;
-  flex-direction: column;
+  @apply flex flex-col min-w-0 relative z-1;
   /* gap: 0.45rem; */
-  min-width: 0;
-  position: relative;
-  z-index: 1;
 }
 .info h2 {
   font-family: var(--font-display);
-  font-size: 1.15rem;
-  letter-spacing: 0.03em;
-  margin-bottom: 0.15rem;
+  @apply text-[1.15rem] tracking-[0.03em] mb-[0.15rem];
 }
 .info .game {
-  font-weight: 500;
-  color: #fff;
-  font-size: 0.9rem;
-  margin-bottom: 0.8rem;
+  @apply font-medium text-white text-[0.9rem] mb-[0.8rem];
 }
 .info .tagline {
   color: var(--color-ink-muted);
-  font-size: 0.82rem;
-  line-height: 1.35;
+  @apply text-[0.82rem] leading-[1.35];
 }
 .badge {
-  font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  @apply text-base font-bold tracking-[0.14em] uppercase;
   color: var(--color-red);
-  display: flex;
-  flex-direction: column;
-  align-self: center;
-  align-items: center;
+  @apply flex flex-col self-center items-center;
 }
 
 .badge img {
   color: var(--color-red);
-  width: 2rem;
-  height: auto;
-  margin-bottom: 0.5rem;
+  @apply w-8 h-auto mb-2;
 }
 
 .planet-card.locked {
-  opacity: 0.55;
-  pointer-events: none;
+  @apply opacity-[0.55] pointer-events-none;
 }
 footer {
-  text-align: center;
-  margin-top: 1.5rem;
-  display: flex;
-  justify-content: center;
-  gap: 1.5rem;
-  flex-wrap: wrap;
+  @apply text-center flex justify-center gap-6 flex-wrap;
 }
 footer a {
   color: var(--color-ink-muted);
-  text-decoration: none;
+  @apply no-underline;
 }
 footer a:hover {
-  color: #fff;
+  @apply text-white;
 }
 @media (max-width: 520px) {
-  .solar-system {
-    grid-template-columns: 1fr;
-  }
   .planet-card {
-    min-height: auto;
+    @apply min-h-[auto];
   }
 }
