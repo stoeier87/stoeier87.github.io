@@ -23,3 +23,5 @@ Thumbs.db
 
 # Local dev
 *.local
+
+**/*.code-workspace

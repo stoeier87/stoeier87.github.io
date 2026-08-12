@@ -1,0 +1,35 @@
+name: Clean Up Branch Preview
+
+on:
+  delete:
+
+concurrency:
+  group: gh-pages-write
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    if: |
+      github.event.ref_type == 'branch' &&
+      (startsWith(github.event.ref, 'feature/') || startsWith(github.event.ref, 'stage/'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout gh-pages branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+
+      - name: Remove preview folder
+        run: |
+          rm -rf "preview/${{ github.event.ref }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing to clean up"
+          else
+            git commit -m "Remove preview for deleted branch ${{ github.event.ref }}"
+            git push
+          fi

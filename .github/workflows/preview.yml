@@ -1,0 +1,41 @@
+name: Deploy Branch Preview
+
+on:
+  push:
+    branches:
+      - "feature/**"
+      - "stage/**"
+
+concurrency:
+  group: gh-pages-write
+  cancel-in-progress: false
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: site-dist
+          path: dist
+
+      - name: Deploy preview
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: dist
+          destination_dir: preview/${{ github.ref_name }}
+          keep_files: true
+          commit_message: "Deploy preview for ${{ github.ref_name }}: ${{ github.sha }}"
+
+      - name: Summary
+        run: |
+          echo "### Preview deployed :rocket:" >> "$GITHUB_STEP_SUMMARY"
+          echo "https://stoeier87.github.io/preview/${{ github.ref_name }}/" >> "$GITHUB_STEP_SUMMARY"

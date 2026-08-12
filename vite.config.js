@@ -52,6 +52,7 @@ function gtagPlugin() {
 }
 
 export default defineConfig({
+  base: "./",
   plugins: [tailwindcss(), directoryIndexRedirect()
     // , gtagPlugin()
   ],
