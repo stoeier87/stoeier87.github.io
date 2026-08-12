@@ -27,6 +27,9 @@ import {
     score = 0,
     spawnT = 0,
     beamCd = 0,
+    elapsed = 0,
+    campZone = -1,
+    campMs = 0,
     gameOver = false;
   let stars = [],
     debris = [],
@@ -152,14 +155,145 @@ import {
   }
   resize();
 
-  function spawnDebris() {
-    const WW = worldW(),
-      HH = worldH();
-    const side = Math.random() < 0.5 ? -30 : WW + 30;
-    const y = Math.random() * HH * 0.7 + 20;
-    const vx = side < 0 ? 50 + Math.random() * 90 : -(50 + Math.random() * 90);
-    const vy = (Math.random() - 0.5) * 40;
-    debris.push({ x: side, y, vx, vy, r: 8 + Math.random() * 9, alive: true });
+  /* ---- Difficulty ramp -------------------------------------------------
+     Every progressive value is derived from `elapsed`, so reset() only has to
+     zero that (plus the camp tracker) to restore a genuinely fresh run. */
+  const RAMP_MS = 120000; // two minutes to full difficulty
+  const SPAWN_MS_START = 1200;
+  const SPAWN_MS_END = 350;
+  const FALL_SPEED_CAP = 1.8; // multiple of the starting fall speed
+  const SPAWN_PAD = 26; // keeps a meteor fully on-screen at either edge
+  const CAMP_MS = 3000; // dwell time in one third before we lean on it
+  const CAMP_BIAS = 0.6; // share of a wave pulled toward the camped third
+
+  function difficulty() {
+    return Math.min(1, elapsed / RAMP_MS);
+  }
+
+  function spawnInterval() {
+    return SPAWN_MS_START + (SPAWN_MS_END - SPAWN_MS_START) * difficulty();
+  }
+
+  function fallSpeedMul() {
+    return 1 + (FALL_SPEED_CAP - 1) * difficulty();
+  }
+
+  function waveSize() {
+    return Math.max(1, Math.round(1 + difficulty() * 2 + (Math.random() - 0.5)));
+  }
+
+  /* Small ones fall fast, big ones lumber, so the field has to be read rather
+     than purely reacted to. */
+  const METEOR_CLASSES = [
+    { w: 0.4, r: [7, 11], speed: [1.15, 1.4] },
+    { w: 0.4, r: [12, 18], speed: [0.9, 1.1] },
+    { w: 0.2, r: [19, 28], speed: [0.6, 0.8] },
+  ];
+
+  function pickClass() {
+    let roll = Math.random();
+    for (const c of METEOR_CLASSES) {
+      if (roll < c.w) return c;
+      roll -= c.w;
+    }
+    return METEOR_CLASSES[METEOR_CLASSES.length - 1];
+  }
+
+  /* The full playable span — spawns cover all of it, edges included */
+  function playableBand() {
+    return { lo: SPAWN_PAD, hi: worldW() - SPAWN_PAD };
+  }
+
+  function shipLaneY() {
+    return worldH() * 0.78;
+  }
+
+  /* The corridor the ship needs to slip through, in world units */
+  function safeGap() {
+    return ufo.r * 2 + 52;
+  }
+
+  function makeMeteor(x) {
+    const c = pickClass();
+    const r = c.r[0] + Math.random() * (c.r[1] - c.r[0]);
+    const speed = c.speed[0] + Math.random() * (c.speed[1] - c.speed[0]);
+    return {
+      x,
+      y: -r - 8,
+      vx: (Math.random() - 0.5) * 30,
+      vy: worldH() * 0.13 * speed * fallSpeedMul(),
+      r,
+      alive: true,
+    };
+  }
+
+  /* Uniform across the whole band, except that parking in one third starts
+     tilting the odds toward it — pressure, not a homing missile. */
+  function sampleX(camping) {
+    const { lo, hi } = playableBand();
+    if (camping && campZone >= 0 && Math.random() < CAMP_BIAS) {
+      const third = (hi - lo) / 3;
+      return lo + campZone * third + Math.random() * third;
+    }
+    return lo + Math.random() * (hi - lo);
+  }
+
+  /* Forward-integrate a copy under the same gravity the live meteors feel, so
+     the gap we validate is the gap the player actually arrives at rather than
+     the one at spawn height. */
+  function projectedX(m) {
+    let x = m.x,
+      y = m.y,
+      vx = m.vx,
+      vy = m.vy;
+    const target = shipLaneY();
+    const dt = 32;
+    for (let i = 0; i < 300 && y < target; i++) {
+      const dx = planet.x - x,
+        dy = planet.y - y;
+      const dist = Math.hypot(dx, dy) || 1;
+      const g = planet.mass / (dist * dist);
+      vx += (dx / dist) * g * dt * 0.001;
+      vy += (dy / dist) * g * dt * 0.001;
+      x += vx * dt * 0.001;
+      y += vy * dt * 0.001;
+    }
+    return x;
+  }
+
+  /* Widest opening left at the ship's altitude, in world units */
+  function widestGap(wave) {
+    const { lo, hi } = playableBand();
+    const blocked = wave
+      .map((m) => {
+        const px = projectedX(m);
+        const half = m.r + ufo.r + 4;
+        return [px - half, px + half];
+      })
+      .sort((a, b) => a[0] - b[0]);
+
+    let cursor = lo;
+    let widest = 0;
+    for (const [a, b] of blocked) {
+      if (a > cursor) widest = Math.max(widest, a - cursor);
+      cursor = Math.max(cursor, b);
+    }
+    return Math.max(widest, hi - cursor);
+  }
+
+  function spawnWave() {
+    const camping = campMs >= CAMP_MS;
+    const wave = [];
+    const n = waveSize();
+    for (let i = 0; i < n; i++) wave.push(makeMeteor(sampleX(camping)));
+
+    /* Checked, not assumed: thin the wave until a route exists. Dropping a
+       meteor can only widen a gap, so this always terminates. */
+    while (wave.length > 1 && widestGap(wave) < safeGap()) {
+      wave.splice(Math.floor(Math.random() * wave.length), 1);
+    }
+
+    for (const m of wave) debris.push(m);
   }
 
   function fireBeam() {
@@ -238,7 +372,12 @@ import {
     debris.length = 0;
     beams.length = 0;
     gameOver = false;
-    spawnT = 0;
+    /* Every progressive value goes back to its opening state */
+    elapsed = 0;
+    spawnT = SPAWN_MS_START;
+    beamCd = 0;
+    campZone = -1;
+    campMs = 0;
     scoreSubmissionStarted = false;
     placeCoreObjects();
     updateRestartBtn();
@@ -262,11 +401,7 @@ import {
       score += dt * 0.01;
       scoreEl.textContent = Math.floor(score);
 
-      spawnT -= dt;
-      if (spawnT <= 0) {
-        spawnDebris();
-        spawnT = 500 + Math.random() * 500;
-      }
+      elapsed += dt;
 
       if (pointer.seen) {
         ufo.x += (pointer.x - ufo.x) * 0.22;
@@ -275,6 +410,25 @@ import {
 
       ufo.x = Math.max(10, Math.min(WW - 10, ufo.x));
       ufo.y = Math.max(10, Math.min(HH - 10, ufo.y));
+
+      /* Which third is the ship loitering in, and for how long */
+      const band = playableBand();
+      const third = Math.max(
+        0,
+        Math.min(2, Math.floor(((ufo.x - band.lo) / (band.hi - band.lo)) * 3)),
+      );
+      if (third === campZone) campMs += dt;
+      else {
+        campZone = third;
+        campMs = 0;
+      }
+
+      /* Spawned after the ship has moved, so a wave reacts to where it is now */
+      spawnT -= dt;
+      if (spawnT <= 0) {
+        spawnWave();
+        spawnT = spawnInterval() * (0.88 + Math.random() * 0.24);
+      }
 
       for (const d of debris) {
         const dx = planet.x - d.x,
@@ -304,7 +458,16 @@ import {
           }
         }
       }
-      debris = debris.filter((d) => d.alive);
+      /* Cull what has left the field — at a 350ms cadence the old code's
+         alive-only filter let spent meteors accumulate for the whole run */
+      debris = debris.filter(
+        (d) =>
+          d.alive &&
+          d.y < HH + 90 &&
+          d.y > -400 &&
+          d.x > -160 &&
+          d.x < WW + 160,
+      );
 
       for (const d of debris) {
         const dx = d.x - ufo.x,
@@ -445,6 +608,10 @@ import {
     { passive: false },
   );
   document.body.appendChild(restartBtn);
+
+  /* Start from the same state Restart produces, so run one and run two are
+     identical rather than the first game quietly opening on different values */
+  reset();
 
   requestAnimationFrame(step);
 })();
