@@ -821,15 +821,28 @@ import {
         { passive: false }
       );
 
-      touchZonesEl.addEventListener("touchmove", (e) => {
-        for (const t of e.touches) {
-          const entry = activeTouches.get(t.identifier);
-          if (entry) {
+      touchZonesEl.addEventListener(
+        "touchmove",
+        (e) => {
+          e.preventDefault();
+          for (const t of e.touches) {
+            const entry = activeTouches.get(t.identifier);
+            if (!entry) continue;
             entry.glow.style.left = t.clientX + "px";
             entry.glow.style.top = t.clientY + "px";
+            // Follow the finger: if it drags into a new quadrant, swap thrust
+            // directions without needing a lift-and-retap. Ramp restarts for
+            // the new direction (pressTouchDir only sets touchStart when 0).
+            const newDir = resolveDir(t.clientX, t.clientY);
+            if (newDir !== entry.dir) {
+              releaseTouchDir(entry.dir);
+              pressTouchDir(newDir);
+              entry.dir = newDir;
+            }
           }
-        }
-      });
+        },
+        { passive: false }
+      );
 
       const handleTouchEnd = (e) => {
         for (const t of e.changedTouches) {
