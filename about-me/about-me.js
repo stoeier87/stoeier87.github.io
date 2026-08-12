@@ -13,18 +13,6 @@
   );
   blocks.forEach(function (b) { io.observe(b); });
 
-  /* On narrow screens the back arrow floats at the bottom, where it would sit
-     on top of the Email/LinkedIn pills. Tuck it away while those are in view. */
-  var contactNav = document.querySelector(".bio-contact");
-  var topbarEl = document.querySelector(".topbar");
-  if (contactNav && topbarEl) {
-    new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) {
-        topbarEl.classList.toggle("tucked", e.isIntersecting);
-      });
-    }).observe(contactNav);
-  }
-
   /* ---- Contact form (fake submit) ---- */
   var form = document.getElementById("inquiryForm");
   var sentMsg = document.getElementById("sentMsg");

@@ -38,17 +38,6 @@ a { color: inherit; text-decoration: none; }
   );
 }
 
-/* header.topbar overrides the shared arcade .topbar pointer-events:none from
-   tailwind.css — without this the back arrow is not clickable */
-header.topbar {
-  pointer-events: auto;
-}
-
-.topbar {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 10;
-  padding: 1.1rem 1.25rem;
-}
-
 /* Same pill as the homepage: identical box, and the same idle float */
 .pill {
   display: inline-flex; align-items: center; font-family: var(--mono);
@@ -61,13 +50,45 @@ header.topbar {
 .pill:focus-visible { outline: 2px solid var(--red); outline-offset: 4px; border-color: var(--red); }
 .pill .arrow { margin-right: 0.5em; }
 
-/* Icon only — the same pill, collapsed to a circle around the arrow */
+/* Sits at the top of the copy and scrolls away with it — no longer pinned to
+   the viewport. Icon only, so the pill collapses toward a circle. */
 .pill.back {
   animation: float 5s ease-in-out infinite;
-  justify-content: center;
-  padding: 0.85rem;
+  align-items: center;
+  padding: 0.8rem 1rem;
+  margin-bottom: 1.75rem;
+  overflow: hidden;
 }
-.pill.back .arrow { margin-right: 0; }
+.pill.back .arrow { margin-right: 0; transition: transform 0.25s ease; }
+.pill.back:hover .arrow { transform: translateX(-3px); }
+
+/* An alien hitches a ride: ducked out of sight until the pill is hovered */
+.pill.back .alien {
+  display: flex;
+  width: 0;
+  margin-left: 0;
+  opacity: 0;
+  transform: translateY(115%);
+  transition: transform 0.34s cubic-bezier(0.2, 0.8, 0.3, 1),
+              opacity 0.22s ease, width 0.34s ease, margin-left 0.34s ease;
+}
+.pill.back:hover .alien,
+.pill.back:focus-visible .alien {
+  width: 17px;
+  margin-left: 0.5em;
+  opacity: 1;
+  transform: translateY(0);
+}
+.pill.back .alien-arm { transform-origin: 20.5px 16.5px; }
+.pill.back:hover .alien-arm,
+.pill.back:focus-visible .alien-arm {
+  animation: alienWave 0.55s ease-in-out 0.24s 3;
+}
+
+@keyframes alienWave {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-42deg); }
+}
 
 @keyframes float {
   0%, 100% { transform: translateY(0); }
@@ -88,7 +109,8 @@ main { position: relative; z-index: 2; }
 .bio-block {
   display: flex;
   justify-content: center;
-  padding: clamp(7rem, 16vh, 10rem) clamp(1.25rem, 6vw, 4rem) clamp(4rem, 8vh, 6rem);
+  /* No fixed topbar to clear any more, so the opening gap can come down */
+  padding: clamp(3rem, 9vh, 5.5rem) clamp(1.25rem, 6vw, 4rem) clamp(4rem, 8vh, 6rem);
   min-height: 100vh;
 }
 
@@ -155,14 +177,6 @@ main { position: relative; z-index: 2; }
 .bio-block.visible .bio-body p:nth-child(5) { animation-delay: 0.55s; }
 .bio-block.visible .bio-body p:nth-child(6) { animation-delay: 0.65s; }
 .bio-block.visible .bio-body p:nth-child(7) { animation-delay: 0.75s; }
-.bio-block.visible .bio-body p:nth-child(8) { animation-delay: 0.85s; }
-
-/* Sign-off */
-.bio-sign {
-  margin-top: 0.5rem;
-  letter-spacing: 0.1em;
-  color: var(--ink);
-}
 
 @keyframes entryIn {
   to { opacity: 1; transform: translateY(0); }
@@ -183,29 +197,7 @@ main { position: relative; z-index: 2; }
   .bio-body { gap: 1.9rem; }
   .bio-body p { font-size: 1.0625rem; }
 
-  /* Back arrow moves to the bottom, in thumb reach rather than up in the
-     corner. Floating over the copy, so it carries a solider background.
-     header.topbar, not .topbar — tailwind.css also styles .topbar and loads
-     after this file, so a bare class selector loses on source order. */
-  header.topbar {
-    top: auto;
-    bottom: 0;
-    padding: 0 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
-    transition: opacity 0.3s ease, transform 0.3s ease;
-  }
-  /* Slides out of the way once the contact pills are on screen, so the two
-     can never sit on top of one another */
-  header.topbar.tucked {
-    opacity: 0;
-    transform: translateY(140%);
-    pointer-events: none;
-  }
-  .pill.back {
-    background: rgba(10, 15, 28, 0.88);
-    border-color: rgba(255, 255, 255, 0.5);
-  }
-  /* Room so the last line never sits under the floating button */
-  .bio-block { padding-bottom: 6.5rem; }
+  .pill.back { margin-bottom: 1.4rem; }
 }
 
 @media (max-width: 560px) {
