@@ -14,13 +14,15 @@ import {
   const speedFill = document.getElementById("speedFill");
   const angleFill = document.getElementById("angleFill");
   const introEl = document.getElementById("intro");
+  const approachEl = document.getElementById("approach");
   const gameOverEl = document.getElementById("gameOver");
   const gameOverCard = gameOverEl.querySelector(".gameover-card");
   const gameOverTitle = document.getElementById("gameOverTitle");
   const gameOverRestart = document.getElementById("gameOverRestart");
 
-  const BASE_W = 900;
-  const BASE_H = 900;
+  const DESIGN_H = 900; // reference world height; keeps art/physics scale consistent
+  let BASE_W = 900;
+  let BASE_H = 900;
 
   // Countdown / scoring: docking faster leaves more time on the clock.
   const MAX_TIME = 60; // countdown start + seconds used for time-based scoring
@@ -308,9 +310,21 @@ import {
     canvas.width = Math.round(W * dpr);
     canvas.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    viewScale = Math.min(W / BASE_W, H / BASE_H);
-    viewOffX = (W - BASE_W * viewScale) * 0.5;
-    viewOffY = (H - BASE_H * viewScale) * 0.5;
+    // Dynamic world size matches the viewport aspect ratio so the canvas
+    // fills the window exactly without letterboxing or zoom changes.
+    const prevW = BASE_W;
+    const prevH = BASE_H;
+    viewScale = H / DESIGN_H;
+    BASE_W = W / viewScale;
+    BASE_H = H / viewScale;
+    viewOffX = 0;
+    viewOffY = 0;
+
+    // Rebuild background if aspect ratio changed significantly.
+    if (!bgCanvas || Math.abs(prevW - BASE_W) > 1 || Math.abs(prevH - BASE_H) > 1) {
+      initStars();
+      buildBackground();
+    }
   }
   addEventListener("resize", resize, { passive: true });
 
@@ -361,7 +375,13 @@ import {
     introHidden = true;
     introEl.style.transition = "opacity .4s ease, transform .4s ease";
     introEl.style.opacity = "0";
-    introEl.style.transform = "translateX(-50%) translateY(-10px)";
+    introEl.style.transform = "translateY(-10px)";
+    if (approachEl && introHidden) {
+      approachEl.style.display = "block";
+      approachEl.style.transition = "opacity .4s ease-in 0.4s, transform .4s ease-in 0.4s";
+      approachEl.style.opacity = "1";
+      approachEl.style.transform = "translateY(-10px)";
+    }
   }
 
   // Keyboard + d-pad: instant full-strength thrust (unchanged behavior).
@@ -826,6 +846,8 @@ import {
       touchZonesEl.addEventListener("touchend", handleTouchEnd);
       touchZonesEl.addEventListener("touchcancel", handleTouchEnd);
     }
+  } else {
+    document.documentElement.classList.add("no-touch-zones");
   }
 
   gameOverRestart.addEventListener("click", reset);
@@ -839,9 +861,9 @@ import {
   );
 
   // initialize
+  resize(); // size the world to the viewport before building the background
   initStars();
   buildBackground();
-  resize();
   reset();
   requestAnimationFrame(step);
 })();
