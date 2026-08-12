@@ -13,6 +13,18 @@
   );
   blocks.forEach(function (b) { io.observe(b); });
 
+  /* On narrow screens the back arrow floats at the bottom, where it would sit
+     on top of the Email/LinkedIn pills. Tuck it away while those are in view. */
+  var contactNav = document.querySelector(".bio-contact");
+  var topbarEl = document.querySelector(".topbar");
+  if (contactNav && topbarEl) {
+    new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        topbarEl.classList.toggle("tucked", e.isIntersecting);
+      });
+    }).observe(contactNav);
+  }
+
   /* ---- Contact form (fake submit) ---- */
   var form = document.getElementById("inquiryForm");
   var sentMsg = document.getElementById("sentMsg");
@@ -33,6 +45,18 @@
 
   var canvas = document.getElementById("scene");
   var ctx = canvas.getContext("2d");
+  /* Overlay for the easter eggs, so they read over the copy instead of being
+     washed out behind it — the rest of the scene stays back there. */
+  var fxCanvas = document.getElementById("scene-fx");
+  var fxCtx = fxCanvas ? fxCanvas.getContext("2d") : null;
+
+  /* Redirects the shared `ctx` at the overlay for the duration of one draw */
+  function onOverlay(fn) {
+    if (!fxCtx) { fn(); return; }
+    var prev = ctx;
+    ctx = fxCtx;
+    try { fn(); } finally { ctx = prev; }
+  }
   var w = 0, h = 0, dpr = 1, raf, t0 = performance.now();
   var isMobile = function () { return window.innerWidth <= 600; };
 
@@ -344,14 +368,14 @@
   /* ---- Easter eggs: occasional, not looping ----
      Each beat waits out a randomised gap, plays once, then re-schedules. */
   function makeEgg(first, minGap, maxGap, dur) {
-    return { at: first, min: minGap, max: maxGap, dur: dur, on: false, start: 0, seed: Math.random() };
+    return { at: first, min: minGap, max: maxGap, dur: dur, on: false, start: 0, seed: Math.random(), seed2: Math.random() };
   }
 
   /* 0..1 while the beat is playing, -1 while it waits */
   function eggProgress(e, t) {
     if (!e.on) {
       if (t < e.at) return -1;
-      e.on = true; e.start = t; e.seed = Math.random();
+      e.on = true; e.start = t; e.seed = Math.random(); e.seed2 = Math.random();
     }
     var p = (t - e.start) / e.dur;
     if (p >= 1) {
@@ -520,11 +544,11 @@
   };
 
   /* A saucer drifting the width of the sky, well above the surface */
-  saturn.drawUfo = function (p, seed) {
+  saturn.drawUfo = function (p, seed, seed2) {
     var dir = seed > 0.5 ? 1 : -1;
     var span = w + 160;
     var x = dir > 0 ? -80 + p * span : w + 80 - p * span;
-    var y = h * 0.11 + Math.sin(p * Math.PI * 3) * h * 0.018;
+    var y = h * (0.1 + seed2 * 0.3) + Math.sin(p * Math.PI * 3) * h * 0.018;
     var s = saturn.eggBase * 0.0022;
 
     ctx.save();
@@ -546,7 +570,7 @@
   /* Peeks over the ridge, waves, ducks back down. Drawn before the surface
      so the ground clips it — that is what sells the ducking. */
   saturn.drawAlien = function (p, seed) {
-    var x = w * (seed > 0.5 ? 0.11 : 0.89);
+    var x = w * (0.12 + seed * 0.76);
     var base = surfaceY(x);
     var s = saturn.eggBase * 0.024;
 
@@ -557,6 +581,11 @@
     /* Stops just shy of clearing the ridge, so it still reads as a peek */
     ctx.save();
     ctx.globalAlpha = 0.7;
+    /* Clipped at the ridge, so it still rises from behind the horizon even on
+       the overlay where the surface is not there to cover it */
+    ctx.beginPath();
+    ctx.rect(0, 0, w, base);
+    ctx.clip();
     ctx.translate(x, base + s * 1.2 - r * s * 1.9);
 
     ctx.fillStyle = "rgba(126,176,138,0.95)";
@@ -704,14 +733,16 @@
     saturn.drawRingArc(0, Math.PI);
     ctx.restore();
 
-    var pUfo = eggProgress(saturn.eggs.ufo, t);
-    if (pUfo >= 0) saturn.drawUfo(pUfo, saturn.eggs.ufo.seed);
-
-    /* Alien goes under the surface so the ridge clips it */
-    var pAlien = eggProgress(saturn.eggs.alien, t);
-    if (pAlien >= 0) saturn.drawAlien(pAlien, saturn.eggs.alien.seed);
-
     saturn.drawSurface(scrollY);
+
+    /* These two ride the overlay canvas, so they cross in front of the copy
+       rather than being washed out behind the reading pool */
+    var pUfo = eggProgress(saturn.eggs.ufo, t);
+    var pAlien = eggProgress(saturn.eggs.alien, t);
+    onOverlay(function () {
+      if (pUfo >= 0) saturn.drawUfo(pUfo, saturn.eggs.ufo.seed, saturn.eggs.ufo.seed2);
+      if (pAlien >= 0) saturn.drawAlien(pAlien, saturn.eggs.alien.seed);
+    });
 
     /* Lander comes down on the opposite side of the frame to Saturn */
     var landX = w * (mobile ? 0.2 : 0.19);
@@ -758,6 +789,11 @@
     canvas.width = w * dpr; canvas.height = h * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
+    if (fxCtx) {
+      fxCanvas.width = w * dpr; fxCanvas.height = h * dpr;
+      fxCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
     if (SCENE === "saturn") saturn.resize();
     else forest.resize();
   }
@@ -770,6 +806,7 @@
       frame._last = now;
       var scrollY = window.scrollY || 0;
       ctx.clearRect(0, 0, w, h);
+      if (fxCtx) fxCtx.clearRect(0, 0, w, h);
 
       if (SCENE === "saturn") saturn.frame(t, dt, scrollY);
       else forest.frame(t, dt, scrollY);

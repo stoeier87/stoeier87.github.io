@@ -23,6 +23,12 @@ a { color: inherit; text-decoration: none; }
   display: block; z-index: 0; will-change: transform;
 }
 
+/* Carries the easter eggs only, above the copy rather than behind it */
+#scene-fx {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+  display: block; z-index: 3; pointer-events: none;
+}
+
 .scrim {
   position: fixed; inset: 0; z-index: 1; pointer-events: none;
   background: linear-gradient(to bottom,
@@ -149,6 +155,14 @@ main { position: relative; z-index: 2; }
 .bio-block.visible .bio-body p:nth-child(5) { animation-delay: 0.55s; }
 .bio-block.visible .bio-body p:nth-child(6) { animation-delay: 0.65s; }
 .bio-block.visible .bio-body p:nth-child(7) { animation-delay: 0.75s; }
+.bio-block.visible .bio-body p:nth-child(8) { animation-delay: 0.85s; }
+
+/* Sign-off */
+.bio-sign {
+  margin-top: 0.5rem;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+}
 
 @keyframes entryIn {
   to { opacity: 1; transform: translateY(0); }
@@ -168,6 +182,30 @@ main { position: relative; z-index: 2; }
 @media (max-width: 640px) {
   .bio-body { gap: 1.9rem; }
   .bio-body p { font-size: 1.0625rem; }
+
+  /* Back arrow moves to the bottom, in thumb reach rather than up in the
+     corner. Floating over the copy, so it carries a solider background.
+     header.topbar, not .topbar — tailwind.css also styles .topbar and loads
+     after this file, so a bare class selector loses on source order. */
+  header.topbar {
+    top: auto;
+    bottom: 0;
+    padding: 0 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  /* Slides out of the way once the contact pills are on screen, so the two
+     can never sit on top of one another */
+  header.topbar.tucked {
+    opacity: 0;
+    transform: translateY(140%);
+    pointer-events: none;
+  }
+  .pill.back {
+    background: rgba(10, 15, 28, 0.88);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+  /* Room so the last line never sits under the floating button */
+  .bio-block { padding-bottom: 6.5rem; }
 }
 
 @media (max-width: 560px) {
