@@ -1,0 +1,94 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap');
+
+@theme {
+  /* Colors — base */
+  --color-bg: #0d1424;
+  --color-bg-deep: #070b14;
+  --color-ink: #ffffff;
+  --color-ink-muted: rgba(255,255,255,0.6);
+  --color-ink-dim: rgba(255,255,255,0.35);
+  --color-red: #e03a2f;
+  --color-red-tint: rgba(224,58,47,0.12);
+  --color-border: rgba(255,255,255,0.28);
+  --color-border-strong: rgba(255,255,255,0.4);
+  --color-border-hover: rgba(255,255,255,0.58);
+  --color-border-faint: rgba(255,255,255,0.12);
+  --color-card-bg: rgba(13,20,36,0.72);
+  --color-pill-bg: rgba(13,20,36,0.6);
+  --color-score-highlight: #c8ffdd;
+
+  /* Colors — rank/medal semantics */
+  --color-rank-gold: #ffd166;
+  --color-rank-silver: #b0bcd8;
+  --color-rank-bronze: #cd8b5a;
+
+  /* Colors — semantic aliases */
+  --color-surface-app: var(--color-bg);
+  --color-surface-card: var(--color-card-bg);
+  --color-surface-pill: var(--color-pill-bg);
+  --color-text-primary: var(--color-ink);
+  --color-text-muted: var(--color-ink-muted);
+  --color-text-dim: var(--color-ink-dim);
+  --color-accent: var(--color-red);
+  --color-accent-tint: var(--color-red-tint);
+  --color-border-default: var(--color-border);
+
+  /* Colors — scoreboard subsystem (isolated, drifted palette — see readme) */
+  --color-scoreboard-bg: #080b14;
+  --color-scoreboard-card: rgba(18,22,42,0.82);
+  --color-scoreboard-card-border: rgba(90,110,200,0.2);
+  --color-scoreboard-text: #eef0ff;
+  --color-scoreboard-muted: #8892b8;
+  --color-scoreboard-accent: #6e8fff;
+  --color-scoreboard-line: rgba(60,75,130,0.35);
+
+  /* Typography */
+  --font-display: "Archivo Black", sans-serif;
+  --font-mono: "Space Mono", ui-monospace, monospace;
+
+  --text-hero: clamp(2.6rem, 12vw, 10.5rem);
+  --text-h1: clamp(2rem, 8vw, 4.5rem);
+  --text-h2-card: 1.15rem;
+  --text-body: 0.9rem;
+  --text-small: 0.82rem;
+  --text-overline: clamp(0.6rem, 1.6vw, 0.72rem);
+
+  --tracking-tight: -0.02em;
+  --tracking-wide: 0.03em;
+  --tracking-wider: 0.06em;
+  --tracking-widest: 0.14em;
+  --tracking-loose: 0.22em;
+
+  --leading-display: 0.92;
+  --leading-body: 1.5;
+  --leading-tight: 1.35;
+
+  /* Spacing */
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-6: 24px;
+  --spacing-7: 32px;
+  --spacing-9: 64px;
+
+  /* Radii */
+  --radius-pill: 999px;
+  --radius-card: 18px;
+  --radius-board-card: 14px;
+  --radius-hud: 10px;
+
+  /* Motion */
+  --ease-standard: ease;
+  --ease-in-out: ease-in-out;
+  --animate-pulse-dot: pulseDot 1.6s ease-in-out infinite;
+  --animate-float-y: floatY 5s ease-in-out infinite;
+  --animate-hint-bounce: hintBounce 2s ease-in-out infinite;
+  --animate-hint-pulse: hintPulse 2s ease-in-out infinite;
+}
+
+@keyframes pulseDot { 0%,100% { opacity: 1; box-shadow: 0 0 8px var(--color-red); } 50% { opacity: .35; box-shadow: none; } }
+@keyframes floatY { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+@keyframes hintBounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes hintPulse { 0%,100% { opacity: .4; } 50% { opacity: 1; } }
