@@ -49,7 +49,7 @@
       pf: 0.42,
       hi: "#b8b0a8",
       lo: "#5c554e",
-      link: "arcade/orbit-runner/orbit-runner.html",
+      link: "/arcade/orbit-runner",
     },
     {
       name: "VENUS",
@@ -59,7 +59,7 @@
       pf: 0.5,
       hi: "#e8cfa0",
       lo: "#a67c48",
-      link: "arcade/meteor-dodge/meteor-dodge.html",
+      link: "/arcade/meteor-dodge",
     },
     {
       name: "JORDEN",
@@ -70,7 +70,7 @@
       hi: "#6fb6e8",
       lo: "#1c4e8a",
       earth: true,
-      link: "arcade/iss-docking/iss-docking.html",
+      link: "/arcade/iss-docking",
     },
     {
       name: "MARS",
@@ -80,7 +80,7 @@
       pf: 0.46,
       hi: "#e0704a",
       lo: "#8a3520",
-      link: "arcade/phobos-lander/phobos-lander.html",
+      link: "/arcade/phobos-lander",
     },
     {
       name: "JUPITER",
@@ -91,7 +91,7 @@
       hi: "#d9b48a",
       lo: "#8a6238",
       bands: true,
-      link: "arcade/comet-pong/comet-pong.html",
+      link: "/arcade/comet-pong",
     },
     {
       name: "SATURN",
@@ -102,7 +102,7 @@
       hi: "#e3c68f",
       lo: "#9c7a48",
       ring: true,
-      link: "arcade/star-memory/star-memory.html",
+      link: "/arcade/star-memory",
     },
     {
       name: "URANUS",
@@ -112,7 +112,7 @@
       pf: 0.48,
       hi: "#a8e0e8",
       lo: "#4a98a8",
-      link: "arcade/nebula-trail/nebula-trail.html",
+      link: "/arcade/nebula-trail",
     },
     {
       name: "NEPTUN",
@@ -122,7 +122,7 @@
       pf: 0.6,
       hi: "#6a8ce8",
       lo: "#2a3f9c",
-      link: "arcade/asteroid-breaker/asteroid-breaker.html",
+      link: "/arcade/asteroid-breaker",
     },
   ];
 
