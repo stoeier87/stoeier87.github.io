@@ -852,9 +852,9 @@ import {
   );
 
   // initialize
+  resize(); // size the world to the viewport before building the background
   initStars();
   buildBackground();
-  resize();
   reset();
   requestAnimationFrame(step);
 })();
