@@ -45,130 +45,278 @@ import {
   });
 
   function buildBackground() {
-    // Build at real screen size so it maps 1:1 regardless of virtual world aspect ratio.
     const c = document.createElement("canvas");
     c.width = W;
     c.height = H;
     const o = c.getContext("2d");
 
-    // deep space gradient
-    const g = o.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, "#020309");
-    g.addColorStop(1, "#080c18");
-    o.fillStyle = g;
+    // Deep space
+    const sky = o.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, "#010208");
+    sky.addColorStop(0.6, "#050914");
+    sky.addColorStop(1, "#060a16");
+    o.fillStyle = sky;
     o.fillRect(0, 0, W, H);
 
-    // Mars — large dramatic planet anchored to upper-right.
-    // mY < 0 so only the lower arc of Mars shows, giving a "looming planet" feel.
-    const lightAngle = -0.85; // sun upper-left
+    // Mars — looms from upper-right, center above viewport
+    const lA = -0.85; // light direction angle (sun upper-left)
+    const lx = Math.cos(lA), ly = Math.sin(lA);
     const mR = Math.max(W, H) * 0.52;
     const mX = W * 0.78;
     const mY = -mR * 0.44;
 
-    // atmosphere glow
-    const atm = o.createRadialGradient(mX, mY, mR * 0.94, mX, mY, mR * 1.14);
-    atm.addColorStop(0, "rgba(200,90,40,0)");
-    atm.addColorStop(0.55, "rgba(210,100,45,0.26)");
-    atm.addColorStop(1, "rgba(200,80,30,0)");
-    o.fillStyle = atm;
+    // Outer atmosphere haze (two-layer)
+    const haze = o.createRadialGradient(mX, mY, mR * 0.96, mX, mY, mR * 1.24);
+    haze.addColorStop(0,    "rgba(230,105,50,0)");
+    haze.addColorStop(0.28, "rgba(230,105,50,0.20)");
+    haze.addColorStop(0.68, "rgba(210,80,35,0.07)");
+    haze.addColorStop(1,    "rgba(190,65,25,0)");
+    o.fillStyle = haze;
     o.beginPath();
-    o.arc(mX, mY, mR * 1.14, 0, Math.PI * 2);
+    o.arc(mX, mY, mR * 1.24, 0, Math.PI * 2);
     o.fill();
 
-    // planet body — radial gradient lit from upper-left
+    // Thin inner limb ring
+    const limb = o.createRadialGradient(mX, mY, mR * 0.91, mX, mY, mR * 1.01);
+    limb.addColorStop(0,   "rgba(245,140,70,0)");
+    limb.addColorStop(0.6, "rgba(245,135,65,0.34)");
+    limb.addColorStop(1,   "rgba(220,100,45,0)");
+    o.fillStyle = limb;
+    o.beginPath();
+    o.arc(mX, mY, mR * 1.01, 0, Math.PI * 2);
+    o.fill();
+
+    // Planet body — 6-stop radial gradient for rich spherical shading
     const body = o.createRadialGradient(
-      mX + Math.cos(lightAngle) * mR * 0.42,
-      mY + Math.sin(lightAngle) * mR * 0.42,
-      mR * 0.04,
-      mX, mY, mR * 1.02,
+      mX + lx * mR * 0.40, mY + ly * mR * 0.40, mR * 0.02,
+      mX, mY, mR,
     );
-    body.addColorStop(0,    "#f0b078");
-    body.addColorStop(0.18, "#d06438");
-    body.addColorStop(0.52, "#8c2e18");
-    body.addColorStop(1,    "#2a0a04");
+    body.addColorStop(0,    "#f8c890"); // sunlit specular
+    body.addColorStop(0.10, "#eda060"); // bright rust
+    body.addColorStop(0.28, "#d0602c"); // mid rust-orange
+    body.addColorStop(0.52, "#962c14"); // deep rust
+    body.addColorStop(0.78, "#521408"); // dark margin
+    body.addColorStop(1,    "#1c0502"); // near-black limb
     o.fillStyle = body;
     o.beginPath();
     o.arc(mX, mY, mR, 0, Math.PI * 2);
     o.fill();
 
-    // surface features, clipped to sphere
+    // ── Surface features (clipped to sphere) ──────────────────────────────
     o.save();
     o.beginPath();
     o.arc(mX, mY, mR, 0, Math.PI * 2);
     o.clip();
 
-    // Valles Marineris — long curved rift valley
-    o.strokeStyle = "rgba(55,12,4,0.42)";
-    o.lineWidth = mR * 0.045;
-    o.lineCap = "round";
-    o.beginPath();
-    o.moveTo(mX - mR * 0.58, mY + mR * 0.12);
-    o.bezierCurveTo(
-      mX - mR * 0.22, mY + mR * 0.02,
-      mX + mR * 0.18, mY + mR * 0.14,
-      mX + mR * 0.52, mY + mR * 0.06,
+    // Hellas Planitia — ancient impact basin, southern hemi (slightly lighter)
+    const hellasG = o.createRadialGradient(
+      mX + mR * 0.44, mY + mR * 0.40, 0,
+      mX + mR * 0.44, mY + mR * 0.40, mR * 0.30,
     );
-    o.stroke();
-
-    // Tharsis volcanic plateau — subtle dark patch
-    const tharsis = o.createRadialGradient(mX - mR * 0.32, mY - mR * 0.22, 0, mX - mR * 0.32, mY - mR * 0.22, mR * 0.35);
-    tharsis.addColorStop(0, "rgba(50,12,4,0.38)");
-    tharsis.addColorStop(1, "rgba(50,12,4,0)");
-    o.fillStyle = tharsis;
+    hellasG.addColorStop(0,   "rgba(205,125,72,0.40)");
+    hellasG.addColorStop(0.55, "rgba(185,98,52,0.16)");
+    hellasG.addColorStop(1,   "rgba(0,0,0,0)");
+    o.fillStyle = hellasG;
     o.beginPath();
-    o.arc(mX - mR * 0.32, mY - mR * 0.22, mR * 0.35, 0, Math.PI * 2);
+    o.arc(mX + mR * 0.44, mY + mR * 0.40, mR * 0.30, 0, Math.PI * 2);
     o.fill();
 
-    // three Tharsis volcanoes as small dark circles
-    for (const v of [{ x: -0.36, y: -0.28 }, { x: -0.2, y: -0.44 }, { x: -0.5, y: -0.16 }]) {
+    // Arabia Terra — ancient highlands (dark mid-band)
+    const arabiaG = o.createRadialGradient(
+      mX + mR * 0.14, mY - mR * 0.06, 0,
+      mX + mR * 0.14, mY - mR * 0.06, mR * 0.52,
+    );
+    arabiaG.addColorStop(0, "rgba(72,18,6,0.32)");
+    arabiaG.addColorStop(1, "rgba(72,18,6,0)");
+    o.fillStyle = arabiaG;
+    o.fillRect(mX - mR, mY - mR, mR * 2, mR * 2);
+
+    // Tharsis plateau — broad elevated region
+    const tharsisG = o.createRadialGradient(
+      mX - mR * 0.30, mY - mR * 0.18, 0,
+      mX - mR * 0.30, mY - mR * 0.18, mR * 0.42,
+    );
+    tharsisG.addColorStop(0,   "rgba(175,72,28,0.24)");
+    tharsisG.addColorStop(0.5, "rgba(130,48,18,0.10)");
+    tharsisG.addColorStop(1,   "rgba(0,0,0,0)");
+    o.fillStyle = tharsisG;
+    o.fillRect(mX - mR, mY - mR, mR * 2, mR * 2);
+
+    // Olympus Mons — largest volcano in solar system (22 km high)
+    const omX = mX - mR * 0.48, omY = mY - mR * 0.30;
+    const omR = mR * 0.115;
+    // Broad flanks (concentric gradient)
+    const omFlank = o.createRadialGradient(omX, omY, 0, omX, omY, omR * 1.4);
+    omFlank.addColorStop(0,   "rgba(30,6,1,0.72)");
+    omFlank.addColorStop(0.42, "rgba(55,14,4,0.50)");
+    omFlank.addColorStop(0.80, "rgba(88,28,8,0.22)");
+    omFlank.addColorStop(1,   "rgba(0,0,0,0)");
+    o.fillStyle = omFlank;
+    o.beginPath();
+    o.arc(omX, omY, omR * 1.4, 0, Math.PI * 2);
+    o.fill();
+    // Sunlit flank highlight
+    o.beginPath();
+    o.arc(omX + omR * 0.25, omY - omR * 0.28, omR * 0.50, 0, Math.PI * 2);
+    o.fillStyle = "rgba(215,125,62,0.26)";
+    o.fill();
+    // Caldera pit
+    o.beginPath();
+    o.arc(omX, omY, omR * 0.24, 0, Math.PI * 2);
+    o.fillStyle = "rgba(20,4,1,0.70)";
+    o.fill();
+    // Caldera rim catch-light
+    o.beginPath();
+    o.arc(omX - omR * 0.08, omY - omR * 0.08, omR * 0.14, 0, Math.PI * 2);
+    o.fillStyle = "rgba(200,110,55,0.30)";
+    o.fill();
+
+    // Tharsis chain: Ascraeus, Pavonis, Arsia Mons
+    for (const v of [
+      { x: -0.26, y: -0.16 },
+      { x: -0.28, y: -0.03 },
+      { x: -0.30, y:  0.11 },
+    ]) {
+      const vx = mX + v.x * mR, vy = mY + v.y * mR, vR = mR * 0.068;
+      const vg = o.createRadialGradient(vx, vy, 0, vx, vy, vR * 1.3);
+      vg.addColorStop(0,   "rgba(28,6,1,0.65)");
+      vg.addColorStop(0.45, "rgba(52,14,4,0.38)");
+      vg.addColorStop(1,   "rgba(0,0,0,0)");
+      o.fillStyle = vg;
       o.beginPath();
-      o.arc(mX + v.x * mR, mY + v.y * mR, mR * 0.048, 0, Math.PI * 2);
-      o.fillStyle = "rgba(44,10,3,0.55)";
+      o.arc(vx, vy, vR * 1.3, 0, Math.PI * 2);
       o.fill();
-      // caldera rim highlight
+      // caldera
       o.beginPath();
-      o.arc(mX + v.x * mR - mR * 0.01, mY + v.y * mR - mR * 0.01, mR * 0.028, 0, Math.PI * 2);
-      o.fillStyle = "rgba(180,90,50,0.22)";
+      o.arc(vx, vy, mR * 0.018, 0, Math.PI * 2);
+      o.fillStyle = "rgba(18,4,1,0.72)";
       o.fill();
     }
 
-    // polar ice cap (north)
-    const cap = o.createLinearGradient(mX, mY - mR, mX, mY - mR * 0.74);
-    cap.addColorStop(0, "rgba(238,218,205,0.92)");
-    cap.addColorStop(1, "rgba(238,218,205,0)");
+    // Valles Marineris — canyon system with floor + sunlit rim
+    o.lineCap = "round";
+    o.lineJoin = "round";
+    // Canyon floor (dark wide stroke)
+    o.strokeStyle = "rgba(32,7,2,0.60)";
+    o.lineWidth = mR * 0.065;
+    o.beginPath();
+    o.moveTo(mX - mR * 0.62, mY + mR * 0.14);
+    o.bezierCurveTo(
+      mX - mR * 0.22, mY + mR * 0.04,
+      mX + mR * 0.22, mY + mR * 0.16,
+      mX + mR * 0.56, mY + mR * 0.08,
+    );
+    o.stroke();
+    // Sunward rim highlight (narrow bright stroke on top)
+    o.strokeStyle = "rgba(210,120,60,0.24)";
+    o.lineWidth = mR * 0.016;
+    o.beginPath();
+    o.moveTo(mX - mR * 0.62, mY + mR * 0.10);
+    o.bezierCurveTo(
+      mX - mR * 0.22, mY + mR * 0.00,
+      mX + mR * 0.22, mY + mR * 0.12,
+      mX + mR * 0.56, mY + mR * 0.04,
+    );
+    o.stroke();
+
+    // Dust storm wisps — horizontal ellipses fading at edges
+    for (const b of [
+      { cy: -0.05, wx: 0.90, wy: 0.050, a: 0.10 },
+      { cy:  0.24, wx: 0.72, wy: 0.036, a: 0.07 },
+      { cy: -0.40, wx: 0.52, wy: 0.026, a: 0.06 },
+    ]) {
+      const by = mY + b.cy * mR;
+      const dust = o.createLinearGradient(mX - b.wx * mR, by, mX + b.wx * mR, by);
+      dust.addColorStop(0,    `rgba(218,128,65,0)`);
+      dust.addColorStop(0.18, `rgba(218,128,65,${b.a})`);
+      dust.addColorStop(0.82, `rgba(218,128,65,${b.a})`);
+      dust.addColorStop(1,    `rgba(218,128,65,0)`);
+      o.fillStyle = dust;
+      o.beginPath();
+      o.ellipse(mX, by, b.wx * mR, b.wy * mR, 0, 0, Math.PI * 2);
+      o.fill();
+    }
+
+    // Polar ice cap — layered with spiral layering hint
+    const cap = o.createLinearGradient(mX, mY - mR, mX, mY - mR * 0.73);
+    cap.addColorStop(0,    "rgba(248,234,220,0.96)");
+    cap.addColorStop(0.38, "rgba(235,216,202,0.74)");
+    cap.addColorStop(0.75, "rgba(228,208,192,0.30)");
+    cap.addColorStop(1,    "rgba(225,205,188,0)");
     o.fillStyle = cap;
-    o.fillRect(mX - mR, mY - mR, mR * 2, mR * 0.3);
+    o.fillRect(mX - mR, mY - mR, mR * 2, mR * 0.34);
+    // Subtle spiral layering strokes
+    o.strokeStyle = "rgba(175,148,128,0.28)";
+    o.lineWidth = mR * 0.005;
+    for (let i = 1; i <= 4; i++) {
+      o.beginPath();
+      o.moveTo(mX - mR * (0.38 * i / 4.5), mY - mR + mR * 0.055 * i);
+      o.bezierCurveTo(
+        mX + mR * 0.22, mY - mR + mR * 0.040 * i,
+        mX + mR * (0.40 * i / 4.5), mY - mR + mR * 0.090 * i,
+        mX + mR * 0.12, mY - mR + mR * 0.120 * i,
+      );
+      o.stroke();
+    }
+
+    // Impact craters (southern/eastern hemisphere)
+    for (const cr of [
+      { x:  0.36, y:  0.28, r: 0.054 },
+      { x: -0.14, y:  0.52, r: 0.038 },
+      { x:  0.60, y:  0.16, r: 0.030 },
+      { x:  0.24, y: -0.28, r: 0.026 },
+      { x: -0.54, y:  0.22, r: 0.021 },
+      { x:  0.50, y:  0.44, r: 0.018 },
+    ]) {
+      const cx = mX + cr.x * mR, cy = mY + cr.y * mR, cr2 = cr.r * mR;
+      // Bowl
+      const bowl = o.createRadialGradient(cx, cy, 0, cx, cy, cr2);
+      bowl.addColorStop(0,   "rgba(38,8,2,0.48)");
+      bowl.addColorStop(0.55, "rgba(155,72,32,0.18)");
+      bowl.addColorStop(1,   "rgba(0,0,0,0)");
+      o.fillStyle = bowl;
+      o.beginPath();
+      o.arc(cx, cy, cr2, 0, Math.PI * 2);
+      o.fill();
+      // Sunlit rim arc
+      o.beginPath();
+      o.arc(cx - cr2 * 0.30, cy - cr2 * 0.28, cr2 * 0.72, -Math.PI * 0.65, Math.PI * 0.15);
+      o.strokeStyle = "rgba(225,135,72,0.30)";
+      o.lineWidth = cr2 * 0.20;
+      o.stroke();
+    }
 
     o.restore();
 
-    // terminator (day/night boundary)
+    // Terminator — clipped to planet, multiply blend
     o.save();
-    o.globalCompositeOperation = "multiply";
-    const shadow = o.createLinearGradient(
-      mX - Math.cos(lightAngle) * mR,
-      mY - Math.sin(lightAngle) * mR,
-      mX + Math.cos(lightAngle) * mR,
-      mY + Math.sin(lightAngle) * mR,
-    );
-    shadow.addColorStop(0,    "rgba(255,255,255,1)");
-    shadow.addColorStop(0.40, "rgba(140,110,90,0.42)");
-    shadow.addColorStop(0.70, "rgba(0,0,0,0.50)");
-    shadow.addColorStop(1,    "rgba(0,0,0,0.72)");
-    o.fillStyle = shadow;
     o.beginPath();
     o.arc(mX, mY, mR, 0, Math.PI * 2);
-    o.fill();
+    o.clip();
+    o.globalCompositeOperation = "multiply";
+    const termG = o.createLinearGradient(
+      mX - lx * mR, mY - ly * mR,
+      mX + lx * mR, mY + ly * mR,
+    );
+    termG.addColorStop(0,    "rgba(255,255,255,1)");
+    termG.addColorStop(0.36, "rgba(165,122,98,0.36)");
+    termG.addColorStop(0.60, "rgba(8,2,1,0.58)");
+    termG.addColorStop(1,    "rgba(0,0,0,0.82)");
+    o.fillStyle = termG;
+    o.fillRect(mX - mR * 1.1, mY - mR * 1.1, mR * 2.2, mR * 2.2);
     o.restore();
 
-    // stars — skip inside Mars
-    for (let i = 0; i < 220; i++) {
+    // Stars — skip inside planet + atmosphere, occasional tinted
+    for (let i = 0; i < 280; i++) {
       const sx = Math.random() * W;
       const sy = Math.random() * H;
-      if (Math.hypot(sx - mX, sy - mY) < mR * 1.02) continue;
-      o.globalAlpha = 0.35 + Math.random() * 0.65;
+      if (Math.hypot(sx - mX, sy - mY) < mR * 1.05) continue;
+      const rng = Math.random();
+      const col = rng < 0.06 ? "#ffd8a8" : rng < 0.11 ? "#b8d4ff" : "#ffffff";
+      o.globalAlpha = 0.28 + Math.random() * 0.72;
       o.beginPath();
-      o.fillStyle = "#fff";
-      o.arc(sx, sy, Math.random() * 1.4 + 0.15, 0, Math.PI * 2);
+      o.fillStyle = col;
+      o.arc(sx, sy, Math.random() * 1.6 + 0.1, 0, Math.PI * 2);
       o.fill();
     }
     o.globalAlpha = 1;
