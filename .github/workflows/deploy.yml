@@ -3,7 +3,7 @@ name: Deploy GitHub Pages
 on:
   pull_request:
     branches: ["main"]
-    types: [open, synchronize, reopened, closed, opened, ]
+    types: [ synchronize, reopened, closed, opened ]
   workflow_dispatch:
 
 concurrency:
