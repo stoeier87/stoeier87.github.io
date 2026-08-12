@@ -19,8 +19,9 @@ import {
   const gameOverTitle = document.getElementById("gameOverTitle");
   const gameOverRestart = document.getElementById("gameOverRestart");
 
-  const BASE_W = 900;
-  const BASE_H = 900;
+  const DESIGN_H = 900; // reference world height; keeps art/physics scale consistent
+  let BASE_W = 900;
+  let BASE_H = 900;
 
   // Countdown / scoring: docking faster leaves more time on the clock.
   const MAX_TIME = 60; // countdown start + seconds used for time-based scoring
@@ -308,9 +309,21 @@ import {
     canvas.width = Math.round(W * dpr);
     canvas.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    viewScale = Math.max(W / BASE_W, H / BASE_H);
-    viewOffX = (W - BASE_W * viewScale) * 0.5;
-    viewOffY = (H - BASE_H * viewScale) * 0.5;
+    // Dynamic world size matches the viewport aspect ratio so the canvas
+    // fills the window exactly without letterboxing or zoom changes.
+    const prevW = BASE_W;
+    const prevH = BASE_H;
+    viewScale = H / DESIGN_H;
+    BASE_W = W / viewScale;
+    BASE_H = H / viewScale;
+    viewOffX = 0;
+    viewOffY = 0;
+
+    // Rebuild background if aspect ratio changed significantly.
+    if (!bgCanvas || Math.abs(prevW - BASE_W) > 1 || Math.abs(prevH - BASE_H) > 1) {
+      initStars();
+      buildBackground();
+    }
   }
   addEventListener("resize", resize, { passive: true });
 
