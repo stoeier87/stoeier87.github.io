@@ -112,14 +112,6 @@ main { position: relative; z-index: 2; }
 /* Hero */
 .bio-hero { margin-bottom: 3rem; }
 
-.eyebrow {
-  font-size: 0.7rem;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-  margin-bottom: 1rem;
-}
-
 .name {
   font-family: var(--display);
   text-transform: uppercase;
