@@ -27,7 +27,7 @@
   /* ============================================================
      Scene switch — change data-scene on <body> to swap:
        "forest"  → Nordic forest + aurora (default)
-       "sunny"   → Daylight rocky landscape + rocket
+       "saturn"  → Saturn seen from a moon + lander
      ============================================================ */
   var SCENE = document.body.dataset.scene || "forest";
 
@@ -67,30 +67,6 @@
       ctx.closePath();
       ctx.fill();
     }
-  }
-
-  /* ---- Shared: draw cactus silhouette ---- */
-  function drawCactus(x, baseY, width, height, color) {
-    ctx.fillStyle = color;
-    var trunkW = width * 0.32;
-    var armW = trunkW * 0.8;
-    var armH = height * 0.42;
-    var armY = baseY - height * 0.62;
-    ctx.beginPath();
-    ctx.roundRect(x - trunkW / 2, baseY - height, trunkW, height, trunkW * 0.5);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.roundRect(x - width * 0.5, armY - armH, armW, armH, armW * 0.5);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.roundRect(x - width * 0.5, armY - armH * 0.55, width * 0.5 - trunkW / 2 + armW, armW, armW * 0.5);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.roundRect(x + width * 0.5 - armW, armY - armH * 1.45, armW, armH * 1.15, armW * 0.5);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.roundRect(x + trunkW / 2 - armW, armY - armH * 0.55, width * 0.5 - trunkW / 2 + armW, armW, armW * 0.5);
-    ctx.fill();
   }
 
   /* ---- Shared: draw rock shape ---- */
@@ -339,130 +315,345 @@
   };
 
   /* ============================================================
-     SUNNY SCENE — Daylight rocky landscape + rocket
+     SATURN SCENE — landed on a moon, Saturn hanging in the sky
+
+     Everything here is deliberately dark and low-contrast: the body copy
+     sits directly on this canvas, so the scene must never produce a bright
+     zone behind text. Saturn and the lander are also kept off-centre so the
+     column the text runs down stays empty sky.
      ============================================================ */
-  var sunny = {};
+  var saturn = {};
 
-  sunny.clouds = [];
-  sunny.birds = [];
-  sunny.rocks = [];
-  sunny.cacti = [];
-  sunny.smoke = [];
-  sunny.horizon = 0;
+  saturn.stars = [];
+  saturn.boulders = [];
+  saturn.craters = [];
+  saturn.horizon = 0;
+  saturn.planet = { cx: 0, cy: 0, r: 0 };
+  saturn.eggs = null;
 
-  sunny.resize = function () {
+  /* Ring bands — mid-radius and thickness as multiples of the planet radius */
+  var RING_BANDS = [
+    { r: 1.26, t: 0.12, a: 0.20, c: "184,170,142" },
+    { r: 1.54, t: 0.30, a: 0.40, c: "204,188,156" },
+    { r: 1.84, t: 0.13, a: 0.24, c: "168,154,128" },
+  ];
+  var RING_TILT = -0.32;   /* radians the ring plane is rotated on screen */
+  var RING_SQUASH = 0.3;   /* how edge-on the ring plane reads */
+
+  /* ---- Easter eggs: occasional, not looping ----
+     Each beat waits out a randomised gap, plays once, then re-schedules. */
+  function makeEgg(first, minGap, maxGap, dur) {
+    return { at: first, min: minGap, max: maxGap, dur: dur, on: false, start: 0, seed: Math.random() };
+  }
+
+  /* 0..1 while the beat is playing, -1 while it waits */
+  function eggProgress(e, t) {
+    if (!e.on) {
+      if (t < e.at) return -1;
+      e.on = true; e.start = t; e.seed = Math.random();
+    }
+    var p = (t - e.start) / e.dur;
+    if (p >= 1) {
+      e.on = false;
+      e.at = t + e.min + Math.random() * (e.max - e.min);
+      return -1;
+    }
+    return p;
+  }
+
+  /* Fade a beat in and out at its own edges so nothing pops */
+  function eggFade(p, edge) {
+    return Math.max(0, Math.min(1, Math.min(p, 1 - p) / edge));
+  }
+
+  /* The moon's surface line — the lander, the flag and the alien all sit on it */
+  function surfaceY(x) {
+    return saturn.horizon
+      + Math.sin(x * 0.0062 + 1.7) * h * 0.011
+      + Math.sin(x * 0.017) * h * 0.005;
+  }
+
+  saturn.resize = function () {
     var mobile = isMobile();
-    /* Horizon sits near the bottom of the viewport so the sky→ground
-       transition never cuts across the middle of the text panel */
-    sunny.horizon = h * (mobile ? 0.93 : 0.89);
-    sunny.clouds = Array.from({ length: mobile ? 3 : 5 }, function () {
-      return { x: Math.random() * w, y: h * (0.08 + Math.random() * 0.2), s: 0.6 + Math.random() * 0.8, speed: 4 + Math.random() * 6 };
-    });
-    sunny.birds = Array.from({ length: mobile ? 0 : 3 }, function () {
-      return { x: Math.random() * w, y: h * (0.14 + Math.random() * 0.12), speed: 8 + Math.random() * 6, phase: Math.random() * Math.PI * 2 };
-    });
-    /* Shorter than before — tall cacti used to grow up through the body copy */
-    sunny.rocks = makeRow(mobile ? 3 : 5, h * 0.05, h * 0.1, 160);
-    sunny.cacti = makeRow(mobile ? 3 : 6, h * 0.1, h * 0.17, 130);
-    sunny.smoke = Array.from({ length: 14 }, function (_, i) {
-      return { t: i / 14, r: 6 + Math.random() * 10, ox: (Math.random() - 0.5) * 14 };
-    });
+    saturn.horizon = h * (mobile ? 0.88 : 0.84);
+
+    saturn.planet = {
+      cx: w * (mobile ? 0.78 : 0.82),
+      cy: h * (mobile ? 0.19 : 0.29),
+      r: Math.min(w, h) * (mobile ? 0.17 : 0.2),
+    };
+
+    var starCount = mobile ? 55 : 120;
+    saturn.stars = [];
+    for (var i = 0; i < starCount; i++) {
+      saturn.stars.push({
+        x: Math.random() * w,
+        y: Math.random() * saturn.horizon,
+        r: 0.4 + Math.random() * 0.9,
+        a: 0.16 + Math.random() * 0.34,
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.3 + Math.random() * 0.7,
+      });
+    }
+
+    saturn.boulders = makeRow(mobile ? 3 : 6, h * 0.015, h * 0.042, 120);
+
+    saturn.craters = [];
+    for (var ci = 0; ci < (mobile ? 5 : 9); ci++) {
+      saturn.craters.push({
+        x: Math.random(),
+        d: 0.15 + Math.random() * 0.8,
+        rx: 16 + Math.random() * 44,
+      });
+    }
+
+    /* Built once — a resize must not reset the schedule */
+    if (!saturn.eggs) {
+      saturn.eggs = {
+        ufo: makeEgg(15000, 42000, 80000, 17000),
+        satellite: makeEgg(27000, 38000, 72000, 12000),
+        alien: makeEgg(39000, 48000, 95000, 7000),
+      };
+    }
   };
 
-  sunny.frame = function (t, dt, scrollY) {
-    var now = t + t0;
-    var docMax = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-    var scrollProgress = Math.min(1, scrollY / docMax);
-
-    /* Sky — the gradient now spans the whole sky band and only turns warm in
-       the last stretch above the horizon, so the content area sits on one tone */
-    var horizon = sunny.horizon;
-    var sky = ctx.createLinearGradient(0, 0, 0, horizon);
-    sky.addColorStop(0, "#5ec2e8");
-    sky.addColorStop(0.55, "#8ed2ee");
-    sky.addColorStop(0.85, "#c6e4ef");
-    sky.addColorStop(1, "#eadfba");
-    ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, w, horizon + 1);
-
-    /* Sun */
-    var sunX = w * 0.78, sunY = h * 0.16, sunR = Math.min(w, h) * 0.07;
-    var glow = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, sunR * 4);
-    glow.addColorStop(0, "rgba(255,247,214,0.9)");
-    glow.addColorStop(1, "rgba(255,247,214,0)");
-    ctx.fillStyle = glow;
-    ctx.beginPath(); ctx.arc(sunX, sunY, sunR * 4, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#fff8e0";
-    ctx.beginPath(); ctx.arc(sunX, sunY, sunR, 0, Math.PI * 2); ctx.fill();
-
-    /* Clouds */
-    ctx.fillStyle = "rgba(255,255,255,0.85)";
-    for (var ci = 0; ci < sunny.clouds.length; ci++) {
-      var c = sunny.clouds[ci];
-      c.x -= c.speed * 0.016;
-      if (c.x < -80 * c.s) c.x = w + 80 * c.s;
-      var cx = c.x, cy = c.y, s = c.s;
+  saturn.drawStars = function (t) {
+    for (var i = 0; i < saturn.stars.length; i++) {
+      var s = saturn.stars[i];
+      var tw = 0.55 + 0.45 * Math.sin(t * 0.001 * s.speed + s.phase);
+      ctx.globalAlpha = s.a * tw;
+      ctx.fillStyle = "#dfe8ff";
       ctx.beginPath();
-      ctx.ellipse(cx, cy, 34 * s, 14 * s, 0, 0, Math.PI * 2);
-      ctx.ellipse(cx + 24 * s, cy + 4 * s, 24 * s, 11 * s, 0, 0, Math.PI * 2);
-      ctx.ellipse(cx - 22 * s, cy + 5 * s, 22 * s, 10 * s, 0, 0, Math.PI * 2);
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  };
+
+  saturn.drawRingArc = function (from, to) {
+    var p = saturn.planet;
+    for (var i = 0; i < RING_BANDS.length; i++) {
+      var b = RING_BANDS[i];
+      ctx.strokeStyle = "rgba(" + b.c + "," + b.a + ")";
+      ctx.lineWidth = b.t * p.r;
+      ctx.beginPath();
+      ctx.ellipse(p.cx, p.cy, b.r * p.r, b.r * p.r * RING_SQUASH, RING_TILT, from, to);
+      ctx.stroke();
+    }
+  };
+
+  saturn.drawPlanet = function () {
+    var p = saturn.planet, R = p.r;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(p.cx, p.cy, R, 0, Math.PI * 2);
+    ctx.clip();
+
+    ctx.fillStyle = "#5c5040";
+    ctx.fillRect(p.cx - R, p.cy - R, R * 2, R * 2);
+
+    /* Cloud banding, aligned to the ring plane */
+    ctx.save();
+    ctx.translate(p.cx, p.cy);
+    ctx.rotate(RING_TILT);
+    var bands = [
+      { y: -0.92, h: 0.32, c: "#6b5d48" },
+      { y: -0.46, h: 0.20, c: "#4d4333" },
+      { y: -0.18, h: 0.28, c: "#73644d" },
+      { y: 0.18, h: 0.15, c: "#483f30" },
+      { y: 0.44, h: 0.24, c: "#63563f" },
+      { y: 0.76, h: 0.34, c: "#433a2c" },
+    ];
+    for (var i = 0; i < bands.length; i++) {
+      ctx.fillStyle = bands[i].c;
+      ctx.fillRect(-R * 1.5, bands[i].y * R, R * 3, bands[i].h * R);
+    }
+    ctx.restore();
+
+    /* Shadow the rings throw across the disc */
+    ctx.strokeStyle = "rgba(8,11,20,0.45)";
+    ctx.lineWidth = R * 0.2;
+    ctx.beginPath();
+    ctx.ellipse(p.cx, p.cy, R * 1.4, R * 1.4 * RING_SQUASH, RING_TILT, 0, Math.PI);
+    ctx.stroke();
+
+    /* Terminator — the sun is off to the upper left */
+    var term = ctx.createLinearGradient(p.cx - R, p.cy - R, p.cx + R, p.cy + R * 0.8);
+    term.addColorStop(0, "rgba(10,14,26,0)");
+    term.addColorStop(0.5, "rgba(9,12,23,0.3)");
+    term.addColorStop(1, "rgba(6,9,18,0.8)");
+    ctx.fillStyle = term;
+    ctx.fillRect(p.cx - R, p.cy - R, R * 2, R * 2);
+
+    ctx.restore();
+  };
+
+  /* A satellite tracking the far side of the ring plane. Drawn before the
+     rings and the disc, so both pass in front of it. */
+  saturn.drawSatellite = function (p) {
+    var pl = saturn.planet;
+    var ang = Math.PI + p * Math.PI;
+    var rr = pl.r * 1.62;
+    var ex = Math.cos(ang) * rr;
+    var ey = Math.sin(ang) * rr * RING_SQUASH;
+    var x = pl.cx + ex * Math.cos(RING_TILT) - ey * Math.sin(RING_TILT);
+    var y = pl.cy + ex * Math.sin(RING_TILT) + ey * Math.cos(RING_TILT);
+    var s = Math.min(w, h) * 0.009;
+
+    ctx.save();
+    ctx.globalAlpha = 0.9 * eggFade(p, 0.12);
+    ctx.translate(x, y);
+    ctx.rotate(RING_TILT);
+    ctx.fillStyle = "rgba(196,210,235,0.95)";
+    ctx.fillRect(-s * 0.4, -s * 0.4, s * 0.8, s * 0.8);
+    ctx.fillStyle = "rgba(120,150,200,0.9)";
+    ctx.fillRect(-s * 2.1, -s * 0.28, s * 1.5, s * 0.56);
+    ctx.fillRect(s * 0.6, -s * 0.28, s * 1.5, s * 0.56);
+    ctx.restore();
+  };
+
+  /* A saucer drifting the width of the sky, well above the surface */
+  saturn.drawUfo = function (p, seed) {
+    var dir = seed > 0.5 ? 1 : -1;
+    var span = w + 160;
+    var x = dir > 0 ? -80 + p * span : w + 80 - p * span;
+    var y = h * 0.11 + Math.sin(p * Math.PI * 3) * h * 0.018;
+    var s = Math.min(w, h) * 0.0022;
+
+    ctx.save();
+    ctx.globalAlpha = 0.45 * eggFade(p, 0.1);
+    ctx.translate(x, y);
+    ctx.scale(s * dir, s);
+    ctx.fillStyle = "rgba(120,145,185,0.95)";
+    ctx.beginPath(); ctx.ellipse(0, 0, 17, 5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "rgba(160,190,225,0.8)";
+    ctx.beginPath(); ctx.ellipse(0, -3.5, 7, 6, 0, Math.PI, Math.PI * 2); ctx.fill();
+    var blink = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(p * 120));
+    ctx.fillStyle = "rgba(224,58,47," + blink.toFixed(2) + ")";
+    for (var i = -1; i <= 1; i++) {
+      ctx.beginPath(); ctx.arc(i * 10, 2, 1.4, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  };
+
+  /* Peeks over the ridge, waves, ducks back down. Drawn before the surface
+     so the ground clips it — that is what sells the ducking. */
+  saturn.drawAlien = function (p, seed) {
+    var x = w * (seed > 0.5 ? 0.11 : 0.89);
+    var base = surfaceY(x);
+    var s = Math.min(w, h) * 0.024;
+
+    /* rise, hold, duck */
+    var r = p < 0.18 ? p / 0.18 : (p > 0.82 ? (1 - p) / 0.18 : 1);
+    r = r * r * (3 - 2 * r);
+
+    /* Stops just shy of clearing the ridge, so it still reads as a peek */
+    ctx.save();
+    ctx.globalAlpha = 0.7;
+    ctx.translate(x, base + s * 1.2 - r * s * 1.9);
+
+    ctx.fillStyle = "rgba(126,176,138,0.95)";
+    ctx.beginPath(); ctx.ellipse(0, 0, s * 0.62, s * 0.72, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "rgba(10,16,24,0.9)";
+    ctx.beginPath(); ctx.ellipse(-s * 0.25, -s * 0.08, s * 0.16, s * 0.22, -0.3, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(s * 0.25, -s * 0.08, s * 0.16, s * 0.22, 0.3, 0, Math.PI * 2); ctx.fill();
+
+    /* Waving arm, only once it is all the way up. Drawn after the head and
+       hinged clear of it, so it never ghosts through the translucent fill. */
+    if (r > 0.98) {
+      var wv = Math.sin(p * 42) * 0.55;
+      ctx.strokeStyle = "rgba(126,176,138,0.95)";
+      ctx.lineCap = "round";
+      ctx.lineWidth = s * 0.17;
+      ctx.translate(s * 0.66, s * 0.14);
+      ctx.rotate(0.9 + wv);
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -s * 0.85); ctx.stroke();
+    }
+
+    ctx.restore();
+  };
+
+  saturn.drawSurface = function (scrollY) {
+    /* Boulders sit on the ridge and drift a little as you scroll */
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    drawRow(saturn.boulders, saturn.horizon + h * 0.008, drawRock, "#161d31", 0.05, scrollY);
+    ctx.restore();
+
+    ctx.beginPath();
+    ctx.moveTo(0, surfaceY(0));
+    for (var x = 0; x <= w; x += 16) ctx.lineTo(x, surfaceY(x));
+    ctx.lineTo(w, h); ctx.lineTo(0, h);
+    ctx.closePath();
+    ctx.fillStyle = "#0c1220";
+    ctx.fill();
+
+    /* Rim light off the ridge, lit by the planet */
+    ctx.strokeStyle = "rgba(150,172,215,0.16)";
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(0, surfaceY(0));
+    for (var x2 = 0; x2 <= w; x2 += 16) ctx.lineTo(x2, surfaceY(x2));
+    ctx.stroke();
+
+    /* Craters */
+    var band = h - saturn.horizon;
+    for (var i = 0; i < saturn.craters.length; i++) {
+      var c = saturn.craters[i];
+      var cx = ((c.x * w - scrollY * 0.04) % (w + 200) + w + 200) % (w + 200) - 100;
+      var cy = saturn.horizon + c.d * band;
+      ctx.fillStyle = "rgba(4,7,14,0.5)";
+      ctx.beginPath(); ctx.ellipse(cx, cy, c.rx, c.rx * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "rgba(150,172,215,0.07)";
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.ellipse(cx, cy - 1, c.rx, c.rx * 0.3, 0, Math.PI, Math.PI * 2); ctx.stroke();
+    }
+  };
+
+  /* Planted beside the lander once it is down */
+  saturn.drawFlag = function (x, baseY, tSec, appear) {
+    if (appear <= 0) return;
+    var s = Math.min(w, h) * 0.04 * appear;
+    ctx.save();
+    ctx.globalAlpha = 0.75;
+    ctx.translate(x, baseY);
+    ctx.strokeStyle = "rgba(190,200,220,0.9)";
+    ctx.lineWidth = Math.max(1, s * 0.055);
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -s); ctx.stroke();
+    var flutter = Math.sin(tSec * 2.2) * s * 0.06;
+    ctx.fillStyle = "#e03a2f";
+    ctx.beginPath();
+    ctx.moveTo(0, -s);
+    ctx.quadraticCurveTo(s * 0.3, -s + flutter, s * 0.52, -s * 0.86 + flutter);
+    ctx.quadraticCurveTo(s * 0.3, -s * 0.72 - flutter, 0, -s * 0.62);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  };
+
+  saturn.drawLander = function (x, y, tSec, descend) {
+    var scale = Math.min(w, h) * 0.00052;
+    ctx.save();
+    ctx.globalAlpha = 0.72;
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+
+    /* Retro burn — cut once the legs are down */
+    var burn = Math.max(0, 1 - descend / 0.97);
+    if (burn > 0.01) {
+      var flameLen = (40 + Math.sin(tSec * 20) * 10) * burn;
+      var flameGrad = ctx.createLinearGradient(0, 60, 0, 60 + flameLen);
+      flameGrad.addColorStop(0, "rgba(255,226,170,0.8)");
+      flameGrad.addColorStop(0.5, "rgba(255,140,60,0.6)");
+      flameGrad.addColorStop(1, "rgba(255,90,40,0)");
+      ctx.fillStyle = flameGrad;
+      ctx.beginPath();
+      ctx.moveTo(-14, 58); ctx.lineTo(14, 58); ctx.lineTo(0, 58 + flameLen); ctx.closePath();
       ctx.fill();
     }
 
-    /* Birds */
-    ctx.strokeStyle = "rgba(60,50,40,0.5)";
-    ctx.lineWidth = 1.5;
-    for (var bi = 0; bi < sunny.birds.length; bi++) {
-      var b = sunny.birds[bi];
-      b.x -= b.speed * 0.016;
-      if (b.x < -20) b.x = w + 20;
-      var bob = Math.sin(now * 0.004 + b.phase) * 4;
-      var y = b.y + bob;
-      ctx.beginPath();
-      ctx.moveTo(b.x - 8, y); ctx.quadraticCurveTo(b.x - 3, y - 6, b.x, y);
-      ctx.quadraticCurveTo(b.x + 3, y - 6, b.x + 8, y);
-      ctx.stroke();
-    }
-
-    /* Terrain — held at low opacity so it reads as atmosphere behind the
-       text panel rather than competing with the copy */
-    ctx.save();
-    ctx.globalAlpha = 0.4;
-    drawRow(sunny.rocks, horizon - h * 0.04, drawRock, "#9c8264", 0.06, scrollY);
-    drawRow(sunny.cacti, horizon + h * 0.015, drawCactus, "#5a8f4f", 0.1, scrollY);
-    ctx.restore();
-
-    /* Ground */
-    ctx.fillStyle = "#4f7a4a";
-    ctx.fillRect(0, horizon, w, h - horizon);
-    ctx.fillStyle = "#3f6a3d";
-    ctx.beginPath();
-    ctx.moveTo(0, horizon);
-    for (var x2 = 0; x2 <= w; x2 += 40) ctx.lineTo(x2, horizon + Math.sin(x2 * 0.01 + scrollY * 0.002) * 6);
-    ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
-    ctx.fill();
-
-    /* Rocket — drawn last so it sits above the ground and cacti */
-    var tSec = t * 0.001;
-    var rocketBaseY = horizon;
-    var descend = scrollProgress;
-    var rocketY = h * 0.06 + descend * (rocketBaseY - h * 0.06) + Math.sin(tSec * 1.4) * 3 * (1 - descend * 0.6);
-    var rocketX = w * (5 / 6);
-    var scale = Math.min(w, h) * 0.00042;
-
-    ctx.save();
-    ctx.translate(rocketX, rocketY);
-    ctx.scale(scale, scale);
-    var flameLen = 40 + Math.sin(tSec * 20) * 10;
-    var flameGrad = ctx.createLinearGradient(0, 60, 0, 60 + flameLen);
-    flameGrad.addColorStop(0, "rgba(255,236,180,0.95)");
-    flameGrad.addColorStop(0.5, "rgba(255,150,60,0.8)");
-    flameGrad.addColorStop(1, "rgba(255,90,40,0)");
-    ctx.fillStyle = flameGrad;
-    ctx.beginPath();
-    ctx.moveTo(-14, 58); ctx.lineTo(14, 58); ctx.lineTo(0, 58 + flameLen); ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = "#e7e9ee";
+    ctx.fillStyle = "#9aa3b4";
     ctx.beginPath();
     ctx.moveTo(0, -70);
     ctx.quadraticCurveTo(24, -10, 20, 50);
@@ -470,30 +661,83 @@
     ctx.quadraticCurveTo(-24, -10, 0, -70);
     ctx.closePath();
     ctx.fill();
-    ctx.fillStyle = "#e03a2f";
+    ctx.fillStyle = "#a8342b";
     ctx.beginPath(); ctx.moveTo(-20, 20); ctx.lineTo(-40, 55); ctx.lineTo(-16, 45); ctx.closePath(); ctx.fill();
     ctx.beginPath(); ctx.moveTo(20, 20); ctx.lineTo(40, 55); ctx.lineTo(16, 45); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = "rgba(90,140,190,0.75)";
+    ctx.fillStyle = "rgba(96,140,185,0.6)";
     ctx.beginPath(); ctx.ellipse(0, -18, 10, 14, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#c7cad1";
+    ctx.fillStyle = "#7d8596";
     ctx.beginPath(); ctx.moveTo(-20, 50); ctx.lineTo(20, 50); ctx.lineTo(14, 62); ctx.lineTo(-14, 62); ctx.closePath(); ctx.fill();
     ctx.restore();
+  };
 
-    /* Smoke */
-    if (descend > 0.55) {
-      var groundY = horizon;
-      var smokeAlpha = Math.min(1, (descend - 0.55) / 0.3);
-      for (var si = 0; si < sunny.smoke.length; si++) {
-        var sm = sunny.smoke[si];
-        var life = (tSec * 0.6 + sm.t) % 1;
-        var sy = rocketY + 70 * scale + life * 60;
-        if (sy > groundY) continue;
-        var sx = rocketX + sm.ox * (1 + life * 2);
+  saturn.frame = function (t, dt, scrollY) {
+    var docMax = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    var descend = Math.min(1, scrollY / docMax);
+    var tSec = t * 0.001;
+    var mobile = isMobile();
+
+    /* Sky — darkest overhead, never brighter than #141b30 at the horizon */
+    var sky = ctx.createLinearGradient(0, 0, 0, saturn.horizon);
+    sky.addColorStop(0, "#05070f");
+    sky.addColorStop(0.5, "#0a1020");
+    sky.addColorStop(1, "#141b30");
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, w, saturn.horizon + 1);
+
+    saturn.drawStars(t);
+
+    /* Saturn: satellite, far rings, disc, near rings */
+    var pSat = eggProgress(saturn.eggs.satellite, t);
+    if (pSat >= 0) saturn.drawSatellite(pSat);
+
+    ctx.save();
+    ctx.globalAlpha = 0.74;
+    saturn.drawRingArc(Math.PI, Math.PI * 2);
+    saturn.drawPlanet();
+    saturn.drawRingArc(0, Math.PI);
+    ctx.restore();
+
+    var pUfo = eggProgress(saturn.eggs.ufo, t);
+    if (pUfo >= 0) saturn.drawUfo(pUfo, saturn.eggs.ufo.seed);
+
+    /* Alien goes under the surface so the ridge clips it */
+    var pAlien = eggProgress(saturn.eggs.alien, t);
+    if (pAlien >= 0) saturn.drawAlien(pAlien, saturn.eggs.alien.seed);
+
+    saturn.drawSurface(scrollY);
+
+    /* Lander comes down on the opposite side of the frame to Saturn */
+    var landX = w * (mobile ? 0.2 : 0.19);
+    var padY = surfaceY(landX);
+    var scale = Math.min(w, h) * 0.00052;
+    var restY = padY - 62 * scale;
+    var landY = h * 0.05 + descend * (restY - h * 0.05)
+      + Math.sin(tSec * 1.4) * 3 * (1 - descend * 0.6);
+
+    saturn.drawLander(landX, landY, tSec, descend);
+    saturn.drawFlag(
+      landX + Math.min(w, h) * 0.045,
+      padY,
+      tSec,
+      Math.max(0, Math.min(1, (descend - 0.93) / 0.06))
+    );
+
+    /* Dust kicked up on the way down */
+    if (descend > 0.6 && descend < 0.995) {
+      var puff = Math.min(1, (descend - 0.6) / 0.25);
+      ctx.save();
+      ctx.globalAlpha = 0.3 * puff;
+      for (var si = 0; si < 10; si++) {
+        var life = (tSec * 0.5 + si / 10) % 1;
+        var sy = landY + 66 * scale + life * h * 0.05;
+        if (sy > padY) continue;
+        ctx.fillStyle = "rgba(150,160,185," + ((1 - life) * 0.4).toFixed(3) + ")";
         ctx.beginPath();
-        ctx.arc(sx, sy, sm.r * (0.5 + life), 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(230,225,215," + ((1 - life) * 0.35 * smokeAlpha).toFixed(3) + ")";
+        ctx.arc(landX + (si - 4.5) * 3 * (1 + life * 2), sy, 3 + life * 8, 0, Math.PI * 2);
         ctx.fill();
       }
+      ctx.restore();
     }
   };
 
@@ -506,7 +750,7 @@
     canvas.width = w * dpr; canvas.height = h * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    if (SCENE === "sunny") sunny.resize();
+    if (SCENE === "saturn") saturn.resize();
     else forest.resize();
   }
 
@@ -519,7 +763,7 @@
       var scrollY = window.scrollY || 0;
       ctx.clearRect(0, 0, w, h);
 
-      if (SCENE === "sunny") sunny.frame(t, dt, scrollY);
+      if (SCENE === "saturn") saturn.frame(t, dt, scrollY);
       else forest.frame(t, dt, scrollY);
     } catch (err) {
       console.error("about-me scene error", err);

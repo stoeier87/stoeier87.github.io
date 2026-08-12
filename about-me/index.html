@@ -11,66 +11,46 @@
     <link href="/css/all.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="/tailwind.css" />
   </head>
-  <body data-scene="sunny">
+  <body data-scene="saturn">
     <canvas id="scene" aria-hidden="true"></canvas>
     <div class="scrim" aria-hidden="true"></div>
 
     <header class="topbar">
-      <a class="pill back" href="../">
+      <a class="pill back" href="../" aria-label="Back to homepage" title="Back to homepage">
         <span class="arrow"><i class="fa-solid fa-arrow-left-long"></i></span>
-        Back to homepage
       </a>
     </header>
 
     <main>
       <section class="block bio-block">
         <div class="bio-inner">
-          <!-- Panel — holds the contrast constant whether bright sky or dark
-               ground happens to sit behind it -->
           <div class="bio-panel">
 
             <!-- Hero -->
             <div class="bio-hero">
-              <p class="eyebrow">About</p>
+              <p class="eyebrow">About me</p>
               <h1 class="name">TOBIAS FULLERTON<br /><span class="red">STØIER</span></h1>
             </div>
 
-            <!-- Lead statement -->
-            <p class="bio-lead">I'm a digital strategist with 15 years of experience turning digital ambition into products and services people actually use.</p>
+            <!-- Body: one continuous column -->
+            <div class="bio-body">
+              <p>I'm a digital strategist with 15+ years of experience turning digital ambition into products and services people actually use.</p>
 
-            <!-- Labeled entries -->
-            <div class="bio-entries">
+              <p>I spent years in the agency world working with some of Denmark's largest brands, spanning fintech, energy, telecom, automotive, hospitality, retail and the public sector. Everything from early strategy and service design to the hard choices in execution: what to build, what to buy, and what to cut.</p>
 
-              <article class="bio-entry">
-                <span class="bio-tag">Agency</span>
-                <p>I spent years in the agency world working with some of Denmark's largest brands, spanning fintech, energy, telecom, automotive, hospitality, retail and the public sector. Everything from early strategy and service design to the hard choices in execution: what to build, what to buy, and what to cut.</p>
-              </article>
+              <p>In my current role, I advise executive leadership on digital strategy, including how AI translates into real service and business value. My craft runs the full distance: spotting the opportunity, building the business case, understanding the systems underneath, and shaping the creative solutions and specifications that make it buildable. Often the real value lies in reframing the problem: challenging how things are done before deciding what to build.</p>
 
-              <article class="bio-entry">
-                <span class="bio-tag">Strategy</span>
-                <p>In my current role, I advise executive leadership on digital strategy, including how AI translates into real service and business value. My craft runs the full distance: spotting the opportunity, building the business case, understanding the systems underneath, and shaping the creative solutions and specifications that make it buildable. Often the real value lies in reframing the problem: challenging how things are done before deciding what to build.</p>
-              </article>
+              <p>I speak frequently on digital value creation, covering digital strategy, design thinking, service design and gamification. I've given talks and run workshops for major Danish companies, public institutions and universities, and hosted industry sessions bringing practitioners together around the craft.</p>
 
-              <article class="bio-entry">
-                <span class="bio-tag">Speaking</span>
-                <p>I speak frequently on digital value creation, covering digital strategy, design thinking, service design and gamification. I've given talks and run workshops for major Danish companies, public institutions and universities, and hosted industry sessions bringing practitioners together around the craft.</p>
-              </article>
+              <p>I care about developing others: partly a responsibility, partly the best way to keep learning. I've mentored, lectured and supervised at several Danish universities, and I continue to take on mentorship and advisory roles.</p>
 
-              <article class="bio-entry">
-                <span class="bio-tag">Mentorship</span>
-                <p>I care about developing others: partly a responsibility, partly the best way to keep learning. I've mentored, lectured and supervised at several Danish universities, and I continue to take on mentorship and advisory roles.</p>
-              </article>
+              <p>The work I've done with the teams I've been part of over the years has resulted in several awards, and I currently serve as a jury member evaluating digital excellence in Denmark.</p>
 
-              <article class="bio-entry">
-                <span class="bio-tag">Awards</span>
-                <p>The work I've done with the teams I've been part of over the years has resulted in several awards, and I currently serve as a jury member evaluating digital excellence in Denmark.</p>
-              </article>
-
+              <p>If you're curious about a talk, a workshop, mentorship, board work or strategic sparring, reach out. My calendar is not endless, but the right conversations always find room.</p>
             </div>
 
-            <!-- CTA + contact -->
+            <!-- Contact -->
             <div class="bio-footer">
-              <p class="bio-cta">If you're curious about a talk, a workshop, mentorship, board work or strategic sparring, reach out. My calendar is not endless, but the right conversations always find room.</p>
               <nav class="bio-contact" aria-label="Contact">
                 <a class="pill" href="mailto:tobias@stoeier.dk">
                   <span class="arrow"><i class="fa-regular fa-envelope" style="color:#e03a2f"></i></span>

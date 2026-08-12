@@ -2,13 +2,14 @@
   --bg: #0d1424;
   --ink: #ffffff;
   --red: #e03a2f;
-  --ink-body: rgba(255, 255, 255, 0.9);
+  --ink-body: rgba(255, 255, 255, 0.93);
   --ink-muted: rgba(255, 255, 255, 0.65);
-  --ink-label: rgba(255, 255, 255, 0.55);
   --ink-dim: rgba(255, 255, 255, 0.35);
   --mono: "Space Mono", ui-monospace, monospace;
   --display: "Archivo Black", sans-serif;
-  --panel: rgba(16, 20, 35, 0.85);
+  /* Barely darker than the sky the scene paints, so it reads as a pool of
+     shade rather than a card — but deep enough to sink Saturn behind the copy */
+  --panel: rgba(7, 11, 21, 0.62);
   /* Echoes the pill radius without turning a tall panel into a stadium */
   --radius-panel: 28px;
 }
@@ -24,31 +25,42 @@ a { color: inherit; text-decoration: none; }
 
 .scrim {
   position: fixed; inset: 0; z-index: 1; pointer-events: none;
-  /* Even tone top-to-bottom — the old scrim dipped in the middle, which made
-     the sky/ground transition read as a hard band across the content */
   background: linear-gradient(to bottom,
-    rgba(5, 10, 18, 0.42),
-    rgba(5, 10, 18, 0.36) 50%,
-    rgba(5, 10, 18, 0.5) 100%
+    rgba(4, 7, 14, 0.3),
+    rgba(4, 7, 14, 0.24) 50%,
+    rgba(4, 7, 14, 0.36) 100%
   );
 }
 
 .topbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 10;
   padding: 1.1rem 1.25rem;
-  /* background: linear-gradient(to bottom, var(--bg) 30%, transparent); */
 }
 
+/* Same pill as the homepage: identical box, and the same idle float */
 .pill {
   display: inline-flex; align-items: center; font-family: var(--mono);
   font-size: clamp(0.7rem, 1.8vw, 0.85rem); letter-spacing: 0.08em; color: var(--ink);
   padding: 0.85rem 1.4rem; border: 1.5px solid rgba(255, 255, 255, 0.4); border-radius: 100px;
   background: rgba(13, 20, 36, 0.6);
-  transition: border-color 0.25s ease, background 0.25s ease;
+  transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
 }
 .pill:hover { border-color: var(--red); background: rgba(224, 58, 47, 0.12); }
 .pill:focus-visible { outline: 2px solid var(--red); outline-offset: 4px; border-color: var(--red); }
 .pill .arrow { margin-right: 0.5em; }
+
+/* Icon only — the same pill, collapsed to a circle around the arrow */
+.pill.back {
+  animation: float 5s ease-in-out infinite;
+  justify-content: center;
+  padding: 0.85rem;
+}
+.pill.back .arrow { margin-right: 0; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
 
 main { position: relative; z-index: 2; }
 
@@ -73,13 +85,22 @@ main { position: relative; z-index: 2; }
   width: 100%;
 }
 
-/* Panel — sits above the illustration so contrast never depends on what the
-   scene happens to be drawing behind it */
+/* A soft pool of shade rather than a card — it sinks Saturn behind the copy
+   without drawing a rectangle across the scene */
 .bio-panel {
-  background: var(--panel);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: var(--radius-panel);
+  position: relative;
+  isolation: isolate;
   padding: 2rem;
+}
+
+.bio-panel::before {
+  content: "";
+  position: absolute;
+  inset: -1.5rem;
+  z-index: -1;
+  border-radius: var(--radius-panel);
+  background: var(--panel);
+  filter: blur(34px);
 }
 
 /* Hero */
@@ -104,70 +125,40 @@ main { position: relative; z-index: 2; }
 }
 .name .red { color: var(--red); }
 
-/* Lead — the big opening statement */
-.bio-lead {
-  font-size: clamp(1.05rem, 2.4vw, 1.28rem);
-  line-height: 1.7;
-  color: var(--ink);
-  padding-bottom: 2.75rem;
-  margin-bottom: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+/* Body — one continuous single column, generous air between paragraphs */
+.bio-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2.25rem;
 }
 
-/* Tagged entries */
-.bio-entries { margin-bottom: 0; }
-
-.bio-entry {
-  display: grid;
-  grid-template-columns: 80px 1fr;
-  gap: 2.25rem;
-  padding: 1.75rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.11);
+.bio-body p {
+  font-size: 1.125rem;
+  line-height: 1.7;
+  color: var(--ink-body);
   /* start hidden; animated in once .bio-block.visible */
   opacity: 0;
   transform: translateY(12px);
 }
 
-.bio-block.visible .bio-entry {
+.bio-block.visible .bio-body p {
   animation: entryIn 0.6s ease forwards;
 }
-.bio-block.visible .bio-entry:nth-child(1) { animation-delay: 0.18s; }
-.bio-block.visible .bio-entry:nth-child(2) { animation-delay: 0.30s; }
-.bio-block.visible .bio-entry:nth-child(3) { animation-delay: 0.42s; }
-.bio-block.visible .bio-entry:nth-child(4) { animation-delay: 0.54s; }
-.bio-block.visible .bio-entry:nth-child(5) { animation-delay: 0.66s; }
+.bio-block.visible .bio-body p:nth-child(1) { animation-delay: 0.15s; }
+.bio-block.visible .bio-body p:nth-child(2) { animation-delay: 0.25s; }
+.bio-block.visible .bio-body p:nth-child(3) { animation-delay: 0.35s; }
+.bio-block.visible .bio-body p:nth-child(4) { animation-delay: 0.45s; }
+.bio-block.visible .bio-body p:nth-child(5) { animation-delay: 0.55s; }
+.bio-block.visible .bio-body p:nth-child(6) { animation-delay: 0.65s; }
+.bio-block.visible .bio-body p:nth-child(7) { animation-delay: 0.75s; }
 
 @keyframes entryIn {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* White at reduced opacity — red disappeared against the bright sky, and it is
-   reserved for accents that always sit on dark (the name, the pill icons) */
-.bio-tag {
-  font-size: 0.6rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--ink-label);
-  padding-top: 0.28em;
-  line-height: 1.6;
-}
-
-.bio-entry p {
-  font-size: clamp(0.87rem, 1.75vw, 0.97rem);
-  line-height: 1.9;
-  color: var(--ink-body);
-}
-
-/* Footer: CTA + pills */
+/* Footer: contact pills */
 .bio-footer {
-  padding-top: 2.5rem;
-}
-
-.bio-cta {
-  font-size: clamp(0.95rem, 2.1vw, 1.1rem);
-  line-height: 1.75;
-  color: var(--ink);
-  margin-bottom: 2.25rem;
+  padding-top: 2.75rem;
 }
 
 .bio-contact {
@@ -176,14 +167,9 @@ main { position: relative; z-index: 2; }
   flex-wrap: wrap;
 }
 
-/* Narrow: label sits above the paragraph, full width — never squeezed beside it */
 @media (max-width: 640px) {
-  .bio-entry {
-    grid-template-columns: 1fr;
-    gap: 0.55rem;
-    padding: 1.5rem 0;
-  }
-  .bio-tag { padding-top: 0; }
+  .bio-body { gap: 1.9rem; }
+  .bio-body p { font-size: 1.0625rem; }
 }
 
 @media (max-width: 560px) {
@@ -191,9 +177,13 @@ main { position: relative; z-index: 2; }
     padding-left: 1rem;
     padding-right: 1rem;
   }
-  .bio-panel {
-    padding: 1.25rem;
-    border-radius: 20px;
-  }
+  .bio-panel { padding: 1.25rem; }
+  .bio-panel::before { inset: -1rem; border-radius: 20px; filter: blur(26px); }
   .bio-hero { margin-bottom: 2.25rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill.back { animation: none; }
+  .block { transition: none; }
+  .bio-body p { opacity: 1; transform: none; animation: none; }
 }
