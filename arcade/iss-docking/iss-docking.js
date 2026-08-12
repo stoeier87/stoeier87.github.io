@@ -767,22 +767,26 @@ import {
   bindBtn("left", "left");
   bindBtn("right", "right");
 
-  // Touch zones: invisible N/S/E/W directional areas split along viewport diagonals.
-  // Only activate on touch-capable devices.
+  // Touch zones: invisible N/S/E/W directional areas split along diagonals
+  // through the capsule's current on-screen position. Only activate on
+  // touch-capable devices.
   if (isTouchDevice) {
     document.documentElement.classList.add("touch-zones");
     const touchZonesEl = document.getElementById("touchZones");
     if (touchZonesEl) {
       const resolveDir = (x, y) => {
-        const cx = W / 2,
-          cy = H / 2;
-        const nx = (x - cx) / (W / 2),
-          ny = (y - cy) / (H / 2);
-        return Math.abs(nx) > Math.abs(ny)
-          ? nx > 0
+        // Pivot on where the capsule is drawn (world → viewport, matches the
+        // draw transform in the render pass). Read live so touchstart and
+        // touchmove both use the capsule's current position.
+        const cx = capsule.x * viewScale + viewOffX;
+        const cy = capsule.y * viewScale + viewOffY;
+        const dx = x - cx;
+        const dy = y - cy;
+        return Math.abs(dx) > Math.abs(dy)
+          ? dx > 0
             ? "right"
             : "left"
-          : ny > 0
+          : dy > 0
             ? "down"
             : "up";
       };
@@ -821,15 +825,28 @@ import {
         { passive: false }
       );
 
-      touchZonesEl.addEventListener("touchmove", (e) => {
-        for (const t of e.touches) {
-          const entry = activeTouches.get(t.identifier);
-          if (entry) {
+      touchZonesEl.addEventListener(
+        "touchmove",
+        (e) => {
+          e.preventDefault();
+          for (const t of e.touches) {
+            const entry = activeTouches.get(t.identifier);
+            if (!entry) continue;
             entry.glow.style.left = t.clientX + "px";
             entry.glow.style.top = t.clientY + "px";
+            // Follow the finger: if it drags into a new quadrant, swap thrust
+            // directions without needing a lift-and-retap. Ramp restarts for
+            // the new direction (pressTouchDir only sets touchStart when 0).
+            const newDir = resolveDir(t.clientX, t.clientY);
+            if (newDir !== entry.dir) {
+              releaseTouchDir(entry.dir);
+              pressTouchDir(newDir);
+              entry.dir = newDir;
+            }
           }
-        }
-      });
+        },
+        { passive: false }
+      );
 
       const handleTouchEnd = (e) => {
         for (const t of e.changedTouches) {
