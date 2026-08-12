@@ -420,7 +420,20 @@
     /* Rocks */
     drawRow(sunny.rocks, h * 0.66, drawRock, "#9c8264", 0.06, scrollY);
 
-    /* Rocket */
+    /* Cacti */
+    drawRow(sunny.cacti, h * 0.82, drawCactus, "#5a8f4f", 0.1, scrollY);
+
+    /* Ground */
+    ctx.fillStyle = "#4f7a4a";
+    ctx.fillRect(0, h * 0.86, w, h * 0.14);
+    ctx.fillStyle = "#3f6a3d";
+    ctx.beginPath();
+    ctx.moveTo(0, h * 0.86);
+    for (var x2 = 0; x2 <= w; x2 += 40) ctx.lineTo(x2, h * 0.86 + Math.sin(x2 * 0.01 + scrollY * 0.002) * 6);
+    ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
+    ctx.fill();
+
+    /* Rocket — drawn last so it sits above the ground and cacti */
     var tSec = t * 0.001;
     var rocketBaseY = h * 0.86;
     var descend = scrollProgress;
@@ -473,19 +486,6 @@
         ctx.fill();
       }
     }
-
-    /* Cacti */
-    drawRow(sunny.cacti, h * 0.82, drawCactus, "#5a8f4f", 0.1, scrollY);
-
-    /* Ground */
-    ctx.fillStyle = "#4f7a4a";
-    ctx.fillRect(0, h * 0.86, w, h * 0.14);
-    ctx.fillStyle = "#3f6a3d";
-    ctx.beginPath();
-    ctx.moveTo(0, h * 0.86);
-    for (var x2 = 0; x2 <= w; x2 += 40) ctx.lineTo(x2, h * 0.86 + Math.sin(x2 * 0.01 + scrollY * 0.002) * 6);
-    ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
-    ctx.fill();
   };
 
   /* ============================================================
