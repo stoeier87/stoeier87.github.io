@@ -1,11 +1,10 @@
-*, *::before, *::after{ box-sizing: border-box; }
 
 html, body{
   margin:0; padding:0; width:100%; height:100%;
   overflow:hidden;
-  background:#070b14;
-  color:#fff;
-  font-family:"Space Mono", ui-monospace, monospace;
+  background:var(--color-bg-deep);
+  color:var(--color-ink);
+  font-family:var(--font-mono);
   -webkit-user-select:none; user-select:none;
   -webkit-touch-callout:none;
   -webkit-tap-highlight-color:transparent;
@@ -58,7 +57,7 @@ html, body{
 .stat{
   font-size:12px; color:rgba(255,255,255,.6); letter-spacing:.06em;
 }
-.stat strong{ color:#fff; margin-left:6px; font-size:13px; }
+.stat strong{ color:var(--color-ink); margin-left:6px; font-size:13px; }
 .stat strong.best-val{ color:#e03a2f; }
 a.stat{ text-decoration:none; cursor:pointer; }
 a.stat:hover{ border-color:rgba(255,255,255,.3); }
@@ -171,7 +170,7 @@ a.stat:hover{ border-color:rgba(255,255,255,.3); }
   border-radius:10px;
   border:2px solid #3fd67a99;
   background:rgba(10,14,24,.82);
-  color:#fff;
+  color:var(--color-ink);
   font:700 13px "Space Mono", monospace;
   letter-spacing:.1em; text-transform:uppercase;
   touch-action:manipulation; cursor:pointer;
@@ -226,7 +225,7 @@ html.touch-zones .controls{ display:none; }
   border-radius:12px;
   border:1px solid rgba(255,255,255,.25);
   background:rgba(10,14,24,.6);
-  color:#fff;
+  color:var(--color-ink);
   font-size:19px;
   touch-action:manipulation;
 }
