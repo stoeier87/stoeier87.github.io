@@ -2,6 +2,10 @@ name: Build Site
 
 on:
   workflow_call:
+    inputs:
+      ref:
+        required: false
+        type: string
 
 jobs:
   build:
@@ -9,6 +13,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Validate Firebase config variables
         env:

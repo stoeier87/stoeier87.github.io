@@ -1,10 +1,9 @@
 name: Deploy GitHub Pages
 
 on:
-  push:
-    branches: ["main"]
   pull_request:
     branches: ["main"]
+    types: [opened, synchronize, reopened, closed]
   workflow_dispatch:
 
 concurrency:
@@ -14,9 +13,11 @@ concurrency:
 jobs:
   build:
     uses: ./.github/workflows/build.yml
+    with:
+      ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
 
   deploy:
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true)
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -35,4 +36,4 @@ jobs:
           publish_dir: dist
           destination_dir: .
           keep_files: true
-          commit_message: "Deploy production: ${{ github.sha }}"
+          commit_message: "Deploy production: ${{ github.event.pull_request.merge_commit_sha || github.sha }}"
