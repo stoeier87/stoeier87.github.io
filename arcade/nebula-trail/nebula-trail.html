@@ -10,16 +10,56 @@
     <link rel="stylesheet" href="/tailwind.css" />
   </head>
   <body>
-    <canvas id="game"></canvas>
-    <div class="hud">
-      <a href="../index.html">← Arcade</a>
-      <div>Score: <span id="score">0</span></div>
-      <div>Best: <span id="best">0</span></div>
+    <canvas id="game" aria-hidden="true"></canvas>
+
+    <!-- Top bar: back link + title badge (left), score + best (right) -->
+    <div class="topbar">
+      <div class="topbar-group">
+        <a href="../index.html" class="pill link">← Arcade</a>
+        <div class="pill badge">
+          <span class="beacon"></span>
+          NEBULA TRAIL
+        </div>
+      </div>
+      <div class="topbar-group">
+        <div class="pill stat">SCORE <strong id="score">0</strong></div>
+        <a class="pill stat" href="/scoreboard/">BEST <strong id="best" class="best-val">0</strong></a>
+      </div>
     </div>
+
+    <!-- Intro card -->
+    <div class="intro-container">
+      <div class="intro" id="intro">
+        <div class="intro-title">NEBULA TRAIL</div>
+        <div class="intro-body">
+          Arrows / WASD or the d-pad to steer. Eat pellets to grow — the
+          bigger the trail, the bigger the pellets. Grab the rare comet
+          before it fades!
+        </div>
+      </div>
+    </div>
+
+    <!-- Game over sign -->
+    <div id="gameOver" class="gameover">
+      <div class="gameover-card">
+        <div id="gameOverTitle" class="gameover-title">TRAIL FADED</div>
+        <div class="gameover-sub">Press R to restart</div>
+        <button id="gameOverRestart" class="restart-btn" type="button">Restart</button>
+      </div>
+    </div>
+
+    <!-- Touch controls -->
     <div class="controls" id="controls">
-      <button id="left" aria-label="Turn left">↺</button>
-      <button id="right" aria-label="Turn right">↻</button>
+      <div class="dpad">
+        <button id="up" aria-label="Turn up">▲</button>
+        <div class="dpad-row">
+          <button id="left" aria-label="Turn left">◀</button>
+          <button id="down" aria-label="Turn down">▼</button>
+          <button id="right" aria-label="Turn right">▶</button>
+        </div>
+      </div>
     </div>
+
     <script type="module" src="nebula-trail.js"></script>
   </body>
 </html>
