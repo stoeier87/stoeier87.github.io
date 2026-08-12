@@ -100,6 +100,11 @@ html.ufo-on .ufo.live {
 }
 
 /* ---- Topbar ---- */
+/* header.topbar overrides the shared arcade .topbar pointer-events:none from tailwind.css */
+header.topbar {
+  pointer-events: auto;
+}
+
 .topbar {
   position: fixed;
   top: 0;
@@ -257,6 +262,8 @@ html.js-anim #stageName .word {
   max-width: 60rem;
   z-index: 4;
   position: relative;
+  width: 100%;
+  margin: 10px auto;
 }
 
 .pill {
