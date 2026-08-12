@@ -337,13 +337,43 @@ $("recentreBtn").addEventListener("click", () => {
 /* ============================================================
    Black hole filtering
    ============================================================ */
-const OPENERS = ["Hold on.", "Watch this.", "One moment.", "Stand back."];
+/* The bartender's whole vocabulary. Nothing here counts anything. */
+const GREETINGS = [
+  "Evening. What are we drinking?",
+  "You made it. Pick a star, any star.",
+  "Bar's open. Pull up a moon.",
+];
+const FILTER_LINES = {
+  all: ["Everything we've got. Take your time.", "The whole sky. Good luck."],
+  strong: ["Good. The universe is cold.", "Say no more.", "Hope you're not flying the ship home."],
+  weird: ["Ah. A person of taste.", "These ones do things. Watch closely.", "Nothing here behaves normally."],
+  "zero-proof": ["Smart. Someone has to fly home.", "Respect. The stars look better sober anyway.", "All the theatre, none of the regret."],
+};
+
+/* Never the same line twice running, per pool */
+const lastSaid = {};
+function pick(key, lines) {
+  if (lines.length === 1) return lines[0];
+  let line;
+  do { line = lines[Math.floor(Math.random() * lines.length)]; }
+  while (line === lastSaid[key]);
+  lastSaid[key] = line;
+  return line;
+}
+
 let bhBusy = false;
 
-function blackholeOpen() {
+/* The point of the map currently under the middle of the screen. On a phone
+   the map centre is usually far off-viewport, so anchoring there meant the
+   whole animation happened where nobody could see it. */
+function viewportHub() {
+  return { x: -pos.x + window.innerWidth / 2, y: -pos.y + window.innerHeight / 2 };
+}
+
+function blackholeOpen(hub) {
   if (reduced()) return Promise.resolve();
-  blackhole.style.left = field.w / 2 + "px";
-  blackhole.style.top = field.h / 2 + "px";
+  blackhole.style.left = hub.x + "px";
+  blackhole.style.top = hub.y + "px";
   return blackhole.animate(
     [
       { transform: "scale(0.1) rotate(0deg)", opacity: 0 },
@@ -364,9 +394,8 @@ function blackholeClose() {
   ).finished;
 }
 
-function suck(n) {
-  const cx = field.w / 2, cy = field.h / 2;
-  const dx = cx - n.x, dy = cy - n.y;
+function suck(n, hub) {
+  const dx = hub.x - n.x, dy = hub.y - n.y;
   const dist = Math.hypot(dx, dy) || 1;
   const deg = (Math.atan2(dy, dx) * 180) / Math.PI;
   const px = -dy / dist, py = dx / dist;          // perpendicular, for the curve
@@ -398,7 +427,7 @@ function suck(n) {
   );
 }
 
-function restore(n) {
+function restore(n, hub) {
   n.gone = false;
   delete n.el.dataset.gone;
   if (reduced()) {
@@ -407,8 +436,7 @@ function restore(n) {
     return;
   }
   const anims = n.el.getAnimations();
-  const cx = field.w / 2, cy = field.h / 2;
-  const dx = cx - n.x, dy = cy - n.y;
+  const dx = hub.x - n.x, dy = hub.y - n.y;
   const dist = Math.hypot(dx, dy) || 1;
   const delay = Math.min(180, dist * 0.09);
   anims.forEach((a) => a.cancel());
@@ -433,29 +461,28 @@ async function applyFilter(key) {
   const toHide = nodes.filter((n) => !matches(n.data) && !n.gone);
   const toShow = nodes.filter((n) => matches(n.data) && n.gone);
 
-  const count = key === "all" ? 40 : COCKTAILS.filter((c) => c.category === key).length;
-
   if (!toHide.length && !toShow.length) return;
 
-  say(OPENERS[Math.floor(Math.random() * OPENERS.length)]);
+  /* Fixed for the whole beat, so a pan mid-animation cannot move the target */
+  const hub = viewportHub();
+
+  say(pick(key, FILTER_LINES[key]));
 
   if (reduced()) {
-    toHide.forEach(suck);
-    toShow.forEach(restore);
-    setTimeout(() => say(`${count} left. Take your pick.`), 400);
+    toHide.forEach((n) => suck(n, hub));
+    toShow.forEach((n) => restore(n, hub));
     return;
   }
 
   bhBusy = true;
-  await blackholeOpen();
-  toHide.forEach(suck);
-  toShow.forEach(restore);
+  await blackholeOpen(hub);
+  toHide.forEach((n) => suck(n, hub));
+  toShow.forEach((n) => restore(n, hub));
   /* Longest star animation is 620ms + up to 200ms of delay */
   setTimeout(async () => {
     await blackholeClose();
     bhBusy = false;
     markNear();
-    say(`${count} left. Take your pick.`);
   }, 700);
 }
 
@@ -549,31 +576,21 @@ document.addEventListener("keydown", (e) => {
 });
 
 /* ============================================================
-   Entry
+   Open the bar — you walk straight in
    ============================================================ */
-const entry = $("entry"), bar = $("bar");
 let entered = false;
 
-function enter() {
-  if (entered) return;
+function openBar() {
   entered = true;
-  entry.classList.add("leaving");
-  bar.hidden = false;
-
   computeField();
   buildStars();
   rocketAt = { x: field.w / 2, y: field.h / 2 };
   centreOn(field.w / 2, field.h / 2, false);
-
-  setTimeout(() => { entry.style.display = "none"; }, 520);
-  say("What are you drinking tonight?", 420);
+  say(pick("greeting", GREETINGS), 500);
   nudgeIdle();
 }
 
-$("enterBtn").addEventListener("click", enter);
-document.addEventListener("keydown", (e) => {
-  if (!entered && (e.code === "Space" || e.key === " ")) { e.preventDefault(); enter(); }
-});
+openBar();
 
 /* Relayout on resize, keeping the current filter and roughly the same view */
 let resizeTimer = null;
