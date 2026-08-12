@@ -377,3 +377,46 @@ footer a:focus-visible {
     z-index: 2;
   }
 }
+
+/* ---- Static home ----------------------------------------------------
+   On a phone the 650vh scroll journey meant the page ran far past its
+   content, the fixed topbar sat on top of the headline, and the letters
+   spent most of the scroll detached mid-flight. Narrow screens (and anyone
+   who asked for reduced motion) get the finished composition instead, laid
+   out in normal flow: buttons, headline, contact, footer. JS pins the
+   letter animation at its end state, so nothing is ever left scattered. */
+html.static-home body { overflow-x: hidden; }
+
+html.static-home .topbar {
+  position: static;
+  background: none;
+  padding: 1.6rem 1.25rem 0;
+}
+
+html.static-home .journey { height: auto; }
+
+html.static-home .stage {
+  position: static;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+  padding: 2.25rem 1.25rem 2.5rem;
+  gap: 2.5rem;
+}
+
+/* One column, one axis, one width — the stack read as ragged before */
+html.static-home .pills {
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 auto;
+}
+html.static-home .pill {
+  width: min(300px, 78vw);
+  text-align: center;
+}
+
+html.static-home .hint,
+html.static-home .title-sat { display: none; }
+
+html.static-home .name { font-size: clamp(2.4rem, 11vw, 4.5rem); }

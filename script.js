@@ -806,13 +806,36 @@
     }
   }
 
+  /* On a phone the scroll journey overran the content and left letters
+     detached mid-flight, so narrow screens get the finished composition in
+     normal flow instead. Same engine, simply pinned at the end. */
+  let staticQ = window.matchMedia("(max-width: 760px)");
+  let motionQ = window.matchMedia("(prefers-reduced-motion: reduce)");
+  let staticHome = staticQ.matches || motionQ.matches;
+
+  function applyHomeMode() {
+    document.documentElement.classList.toggle("static-home", staticHome);
+    if (staticHome) updateLetters(1);
+    else { dirty = true; }
+  }
+
+  function onModeChange() {
+    let next = staticQ.matches || motionQ.matches;
+    if (next === staticHome) return;
+    staticHome = next;
+    applyHomeMode();
+  }
+  staticQ.addEventListener("change", onModeChange);
+  motionQ.addEventListener("change", onModeChange);
+
   splitLetters();
   initTitleSats();
-  updateLetters(0);
+  applyHomeMode();
+  if (!staticHome) updateLetters(0);
   let ufoActive = finePointer && ufo;
   (function frame(time) {
     drawStars(scrollPos, time);
-    if (dirty) {
+    if (dirty && !staticHome) {
       dirty = false;
       let p = scrollPos / journeyEnd;
       updateLetters(p < 0 ? 0 : p > 1 ? 1 : p);

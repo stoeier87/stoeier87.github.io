@@ -35,21 +35,8 @@
     <!-- Far background: drifting starfield and the occasional UFO -->
     <canvas id="backdrop" aria-hidden="true"></canvas>
 
-    <!-- ── Entry ─────────────────────────────────────────────── -->
-    <div class="entry" id="entry">
-      <div class="entry-inner">
-        <p class="entry-eyebrow">40 drinks · 40 stars · one galaxy</p>
-        <h1 class="entry-title">THE <span class="red">SPACE BAR</span></h1>
-        <p class="entry-hint key-hint">Press the space bar to enter</p>
-        <button class="pill pill-wide" id="enterBtn" type="button">
-          <span class="arrow"><i class="fa-solid fa-martini-glass-citrus"></i></span>
-          SPACE BAR
-        </button>
-      </div>
-    </div>
-
     <!-- ── Bar ───────────────────────────────────────────────── -->
-    <div class="bar" id="bar" hidden>
+    <div class="bar" id="bar">
       <header class="bar-nav">
         <a class="pill back" href="../" aria-label="Back to homepage" title="Back to homepage">
           <span class="arrow"><i class="fa-solid fa-arrow-left-long"></i></span>
@@ -102,10 +89,10 @@
 
       <!-- ── Filters ─────────────────────────────────────────── -->
       <nav class="filters" id="filters" aria-label="Filter drinks">
+        <button class="pill filter is-on" type="button" data-filter="all">All</button>
         <button class="pill filter" type="button" data-filter="strong">Hard-core</button>
         <button class="pill filter" type="button" data-filter="weird">Weird</button>
         <button class="pill filter" type="button" data-filter="zero-proof">Sober</button>
-        <button class="pill filter is-on" type="button" data-filter="all">All 40</button>
       </nav>
     </div>
 
