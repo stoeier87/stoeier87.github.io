@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="da">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About Me — Tobias Fullerton Støier</title>
+    <meta name="description" content="About Tobias Fullerton Støier — Principal Digital Strategist" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="about-me.css" />
+    <link href="/css/all.min.css" rel="stylesheet" />
+  </head>
+  <body>
+    <canvas id="scene" aria-hidden="true"></canvas>
+    <div class="scrim" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <span class="value">Principal Digital Strategist</span>
+      <a class="pill back" href="../">
+        <span class="arrow"><i class="fa-solid fa-arrow-left-long"></i></span>
+        Back to homepage
+      </a>
+    </header>
+
+    <main>
+      <section class="block hero">
+        <p class="eyebrow">About</p>
+        <h1 class="name">
+          TOBIAS FULLERTON<br /><span class="red">STØIER</span>
+        </h1>
+        <p class="lede">
+          I help Nordic organizations turn fuzzy digital ambitions into
+          products people actually use. Ten years across strategy, service
+          design, and engineering — I bridge the gap between the boardroom
+          and the codebase.
+        </p>
+      </section>
+
+      <section class="block">
+        <h2 class="h2">Experience</h2>
+        <div class="stack">
+          <article class="card">
+            <div class="card-top">
+              <h3>Principal Digital Strategist</h3>
+              <span class="period">2022 — Present</span>
+            </div>
+            <p class="org">Independent</p>
+            <p class="desc">
+              Advising Nordic brands on digital product strategy, service
+              design, and organizational transformation.
+            </p>
+          </article>
+          <article class="card">
+            <div class="card-top">
+              <h3>Head of Digital</h3>
+              <span class="period">2018 — 2022</span>
+            </div>
+            <p class="org">Nordic Agency Group</p>
+            <p class="desc">
+              Led a 20-person digital practice across e-commerce, CMS
+              platforms, and design systems.
+            </p>
+          </article>
+          <article class="card">
+            <div class="card-top">
+              <h3>Senior Consultant</h3>
+              <span class="period">2014 — 2018</span>
+            </div>
+            <p class="org">Servicedesign.dk</p>
+            <p class="desc">
+              Service design and UX research for public-sector and
+              enterprise clients.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2 class="h2">What I Can Offer</h2>
+        <div class="grid">
+          <article class="card center">
+            <i class="fa-solid fa-compass" aria-hidden="true"></i>
+            <h3>Digital Strategy</h3>
+            <p class="desc">Roadmaps that connect business goals to what actually ships.</p>
+          </article>
+          <article class="card center">
+            <i class="fa-solid fa-diagram-project" aria-hidden="true"></i>
+            <h3>Service Design</h3>
+            <p class="desc">End-to-end journeys mapped, tested, and simplified.</p>
+          </article>
+          <article class="card center">
+            <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+            <h3>Design Systems</h3>
+            <p class="desc">Scalable component libraries and brand foundations.</p>
+          </article>
+          <article class="card center">
+            <i class="fa-solid fa-users" aria-hidden="true"></i>
+            <h3>Team Leadership</h3>
+            <p class="desc">Building and mentoring high-performing digital teams.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="block contact-block">
+        <h2 class="h2">Get In Touch</h2>
+        <div class="card form-card">
+          <form id="inquiryForm">
+            <input required type="text" name="name" placeholder="Name" />
+            <input required type="email" name="email" placeholder="Email" />
+            <textarea required name="message" rows="4" placeholder="Message"></textarea>
+            <button type="submit" class="submit">Send Message</button>
+          </form>
+          <p class="sent-msg" id="sentMsg" hidden>Message sent — thank you.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <a href="../">Back to homepage</a>
+    </footer>
+
+    <script type="module" src="./about-me.js"></script>
+  </body>
+</html>
