@@ -14,6 +14,7 @@ import {
   const speedFill = document.getElementById("speedFill");
   const angleFill = document.getElementById("angleFill");
   const introEl = document.getElementById("intro");
+  const approachEl = document.getElementById("approach");
   const gameOverEl = document.getElementById("gameOver");
   const gameOverCard = gameOverEl.querySelector(".gameover-card");
   const gameOverTitle = document.getElementById("gameOverTitle");
@@ -374,7 +375,13 @@ import {
     introHidden = true;
     introEl.style.transition = "opacity .4s ease, transform .4s ease";
     introEl.style.opacity = "0";
-    introEl.style.transform = "translateX(-50%) translateY(-10px)";
+    introEl.style.transform = "translateY(-10px)";
+    if (approachEl && introHidden) {
+      approachEl.style.display = "block";
+      approachEl.style.transition = "opacity .4s ease-in 0.4s, transform .4s ease-in 0.4s";
+      approachEl.style.opacity = "1";
+      approachEl.style.transform = "translateY(-10px)";
+    }
   }
 
   // Keyboard + d-pad: instant full-strength thrust (unchanged behavior).
@@ -839,6 +846,8 @@ import {
       touchZonesEl.addEventListener("touchend", handleTouchEnd);
       touchZonesEl.addEventListener("touchcancel", handleTouchEnd);
     }
+  } else {
+    document.documentElement.classList.add("no-touch-zones");
   }
 
   gameOverRestart.addEventListener("click", reset);
