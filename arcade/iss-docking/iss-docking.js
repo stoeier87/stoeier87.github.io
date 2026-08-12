@@ -308,7 +308,7 @@ import {
     canvas.width = Math.round(W * dpr);
     canvas.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    viewScale = Math.min(W / BASE_W, H / BASE_H);
+    viewScale = Math.max(W / BASE_W, H / BASE_H);
     viewOffX = (W - BASE_W * viewScale) * 0.5;
     viewOffY = (H - BASE_H * viewScale) * 0.5;
   }
