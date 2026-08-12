@@ -10,12 +10,44 @@
     <link rel="stylesheet" href="/tailwind.css" />
   </head>
   <body>
-    <canvas id="game"></canvas>
-    <div class="hud">
-      <a href="../index.html">← Arcade</a>
-      <div>Score: <span id="score">0</span></div>
-      <div>Fuel: <span id="fuel">100</span>%</div>
+    <canvas id="game" aria-hidden="true"></canvas>
+
+    <!-- Top bar: back link + title badge (left), score + best (right) -->
+    <div class="topbar">
+      <div class="topbar-group">
+        <a href="../index.html" class="pill link">← Arcade</a>
+        <div class="pill badge">
+          <span class="beacon"></span>
+          PHOBOS LANDER
+        </div>
+      </div>
+      <div class="topbar-group">
+        <div class="pill stat">FUEL <strong id="fuel">100</strong>%</div>
+        <div class="pill stat">SCORE <strong id="score">0</strong></div>
+        <a class="pill stat" href="/scoreboard/">BEST <strong id="best" class="best-val">0</strong></a>
+      </div>
     </div>
+
+    <!-- Intro card -->
+    <div class="intro-container">
+      <div class="intro" id="intro">
+        <div class="intro-title">PHOBOS LANDER</div>
+        <div class="intro-body">
+          Space / W to thrust. A / D or ← / → to rotate. Land gently on a pad to score.
+        </div>
+      </div>
+    </div>
+
+    <!-- Game over sign -->
+    <div id="gameOver" class="gameover">
+      <div class="gameover-card">
+        <div id="gameOverTitle" class="gameover-title">TOUCHDOWN!</div>
+        <div class="gameover-sub">Press R to restart</div>
+        <button id="gameOverRestart" class="restart-btn" type="button">Restart</button>
+      </div>
+    </div>
+
+    <!-- Touch controls -->
     <div class="controls" id="controls">
       <button id="thrust" aria-label="Thrust">THRUST</button>
       <div class="dpad-row">
@@ -23,6 +55,7 @@
         <button id="right" aria-label="Rotate right">↻</button>
       </div>
     </div>
+
     <script type="module" src="phobos-lander.js"></script>
   </body>
 </html>
