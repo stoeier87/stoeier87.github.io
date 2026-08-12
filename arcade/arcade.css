@@ -10,6 +10,7 @@ body {
   background: var(--color-bg);
   color: var(--color-ink);
   @apply min-h-screen overflow-hidden md:overflow-y-scroll;
+  overflow-y: auto;
 }
 
 #bg {
