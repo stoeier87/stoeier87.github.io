@@ -32,8 +32,13 @@ function directoryIndexRedirect() {
   };
 }
 
+// Routing is the filesystem: every HTML file becomes a Rollup entry.
+// `dist/**` MUST be ignored — otherwise a previous build's output is fed back in
+// as input (12 extra entries), and a stale dist/ built with a different `base`
+// fails the build outright with "Failed to resolve /assets/…". CI never hit this
+// because CI always checks out fresh.
 function getInputs() {
-  const files = globSync("**/*.html", { ignore: "node_modules/**" });
+  const files = globSync("**/*.html", { ignore: ["node_modules/**", "dist/**"] });
   const inputs = {};
   files.forEach((file) => {
     const name = file.replace(/\.html$/, "");

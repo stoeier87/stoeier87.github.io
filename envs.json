@@ -1,0 +1,85 @@
+{
+  "$comment": "The deploy ladder. Single source of truth for where code goes live. Read by .claude skills, agents and loops -- adding a rung is a config entry here, not a code change. See CLAUDE.md section 'The ladder'.",
+  "repo": {
+    "owner": "stoeier87",
+    "name": "stoeier87.github.io",
+    "pagesHost": "https://stoeier87.github.io",
+    "defaultBranch": "main",
+    "deployBranch": "gh-pages"
+  },
+  "envs": {
+    "local": {
+      "rung": 0,
+      "label": "Local",
+      "url": "http://localhost:3000",
+      "how": "npm run dev",
+      "gates": [],
+      "notes": "Vite dev server. A custom directoryIndexRedirect plugin makes /foo resolve to /foo/index.html the way a static host would."
+    },
+    "preview": {
+      "rung": 1,
+      "label": "Preview",
+      "branchPattern": "preview/{topic}",
+      "url": "https://stoeier87.github.io/preview/{topic}/",
+      "trigger": "push",
+      "workflow": "preview.yml",
+      "ephemeral": true,
+      "gates": ["build"],
+      "notes": "Throwaway, one per topic. Fast lane -- sloppy code is allowed here on purpose. WARNING: preview.yml uses destination_dir: preview/${{ github.ref_name }} and ref_name already contains the slash, so branch preview/foo publishes to /preview/preview/foo/. The /deploy skill strips the prefix so the URL above is the real one; if you push by hand you get the doubled path."
+    },
+    "stage": {
+      "rung": 2,
+      "label": "Stage",
+      "branchPattern": "stage",
+      "url": "https://stoeier87.github.io/stage/",
+      "trigger": "push",
+      "workflow": "stage.yml",
+      "ephemeral": false,
+      "gates": ["build", "format", "lint", "typecheck"],
+      "notes": "ONE persistent URL, always the latest release candidate. A single branch named 'stage' -- not the legacy stage/** pattern, which still makes per-branch folders via preview.yml."
+    },
+    "prod": {
+      "rung": 3,
+      "label": "Production",
+      "branchPattern": "main",
+      "url": "https://stoeier.dk",
+      "trigger": "pr-merge",
+      "workflow": "deploy.yml",
+      "confirm": true,
+      "gates": ["build", "format", "lint", "typecheck", "verify"],
+      "notes": "deploy.yml has NO push trigger. A direct commit to main deploys nothing. Production publishes only when a PR to main is closed-as-merged, or on manual workflow_dispatch. Merging the PR IS the deploy button."
+    }
+  },
+  "viewports": [
+    { "w": 1440, "h": 900, "label": "desktop" },
+    { "w": 1280, "h": 800, "label": "laptop" },
+    { "w": 390, "h": 844, "label": "iphone-14" },
+    { "w": 375, "h": 812, "label": "iphone-x" },
+    { "w": 360, "h": 640, "label": "android-small" },
+    { "w": 320, "h": 568, "label": "narrow" }
+  ],
+  "pages": {
+    "$comment": "Routing is the filesystem: vite.config.js globs **/*.html into rollupOptions.input. This list is for skills that need to enumerate routes; verify against dist/ after a build rather than trusting it.",
+    "expectedHtmlCount": 13,
+    "routes": [
+      "/",
+      "/about-me/",
+      "/space-bar/",
+      "/scoreboard/",
+      "/arcade/",
+      "/arcade/orbit-runner/",
+      "/arcade/meteor-dodge/",
+      "/arcade/iss-docking/",
+      "/arcade/phobos-lander/",
+      "/arcade/comet-pong/",
+      "/arcade/star-memory/",
+      "/arcade/nebula-trail/",
+      "/arcade/asteroid-breaker/"
+    ]
+  },
+  "concurrency": {
+    "$comment": "All workflows that write gh-pages MUST join this group. One branch, many destination_dirs, keep_files: true, never cancel a write.",
+    "group": "gh-pages-write",
+    "cancelInProgress": false
+  }
+}

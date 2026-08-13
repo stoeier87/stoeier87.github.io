@@ -25,3 +25,8 @@ Thumbs.db
 *.local
 
 **/*.code-workspace
+
+# Claude Code — machine-local only. The shared harness (settings.json, skills/,
+# agents/, hooks/) IS committed; this is the per-machine overlay and scratch.
+.claude/settings.local.json
+.claude/worktrees/
