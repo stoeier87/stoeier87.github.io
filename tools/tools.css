@@ -141,12 +141,6 @@ a.tool-node:focus-visible .tool-name {
 }
 a.tool-node:focus-visible { outline: none; }
 
-/* Development scaffolding — dimmed, inert, unlabelled. Not a link. */
-.tool-node.placeholder .tool-diagram {
-  opacity: 0.16;
-  color: var(--ink-dim);
-}
-
 /* ── Small screens: smaller models, still generous tap targets ── */
 @media (max-width: 640px) {
   .tool-node { width: 100px; }

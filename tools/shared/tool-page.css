@@ -208,6 +208,15 @@ a { color: inherit; text-decoration: none; }
 .tool-label-num.show { opacity: 1; }
 
 .oct-label { font-size: 6.6px; }
+.bmc-label { font-size: 3.6px; letter-spacing: 0.04em; }
+.emp-label { font-size: 6.5px; }
+.muda-label, .vcm-label { font-size: 7.2px; }
+.sbp-band-label { font-size: 4.4px; letter-spacing: 0; }
+.sbp-dashed-label { letter-spacing: 0; }
+
+@media (max-width: 760px) {
+  .muda-dashed-label { font-size: 5px; }
+}
 
 .tri-centre-line {
   font-family: var(--mono);

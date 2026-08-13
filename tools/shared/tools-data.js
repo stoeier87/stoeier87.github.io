@@ -180,6 +180,92 @@ const PYR_TICKS = [
   { y: 37.5, label: "11 stars", accent: true },
 ];
 
+/* ── Tool 6: Business Model Canvas (nine blocks) ───────────────
+   Five columns across an upper section, three of them split into
+   two stacked blocks, plus a bottom row split into two wide blocks.
+   Coordinates are shared between the outline draw order and the
+   label placement so the two never drift apart. */
+const BMC = {
+  x0: 10, x1: 46, x2: 82, x3: 118, x4: 154, x5: 190,
+  y0: 10, ySplit: 51, yMid: 92, yBottom: 130,
+  xBottomMid: 100,
+};
+const BMC_STAGE_VB = "0 0 200 140";
+const BMC_BLOCKS = [
+  { key: "kp", lines: ["Key", "Partners"], cx: (BMC.x0 + BMC.x1) / 2, cy: (BMC.y0 + BMC.yMid) / 2 },
+  { key: "ka", lines: ["Key", "Activities"], cx: (BMC.x1 + BMC.x2) / 2, cy: (BMC.y0 + BMC.ySplit) / 2 },
+  { key: "kr", lines: ["Key", "Resources"], cx: (BMC.x1 + BMC.x2) / 2, cy: (BMC.ySplit + BMC.yMid) / 2 },
+  { key: "vp", lines: ["Value", "Propositions"], cx: (BMC.x2 + BMC.x3) / 2, cy: (BMC.y0 + BMC.yMid) / 2, accent: true },
+  { key: "cr", lines: ["Customer", "Relationships"], cx: (BMC.x3 + BMC.x4) / 2, cy: (BMC.y0 + BMC.ySplit) / 2 },
+  { key: "ch", lines: ["Channels"], cx: (BMC.x3 + BMC.x4) / 2, cy: (BMC.ySplit + BMC.yMid) / 2 },
+  { key: "cs", lines: ["Customer", "Segments"], cx: (BMC.x4 + BMC.x5) / 2, cy: (BMC.y0 + BMC.yMid) / 2 },
+  { key: "cost", lines: ["Cost", "Structure"], cx: (BMC.x0 + BMC.xBottomMid) / 2, cy: (BMC.yMid + BMC.yBottom) / 2 },
+  { key: "rev", lines: ["Revenue", "Streams"], cx: (BMC.xBottomMid + BMC.x5) / 2, cy: (BMC.yMid + BMC.yBottom) / 2 },
+];
+
+/* ── Tool 7: Empathy Map (six panels + centre circle) ─────────── */
+const EMP = { x0: 10, xMid: 90, x1: 170, y0: 10, y1: 70, y2: 130, y3: 190 };
+const EMP_STAGE_VB = "0 0 180 200";
+const EMP_PANELS = [
+  { key: "think", text: "Thinks and Feels", x: EMP.x0 + 6, y: EMP.y0 + 12 },
+  { key: "says", text: "Says and Does", x: EMP.xMid + 6, y: EMP.y0 + 12 },
+  { key: "sees", text: "Sees", x: EMP.x0 + 6, y: EMP.y1 + 12 },
+  { key: "hears", text: "Hears", x: EMP.xMid + 6, y: EMP.y1 + 12 },
+  { key: "pains", text: "Pains", x: EMP.x0 + 6, y: EMP.y2 + 12 },
+  { key: "gains", text: "Gains", x: EMP.xMid + 6, y: EMP.y2 + 12 },
+];
+// Reveal order: clockwise from the top-left panel.
+const EMP_ORDER = ["think", "says", "hears", "gains", "pains", "sees"];
+
+/* ── Tool 8: Service Blueprint (five bands) ────────────────────
+   Bands run top to bottom: Evidence, User Actions, Frontstage,
+   Backstage, Support Processes. Three of the four boundaries get an
+   extra dashed, labelled line drawn over the plain band edge; the
+   Evidence/User Actions boundary stays a plain edge, unlabelled. */
+const SBP = { x0: 20, x1: 190, yTop: 20, bandH: 36 };
+const SBP_BAND_Y = [0, 1, 2, 3, 4, 5].map((i) => SBP.yTop + i * SBP.bandH);
+const SBP_BANDS = ["Evidence", "User Actions", "Frontstage", "Backstage", "Support"];
+// The three dashed/labelled boundaries, by index into SBP_BAND_Y (1..3 —
+// the boundary between bands[i-1] and bands[i]).
+const SBP_DASHED = [
+  { boundary: 2, label: "Line of Interaction" },
+  { boundary: 3, label: "Line of Visibility" },
+  { boundary: 4, label: "Line of Internal Interaction" },
+];
+const SBP_PHASES = ["Before", "During", "After"];
+const SBP_STAGE_VB = "-38 -14 270 240";
+
+/* ── Tool 9: Value / Complexity Matrix ─────────────────────────
+   Plain L-shaped axes (single arrowhead each, no bounding rect) with
+   a dashed cross at the plot centre forming the four quadrants. */
+const VCM = { x0: 20, x1: 172, y0: 140, y1: 20 };
+const VCM_CX = (VCM.x0 + VCM.x1) / 2, VCM_CY = (VCM.y0 + VCM.y1) / 2;
+const VCM_STAGE_VB = "-18 -18 235 200";
+const VCM_QUADRANTS = [
+  { key: "tl", lines: ["Easy wins"], cx: (VCM.x0 + VCM_CX) / 2, cy: (VCM_CY + VCM.y1) / 2, accent: true },
+  { key: "tr", lines: ["Strategic", "investments"], cx: (VCM_CX + VCM.x1) / 2, cy: (VCM_CY + VCM.y1) / 2 },
+  { key: "br", lines: ["Deprioritise"], cx: (VCM_CX + VCM.x1) / 2, cy: (VCM.y0 + VCM_CY) / 2 },
+  { key: "bl", lines: ["Take as", "they come"], cx: (VCM.x0 + VCM_CX) / 2, cy: (VCM.y0 + VCM_CY) / 2 },
+];
+
+/* ── Tool 10: Muda, the seven (plus one) wastes ────────────────
+   Eight evenly spaced directions (45 degrees apart) around the
+   centre; seven carry a solid line and are the classic wastes, the
+   eighth — the "remaining gap" once the seven are placed clockwise
+   from the top — carries a shorter dashed line for Unused Talent. */
+const MUDA = { cx: 90, cy: 92, r: 52, rDashed: 42 };
+const MUDA_NODES = [
+  { key: "overproduction", label: "Overproduction", angle: -90 },
+  { key: "waiting", label: "Waiting", angle: -45 },
+  { key: "transport", label: "Transport", angle: 0 },
+  { key: "overprocessing", label: "Over-processing", angle: 45 },
+  { key: "inventory", label: "Inventory", angle: 90 },
+  { key: "motion", label: "Motion", angle: 135 },
+  { key: "defects", label: "Defects", angle: 180 },
+];
+const MUDA_DASHED = { key: "unused", label: "Unused Talent", angle: 225 };
+const MUDA_STAGE_VB = "-30 0 260 185";
+
 export const DIAGRAMS = {
   venn: {
     thumb() { return vennCirclesSvg(VB, false); },
@@ -683,60 +769,544 @@ export const DIAGRAMS = {
   grid9: {
     thumb() {
       const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
-      svg.appendChild(svgEl("rect", { x: 24, y: 24, width: 112, height: 112, ...LINE }));
-      for (const p of [24 + 112 / 3, 24 + (112 / 3) * 2]) {
-        svg.appendChild(svgEl("line", { x1: p, y1: 24, x2: p, y2: 136, ...LINE, "stroke-width": "1" }));
-        svg.appendChild(svgEl("line", { x1: 24, y1: p, x2: 136, y2: p, ...LINE, "stroke-width": "1" }));
-      }
+      const x0 = 20, x1 = 44, x2 = 68, x3 = 92, x4 = 116, x5 = 140, y0 = 20, ySplit = 60, yMid = 100, yBottom = 140, xBotMid = 80;
+      svg.appendChild(svgEl("rect", { x: x0, y: y0, width: x5 - x0, height: yBottom - y0, ...LINE }));
+      svg.appendChild(svgEl("line", { x1: x0, y1: yMid, x2: x5, y2: yMid, ...LINE, "stroke-width": "1" }));
+      for (const x of [x1, x2, x3, x4]) svg.appendChild(svgEl("line", { x1: x, y1: y0, x2: x, y2: yMid, ...LINE, "stroke-width": "1" }));
+      for (const [a, b] of [[x1, x2], [x3, x4]]) svg.appendChild(svgEl("line", { x1: a, y1: ySplit, x2: b, y2: ySplit, ...LINE, "stroke-width": "1" }));
+      svg.appendChild(svgEl("line", { x1: xBotMid, y1: yMid, x2: xBotMid, y2: yBottom, ...LINE, "stroke-width": "1" }));
       return svg;
     },
+    /* Nine-block canvas: outer rect, the upper/lower split, four column
+       dividers, the two inner splits and the bottom split, in that
+       order — each block's label sits at its own centre, wrapping to
+       two short lines so it fits its (narrow) column. */
+    buildStage() {
+      const svg = svgEl("svg", { viewBox: BMC_STAGE_VB, draggable: "false" });
+
+      const outer = svgEl("path", {
+        d: "M " + BMC.x0 + " " + BMC.y0 + " L " + BMC.x5 + " " + BMC.y0 + " L " + BMC.x5 + " " + BMC.yBottom + " L " + BMC.x0 + " " + BMC.yBottom + " Z",
+        ...LINE, class: "bmc-outer", pathLength: "1",
+      });
+      outer.style.strokeDasharray = "1"; outer.style.strokeDashoffset = "1";
+      svg.appendChild(outer);
+
+      const hSplit = svgEl("line", { x1: BMC.x0, y1: BMC.yMid, x2: BMC.x5, y2: BMC.yMid, ...LINE, "stroke-width": "1", class: "bmc-hsplit", pathLength: "1" });
+      hSplit.style.strokeDasharray = "1"; hSplit.style.strokeDashoffset = "1";
+      svg.appendChild(hSplit);
+
+      const vDividers = [BMC.x1, BMC.x2, BMC.x3, BMC.x4].map((x, i) => {
+        const l = svgEl("line", { x1: x, y1: BMC.y0, x2: x, y2: BMC.yMid, ...LINE, "stroke-width": "1", class: "bmc-vdiv bmc-vdiv-" + i, pathLength: "1" });
+        l.style.strokeDasharray = "1"; l.style.strokeDashoffset = "1";
+        return l;
+      });
+      vDividers.forEach((l) => svg.appendChild(l));
+
+      const innerSplits = [[BMC.x1, BMC.x2], [BMC.x3, BMC.x4]].map(([a, b], i) => {
+        const l = svgEl("line", { x1: a, y1: BMC.ySplit, x2: b, y2: BMC.ySplit, ...LINE, "stroke-width": "1", class: "bmc-inner bmc-inner-" + i, pathLength: "1" });
+        l.style.strokeDasharray = "1"; l.style.strokeDashoffset = "1";
+        return l;
+      });
+      innerSplits.forEach((l) => svg.appendChild(l));
+
+      const bottomSplit = svgEl("line", { x1: BMC.xBottomMid, y1: BMC.yMid, x2: BMC.xBottomMid, y2: BMC.yBottom, ...LINE, "stroke-width": "1", class: "bmc-bottomsplit", pathLength: "1" });
+      bottomSplit.style.strokeDasharray = "1"; bottomSplit.style.strokeDashoffset = "1";
+      svg.appendChild(bottomSplit);
+
+      const labelGroup = svgEl("g", { class: "bmc-labels" });
+      labelGroup.style.opacity = "0";
+      for (const b of BMC_BLOCKS) {
+        // "show" is applied immediately — these fade in together via the
+        // parent group's own opacity transition, not individually.
+        const cls = "tool-label bmc-label show" + (b.accent ? "" : " neutral");
+        b.lines.forEach((line, li) => {
+          const y = b.cy - ((b.lines.length - 1) / 2) * 4.6 + li * 4.6;
+          labelGroup.appendChild(svgText(b.cx, y, "middle", line, cls));
+        });
+      }
+      svg.appendChild(labelGroup);
+
+      return svg;
+    },
+    assemble(diagramEl) {
+      const outer = diagramEl.querySelector(".bmc-outer");
+      const hSplit = diagramEl.querySelector(".bmc-hsplit");
+      const vDividers = [0, 1, 2, 3].map((i) => diagramEl.querySelector(".bmc-vdiv-" + i));
+      const innerSplits = [0, 1].map((i) => diagramEl.querySelector(".bmc-inner-" + i));
+      const bottomSplit = diagramEl.querySelector(".bmc-bottomsplit");
+      const labelGroup = diagramEl.querySelector(".bmc-labels");
+
+      function applyFinal() {
+        [outer, hSplit, bottomSplit, ...vDividers, ...innerSplits].forEach((el) => { el.style.transition = "none"; el.style.strokeDashoffset = "0"; });
+        labelGroup.style.transition = "none"; labelGroup.style.opacity = "1";
+      }
+
+      if (reduced()) { applyFinal(); return { doneAt: 0, timers: [], applyFinal }; }
+
+      const timers = [];
+      const outerDur = 160;
+      timers.push(setTimeout(() => { outer.style.transition = "stroke-dashoffset " + outerDur + "ms ease"; outer.style.strokeDashoffset = "0"; }, 0));
+
+      const hSplitStart = outerDur + 10, hSplitDur = 120, hSplitEnd = hSplitStart + hSplitDur;
+      timers.push(setTimeout(() => { hSplit.style.transition = "stroke-dashoffset " + hSplitDur + "ms ease"; hSplit.style.strokeDashoffset = "0"; }, hSplitStart));
+
+      const vStagger = 40, vDur = 80, vStart = hSplitEnd + 10;
+      vDividers.forEach((v, i) => {
+        timers.push(setTimeout(() => { v.style.transition = "stroke-dashoffset " + vDur + "ms ease"; v.style.strokeDashoffset = "0"; }, vStart + i * vStagger));
+      });
+      const afterV = vStart + (vDividers.length - 1) * vStagger + vDur;
+
+      const innerStagger = 40, innerDur = 80, innerStart = afterV + 10;
+      innerSplits.forEach((l, i) => {
+        timers.push(setTimeout(() => { l.style.transition = "stroke-dashoffset " + innerDur + "ms ease"; l.style.strokeDashoffset = "0"; }, innerStart + i * innerStagger));
+      });
+      const afterInner = innerStart + (innerSplits.length - 1) * innerStagger + innerDur;
+
+      const bottomStart = afterInner + 20, bottomDur = 100, bottomEnd = bottomStart + bottomDur;
+      timers.push(setTimeout(() => { bottomSplit.style.transition = "stroke-dashoffset " + bottomDur + "ms ease"; bottomSplit.style.strokeDashoffset = "0"; }, bottomStart));
+
+      const labelStart = bottomEnd + 20, labelDur = 140;
+      timers.push(setTimeout(() => { labelGroup.style.transition = "opacity " + labelDur + "ms ease"; labelGroup.style.opacity = "1"; }, labelStart));
+
+      return { doneAt: labelStart + labelDur, timers, applyFinal };
+    },
+    stageWidth(mobile) { return mobile ? "min(420px, calc(100vw - 3rem))" : "min(680px, 92vw)"; },
   },
 
   grid6: {
     thumb() {
       const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
-      svg.appendChild(svgEl("rect", { x: 22, y: 40, width: 116, height: 80, ...LINE }));
-      for (const p of [22 + 116 / 3, 22 + (116 / 3) * 2]) {
-        svg.appendChild(svgEl("line", { x1: p, y1: 40, x2: p, y2: 120, ...LINE, "stroke-width": "1" }));
-      }
-      svg.appendChild(svgEl("line", { x1: 22, y1: 80, x2: 138, y2: 80, ...LINE, "stroke-width": "1" }));
+      const x0 = 22, xMid = 80, x1 = 138, y0 = 14, y1 = 59, y2 = 105, y3 = 150;
+      svg.appendChild(svgEl("rect", { x: x0, y: y0, width: x1 - x0, height: y3 - y0, ...LINE }));
+      svg.appendChild(svgEl("line", { x1: xMid, y1: y0, x2: xMid, y2: y3, ...LINE, "stroke-width": "1" }));
+      svg.appendChild(svgEl("line", { x1: x0, y1: y1, x2: x1, y2: y1, ...LINE, "stroke-width": "1" }));
+      svg.appendChild(svgEl("line", { x1: x0, y1: y2, x2: x1, y2: y2, ...LINE, "stroke-width": "1" }));
+      svg.appendChild(svgEl("circle", { cx: xMid, cy: (y0 + y3) / 2, r: 9, fill: "currentColor" }));
       return svg;
+    },
+    /* Six panels around a small centre circle representing the person —
+       the circle appears first, then the grid draws around it, then
+       each panel's label appears clockwise from the top left. */
+    buildStage() {
+      const svg = svgEl("svg", { viewBox: EMP_STAGE_VB, draggable: "false" });
+      const cx = (EMP.x0 + EMP.x1) / 2, cy = (EMP.y0 + EMP.y3) / 2;
+
+      const circleOuter = svgEl("g", { transform: "translate(" + cx + "," + cy + ")" });
+      const circleInner = svgEl("circle", { cx: 0, cy: 0, r: 9, class: "emp-circle", fill: "currentColor", style: "color: var(--red);" });
+      circleInner.style.transform = "scale(0)";
+      circleInner.style.transformOrigin = "center";
+      circleOuter.appendChild(circleInner);
+      svg.appendChild(circleOuter);
+
+      const outer = svgEl("rect", { x: EMP.x0, y: EMP.y0, width: EMP.x1 - EMP.x0, height: EMP.y3 - EMP.y0, ...LINE, class: "emp-outer", pathLength: "1" });
+      outer.style.strokeDasharray = "1"; outer.style.strokeDashoffset = "1";
+      svg.appendChild(outer);
+
+      const vDiv = svgEl("line", { x1: EMP.xMid, y1: EMP.y0, x2: EMP.xMid, y2: EMP.y3, ...LINE, "stroke-width": "1", class: "emp-vdiv", pathLength: "1" });
+      vDiv.style.strokeDasharray = "1"; vDiv.style.strokeDashoffset = "1";
+      svg.appendChild(vDiv);
+
+      const hDiv0 = svgEl("line", { x1: EMP.x0, y1: EMP.y1, x2: EMP.x1, y2: EMP.y1, ...LINE, "stroke-width": "1", class: "emp-hdiv-0", pathLength: "1" });
+      const hDiv1 = svgEl("line", { x1: EMP.x0, y1: EMP.y2, x2: EMP.x1, y2: EMP.y2, ...LINE, "stroke-width": "1", class: "emp-hdiv-1", pathLength: "1" });
+      [hDiv0, hDiv1].forEach((l) => { l.style.strokeDasharray = "1"; l.style.strokeDashoffset = "1"; svg.appendChild(l); });
+
+      for (const p of EMP_PANELS) {
+        svg.appendChild(svgText(p.x, p.y, "start", p.text, "tool-label neutral emp-label emp-label-" + p.key));
+      }
+
+      return svg;
+    },
+    assemble(diagramEl) {
+      const circle = diagramEl.querySelector(".emp-circle");
+      const outer = diagramEl.querySelector(".emp-outer");
+      const vDiv = diagramEl.querySelector(".emp-vdiv");
+      const hDiv0 = diagramEl.querySelector(".emp-hdiv-0");
+      const hDiv1 = diagramEl.querySelector(".emp-hdiv-1");
+      const labelFor = (k) => diagramEl.querySelector(".emp-label-" + k);
+
+      function applyFinal() {
+        circle.style.transition = "none"; circle.style.transform = "scale(1)";
+        [outer, vDiv, hDiv0, hDiv1].forEach((el) => { el.style.transition = "none"; el.style.strokeDashoffset = "0"; });
+        EMP_ORDER.forEach((k) => labelFor(k).classList.add("show"));
+      }
+
+      if (reduced()) { applyFinal(); return { doneAt: 0, timers: [], applyFinal }; }
+
+      const timers = [];
+      const circleDur = 120;
+      timers.push(setTimeout(() => {
+        circle.style.transition = "transform " + circleDur + "ms cubic-bezier(0.2,0.8,0.3,1.3)";
+        circle.style.transform = "scale(1)";
+      }, 0));
+
+      const outerStart = circleDur + 5, outerDur = 150, outerEnd = outerStart + outerDur;
+      timers.push(setTimeout(() => { outer.style.transition = "stroke-dashoffset " + outerDur + "ms ease"; outer.style.strokeDashoffset = "0"; }, outerStart));
+
+      const vStart = outerEnd + 10, vDur = 110, vEnd = vStart + vDur;
+      timers.push(setTimeout(() => { vDiv.style.transition = "stroke-dashoffset " + vDur + "ms ease"; vDiv.style.strokeDashoffset = "0"; }, vStart));
+
+      const h0Start = vEnd + 10, hDur = 90, h0End = h0Start + hDur;
+      timers.push(setTimeout(() => { hDiv0.style.transition = "stroke-dashoffset " + hDur + "ms ease"; hDiv0.style.strokeDashoffset = "0"; }, h0Start));
+      const h1Start = h0Start + 60, h1End = h1Start + hDur;
+      timers.push(setTimeout(() => { hDiv1.style.transition = "stroke-dashoffset " + hDur + "ms ease"; hDiv1.style.strokeDashoffset = "0"; }, h1Start));
+
+      const labelStart = Math.max(h0End, h1End) + 15, labelStagger = 45;
+      EMP_ORDER.forEach((k, i) => {
+        timers.push(setTimeout(() => labelFor(k).classList.add("show"), labelStart + i * labelStagger));
+      });
+      const lastLabelStart = labelStart + (EMP_ORDER.length - 1) * labelStagger;
+
+      return { doneAt: lastLabelStart + 25, timers, applyFinal };
     },
   },
 
   layered: {
     thumb() {
       const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
-      svg.appendChild(svgEl("line", { x1: 26, y1: 26, x2: 26, y2: 134, ...LINE, "stroke-width": "1" }));
-      const widths = [92, 68, 104, 50];
-      widths.forEach((w, i) => {
-        const y = 40 + i * 24;
-        svg.appendChild(svgEl("line", { x1: 26, y1: y, x2: 26 + w, y2: y, ...LINE }));
-      });
+      const x0 = 20, x1 = 140, y0 = 20, bandH = 24;
+      for (let i = 0; i <= 5; i++) {
+        const y = y0 + i * bandH;
+        svg.appendChild(svgEl("line", { x1: x0, y1: y, x2: x1, y2: y, ...LINE, "stroke-width": "1" }));
+      }
+      svg.appendChild(svgEl("line", { x1: x0, y1: y0, x2: x0, y2: y0 + 5 * bandH, ...LINE, "stroke-width": "1" }));
+      svg.appendChild(svgEl("line", { x1: x1, y1: y0, x2: x1, y2: y0 + 5 * bandH, ...LINE, "stroke-width": "1" }));
       return svg;
     },
+    /* Five bands draw top to bottom, then three of their four internal
+       boundaries redraw as dashed, labelled lines of interaction — the
+       fourth boundary stays a plain, unlabelled band edge. */
+    buildStage() {
+      const svg = svgEl("svg", { viewBox: SBP_STAGE_VB, draggable: "false" });
+
+      const bandEls = [];
+      for (let i = 0; i < 5; i++) {
+        const y0 = SBP_BAND_Y[i], y1 = SBP_BAND_Y[i + 1];
+        const r = svgEl("rect", { x: SBP.x0, y: y0, width: SBP.x1 - SBP.x0, height: y1 - y0, ...LINE, class: "sbp-band sbp-band-" + i, pathLength: "1" });
+        r.style.strokeDasharray = "1"; r.style.strokeDashoffset = "1";
+        svg.appendChild(r);
+        bandEls.push(r);
+      }
+
+      SBP_DASHED.forEach((d, i) => {
+        const y = SBP_BAND_Y[d.boundary];
+        const line = svgEl("line", {
+          x1: SBP.x0, y1: y, x2: SBP.x1, y2: y,
+          fill: "none", stroke: "currentColor", "stroke-width": "1.5", "stroke-dasharray": "4 3", "stroke-linecap": "round",
+          class: "sbp-dashed sbp-dashed-" + i,
+        });
+        line.style.transformOrigin = SBP.x0 + "px " + y + "px";
+        line.style.transform = "scaleX(0)";
+        svg.appendChild(line);
+        svg.appendChild(svgText(SBP.x1, y - 4, "end", d.label, "tool-label sbp-dashed-label sbp-dashed-label-" + i));
+      });
+
+      const bandLabels = svgEl("g", { class: "sbp-band-labels" });
+      SBP_BANDS.forEach((name, i) => {
+        const yc = (SBP_BAND_Y[i] + SBP_BAND_Y[i + 1]) / 2;
+        // "show" applied immediately — these fade in together via the
+        // parent group's own opacity transition, not individually.
+        const t = svgText(SBP.x0 - 10, yc, "middle", name, "tool-label neutral show sbp-band-label");
+        t.setAttribute("transform", "rotate(-90 " + (SBP.x0 - 10) + " " + yc + ")");
+        bandLabels.appendChild(t);
+      });
+      bandLabels.style.opacity = "0";
+      svg.appendChild(bandLabels);
+
+      const guideX = [SBP.x0 + (SBP.x1 - SBP.x0) / 3, SBP.x0 + ((SBP.x1 - SBP.x0) * 2) / 3];
+      const guides = guideX.map((x, i) => {
+        const l = svgEl("line", { x1: x, y1: SBP.yTop, x2: x, y2: SBP_BAND_Y[5], fill: "none", stroke: "currentColor", "stroke-width": "1", class: "sbp-guide sbp-guide-" + i, pathLength: "1" });
+        l.style.strokeDasharray = "1"; l.style.strokeDashoffset = "1";
+        l.style.opacity = "0.35";
+        svg.appendChild(l);
+        return l;
+      });
+
+      const phaseX = [(SBP.x0 + guideX[0]) / 2, (guideX[0] + guideX[1]) / 2, (guideX[1] + SBP.x1) / 2];
+      const phaseGroup = svgEl("g", { class: "sbp-phases" });
+      phaseGroup.style.opacity = "0";
+      SBP_PHASES.forEach((label, i) => {
+        phaseGroup.appendChild(svgText(phaseX[i], SBP.yTop - 8, "middle", label, "tool-label neutral show"));
+      });
+      svg.appendChild(phaseGroup);
+
+      return svg;
+    },
+    assemble(diagramEl) {
+      const bandEls = Array.from({ length: 5 }, (_, i) => diagramEl.querySelector(".sbp-band-" + i));
+      const dashedEls = Array.from({ length: 3 }, (_, i) => diagramEl.querySelector(".sbp-dashed-" + i));
+      const dashedLabels = Array.from({ length: 3 }, (_, i) => diagramEl.querySelector(".sbp-dashed-label-" + i));
+      const bandLabels = diagramEl.querySelector(".sbp-band-labels");
+      const guides = [0, 1].map((i) => diagramEl.querySelector(".sbp-guide-" + i));
+      const phaseGroup = diagramEl.querySelector(".sbp-phases");
+
+      function applyFinal() {
+        bandEls.forEach((b) => { b.style.transition = "none"; b.style.strokeDashoffset = "0"; });
+        dashedEls.forEach((d) => { d.style.transition = "none"; d.style.transform = "scaleX(1)"; });
+        dashedLabels.forEach((l) => l.classList.add("show"));
+        bandLabels.style.transition = "none"; bandLabels.style.opacity = "1";
+        guides.forEach((g) => { g.style.transition = "none"; g.style.strokeDashoffset = "0"; });
+        phaseGroup.style.transition = "none"; phaseGroup.style.opacity = "1";
+      }
+
+      if (reduced()) { applyFinal(); return { doneAt: 0, timers: [], applyFinal }; }
+
+      const timers = [];
+      const bandDur = 80, bandStagger = 45;
+      bandEls.forEach((b, i) => {
+        timers.push(setTimeout(() => { b.style.transition = "stroke-dashoffset " + bandDur + "ms ease"; b.style.strokeDashoffset = "0"; }, i * bandStagger));
+      });
+      const afterBands = (bandEls.length - 1) * bandStagger + bandDur;
+
+      const dashDur = 70, dashStagger = 45, dashStart0 = afterBands + 20;
+      dashedEls.forEach((d, i) => {
+        const start = dashStart0 + i * dashStagger;
+        timers.push(setTimeout(() => { d.style.transition = "transform " + dashDur + "ms ease"; d.style.transform = "scaleX(1)"; }, start));
+        timers.push(setTimeout(() => dashedLabels[i].classList.add("show"), start + dashDur));
+      });
+      const afterDashed = dashStart0 + (dashedEls.length - 1) * dashStagger + dashDur;
+
+      const labelStart = afterDashed + 20;
+      timers.push(setTimeout(() => { bandLabels.style.transition = "opacity 130ms ease"; bandLabels.style.opacity = "1"; }, labelStart));
+
+      const guideStart = labelStart + 30, guideDur = 90, guideEnd = guideStart + guideDur;
+      guides.forEach((g) => {
+        timers.push(setTimeout(() => { g.style.transition = "stroke-dashoffset " + guideDur + "ms ease"; g.style.strokeDashoffset = "0"; }, guideStart));
+      });
+      timers.push(setTimeout(() => { phaseGroup.style.transition = "opacity 110ms ease"; phaseGroup.style.opacity = "1"; }, guideEnd + 10));
+
+      return { doneAt: guideEnd + 10 + 110, timers, applyFinal };
+    },
+    stageWidth(mobile) { return mobile ? "min(360px, calc(100vw - 3rem))" : "min(520px, 90vw)"; },
   },
 
   matrix: {
     thumb() {
       const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
-      svg.appendChild(svgEl("rect", { x: 28, y: 28, width: 104, height: 104, ...LINE }));
-      svg.appendChild(svgEl("line", { x1: 80, y1: 16, x2: 80, y2: 144, ...LINE, "stroke-width": "1" }));
-      svg.appendChild(svgEl("line", { x1: 16, y1: 80, x2: 144, y2: 80, ...LINE, "stroke-width": "1" }));
+      svg.appendChild(svgEl("line", { x1: 24, y1: 132, x2: 24, y2: 24, ...LINE, "stroke-width": "1" }));
+      svg.appendChild(svgEl("line", { x1: 24, y1: 132, x2: 136, y2: 132, ...LINE, "stroke-width": "1" }));
+      svg.appendChild(svgEl("line", { x1: 80, y1: 24, x2: 80, y2: 132, fill: "none", stroke: "currentColor", "stroke-width": "0.8", "stroke-dasharray": "3 2" }));
+      svg.appendChild(svgEl("line", { x1: 24, y1: 78, x2: 136, y2: 78, fill: "none", stroke: "currentColor", "stroke-width": "0.8", "stroke-dasharray": "3 2" }));
       return svg;
+    },
+    /* Plain L-shaped axes, single arrowhead each, with a dashed cross
+       at the plot centre forming the four quadrants. No bounding rect. */
+    buildStage() {
+      const svg = svgEl("svg", { viewBox: VCM_STAGE_VB, draggable: "false" });
+
+      const vAxis = svgEl("path", { d: "M " + VCM.x0 + " " + VCM.y0 + " L " + VCM.x0 + " " + VCM.y1, ...LINE, "stroke-width": "1", class: "vcm-vaxis", pathLength: "1" });
+      const hAxis = svgEl("path", { d: "M " + VCM.x0 + " " + VCM.y0 + " L " + VCM.x1 + " " + VCM.y0, ...LINE, "stroke-width": "1", class: "vcm-haxis", pathLength: "1" });
+      [vAxis, hAxis].forEach((a) => { a.style.strokeDasharray = "1"; a.style.strokeDashoffset = "1"; });
+      svg.appendChild(vAxis);
+      svg.appendChild(hAxis);
+
+      const vGroup = svgEl("g", { class: "vcm-vgroup" });
+      vGroup.style.opacity = "0";
+      vGroup.appendChild(arrowHead(VCM.x0, VCM.y1 - 3, -90, "vcm-arrow"));
+      const valueLabel = svgText(VCM.x0 - 14, VCM_CY, "middle", "Value", "tool-label neutral show");
+      valueLabel.setAttribute("transform", "rotate(-90 " + (VCM.x0 - 14) + " " + VCM_CY + ")");
+      vGroup.appendChild(valueLabel);
+      svg.appendChild(vGroup);
+
+      const hGroup = svgEl("g", { class: "vcm-hgroup" });
+      hGroup.style.opacity = "0";
+      hGroup.appendChild(arrowHead(VCM.x1 + 3, VCM.y0, 0, "vcm-arrow"));
+      hGroup.appendChild(svgText(VCM.x1, VCM.y0 + 16, "end", "Effort", "tool-label neutral show"));
+      svg.appendChild(hGroup);
+
+      const hDash = svgEl("line", { x1: VCM.x0, y1: VCM_CY, x2: VCM.x1, y2: VCM_CY, fill: "none", stroke: "currentColor", "stroke-width": "1", "stroke-dasharray": "4 3", class: "vcm-hdash" });
+      hDash.style.transformOrigin = VCM.x0 + "px " + VCM_CY + "px";
+      hDash.style.transform = "scaleX(0)";
+      svg.appendChild(hDash);
+
+      const vDash = svgEl("line", { x1: VCM_CX, y1: VCM.y0, x2: VCM_CX, y2: VCM.y1, fill: "none", stroke: "currentColor", "stroke-width": "1", "stroke-dasharray": "4 3", class: "vcm-vdash" });
+      vDash.style.transformOrigin = VCM_CX + "px " + VCM.y0 + "px";
+      vDash.style.transform = "scaleY(0)";
+      svg.appendChild(vDash);
+
+      for (const q of VCM_QUADRANTS) {
+        const cls = "tool-label vcm-label vcm-label-" + q.key + (q.accent ? "" : " neutral");
+        q.lines.forEach((line, li) => {
+          const y = q.cy - ((q.lines.length - 1) / 2) * 9 + li * 9;
+          svg.appendChild(svgText(q.cx, y, "middle", line, cls));
+        });
+      }
+
+      return svg;
+    },
+    assemble(diagramEl) {
+      const vAxis = diagramEl.querySelector(".vcm-vaxis");
+      const hAxis = diagramEl.querySelector(".vcm-haxis");
+      const vGroup = diagramEl.querySelector(".vcm-vgroup");
+      const hGroup = diagramEl.querySelector(".vcm-hgroup");
+      const hDash = diagramEl.querySelector(".vcm-hdash");
+      const vDash = diagramEl.querySelector(".vcm-vdash");
+      const quadLabels = (key) => diagramEl.querySelectorAll(".vcm-label-" + key);
+
+      function applyFinal() {
+        [vAxis, hAxis].forEach((a) => { a.style.transition = "none"; a.style.strokeDashoffset = "0"; });
+        [vGroup, hGroup].forEach((g) => { g.style.transition = "none"; g.style.opacity = "1"; });
+        hDash.style.transition = "none"; hDash.style.transform = "scaleX(1)";
+        vDash.style.transition = "none"; vDash.style.transform = "scaleY(1)";
+        ["tl", "tr", "br", "bl"].forEach((k) => quadLabels(k).forEach((l) => l.classList.add("show")));
+      }
+
+      if (reduced()) { applyFinal(); return { doneAt: 0, timers: [], applyFinal }; }
+
+      const timers = [];
+      const vDur = 130;
+      timers.push(setTimeout(() => {
+        vAxis.style.transition = "stroke-dashoffset " + vDur + "ms ease";
+        vAxis.style.strokeDashoffset = "0";
+        vGroup.style.transition = "opacity 160ms ease";
+        vGroup.style.opacity = "1";
+      }, 0));
+
+      const hStart = 90, hDur = 130, hEnd = hStart + hDur;
+      timers.push(setTimeout(() => {
+        hAxis.style.transition = "stroke-dashoffset " + hDur + "ms ease";
+        hAxis.style.strokeDashoffset = "0";
+        hGroup.style.transition = "opacity 160ms ease";
+        hGroup.style.opacity = "1";
+      }, hStart));
+
+      const hDashStart = hEnd + 20, hDashDur = 110, hDashEnd = hDashStart + hDashDur;
+      timers.push(setTimeout(() => { hDash.style.transition = "transform " + hDashDur + "ms ease"; hDash.style.transform = "scaleX(1)"; }, hDashStart));
+
+      const vDashStart = hDashEnd, vDashDur = 110, vDashEnd = vDashStart + vDashDur;
+      timers.push(setTimeout(() => { vDash.style.transition = "transform " + vDashDur + "ms ease"; vDash.style.transform = "scaleY(1)"; }, vDashStart));
+
+      const labelOrder = ["tl", "tr", "br", "bl"];
+      const labelStagger = 55;
+      labelOrder.forEach((k, i) => {
+        timers.push(setTimeout(() => quadLabels(k).forEach((l) => l.classList.add("show")), vDashEnd + 20 + i * labelStagger));
+      });
+      const lastLabelStart = vDashEnd + 20 + (labelOrder.length - 1) * labelStagger;
+
+      return { doneAt: lastLabelStart + 30, timers, applyFinal };
     },
   },
 
   radial7: {
     thumb() {
       const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
-      const pts = polygonPoints(80, 80, 54, 7);
-      svg.appendChild(svgEl("polygon", { points: pointsAttr(pts), ...LINE, "stroke-width": "1" }));
-      for (const p of pts) {
-        svg.appendChild(svgEl("line", { x1: 80, y1: 80, x2: p[0], y2: p[1], ...LINE, "stroke-width": "1" }));
+      const cx = 80, cy = 84, r = 48;
+      for (let i = 0; i < 7; i++) {
+        const a = -Math.PI / 2 + i * ((2 * Math.PI) / 7);
+        const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
+        svg.appendChild(svgEl("line", { x1: cx, y1: cy, x2: x, y2: y, ...LINE, "stroke-width": "1" }));
+        svg.appendChild(svgEl("circle", { cx: x, cy: y, r: 2.6, fill: "currentColor", stroke: "none" }));
       }
+      svg.appendChild(svgEl("circle", { cx, cy, r: 3, fill: "currentColor", style: "color: var(--red);" }));
       return svg;
     },
+    /* Eight evenly spaced directions (45 degrees apart); seven carry a
+       solid radiating line, the eighth — the "remaining gap" once the
+       seven are placed clockwise from the top — carries a shorter
+       dashed line at reduced opacity. Radius shrinks on mobile so the
+       eight labels keep their clearance on a narrow screen. */
+    buildStage() {
+      const m = isMobile();
+      const cx = m ? 62 : 90, cy = m ? 65 : 92;
+      const r = m ? 36 : 52, rDashed = m ? 28 : 42;
+      const labelGap = m ? 10 : 13;
+      const vb = m ? "-18 2 170 128" : MUDA_STAGE_VB;
+      const svg = svgEl("svg", { viewBox: vb, draggable: "false" });
+
+      const centreOuter = svgEl("g", { transform: "translate(" + cx + "," + cy + ")" });
+      const centreInner = svgEl("circle", { cx: 0, cy: 0, r: 4, class: "muda-centre", fill: "currentColor", style: "color: var(--red);" });
+      centreInner.style.transform = "scale(0)";
+      centreInner.style.transformOrigin = "center";
+      centreOuter.appendChild(centreInner);
+      svg.appendChild(centreOuter);
+
+      const rad = Math.PI / 180;
+      MUDA_NODES.forEach((n, i) => {
+        const a = n.angle * rad;
+        const ex = cx + Math.cos(a) * r, ey = cy + Math.sin(a) * r;
+        const line = svgEl("line", { x1: cx, y1: cy, x2: ex, y2: ey, ...LINE, "stroke-width": "1", class: "muda-line muda-line-" + i, pathLength: "1" });
+        line.style.strokeDasharray = "1"; line.style.strokeDashoffset = "1";
+        svg.appendChild(line);
+
+        const node = svgEl("circle", { cx: ex, cy: ey, r: 3.2, class: "muda-node muda-node-" + i, fill: "currentColor" });
+        node.style.opacity = "0";
+        svg.appendChild(node);
+
+        const labelR = r + labelGap;
+        const lx = cx + Math.cos(a) * labelR, ly = cy + Math.sin(a) * labelR;
+        const anchor = Math.cos(a) > 0.3 ? "start" : Math.cos(a) < -0.3 ? "end" : "middle";
+        svg.appendChild(svgText(lx, ly, anchor, n.label, "tool-label neutral muda-label muda-label-" + i));
+      });
+
+      const da = MUDA_DASHED.angle * rad;
+      const dex = cx + Math.cos(da) * rDashed, dey = cy + Math.sin(da) * rDashed;
+      const dashedLine = svgEl("line", { x1: cx, y1: cy, x2: dex, y2: dey, fill: "none", stroke: "currentColor", "stroke-width": "1", "stroke-dasharray": "3 2.5", class: "muda-dashed-line" });
+      dashedLine.style.transformOrigin = cx + "px " + cy + "px";
+      dashedLine.style.transform = "scale(0)";
+      dashedLine.style.opacity = "0.55";
+      svg.appendChild(dashedLine);
+
+      const dashedNode = svgEl("circle", { cx: dex, cy: dey, r: 3.2, class: "muda-dashed-node", fill: "currentColor" });
+      dashedNode.style.opacity = "0";
+      svg.appendChild(dashedNode);
+
+      const dLabelR = rDashed + labelGap;
+      const dlx = cx + Math.cos(da) * dLabelR, dly = cy + Math.sin(da) * dLabelR;
+      const dAnchor = Math.cos(da) > 0.3 ? "start" : Math.cos(da) < -0.3 ? "end" : "middle";
+      svg.appendChild(svgText(dlx, dly, dAnchor, MUDA_DASHED.label, "tool-label neutral dim muda-label muda-dashed-label"));
+
+      return svg;
+    },
+    assemble(diagramEl) {
+      const centre = diagramEl.querySelector(".muda-centre");
+      const lines = Array.from({ length: 7 }, (_, i) => diagramEl.querySelector(".muda-line-" + i));
+      const nodes = Array.from({ length: 7 }, (_, i) => diagramEl.querySelector(".muda-node-" + i));
+      const labelFor = (i) => diagramEl.querySelector(".muda-label-" + i);
+      const dashedLine = diagramEl.querySelector(".muda-dashed-line");
+      const dashedNode = diagramEl.querySelector(".muda-dashed-node");
+      const dashedLabel = diagramEl.querySelector(".muda-dashed-label");
+
+      function applyFinal() {
+        centre.style.transition = "none"; centre.style.transform = "scale(1)";
+        lines.forEach((l) => { l.style.transition = "none"; l.style.strokeDashoffset = "0"; });
+        nodes.forEach((n) => { n.style.transition = "none"; n.style.opacity = "1"; });
+        for (let i = 0; i < 7; i++) labelFor(i).classList.add("show");
+        dashedLine.style.transition = "none"; dashedLine.style.transform = "scale(1)";
+        dashedNode.style.transition = "none"; dashedNode.style.opacity = "0.55";
+        dashedLabel.classList.add("show");
+      }
+
+      if (reduced()) { applyFinal(); return { doneAt: 0, timers: [], applyFinal }; }
+
+      const timers = [];
+      const centreDur = 90;
+      timers.push(setTimeout(() => {
+        centre.style.transition = "transform " + centreDur + "ms cubic-bezier(0.2,0.8,0.3,1.3)";
+        centre.style.transform = "scale(1)";
+      }, 0));
+
+      const lineDur = 70, lineStagger = 45, startAfterCentre = centreDur + 10;
+      lines.forEach((l, i) => {
+        const start = startAfterCentre + i * lineStagger;
+        timers.push(setTimeout(() => { l.style.transition = "stroke-dashoffset " + lineDur + "ms ease"; l.style.strokeDashoffset = "0"; }, start));
+        timers.push(setTimeout(() => {
+          nodes[i].style.transition = "opacity 110ms ease";
+          nodes[i].style.opacity = "1";
+          labelFor(i).classList.add("show");
+        }, start + lineDur));
+      });
+      const afterLines = startAfterCentre + (lines.length - 1) * lineStagger + lineDur;
+
+      const dashedStart = afterLines + 25, dashedDur = 140, dashedEnd = dashedStart + dashedDur;
+      timers.push(setTimeout(() => { dashedLine.style.transition = "transform " + dashedDur + "ms ease"; dashedLine.style.transform = "scale(1)"; }, dashedStart));
+      timers.push(setTimeout(() => {
+        dashedNode.style.transition = "opacity 110ms ease";
+        dashedNode.style.opacity = "0.55";
+        dashedLabel.classList.add("show");
+      }, dashedEnd));
+
+      return { doneAt: dashedEnd + 110, timers, applyFinal };
+    },
+    stageWidth(mobile) { return mobile ? "min(340px, calc(100vw - 3rem))" : "min(460px, 88vw)"; },
   },
 };
 
@@ -821,11 +1391,76 @@ export const TOOLS = [
     watchOut: "It works once. Run it after estimation has started and the room will treat it as a joke.",
     source: "https://mastersofscale.com/brian-chesky/",
   },
-  { diagram: "grid9", ready: false, shortName: "Business Model Canvas" },
-  { diagram: "grid6", ready: false, shortName: "Empathy Map" },
-  { diagram: "layered", ready: false, shortName: "Service Blueprint" },
-  { diagram: "matrix", ready: false, shortName: "Value / Complexity" },
-  { diagram: "radial7", ready: false, shortName: "Muda" },
+  {
+    id: "business-model-canvas",
+    slug: "business-model-canvas",
+    diagram: "grid9",
+    ready: true,
+    shortName: "Business Model Canvas",
+    name: "Business Model Canvas",
+    attribution: "Alexander Osterwalder and Yves Pigneur, Business Model Generation, 2010",
+    whatItIs: "Nine blocks covering who it is for, what it delivers, how it reaches people, and what it costs and earns.",
+    strongFor: "Showing that a product idea is not yet a business. The gaps are the output, not the filled blocks.",
+    howIUse: "When someone wants to build something but cannot say who pays, or what it costs to keep alive once it exists. The cost side is where enthusiasm usually dies.",
+    watchOut: "It describes a model, it does not validate one. A completed canvas is a hypothesis with nine parts, not evidence.",
+    source: "https://www.strategyzer.com/library/the-business-model-canvas",
+  },
+  {
+    id: "empathy-map",
+    slug: "empathy-map",
+    diagram: "grid6",
+    ready: true,
+    shortName: "Empathy Map",
+    name: "Empathy Map",
+    attribution: "Dave Gray, XPLANE, in Gamestorming, 2010",
+    whatItIs: "What a person sees, hears, says, does, thinks and feels, plus their pains and gains.",
+    strongFor: "Separating what people say from what they actually do. The gap between those two is where most service problems live.",
+    howIUse: "One per archetype, as direct input to the blueprint. On its own it tells you about a person. Connected to a service, it changes decisions.",
+    watchOut: "Built on assumptions rather than research, it is worse than nothing, because it makes guesses look like insight.",
+    source: "https://gamestorming.com/empathy-map/",
+  },
+  {
+    id: "service-blueprint",
+    slug: "service-blueprint",
+    diagram: "layered",
+    ready: true,
+    shortName: "Service Blueprint",
+    name: "Service Blueprint",
+    attribution: "After G. Lynn Shostack, Harvard Business Review, 1984",
+    whatItIs: "The visible journey above the line, and everything that has to happen behind it: staff, systems and support processes.",
+    strongFor: "The parts of a service the customer never sees but always feels.",
+    howIUse: "Split into before, during and after, mapped per archetype, so backstage interactions and the systems underneath surface alongside the visible steps. Most failures I have found were not in the interface. They were two lines below it.",
+    watchOut: "It gets long fast. One archetype, one journey. A blueprint that tries to cover everyone covers nobody.",
+    source: "https://hbr.org/1984/01/designing-services-that-deliver",
+  },
+  {
+    id: "value-complexity",
+    slug: "value-complexity",
+    diagram: "matrix",
+    ready: true,
+    shortName: "Value / Complexity",
+    name: "Value / Complexity Matrix",
+    attribution: "No single origin",
+    whatItIs: "Value on one axis, complexity and cost on the other.",
+    strongFor: "Making a prioritisation conversation short, and forcing people to name what they will not do.",
+    howIUse: "To decide sequence within a quadrant, not whether something should be done at all. The matrix ranks work. It does not decide strategy.",
+    watchOut: "Both axes are estimates, and the effort axis is usually the one being guessed at. Ask who filled it in and what they were assuming.",
+    sources: [{ label: "I built my own version of this. Try it", url: "../validator/", internal: true }],
+  },
+  {
+    id: "muda",
+    slug: "muda",
+    diagram: "radial7",
+    ready: true,
+    shortName: "Muda",
+    name: "Muda: The Seven Wastes",
+    attribution: "Taiichi Ohno, Toyota Production System",
+    whatItIs: "Seven categories of waste from the Toyota Production System. An eighth, unused talent, was added decades later, which is why it sits apart.",
+    strongFor: "Looking at a service from the inside, which none of the other nine tools on this page do.",
+    howIUse: "When a service feels slow and nobody can point to why. Waiting and over-processing show up most in service work, and both are invisible from the customer side.",
+    watchOut: "Built for factories. Applied literally to a service it produces nonsense, so treat the seven as prompts rather than categories.",
+    source: "https://en.wikipedia.org/wiki/Muda_(Japanese_term)",
+  },
 ];
 
 /* Renders a tool's title/attribution/sections/source(s) into a given
@@ -862,19 +1497,27 @@ export function renderToolContent(tool, container) {
 
   // Most tools carry one source; a tool may instead carry a `sources`
   // array of { label, url } so more than one link can render, each on
-  // its own line with its own label.
+  // its own line with its own label. An internal link (e.g. to the
+  // validator) uses its label as the link text itself, in the same
+  // spot and style as an external source, rather than showing a raw
+  // URL beside a "Source:" prefix.
   const sourceList = tool.sources || [{ label: "Source", url: tool.source }];
   const sourceWrap = document.createElement("div");
   sourceWrap.className = "tool-source";
-  for (const { label, url } of sourceList) {
+  for (const { label, url, internal } of sourceList) {
     const line = document.createElement("p");
     const a = document.createElement("a");
     a.href = url;
-    a.target = "_blank";
-    a.rel = "noopener";
-    a.textContent = url;
-    line.append(label + ": ");
-    line.appendChild(a);
+    if (internal) {
+      a.textContent = label;
+      line.appendChild(a);
+    } else {
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.textContent = url;
+      line.append(label + ": ");
+      line.appendChild(a);
+    }
     sourceWrap.appendChild(line);
   }
   container.appendChild(sourceWrap);

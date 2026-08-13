@@ -108,11 +108,9 @@ function buildNodes() {
   const rnd = mulberry32(9042);
 
   drifters = TOOLS.map((tool, i) => {
-    const isReady = !!tool.ready;
-    const el = document.createElement(isReady ? "a" : "div");
-    if (isReady) el.href = "./" + tool.slug + "/";
-    el.className = "tool-node" + (isReady ? "" : " placeholder");
-    if (!isReady) el.setAttribute("aria-hidden", "true");
+    const el = document.createElement("a");
+    el.href = "./" + tool.slug + "/";
+    el.className = "tool-node";
 
     const diagram = DIAGRAMS[tool.diagram].thumb();
     diagram.setAttribute("class", "tool-diagram");
@@ -120,14 +118,12 @@ function buildNodes() {
     diagram.setAttribute("draggable", "false");
     el.appendChild(diagram);
 
-    if (isReady) {
-      const label = document.createElement("span");
-      label.className = "tool-name";
-      label.textContent = tool.shortName;
-      label.style.fontSize = fitLabelFontSize(tool.shortName, labelMaxWidth, labelMaxPx, labelMinPx) + "px";
-      el.appendChild(label);
-      el.setAttribute("aria-label", tool.name);
-    }
+    const label = document.createElement("span");
+    label.className = "tool-name";
+    label.textContent = tool.shortName;
+    label.style.fontSize = fitLabelFontSize(tool.shortName, labelMaxWidth, labelMaxPx, labelMinPx) + "px";
+    el.appendChild(label);
+    el.setAttribute("aria-label", tool.name);
 
     space.appendChild(el);
 
