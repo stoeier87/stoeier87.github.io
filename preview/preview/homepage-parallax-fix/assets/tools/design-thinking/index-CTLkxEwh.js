@@ -1,0 +1,1 @@
+import"../../tailwind-BawHnMd-.js";import{t as e}from"../../tool-page-wjpaKNdk.js";e(`design-thinking`);

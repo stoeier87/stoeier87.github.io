@@ -3,23 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Idea Validator — Tobias Fullerton Støier</title>
-    <meta
-      name="description"
-      content="A twelve-question assessment that plots an idea on three matrices and returns a verdict on how to treat it."
-    />
+    <title>Design Thinking: The Three Lenses — Tobias Fullerton Støier</title>
+    <meta name="description" content="Desirable, viable, feasible. A solution has to sit where all three meet." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="../../css/all.min.css" rel="stylesheet" />
-    <script type="module" crossorigin src="../../assets/tools/validator/index-BvVY0BD_.js"></script>
+    <script type="module" crossorigin src="../../assets/tools/design-thinking/index-CTLkxEwh.js"></script>
     <link rel="modulepreload" crossorigin href="../../assets/tailwind-BawHnMd-.js">
+    <link rel="modulepreload" crossorigin href="../../assets/tools-data-C00oLyWs.js">
+    <link rel="modulepreload" crossorigin href="../../assets/tool-page-wjpaKNdk.js">
     <link rel="stylesheet" crossorigin href="../../assets/tailwind-B6W7fvP9.css">
-    <link rel="stylesheet" crossorigin href="../../assets/index-C-LY7TX6.css">
+    <link rel="stylesheet" crossorigin href="../../assets/tool-page-aXN2sCLq.css">
   </head>
   <body>
     <canvas id="backdrop" aria-hidden="true"></canvas>
 
-    <nav class="validator-nav" aria-label="Validator navigation">
+    <nav class="tool-page-nav" aria-label="Tool navigation">
       <a class="pill back" href="../" aria-label="Back to tools" title="Back to tools">
         <span class="arrow"><i class="fa-solid fa-arrow-left-long"></i></span>
         <span class="alien" aria-hidden="true">
@@ -36,11 +35,14 @@
       </a>
     </nav>
 
-    <main class="stage" id="stage"></main>
-
-    <footer class="validator-footer">
-      <p>Model &copy; Tobias Fullerton Støier</p>
-    </footer>
+    <main class="tool-page">
+      <div class="tool-page-body">
+        <div class="tool-page-diagram-wrap">
+          <div id="diagramHost"></div>
+        </div>
+        <div id="toolContent"></div>
+      </div>
+    </main>
 
   </body>
 </html>
