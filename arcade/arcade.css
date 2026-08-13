@@ -30,7 +30,9 @@ header {
 h1 {
   font-family: var(--font-display);
   font-size: clamp(2rem, 8vw, 4.5rem);
-  @apply tracking-[0.06em];
+  line-height: 0.93;
+  letter-spacing: -0.01em;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6);
 }
 header p {
   color: var(--color-ink-muted);
@@ -111,7 +113,9 @@ header p {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 1rem clamp(0.9rem, 3vw, 1.4rem);
+  /* Same gutter as about-me's bio-panel, so the back pill sits on the
+     same grid across pages instead of hugging the raw viewport edge. */
+  padding: 1rem clamp(1.25rem, 6vw, 4rem);
 }
 
 .pill {

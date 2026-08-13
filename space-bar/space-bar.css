@@ -52,7 +52,9 @@ a { color: inherit; text-decoration: none; }
   position: fixed; top: 0; left: 0; right: 0; z-index: 8;
   display: flex; align-items: center; justify-content: space-between;
   gap: 0.75rem;
-  padding: 1rem clamp(0.9rem, 3vw, 1.4rem);
+  /* Same gutter as about-me's bio-panel, so the back pill sits on the
+     same grid across pages instead of hugging the raw viewport edge. */
+  padding: 1rem clamp(1.25rem, 6vw, 4rem);
   pointer-events: none;
 }
 .bar-nav > * { pointer-events: auto; }
@@ -172,8 +174,10 @@ a { color: inherit; text-decoration: none; }
    filter pills at the same baseline instead of floating above them ── */
 .bar-bottom {
   position: fixed; z-index: 6;
-  left: clamp(0.9rem, 3vw, 1.4rem);
-  right: clamp(0.9rem, 3vw, 1.4rem);
+  /* Same gutter as .bar-nav above, so the alien/filters row lines up
+     with the back pill on the same vertical grid line. */
+  left: clamp(1.25rem, 6vw, 4rem);
+  right: clamp(1.25rem, 6vw, 4rem);
   bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
   display: flex; align-items: flex-end;
   gap: 0.6rem;

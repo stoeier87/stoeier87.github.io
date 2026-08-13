@@ -46,7 +46,9 @@ header {
 header h1 {
   font-family: 'Archivo Black', sans-serif;
   font-size: clamp(1.6rem, 4vw, 2.4rem);
-  letter-spacing: 1px;
+  line-height: 0.93;
+  letter-spacing: -0.01em;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6);
   color: #fff;
 }
 
@@ -178,7 +180,9 @@ tr[data-rank='3'] .rank { color: var(--bronze); }
   top: 0;
   left: 0;
   z-index: 20;
-  padding: 1rem clamp(0.9rem, 3vw, 1.4rem);
+  /* Same gutter as about-me's bio-panel, so the back pill sits on the
+     same grid across pages instead of hugging the raw viewport edge. */
+  padding: 1rem clamp(1.25rem, 6vw, 4rem);
 }
 
 .pill {
