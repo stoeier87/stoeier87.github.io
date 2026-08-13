@@ -214,6 +214,10 @@ a { color: inherit; text-decoration: none; }
   position: absolute;
   left: 0;
   bottom: calc(100% + 0.7rem);
+  /* .host (the containing block here) is only as wide as the alien, so
+     shrink-to-fit against it would starve the bubble regardless of
+     max-width. Size to content instead, capped by max-width. */
+  width: max-content;
   max-width: min(22rem, 68vw);
   min-height: 2.7rem;
   background: var(--panel);
