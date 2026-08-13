@@ -149,27 +149,6 @@ a { color: inherit; text-decoration: none; }
 .rocket-flame { transform-origin: 12px 32px; animation: flame 0.12s steps(2) infinite alternate; }
 @keyframes flame { from { transform: scaleY(0.7); } to { transform: scaleY(1.15); } }
 
-/* ── Easter egg: the sign above the bar ────────────────────── */
-.no-id {
-  position: absolute;
-  right: clamp(0.8rem, 4vw, 2.4rem);
-  bottom: 8.5rem;
-  z-index: 3;
-  font-size: 0.58rem; letter-spacing: 0.28em;
-  color: rgba(224, 58, 47, 0.38);
-  border: 1px solid rgba(224, 58, 47, 0.22);
-  border-radius: 4px;
-  padding: 0.3rem 0.55rem;
-  transform: rotate(-4deg);
-  pointer-events: none;
-  animation: buzz 7s ease-in-out infinite;
-}
-@keyframes buzz {
-  0%, 88%, 100% { opacity: 0.75; }
-  90% { opacity: 0.25; }
-  93% { opacity: 0.8; }
-}
-
 /* ── Host + filters share one row, so the alien sits in front of the
    filter pills at the same baseline instead of floating above them ── */
 .bar-bottom {
@@ -387,13 +366,12 @@ a { color: inherit; text-decoration: none; }
   .filters { gap: 0.4rem; flex-wrap: nowrap; }
   .bubble { font-size: 0.8rem; max-width: 70vw; }
   .alien svg { width: 60px; height: 56px; }
-  .no-id { bottom: 10.5rem; font-size: 0.5rem; letter-spacing: 0.2em; }
   .star .label { font-size: 0.55rem; }
 }
 
 /* ── Reduced motion: keep the information, drop the theatre ── */
 @media (prefers-reduced-motion: reduce) {
-  .star .dot, .rocket-flame, .no-id,
+  .star .dot, .rocket-flame,
   .host.idle .alien .cloth, .host.idle .alien .arm, .alien .eye {
     animation: none;
   }
