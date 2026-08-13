@@ -30,11 +30,13 @@ header {
 h1 {
   font-family: var(--font-display);
   text-transform: uppercase;
-  font-size: clamp(2rem, 8vw, 4.5rem);
+  /* Same size as about-me's .name, on both desktop and mobile */
+  font-size: clamp(2.6rem, 9.5vw, 5.8rem);
   line-height: 0.93;
   letter-spacing: -0.01em;
   text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6);
 }
+h1 .red { color: var(--color-red); }
 header p {
   color: var(--color-ink-muted);
   @apply mt-[0.35rem];
