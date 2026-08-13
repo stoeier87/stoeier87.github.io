@@ -216,40 +216,52 @@ const BMC_BLOCKS = [
   { key: "rev", lines: ["Revenue", "Streams"], cx: (BMC.xBottomMid + BMC.x5) / 2, cy: (BMC.yMid + BMC.yBottom) / 2 },
 ];
 
-/* ── Tool 7: Empathy Map (six panels + centre circle) ─────────── */
-const EMP = { x0: 10, xMid: 90, x1: 170, y0: 10, y1: 70, y2: 130, y3: 190 };
-const EMP_STAGE_VB = "0 0 180 200";
-// Same padding value from every panel's own top-left corner, so spacing
-// reads as consistent across all six.
-const EMP_PAD_X = 9, EMP_PAD_Y = 12;
-const EMP_PANELS = [
-  { key: "think", text: "Thinks and Feels", x: EMP.x0 + EMP_PAD_X, y: EMP.y0 + EMP_PAD_Y },
-  { key: "says", text: "Says and Does", x: EMP.xMid + EMP_PAD_X, y: EMP.y0 + EMP_PAD_Y },
-  { key: "sees", text: "Sees", x: EMP.x0 + EMP_PAD_X, y: EMP.y1 + EMP_PAD_Y },
-  { key: "hears", text: "Hears", x: EMP.xMid + EMP_PAD_X, y: EMP.y1 + EMP_PAD_Y },
-  { key: "pains", text: "Pains", x: EMP.x0 + EMP_PAD_X, y: EMP.y2 + EMP_PAD_Y },
-  { key: "gains", text: "Gains", x: EMP.xMid + EMP_PAD_X, y: EMP.y2 + EMP_PAD_Y },
+/* ── Tool 7: Empathy Map (six filled panels + centre placeholder) ──
+   Two columns, three rows, visible gutters between panels. The four
+   upper panels are one step lighter than the page background; the two
+   lower panels (Pains, Gains) are a second, visibly different shade so
+   the split between observation and outcome reads immediately. */
+const EMP2_COLW = 60, EMP2_ROWH = 50, EMP2_GUTTER = 4;
+const EMP2_PANELS = [
+  { key: "think", label: "Thinks and Feels", col: 0, row: 0, shade: 1 },
+  { key: "says", label: "Says and Does", col: 1, row: 0, shade: 1 },
+  { key: "sees", label: "Sees", col: 0, row: 1, shade: 1 },
+  { key: "hears", label: "Hears", col: 1, row: 1, shade: 1 },
+  { key: "pains", label: "Pains", col: 0, row: 2, shade: 2 },
+  { key: "gains", label: "Gains", col: 1, row: 2, shade: 2 },
 ];
-// Reveal order: clockwise from the top-left panel.
-const EMP_ORDER = ["think", "says", "hears", "gains", "pains", "sees"];
+// Reveal order: the four upper panels clockwise from top left, then the
+// two lower panels together; labels follow in the same order.
+const EMP2_UPPER_ORDER = ["think", "says", "hears", "sees"];
+const EMP2_LOWER_ORDER = ["pains", "gains"];
+const EMP2_LABEL_ORDER = ["think", "says", "hears", "sees", "pains", "gains"];
 
-/* ── Tool 8: Service Blueprint (five bands) ────────────────────
-   Bands run top to bottom: Evidence, User Actions, Frontstage,
-   Backstage, Support Processes. Three of the four boundaries get an
-   extra dashed, labelled line drawn over the plain band edge; the
-   Evidence/User Actions boundary stays a plain edge, unlabelled. */
-const SBP = { x0: 20, x1: 190, yTop: 20, bandH: 36 };
-const SBP_BAND_Y = [0, 1, 2, 3, 4, 5].map((i) => SBP.yTop + i * SBP.bandH);
-const SBP_BANDS = ["Evidence", "User Actions", "Frontstage", "Backstage", "Support"];
-// The three dashed/labelled boundaries, by index into SBP_BAND_Y (1..3 —
-// the boundary between bands[i-1] and bands[i]).
-const SBP_DASHED = [
-  { boundary: 2, lines: ["Line of Interaction"] },
-  { boundary: 3, lines: ["Line of Visibility"] },
-  { boundary: 4, lines: ["Line of Internal", "Interaction"] },
+/* ── Tool 8: Service Blueprint (filled row/column template) ───────
+   A label column plus a content grid of empty cells, five rows deep,
+   with three full-width accent bands standing in for the boundary
+   lines and a single phase header above. Content columns drop from
+   five to three under 500px so the grid stays legible on a phone. */
+const SBP2_ROW_ORDER = [
+  { type: "content", label: "Evidence" },
+  { type: "content", label: "User Actions" },
+  { type: "band", label: "Line of Interaction" },
+  { type: "content", label: "Frontstage" },
+  { type: "band", label: "Line of Visibility" },
+  { type: "content", label: "Backstage" },
+  { type: "band", label: "Line of Internal Interaction" },
+  { type: "content", label: "Support Processes" },
 ];
-const SBP_PHASES = ["Before", "During", "After"];
-const SBP_STAGE_VB = "-38 -14 270 240";
+const SBP2_HEADER_LABEL = "BEFORE";
+const SBP2_ROW_H = { content: 24, band: 13 };
+const SBP2_LABEL_COL_W = 44;
+const SBP2_COL_W = 24;
+const SBP2_GUTTER = 3;
+const SBP2_HEADER_H = 16, SBP2_HEADER_GAP = 5;
+const SBP2_BAND_FILL = "rgba(224, 58, 47, 0.2)";
+// Three illustrative numbered markers connecting steps across rows —
+// not tied to real content. Indices are into SBP2_ROW_ORDER; all three
+// land on content rows (Evidence, Frontstage, Support Processes).
+const SBP2_MARKER_ROWS = [0, 3, 7];
 
 /* ── Tool 9: Value / Complexity Matrix ─────────────────────────
    Plain L-shaped axes (single arrowhead each, no bounding rect) with
@@ -900,79 +912,86 @@ export const DIAGRAMS = {
       svg.appendChild(svgEl("circle", { cx: xMid, cy: (y0 + y3) / 2, r: 9, fill: "currentColor" }));
       return svg;
     },
-    /* Six panels around a small centre circle representing the person —
-       the circle appears first, then the grid draws around it, then
-       each panel's label appears clockwise from the top left. */
+    /* A filled template, not line art: six panels in two columns and
+       three rows, visible gutters between them. The lower two (Pains,
+       Gains) use a visibly different fill so the split between
+       observation and outcome reads immediately. A small neutral
+       rectangle marks the centre — a placeholder for the person's
+       photo — and sits on top of the gutters. */
     buildStage() {
-      const svg = svgEl("svg", { viewBox: EMP_STAGE_VB, draggable: "false" });
-      const cx = (EMP.x0 + EMP.x1) / 2, cy = (EMP.y0 + EMP.y3) / 2;
+      const colW = EMP2_COLW, rowH = EMP2_ROWH, gutter = EMP2_GUTTER;
+      const gridW = colW * 2 + gutter;
+      const gridH = rowH * 3 + gutter * 2;
+      const svg = svgEl("svg", { viewBox: "-8 -8 " + (gridW + 16) + " " + (gridH + 16), draggable: "false" });
 
-      const circleOuter = svgEl("g", { transform: "translate(" + cx + "," + cy + ")" });
-      const circleInner = svgEl("circle", { cx: 0, cy: 0, r: 2.3, class: "emp-circle", fill: "none", stroke: "currentColor", "stroke-width": "1.1", style: "color: var(--red);" });
-      circleInner.style.transform = "scale(0)";
-      circleInner.style.transformOrigin = "center";
-      circleOuter.appendChild(circleInner);
-      svg.appendChild(circleOuter);
+      const colX = [0, colW + gutter];
+      const rowY = [0, rowH + gutter, (rowH + gutter) * 2];
 
-      const outer = svgEl("rect", { x: EMP.x0, y: EMP.y0, width: EMP.x1 - EMP.x0, height: EMP.y3 - EMP.y0, ...LINE, class: "emp-outer", pathLength: "1" });
-      outer.style.strokeDasharray = "1"; outer.style.strokeDashoffset = "1";
-      svg.appendChild(outer);
+      EMP2_PANELS.forEach((p) => {
+        const x = colX[p.col], y = rowY[p.row];
+        const rect = svgEl("rect", { x, y, width: colW, height: rowH, fill: p.shade === 2 ? "var(--panel-2)" : "var(--panel-1)", class: "emp2-panel emp2-panel-" + p.key });
+        rect.style.opacity = "0";
+        svg.appendChild(rect);
 
-      const vDiv = svgEl("line", { x1: EMP.xMid, y1: EMP.y0, x2: EMP.xMid, y2: EMP.y3, ...LINE, "stroke-width": "1", class: "emp-vdiv", pathLength: "1" });
-      vDiv.style.strokeDasharray = "1"; vDiv.style.strokeDashoffset = "1";
-      svg.appendChild(vDiv);
+        const label = svgText(x + colW / 2, y + 11, "middle", p.label, "emp2-panel-label emp2-panel-label-" + p.key);
+        label.style.opacity = "0";
+        svg.appendChild(label);
+      });
 
-      const hDiv0 = svgEl("line", { x1: EMP.x0, y1: EMP.y1, x2: EMP.x1, y2: EMP.y1, ...LINE, "stroke-width": "1", class: "emp-hdiv-0", pathLength: "1" });
-      const hDiv1 = svgEl("line", { x1: EMP.x0, y1: EMP.y2, x2: EMP.x1, y2: EMP.y2, ...LINE, "stroke-width": "1", class: "emp-hdiv-1", pathLength: "1" });
-      [hDiv0, hDiv1].forEach((l) => { l.style.strokeDasharray = "1"; l.style.strokeDashoffset = "1"; svg.appendChild(l); });
-
-      for (const p of EMP_PANELS) {
-        svg.appendChild(svgText(p.x, p.y, "start", p.text, "tool-label neutral emp-label emp-label-" + p.key));
-      }
+      const cx = gridW / 2, cy = gridH / 2;
+      const photoOuter = svgEl("g", { transform: "translate(" + cx + "," + cy + ")" });
+      const photoInner = svgEl("g", { class: "emp2-photo" });
+      photoInner.style.transform = "scale(0)";
+      photoInner.style.transformOrigin = "center";
+      photoInner.appendChild(svgEl("rect", { x: -9, y: -6.5, width: 18, height: 13, fill: "var(--panel-photo)" }));
+      photoOuter.appendChild(photoInner);
+      svg.appendChild(photoOuter);
 
       return svg;
     },
     assemble(diagramEl) {
-      const circle = diagramEl.querySelector(".emp-circle");
-      const outer = diagramEl.querySelector(".emp-outer");
-      const vDiv = diagramEl.querySelector(".emp-vdiv");
-      const hDiv0 = diagramEl.querySelector(".emp-hdiv-0");
-      const hDiv1 = diagramEl.querySelector(".emp-hdiv-1");
-      const labelFor = (k) => diagramEl.querySelector(".emp-label-" + k);
+      const panelFor = (k) => diagramEl.querySelector(".emp2-panel-" + k);
+      const labelFor = (k) => diagramEl.querySelector(".emp2-panel-label-" + k);
+      const photo = diagramEl.querySelector(".emp2-photo");
 
       function applyFinal() {
-        circle.style.transition = "none"; circle.style.transform = "scale(1)";
-        [outer, vDiv, hDiv0, hDiv1].forEach((el) => { el.style.transition = "none"; el.style.strokeDashoffset = "0"; });
-        EMP_ORDER.forEach((k) => labelFor(k).classList.add("show"));
+        EMP2_PANELS.forEach((p) => {
+          panelFor(p.key).style.transition = "none"; panelFor(p.key).style.opacity = "1";
+          labelFor(p.key).style.transition = "none"; labelFor(p.key).style.opacity = "1";
+        });
+        photo.style.transition = "none"; photo.style.transform = "scale(1)";
       }
 
       if (reduced()) { applyFinal(); return { doneAt: 0, timers: [], applyFinal }; }
 
       const timers = [];
-      const circleDur = 120;
+      const fade = (el, delay, dur) => {
+        timers.push(setTimeout(() => { el.style.transition = "opacity " + dur + "ms ease"; el.style.opacity = "1"; }, delay));
+      };
+
+      // 1. Four upper panels, clockwise from top left.
+      const upperStagger = 45, upperDur = 80;
+      EMP2_UPPER_ORDER.forEach((k, i) => fade(panelFor(k), i * upperStagger, upperDur));
+      let t = (EMP2_UPPER_ORDER.length - 1) * upperStagger + upperDur + 10;
+
+      // 2. Two lower panels together.
+      const lowerDur = 90;
+      EMP2_LOWER_ORDER.forEach((k) => fade(panelFor(k), t, lowerDur));
+      t = t + lowerDur + 10;
+
+      // 3. Six labels, in the same order.
+      const labelStagger = 35, labelDur = 65;
+      EMP2_LABEL_ORDER.forEach((k, i) => fade(labelFor(k), t + i * labelStagger, labelDur));
+      t = t + (EMP2_LABEL_ORDER.length - 1) * labelStagger + labelDur + 10;
+
+      // 4. Centre rectangle, scaling up last.
+      const photoDur = 130;
       timers.push(setTimeout(() => {
-        circle.style.transition = "transform " + circleDur + "ms cubic-bezier(0.2,0.8,0.3,1.3)";
-        circle.style.transform = "scale(1)";
-      }, 0));
+        photo.style.transition = "transform " + photoDur + "ms cubic-bezier(0.2,0.8,0.3,1.3)";
+        photo.style.transform = "scale(1)";
+      }, t));
 
-      const outerStart = circleDur + 5, outerDur = 150, outerEnd = outerStart + outerDur;
-      timers.push(setTimeout(() => { outer.style.transition = "stroke-dashoffset " + outerDur + "ms ease"; outer.style.strokeDashoffset = "0"; }, outerStart));
-
-      const vStart = outerEnd + 10, vDur = 110, vEnd = vStart + vDur;
-      timers.push(setTimeout(() => { vDiv.style.transition = "stroke-dashoffset " + vDur + "ms ease"; vDiv.style.strokeDashoffset = "0"; }, vStart));
-
-      const h0Start = vEnd + 10, hDur = 90, h0End = h0Start + hDur;
-      timers.push(setTimeout(() => { hDiv0.style.transition = "stroke-dashoffset " + hDur + "ms ease"; hDiv0.style.strokeDashoffset = "0"; }, h0Start));
-      const h1Start = h0Start + 60, h1End = h1Start + hDur;
-      timers.push(setTimeout(() => { hDiv1.style.transition = "stroke-dashoffset " + hDur + "ms ease"; hDiv1.style.strokeDashoffset = "0"; }, h1Start));
-
-      const labelStart = Math.max(h0End, h1End) + 15, labelStagger = 45;
-      EMP_ORDER.forEach((k, i) => {
-        timers.push(setTimeout(() => labelFor(k).classList.add("show"), labelStart + i * labelStagger));
-      });
-      const lastLabelStart = labelStart + (EMP_ORDER.length - 1) * labelStagger;
-
-      return { doneAt: lastLabelStart + 25, timers, applyFinal };
+      return { doneAt: t + photoDur + 15, timers, applyFinal };
     },
   },
 
@@ -988,118 +1007,174 @@ export const DIAGRAMS = {
       svg.appendChild(svgEl("line", { x1: x1, y1: y0, x2: x1, y2: y0 + 5 * bandH, ...LINE, "stroke-width": "1" }));
       return svg;
     },
-    /* Five bands draw top to bottom, then three of their four internal
-       boundaries redraw as dashed, labelled lines of interaction — the
-       fourth boundary stays a plain, unlabelled band edge. */
+    /* A filled template, not line art: a label column plus a grid of
+       empty content cells (three columns under 500px, five above),
+       three full-width accent bands standing in for the boundary
+       lines, and a single phase header above. Header, then label
+       cells top to bottom, then content cells row by row, then the
+       three bands with their names, then three illustrative numbered
+       markers. */
     buildStage() {
-      const svg = svgEl("svg", { viewBox: SBP_STAGE_VB, draggable: "false" });
+      const cols = window.innerWidth < 500 ? 3 : 5;
+      const gutter = SBP2_GUTTER;
+      const labelW = SBP2_LABEL_COL_W;
+      const colW = SBP2_COL_W;
+      const gridW = labelW + gutter + cols * colW + (cols - 1) * gutter;
 
-      const bandEls = [];
-      for (let i = 0; i < 5; i++) {
-        const y0 = SBP_BAND_Y[i], y1 = SBP_BAND_Y[i + 1];
-        const r = svgEl("rect", { x: SBP.x0, y: y0, width: SBP.x1 - SBP.x0, height: y1 - y0, ...LINE, class: "sbp-band sbp-band-" + i, pathLength: "1" });
-        r.style.strokeDasharray = "1"; r.style.strokeDashoffset = "1";
-        svg.appendChild(r);
-        bandEls.push(r);
-      }
+      const rowY = [];
+      let yCursor = 0;
+      SBP2_ROW_ORDER.forEach((r) => {
+        rowY.push(yCursor);
+        yCursor += SBP2_ROW_H[r.type] + gutter;
+      });
+      const gridH = yCursor - gutter;
+      const headerH = SBP2_HEADER_H, headerGap = SBP2_HEADER_GAP;
+      const gridTop = headerH + headerGap;
+      const totalH = gridTop + gridH;
 
-      const dashLabelLineH = 5;
-      SBP_DASHED.forEach((d, i) => {
-        const y = SBP_BAND_Y[d.boundary];
-        // The bands above and below this boundary each stroke their own
-        // edge at this same y, so two solid strokes already sit here —
-        // erase that seam first, or the dashed line drawn on top of it
-        // reads as solid (the gaps just show the solid edges beneath).
-        svg.appendChild(svgEl("line", { x1: SBP.x0, y1: y, x2: SBP.x1, y2: y, stroke: "var(--bg)", "stroke-width": "2.4" }));
-        const line = svgEl("line", {
-          x1: SBP.x0, y1: y, x2: SBP.x1, y2: y,
-          fill: "none", stroke: "currentColor", "stroke-width": "1.5", "stroke-dasharray": "5 3.5", "stroke-linecap": "butt",
-          class: "sbp-dashed sbp-dashed-" + i,
-        });
-        line.style.transformOrigin = SBP.x0 + "px " + y + "px";
-        line.style.transform = "scaleX(0)";
-        svg.appendChild(line);
-        // Left-aligned, inside the frame, above the line — never right-
-        // aligned, so it can never run past the right edge of the model.
-        const labelY = y - 7 - (d.lines.length - 1) * dashLabelLineH;
-        svg.appendChild(svgTextLines(SBP.x0 + 3, labelY, "start", d.lines, "tool-label sbp-dashed-label sbp-dashed-label-" + i, dashLabelLineH));
+      const svg = svgEl("svg", { viewBox: "-8 -8 " + (gridW + 16) + " " + (totalH + 16), draggable: "false" });
+
+      const header = svgEl("rect", { x: 0, y: 0, width: gridW, height: headerH, fill: SBP2_BAND_FILL, class: "sbp2-header" });
+      header.style.opacity = "0";
+      svg.appendChild(header);
+      const headerLabel = svgText(gridW / 2, headerH / 2 + 2, "middle", SBP2_HEADER_LABEL, "sbp2-band-label sbp2-header-label");
+      headerLabel.style.opacity = "0";
+      svg.appendChild(headerLabel);
+
+      let contentRowIdx = 0;
+      let bandIdx = 0;
+      SBP2_ROW_ORDER.forEach((r, i) => {
+        const ry = gridTop + rowY[i];
+        if (r.type === "content") {
+          const cell = svgEl("rect", { x: 0, y: ry, width: labelW, height: SBP2_ROW_H.content, fill: "var(--panel-1)", class: "sbp2-cell sbp2-label-row-" + contentRowIdx });
+          cell.style.opacity = "0";
+          svg.appendChild(cell);
+
+          const lines = r.label === "Support Processes" ? ["Support", "Processes"] : [r.label];
+          const lineH = 5.6;
+          const labelY = ry + SBP2_ROW_H.content / 2 - ((lines.length - 1) * lineH) / 2 + 1.8;
+          const labelText = svgTextLines(labelW / 2, labelY, "middle", lines, "sbp2-row-label sbp2-label-row-" + contentRowIdx, lineH);
+          labelText.style.opacity = "0";
+          svg.appendChild(labelText);
+
+          for (let c = 0; c < cols; c++) {
+            const cx = labelW + gutter + c * (colW + gutter);
+            const ccell = svgEl("rect", { x: cx, y: ry, width: colW, height: SBP2_ROW_H.content, fill: "var(--panel-1)", class: "sbp2-cell sbp2-content-row-" + contentRowIdx + "-col-" + c });
+            ccell.style.opacity = "0";
+            svg.appendChild(ccell);
+          }
+
+          contentRowIdx++;
+        } else {
+          const band = svgEl("rect", { x: 0, y: ry, width: gridW, height: SBP2_ROW_H.band, fill: SBP2_BAND_FILL, class: "sbp2-band sbp2-band-" + bandIdx });
+          band.style.opacity = "0";
+          svg.appendChild(band);
+          const bandLabel = svgText(gridW / 2, ry + SBP2_ROW_H.band / 2 + 1.8, "middle", r.label, "sbp2-band-label sbp2-band-label-" + bandIdx);
+          bandLabel.style.opacity = "0";
+          svg.appendChild(bandLabel);
+          bandIdx++;
+        }
       });
 
-      const bandLabels = svgEl("g", { class: "sbp-band-labels" });
-      SBP_BANDS.forEach((name, i) => {
-        const yc = (SBP_BAND_Y[i] + SBP_BAND_Y[i + 1]) / 2;
-        // "show" applied immediately — these fade in together via the
-        // parent group's own opacity transition, not individually.
-        const t = svgText(SBP.x0 - 13, yc, "middle", name, "tool-label neutral show sbp-band-label");
-        t.setAttribute("transform", "rotate(-90 " + (SBP.x0 - 13) + " " + yc + ")");
-        bandLabels.appendChild(t);
+      // Three illustrative numbered markers, spanning early/middle/late
+      // rows and columns to suggest a path connecting steps — not tied
+      // to real content.
+      const markerCols = [0, Math.floor((cols - 1) / 2), cols - 1];
+      SBP2_MARKER_ROWS.forEach((rowOrderIdx, mi) => {
+        const ry = gridTop + rowY[rowOrderIdx];
+        const c = markerCols[mi];
+        const mx = labelW + gutter + c * (colW + gutter) + colW / 2;
+        const my = ry + SBP2_ROW_H.content / 2;
+        const outer = svgEl("g", { transform: "translate(" + mx + "," + my + ")" });
+        const inner = svgEl("g", { class: "sbp2-marker sbp2-marker-" + mi });
+        inner.style.transform = "scale(0)";
+        inner.style.transformOrigin = "center";
+        inner.appendChild(svgEl("circle", { cx: 0, cy: 0, r: 6, fill: "var(--red)" }));
+        inner.appendChild(svgText(0, 2.1, "middle", String(mi + 1), "sbp2-marker-num"));
+        outer.appendChild(inner);
+        svg.appendChild(outer);
       });
-      bandLabels.style.opacity = "0";
-      svg.appendChild(bandLabels);
-
-      const guideX = [SBP.x0 + (SBP.x1 - SBP.x0) / 3, SBP.x0 + ((SBP.x1 - SBP.x0) * 2) / 3];
-      const guides = guideX.map((x, i) => {
-        const l = svgEl("line", { x1: x, y1: SBP.yTop, x2: x, y2: SBP_BAND_Y[5], fill: "none", stroke: "currentColor", "stroke-width": "1", class: "sbp-guide sbp-guide-" + i, pathLength: "1" });
-        l.style.strokeDasharray = "1"; l.style.strokeDashoffset = "1";
-        l.style.opacity = "0.35";
-        svg.appendChild(l);
-        return l;
-      });
-
-      const phaseX = [(SBP.x0 + guideX[0]) / 2, (guideX[0] + guideX[1]) / 2, (guideX[1] + SBP.x1) / 2];
-      const phaseGroup = svgEl("g", { class: "sbp-phases" });
-      phaseGroup.style.opacity = "0";
-      SBP_PHASES.forEach((label, i) => {
-        phaseGroup.appendChild(svgText(phaseX[i], SBP.yTop - 8, "middle", label, "tool-label neutral show"));
-      });
-      svg.appendChild(phaseGroup);
 
       return svg;
     },
     assemble(diagramEl) {
-      const bandEls = Array.from({ length: 5 }, (_, i) => diagramEl.querySelector(".sbp-band-" + i));
-      const dashedEls = Array.from({ length: 3 }, (_, i) => diagramEl.querySelector(".sbp-dashed-" + i));
-      const dashedLabels = Array.from({ length: 3 }, (_, i) => diagramEl.querySelector(".sbp-dashed-label-" + i));
-      const bandLabels = diagramEl.querySelector(".sbp-band-labels");
-      const guides = [0, 1].map((i) => diagramEl.querySelector(".sbp-guide-" + i));
-      const phaseGroup = diagramEl.querySelector(".sbp-phases");
+      const header = diagramEl.querySelector(".sbp2-header");
+      const headerLabel = diagramEl.querySelector(".sbp2-header-label");
+      const labelRows = Array.from({ length: 5 }, (_, i) => Array.from(diagramEl.querySelectorAll(".sbp2-label-row-" + i)));
+      const contentRows = Array.from({ length: 5 }, (_, r) => {
+        const cells = [];
+        for (let c = 0; ; c++) {
+          const el = diagramEl.querySelector(".sbp2-content-row-" + r + "-col-" + c);
+          if (!el) break;
+          cells.push(el);
+        }
+        return cells;
+      });
+      const bandPairs = Array.from({ length: 3 }, (_, i) => [
+        diagramEl.querySelector(".sbp2-band-" + i),
+        diagramEl.querySelector(".sbp2-band-label-" + i),
+      ]);
+      const markers = Array.from({ length: 3 }, (_, i) => diagramEl.querySelector(".sbp2-marker-" + i));
 
       function applyFinal() {
-        bandEls.forEach((b) => { b.style.transition = "none"; b.style.strokeDashoffset = "0"; });
-        dashedEls.forEach((d) => { d.style.transition = "none"; d.style.transform = "scaleX(1)"; });
-        dashedLabels.forEach((l) => l.classList.add("show"));
-        bandLabels.style.transition = "none"; bandLabels.style.opacity = "1";
-        guides.forEach((g) => { g.style.transition = "none"; g.style.strokeDashoffset = "0"; });
-        phaseGroup.style.transition = "none"; phaseGroup.style.opacity = "1";
+        header.style.transition = "none"; header.style.opacity = "1";
+        headerLabel.style.transition = "none"; headerLabel.style.opacity = "1";
+        labelRows.forEach((row) => row.forEach((el) => { el.style.transition = "none"; el.style.opacity = "1"; }));
+        contentRows.forEach((row) => row.forEach((el) => { el.style.transition = "none"; el.style.opacity = "1"; }));
+        bandPairs.forEach((pair) => pair.forEach((el) => { el.style.transition = "none"; el.style.opacity = "1"; }));
+        markers.forEach((m) => { m.style.transition = "none"; m.style.transform = "scale(1)"; });
       }
 
       if (reduced()) { applyFinal(); return { doneAt: 0, timers: [], applyFinal }; }
 
       const timers = [];
-      const bandDur = 80, bandStagger = 45;
-      bandEls.forEach((b, i) => {
-        timers.push(setTimeout(() => { b.style.transition = "stroke-dashoffset " + bandDur + "ms ease"; b.style.strokeDashoffset = "0"; }, i * bandStagger));
+      const fade = (el, delay, dur) => {
+        timers.push(setTimeout(() => { el.style.transition = "opacity " + dur + "ms ease"; el.style.opacity = "1"; }, delay));
+      };
+
+      // 1. Header band fades in.
+      const headerDur = 80;
+      fade(header, 0, headerDur);
+      fade(headerLabel, 0, headerDur);
+      let t = headerDur + 10;
+
+      // 2. Five label cells fade in top to bottom.
+      const labelStagger = 35, labelDur = 65;
+      labelRows.forEach((row, i) => {
+        const start = t + i * labelStagger;
+        row.forEach((el) => fade(el, start, labelDur));
       });
-      const afterBands = (bandEls.length - 1) * bandStagger + bandDur;
+      t = t + (labelRows.length - 1) * labelStagger + labelDur + 10;
 
-      const dashDur = 70, dashStagger = 45, dashStart0 = afterBands + 20;
-      dashedEls.forEach((d, i) => {
-        const start = dashStart0 + i * dashStagger;
-        timers.push(setTimeout(() => { d.style.transition = "transform " + dashDur + "ms ease"; d.style.transform = "scaleX(1)"; }, start));
-        timers.push(setTimeout(() => dashedLabels[i].classList.add("show"), start + dashDur));
+      // 3. Content cells fade in row by row, left to right within a row.
+      const rowStagger = 35, cellStagger = 6, cellDur = 45;
+      contentRows.forEach((row, r) => {
+        const rowStart = t + r * rowStagger;
+        row.forEach((el, c) => fade(el, rowStart + c * cellStagger, cellDur));
       });
-      const afterDashed = dashStart0 + (dashedEls.length - 1) * dashStagger + dashDur;
+      const colsUsed = contentRows[0] ? contentRows[0].length : 0;
+      const lastRowStart = t + (contentRows.length - 1) * rowStagger;
+      t = lastRowStart + (colsUsed - 1) * cellStagger + cellDur + 10;
 
-      const labelStart = afterDashed + 20;
-      timers.push(setTimeout(() => { bandLabels.style.transition = "opacity 130ms ease"; bandLabels.style.opacity = "1"; }, labelStart));
-
-      const guideStart = labelStart + 30, guideDur = 90, guideEnd = guideStart + guideDur;
-      guides.forEach((g) => {
-        timers.push(setTimeout(() => { g.style.transition = "stroke-dashoffset " + guideDur + "ms ease"; g.style.strokeDashoffset = "0"; }, guideStart));
+      // 4. Three boundary bands fade in top to bottom, each with its name.
+      const bandStagger = 55, bandDur = 70;
+      bandPairs.forEach((pair, i) => {
+        const start = t + i * bandStagger;
+        pair.forEach((el) => fade(el, start, bandDur));
       });
-      timers.push(setTimeout(() => { phaseGroup.style.transition = "opacity 110ms ease"; phaseGroup.style.opacity = "1"; }, guideEnd + 10));
+      t = t + (bandPairs.length - 1) * bandStagger + bandDur + 10;
 
-      return { doneAt: guideEnd + 10 + 110, timers, applyFinal };
+      // 5. Three numbered circles pop in.
+      const markerStagger = 45, markerDur = 100;
+      markers.forEach((m, i) => {
+        const start = t + i * markerStagger;
+        timers.push(setTimeout(() => {
+          m.style.transition = "transform " + markerDur + "ms cubic-bezier(0.2,0.8,0.3,1.3)";
+          m.style.transform = "scale(1)";
+        }, start));
+      });
+
+      return { doneAt: t + (markers.length - 1) * markerStagger + markerDur + 15, timers, applyFinal };
     },
     stageWidth(mobile) { return mobile ? "min(360px, calc(100vw - 3rem))" : "min(520px, 90vw)"; },
   },
