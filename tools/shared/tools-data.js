@@ -43,6 +43,19 @@ export function svgText(x, y, anchor, text, cls) {
   return t;
 }
 
+// Same as svgText, but wraps to one tspan per entry in `lines`, each
+// offset from the previous by `lineHeight`. `y` is the baseline of the
+// first line.
+export function svgTextLines(x, y, anchor, lines, cls, lineHeight) {
+  const t = svgEl("text", { x, y, "text-anchor": anchor, class: cls });
+  lines.forEach((line, i) => {
+    const tspan = svgEl("tspan", { x, dy: i === 0 ? 0 : lineHeight });
+    tspan.textContent = line;
+    t.appendChild(tspan);
+  });
+  return t;
+}
+
 /* A small chevron, pointing along +x by default, rotated to face the
    given direction. Used for directional and axis-end arrowheads. */
 export function arrowHead(x, y, angleDeg, cls) {
@@ -206,13 +219,16 @@ const BMC_BLOCKS = [
 /* ── Tool 7: Empathy Map (six panels + centre circle) ─────────── */
 const EMP = { x0: 10, xMid: 90, x1: 170, y0: 10, y1: 70, y2: 130, y3: 190 };
 const EMP_STAGE_VB = "0 0 180 200";
+// Same padding value from every panel's own top-left corner, so spacing
+// reads as consistent across all six.
+const EMP_PAD_X = 9, EMP_PAD_Y = 12;
 const EMP_PANELS = [
-  { key: "think", text: "Thinks and Feels", x: EMP.x0 + 6, y: EMP.y0 + 12 },
-  { key: "says", text: "Says and Does", x: EMP.xMid + 6, y: EMP.y0 + 12 },
-  { key: "sees", text: "Sees", x: EMP.x0 + 6, y: EMP.y1 + 12 },
-  { key: "hears", text: "Hears", x: EMP.xMid + 6, y: EMP.y1 + 12 },
-  { key: "pains", text: "Pains", x: EMP.x0 + 6, y: EMP.y2 + 12 },
-  { key: "gains", text: "Gains", x: EMP.xMid + 6, y: EMP.y2 + 12 },
+  { key: "think", text: "Thinks and Feels", x: EMP.x0 + EMP_PAD_X, y: EMP.y0 + EMP_PAD_Y },
+  { key: "says", text: "Says and Does", x: EMP.xMid + EMP_PAD_X, y: EMP.y0 + EMP_PAD_Y },
+  { key: "sees", text: "Sees", x: EMP.x0 + EMP_PAD_X, y: EMP.y1 + EMP_PAD_Y },
+  { key: "hears", text: "Hears", x: EMP.xMid + EMP_PAD_X, y: EMP.y1 + EMP_PAD_Y },
+  { key: "pains", text: "Pains", x: EMP.x0 + EMP_PAD_X, y: EMP.y2 + EMP_PAD_Y },
+  { key: "gains", text: "Gains", x: EMP.xMid + EMP_PAD_X, y: EMP.y2 + EMP_PAD_Y },
 ];
 // Reveal order: clockwise from the top-left panel.
 const EMP_ORDER = ["think", "says", "hears", "gains", "pains", "sees"];
@@ -228,9 +244,9 @@ const SBP_BANDS = ["Evidence", "User Actions", "Frontstage", "Backstage", "Suppo
 // The three dashed/labelled boundaries, by index into SBP_BAND_Y (1..3 —
 // the boundary between bands[i-1] and bands[i]).
 const SBP_DASHED = [
-  { boundary: 2, label: "Line of Interaction" },
-  { boundary: 3, label: "Line of Visibility" },
-  { boundary: 4, label: "Line of Internal Interaction" },
+  { boundary: 2, lines: ["Line of Interaction"] },
+  { boundary: 3, lines: ["Line of Visibility"] },
+  { boundary: 4, lines: ["Line of Internal", "Interaction"] },
 ];
 const SBP_PHASES = ["Before", "During", "After"];
 const SBP_STAGE_VB = "-38 -14 270 240";
@@ -892,7 +908,7 @@ export const DIAGRAMS = {
       const cx = (EMP.x0 + EMP.x1) / 2, cy = (EMP.y0 + EMP.y3) / 2;
 
       const circleOuter = svgEl("g", { transform: "translate(" + cx + "," + cy + ")" });
-      const circleInner = svgEl("circle", { cx: 0, cy: 0, r: 9, class: "emp-circle", fill: "currentColor", style: "color: var(--red);" });
+      const circleInner = svgEl("circle", { cx: 0, cy: 0, r: 2.3, class: "emp-circle", fill: "none", stroke: "currentColor", "stroke-width": "1.1", style: "color: var(--red);" });
       circleInner.style.transform = "scale(0)";
       circleInner.style.transformOrigin = "center";
       circleOuter.appendChild(circleInner);
@@ -987,17 +1003,26 @@ export const DIAGRAMS = {
         bandEls.push(r);
       }
 
+      const dashLabelLineH = 5;
       SBP_DASHED.forEach((d, i) => {
         const y = SBP_BAND_Y[d.boundary];
+        // The bands above and below this boundary each stroke their own
+        // edge at this same y, so two solid strokes already sit here —
+        // erase that seam first, or the dashed line drawn on top of it
+        // reads as solid (the gaps just show the solid edges beneath).
+        svg.appendChild(svgEl("line", { x1: SBP.x0, y1: y, x2: SBP.x1, y2: y, stroke: "var(--bg)", "stroke-width": "2.4" }));
         const line = svgEl("line", {
           x1: SBP.x0, y1: y, x2: SBP.x1, y2: y,
-          fill: "none", stroke: "currentColor", "stroke-width": "1.5", "stroke-dasharray": "4 3", "stroke-linecap": "round",
+          fill: "none", stroke: "currentColor", "stroke-width": "1.5", "stroke-dasharray": "5 3.5", "stroke-linecap": "butt",
           class: "sbp-dashed sbp-dashed-" + i,
         });
         line.style.transformOrigin = SBP.x0 + "px " + y + "px";
         line.style.transform = "scaleX(0)";
         svg.appendChild(line);
-        svg.appendChild(svgText(SBP.x1, y - 4, "end", d.label, "tool-label sbp-dashed-label sbp-dashed-label-" + i));
+        // Left-aligned, inside the frame, above the line — never right-
+        // aligned, so it can never run past the right edge of the model.
+        const labelY = y - 7 - (d.lines.length - 1) * dashLabelLineH;
+        svg.appendChild(svgTextLines(SBP.x0 + 3, labelY, "start", d.lines, "tool-label sbp-dashed-label sbp-dashed-label-" + i, dashLabelLineH));
       });
 
       const bandLabels = svgEl("g", { class: "sbp-band-labels" });
@@ -1005,8 +1030,8 @@ export const DIAGRAMS = {
         const yc = (SBP_BAND_Y[i] + SBP_BAND_Y[i + 1]) / 2;
         // "show" applied immediately — these fade in together via the
         // parent group's own opacity transition, not individually.
-        const t = svgText(SBP.x0 - 10, yc, "middle", name, "tool-label neutral show sbp-band-label");
-        t.setAttribute("transform", "rotate(-90 " + (SBP.x0 - 10) + " " + yc + ")");
+        const t = svgText(SBP.x0 - 13, yc, "middle", name, "tool-label neutral show sbp-band-label");
+        t.setAttribute("transform", "rotate(-90 " + (SBP.x0 - 13) + " " + yc + ")");
         bandLabels.appendChild(t);
       });
       bandLabels.style.opacity = "0";
