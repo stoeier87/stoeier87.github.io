@@ -78,6 +78,24 @@ function pointsAttr(pts) {
   return pts.map((p) => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
 }
 
+function svgText(x, y, anchor, text, cls) {
+  const t = svgEl("text", { x, y, "text-anchor": anchor, class: cls });
+  t.textContent = text;
+  return t;
+}
+
+/* A small chevron, pointing along +x by default, rotated to face the
+   given direction. Used for directional and axis-end arrowheads. */
+function arrowHead(x, y, angleDeg, cls) {
+  const g = svgEl("g", { transform: "translate(" + x + "," + y + ") rotate(" + angleDeg + ")", class: cls });
+  g.appendChild(svgEl("path", {
+    d: "M -5,-4 L 4,0 L -5,4",
+    fill: "none", stroke: "currentColor", "stroke-width": "1.3",
+    "stroke-linejoin": "round", "stroke-linecap": "round",
+  }));
+  return g;
+}
+
 /* ============================================================
    Diagrams — thin line-art SVG, one per tool shape. Each exposes
    thumb() for the small drifting field version. `venn` additionally
@@ -114,6 +132,76 @@ function vennCirclesSvg(viewBox, pathLength) {
   }
   return svg;
 }
+
+/* ── Tool 2: Lean UX (triangle) ──────────────────────────────
+   Apex at top; vertices computed the same way as the thumbnail
+   polygon so the stage version reads as the same shape, just with
+   room around it for labels. */
+const TRI = { apex: { x: 80, y: 22 }, br: { x: 130.2, y: 109 }, bl: { x: 29.8, y: 109 } };
+const TRI_STAGE_VB = "-15 -20 190 165";
+const TRI_LABELS = [
+  { key: "observe", number: "01", word: "Observe", numX: 80, numY: -1, wordX: 80, wordY: 12, anchor: "middle" },
+  { key: "build", number: "02", word: "Build", numX: 130.2, numY: 123, wordX: 130.2, wordY: 136, anchor: "middle" },
+  { key: "improve", number: "03", word: "Improve", numX: 29.8, numY: 123, wordX: 29.8, wordY: 136, anchor: "middle" },
+];
+
+/* ── Tool 3: Behavior Model (B=MAP curve) ────────────────────── */
+const CURVE_STAGE_VB = "-15 -8 215 175";
+const CURVE_PATH_D = "M 38 26 C 45 70, 120 126, 144 127";
+const CURVE_PROMPT = { cx: 128, cy: 42 };
+
+/* ── Tool 4: Octalysis (octagon) ──────────────────────────────
+   Flat-top regular octagon, same rotation as the thumbnail. Edges
+   are drawn clockwise starting at the top edge; OCT_EDGE_ORDER maps
+   that animation sequence onto the underlying vertex-pair indices. */
+const OCT = { cx: 80, cy: 80, r: 56, rotate: -Math.PI / 8 };
+function octVertices() { return polygonPoints(OCT.cx, OCT.cy, OCT.r, 8, OCT.rotate); }
+const OCT_EDGE_ORDER = [6, 7, 0, 1, 2, 3, 4, 5];
+const OCT_LABEL_TEXT = [
+  ["Epic Meaning", "and Calling"],
+  ["Empowerment of", "Creativity and Feedback"],
+  ["Social Influence", "and Relatedness"],
+  ["Unpredictability", "and Curiosity"],
+  ["Loss and Avoidance"],
+  ["Scarcity and", "Impatience"],
+  ["Ownership and", "Possession"],
+  ["Development and", "Accomplishment"],
+];
+// Anchor geometry per ORIGINAL edge index (0-7): point closest to the
+// shape, text-anchor, and which way extra lines grow away from it.
+const OCT_LABEL_GEOM = {
+  0: { x: 143, y: 80, anchor: "start", grow: "mid" },
+  1: { x: 124, y: 124, anchor: "start", grow: "down" },
+  2: { x: 80, y: 143, anchor: "middle", grow: "down" },
+  3: { x: 36, y: 124, anchor: "end", grow: "down" },
+  4: { x: 17, y: 80, anchor: "end", grow: "mid" },
+  5: { x: 36, y: 36, anchor: "end", grow: "up" },
+  6: { x: 80, y: 17, anchor: "middle", grow: "up" },
+  7: { x: 124, y: 36, anchor: "start", grow: "up" },
+};
+// Edges below the shape's horizontal centre line (original vertex-pair
+// indices): lower-right diagonal, bottom, lower-left diagonal, left.
+// The right edge sits with the upper half — this is what reproduces
+// the real Octalysis white-hat/black-hat split, not a literal 4/4
+// bisection by clockwise list position.
+const OCT_LOWER_EDGES = new Set([1, 2, 3, 4]);
+const OCT_STAGE_VB = "-70 -8 335 215";
+const OCT_LINE_H = 8.5;
+
+/* ── Tool 5: The 11-Star Experience (pyramid, 4 bands) ───────── */
+const PYR = { apex: { x: 80, y: 24 }, br: { x: 138, y: 132 }, bl: { x: 22, y: 132 } };
+function pyrXAtY(y) {
+  const t = (y - PYR.apex.y) / (PYR.br.y - PYR.apex.y);
+  return { left: PYR.apex.x - t * (PYR.apex.x - PYR.bl.x), right: PYR.apex.x + t * (PYR.br.x - PYR.apex.x) };
+}
+const PYR_DIVIDERS_Y = [105, 78, 51];
+const PYR_STAGE_VB = "-10 8 250 145";
+const PYR_TICKS = [
+  { y: 118.5, label: "5 stars", accent: false },
+  { y: 91.5, label: "7 stars", accent: false },
+  { y: 64.5, label: "9 stars", accent: false },
+  { y: 37.5, label: "11 stars", accent: true },
+];
 
 const DIAGRAMS = {
   venn: {
@@ -198,35 +286,413 @@ const DIAGRAMS = {
       svg.appendChild(svgEl("polygon", { points: pointsAttr(polygonPoints(80, 80, 58, 3)), ...LINE }));
       return svg;
     },
+    buildStage() {
+      const svg = svgEl("svg", { viewBox: TRI_STAGE_VB, draggable: "false" });
+      const sideAttrs = { ...LINE, pathLength: "1" };
+      const right = svgEl("path", { d: "M " + TRI.apex.x + " " + TRI.apex.y + " L " + TRI.br.x + " " + TRI.br.y, ...sideAttrs, class: "tri-side tri-right" });
+      const bottom = svgEl("path", { d: "M " + TRI.br.x + " " + TRI.br.y + " L " + TRI.bl.x + " " + TRI.bl.y, ...sideAttrs, class: "tri-side tri-bottom" });
+      const left = svgEl("path", { d: "M " + TRI.bl.x + " " + TRI.bl.y + " L " + TRI.apex.x + " " + TRI.apex.y, ...sideAttrs, class: "tri-side tri-left" });
+      [right, bottom, left].forEach((s) => { s.style.strokeDasharray = "1"; s.style.strokeDashoffset = "1"; });
+      svg.appendChild(right); svg.appendChild(bottom); svg.appendChild(left);
+
+      const arrows = svgEl("g", { class: "tri-arrows" });
+      arrows.style.opacity = "0";
+      arrows.appendChild(arrowHead(105.1, 65.5, 60, "tri-arrow"));
+      arrows.appendChild(arrowHead(80, 109, 180, "tri-arrow"));
+      arrows.appendChild(arrowHead(54.9, 65.5, -60, "tri-arrow"));
+      svg.appendChild(arrows);
+
+      for (const l of TRI_LABELS) {
+        svg.appendChild(svgText(l.numX, l.numY, l.anchor, l.number, "tool-label-num tri-label-" + l.key));
+        svg.appendChild(svgText(l.wordX, l.wordY, l.anchor, l.word, "tool-label tri-label-" + l.key));
+      }
+
+      const centre = svgEl("g", { class: "tri-centre" });
+      centre.style.opacity = "0";
+      centre.appendChild(svgText(80, 74, "middle", "Prototype", "tri-centre-line"));
+      centre.appendChild(svgText(80, 90, "middle", "+ Validate", "tri-centre-line"));
+      svg.appendChild(centre);
+
+      return svg;
+    },
+    assemble(diagramEl) {
+      const strokeDur = 180, stagger = 120;
+      const sides = ["right", "bottom", "left"];
+      const sideEls = sides.map((k) => diagramEl.querySelector(".tri-" + k));
+      const labelKeys = ["build", "improve", "observe"];
+      const arrows = diagramEl.querySelector(".tri-arrows");
+      const centre = diagramEl.querySelector(".tri-centre");
+      const labelEls = (key) => diagramEl.querySelectorAll(".tri-label-" + key);
+
+      function applyFinal() {
+        sideEls.forEach((s) => { s.style.transition = "none"; s.style.strokeDashoffset = "0"; });
+        labelKeys.forEach((k) => labelEls(k).forEach((el) => el.classList.add("show")));
+        arrows.style.transition = "none"; arrows.style.opacity = "1";
+        centre.style.transition = "none"; centre.style.opacity = "1";
+      }
+
+      if (reduced()) { applyFinal(); return { doneAt: 0, timers: [], applyFinal }; }
+
+      const timers = [];
+      sides.forEach((_, i) => {
+        timers.push(setTimeout(() => {
+          sideEls[i].style.transition = "stroke-dashoffset " + strokeDur + "ms ease";
+          sideEls[i].style.strokeDashoffset = "0";
+        }, i * stagger));
+        timers.push(setTimeout(() => {
+          labelEls(labelKeys[i]).forEach((el) => el.classList.add("show"));
+        }, i * stagger + strokeDur));
+      });
+
+      const afterSides = (sides.length - 1) * stagger + strokeDur;
+      const arrowDur = 130;
+      timers.push(setTimeout(() => {
+        arrows.style.transition = "opacity " + arrowDur + "ms ease";
+        arrows.style.opacity = "1";
+      }, afterSides + 30));
+      const afterArrows = afterSides + 30 + arrowDur;
+      const centreDur = 130;
+      timers.push(setTimeout(() => {
+        centre.style.transition = "opacity " + centreDur + "ms ease";
+        centre.style.opacity = "1";
+      }, afterArrows + 30));
+
+      return { doneAt: afterArrows + 30 + centreDur, timers, applyFinal };
+    },
   },
 
   curve: {
     thumb() {
       const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
-      svg.appendChild(svgEl("line", { x1: 18, y1: 122, x2: 142, y2: 122, ...LINE, "stroke-width": "1" }));
+      svg.appendChild(svgEl("line", { x1: 22, y1: 132, x2: 22, y2: 22, ...LINE, "stroke-width": "1" }));
+      svg.appendChild(svgEl("line", { x1: 22, y1: 132, x2: 140, y2: 132, ...LINE, "stroke-width": "1" }));
       svg.appendChild(svgEl("path", {
-        d: "M 18 118 C 55 118, 60 30, 80 30 C 100 30, 105 118, 142 118",
-        ...LINE,
+        d: "M 28 30 C 34 70, 96 118, 134 120",
+        ...LINE, style: "color: var(--red);",
       }));
       return svg;
+    },
+    buildStage() {
+      const svg = svgEl("svg", { viewBox: CURVE_STAGE_VB, draggable: "false" });
+
+      const vAxis = svgEl("path", { d: "M 30 138 L 30 20", ...LINE, "stroke-width": "1", class: "curve-axis-v", pathLength: "1" });
+      const hAxis = svgEl("path", { d: "M 27 135 L 150 135", ...LINE, "stroke-width": "1", class: "curve-axis-h", pathLength: "1" });
+      [vAxis, hAxis].forEach((a) => { a.style.strokeDasharray = "1"; a.style.strokeDashoffset = "1"; });
+      svg.appendChild(vAxis);
+      svg.appendChild(hAxis);
+
+      const vGroup = svgEl("g", { class: "curve-vgroup" });
+      vGroup.style.opacity = "0";
+      vGroup.appendChild(arrowHead(30, 15, -90, "curve-arrow"));
+      vGroup.appendChild(arrowHead(30, 141, 90, "curve-arrow"));
+      const motivationLabel = svgText(10, 79, "middle", "Motivation", "tool-label neutral show");
+      motivationLabel.setAttribute("transform", "rotate(-90 10 79)");
+      vGroup.appendChild(motivationLabel);
+      svg.appendChild(vGroup);
+
+      const hGroup = svgEl("g", { class: "curve-hgroup" });
+      hGroup.style.opacity = "0";
+      hGroup.appendChild(arrowHead(23, 135, 180, "curve-arrow"));
+      hGroup.appendChild(arrowHead(153, 135, 0, "curve-arrow"));
+      hGroup.appendChild(svgText(132, 150, "start", "Ability", "tool-label neutral show"));
+      svg.appendChild(hGroup);
+
+      const curveLine = svgEl("path", {
+        d: CURVE_PATH_D, fill: "none", stroke: "currentColor", "stroke-width": "1.5",
+        "stroke-linecap": "round", class: "curve-line", pathLength: "1", style: "color: var(--red);",
+      });
+      curveLine.style.strokeDasharray = "1";
+      curveLine.style.strokeDashoffset = "1";
+      svg.appendChild(curveLine);
+      svg.appendChild(svgText(146, 119, "start", "Action Line", "tool-label curve-label-action"));
+
+      svg.appendChild(svgText(50, 40, "middle", "Behaviour happens", "tool-label neutral curve-zone-a"));
+      const zoneB = svgText(58, 129, "middle", "Behaviour does not happen", "tool-label neutral curve-zone-b");
+      zoneB.style.fontSize = "7.5px";
+      svg.appendChild(zoneB);
+
+      const promptOuter = svgEl("g", { transform: "translate(" + CURVE_PROMPT.cx + "," + CURVE_PROMPT.cy + ")" });
+      const promptInner = svgEl("g", { class: "curve-prompt-circles" });
+      promptInner.appendChild(svgEl("circle", { cx: 0, cy: 0, r: 14, ...LINE, "stroke-width": "1" }));
+      promptInner.appendChild(svgEl("circle", { cx: 0, cy: 0, r: 9, ...LINE, "stroke-width": "1" }));
+      promptInner.appendChild(svgEl("circle", { cx: 0, cy: 0, r: 4, fill: "currentColor", style: "color: var(--red); opacity: 0.32;" }));
+      promptOuter.appendChild(promptInner);
+      svg.appendChild(promptOuter);
+      svg.appendChild(svgText(CURVE_PROMPT.cx, CURVE_PROMPT.cy - 20, "middle", "Prompt", "tool-label curve-label-prompt"));
+
+      return svg;
+    },
+    assemble(diagramEl) {
+      const vAxis = diagramEl.querySelector(".curve-axis-v");
+      const hAxis = diagramEl.querySelector(".curve-axis-h");
+      const vGroup = diagramEl.querySelector(".curve-vgroup");
+      const hGroup = diagramEl.querySelector(".curve-hgroup");
+      const curveLine = diagramEl.querySelector(".curve-line");
+      const actionLabel = diagramEl.querySelector(".curve-label-action");
+      const zoneA = diagramEl.querySelector(".curve-zone-a");
+      const zoneB = diagramEl.querySelector(".curve-zone-b");
+      const promptCircles = diagramEl.querySelector(".curve-prompt-circles");
+      const promptLabel = diagramEl.querySelector(".curve-label-prompt");
+
+      function applyFinal() {
+        [vAxis, hAxis, curveLine].forEach((el) => { el.style.transition = "none"; el.style.strokeDashoffset = "0"; });
+        [vGroup, hGroup].forEach((g) => { g.style.transition = "none"; g.style.opacity = "1"; });
+        [actionLabel, promptLabel, zoneA, zoneB].forEach((el) => el.classList.add("show"));
+        promptCircles.style.transition = "none"; promptCircles.style.animation = "none";
+        promptCircles.style.transform = "scale(1)"; promptCircles.style.opacity = "1";
+      }
+
+      if (reduced()) { applyFinal(); return { doneAt: 0, timers: [], applyFinal }; }
+
+      const timers = [];
+      const vDur = 110;
+      timers.push(setTimeout(() => {
+        vAxis.style.transition = "stroke-dashoffset " + vDur + "ms ease";
+        vAxis.style.strokeDashoffset = "0";
+        vGroup.style.transition = "opacity 180ms ease";
+        vGroup.style.opacity = "1";
+      }, 0));
+
+      const hStart = 70, hDur = 110, hEnd = hStart + hDur;
+      timers.push(setTimeout(() => {
+        hAxis.style.transition = "stroke-dashoffset " + hDur + "ms ease";
+        hAxis.style.strokeDashoffset = "0";
+        hGroup.style.transition = "opacity 180ms ease";
+        hGroup.style.opacity = "1";
+      }, hStart));
+
+      const curveStart = hEnd, curveDur = 220, curveEnd = curveStart + curveDur;
+      timers.push(setTimeout(() => {
+        curveLine.style.transition = "stroke-dashoffset " + curveDur + "ms ease";
+        curveLine.style.strokeDashoffset = "0";
+      }, curveStart));
+      timers.push(setTimeout(() => actionLabel.classList.add("show"), curveEnd + 15));
+
+      const zoneStart = curveEnd + 15 + 50;
+      timers.push(setTimeout(() => {
+        zoneA.classList.add("show");
+        zoneB.classList.add("show");
+      }, zoneStart));
+
+      const pulseStart = zoneStart + 90, pulseDur = 160, pulseEnd = pulseStart + pulseDur;
+      timers.push(setTimeout(() => {
+        promptCircles.style.animation = "pulseIn " + pulseDur + "ms cubic-bezier(0.2,0.8,0.3,1) forwards";
+      }, pulseStart));
+      timers.push(setTimeout(() => promptLabel.classList.add("show"), pulseEnd));
+
+      return { doneAt: pulseEnd, timers, applyFinal };
     },
   },
 
   octagon: {
     thumb() {
       const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
-      svg.appendChild(svgEl("polygon", { points: pointsAttr(polygonPoints(80, 80, 56, 8, -Math.PI / 8)), ...LINE }));
+      svg.appendChild(svgEl("polygon", {
+        points: pointsAttr(polygonPoints(80, 80, 56, 8, -Math.PI / 8)),
+        ...LINE, style: "color: var(--red);",
+      }));
       return svg;
     },
+    buildStage() {
+      const svg = svgEl("svg", { viewBox: OCT_STAGE_VB, draggable: "false", style: "color: var(--red);" });
+      const verts = octVertices();
+
+      OCT_EDGE_ORDER.forEach((edgeIdx, seq) => {
+        const a = verts[edgeIdx], b = verts[(edgeIdx + 1) % 8];
+        const path = svgEl("path", {
+          d: "M " + a[0].toFixed(1) + " " + a[1].toFixed(1) + " L " + b[0].toFixed(1) + " " + b[1].toFixed(1),
+          ...LINE, class: "oct-edge oct-edge-" + seq, pathLength: "1",
+        });
+        path.style.strokeDasharray = "1";
+        path.style.strokeDashoffset = "1";
+        svg.appendChild(path);
+
+        const geom = OCT_LABEL_GEOM[edgeIdx];
+        const lines = OCT_LABEL_TEXT[seq];
+        // Dim by actual geometric position (edges below the shape's
+        // horizontal centre), not by position in the clockwise list —
+        // the two are different splits, and only the geometric one
+        // reads as "upper half vs lower half" on screen.
+        const dimCls = OCT_LOWER_EDGES.has(edgeIdx) ? " dim" : "";
+        lines.forEach((line, li) => {
+          let y;
+          if (geom.grow === "up") y = geom.y - (lines.length - 1 - li) * OCT_LINE_H;
+          else if (geom.grow === "down") y = geom.y + li * OCT_LINE_H;
+          else y = geom.y - ((lines.length - 1) / 2) * OCT_LINE_H + li * OCT_LINE_H;
+          svg.appendChild(svgText(geom.x, y, geom.anchor, line, "tool-label oct-label oct-label-" + seq + dimCls));
+        });
+      });
+
+      const vAxis = svgEl("path", { d: "M -35 140 L -35 20", ...LINE, "stroke-width": "1", class: "oct-vaxis", pathLength: "1", style: "color: var(--ink);" });
+      const hAxis = svgEl("path", { d: "M 5 185 L 155 185", ...LINE, "stroke-width": "1", class: "oct-haxis", pathLength: "1", style: "color: var(--ink);" });
+      [vAxis, hAxis].forEach((a) => { a.style.strokeDasharray = "1"; a.style.strokeDashoffset = "1"; });
+      svg.appendChild(vAxis);
+      svg.appendChild(hAxis);
+
+      const vGroup = svgEl("g", { class: "oct-vaxis-group", style: "color: var(--ink);" });
+      vGroup.style.opacity = "0";
+      vGroup.appendChild(arrowHead(-35, 17, -90, "oct-arrow"));
+      vGroup.appendChild(arrowHead(-35, 143, 90, "oct-arrow"));
+      vGroup.appendChild(svgText(-35, 10, "middle", "Appeal", "tool-label neutral show"));
+      vGroup.appendChild(svgText(-35, 160, "middle", "Pressure", "tool-label neutral show"));
+      svg.appendChild(vGroup);
+
+      const hGroup = svgEl("g", { class: "oct-haxis-group", style: "color: var(--ink);" });
+      hGroup.style.opacity = "0";
+      hGroup.appendChild(arrowHead(2, 185, 180, "oct-arrow"));
+      hGroup.appendChild(arrowHead(158, 185, 0, "oct-arrow"));
+      hGroup.appendChild(svgText(-2, 200, "end", "Extrinsic", "tool-label neutral show"));
+      hGroup.appendChild(svgText(162, 200, "start", "Intrinsic", "tool-label neutral show"));
+      svg.appendChild(hGroup);
+
+      return svg;
+    },
+    assemble(diagramEl) {
+      const strokeDur = 100, stagger = 60;
+      const edgeEls = Array.from({ length: 8 }, (_, i) => diagramEl.querySelector(".oct-edge-" + i));
+      const vAxis = diagramEl.querySelector(".oct-vaxis");
+      const hAxis = diagramEl.querySelector(".oct-haxis");
+      const vGroup = diagramEl.querySelector(".oct-vaxis-group");
+      const hGroup = diagramEl.querySelector(".oct-haxis-group");
+      const labelsFor = (i) => diagramEl.querySelectorAll(".oct-label-" + i);
+
+      function applyFinal() {
+        edgeEls.forEach((e) => { e.style.transition = "none"; e.style.strokeDashoffset = "0"; });
+        for (let i = 0; i < 8; i++) labelsFor(i).forEach((l) => l.classList.add("show"));
+        [vAxis, hAxis].forEach((a) => { a.style.transition = "none"; a.style.strokeDashoffset = "0"; });
+        [vGroup, hGroup].forEach((g) => { g.style.transition = "none"; g.style.opacity = "1"; });
+      }
+
+      if (reduced()) { applyFinal(); return { doneAt: 0, timers: [], applyFinal }; }
+
+      const timers = [];
+      for (let i = 0; i < 8; i++) {
+        timers.push(setTimeout(() => {
+          edgeEls[i].style.transition = "stroke-dashoffset " + strokeDur + "ms ease";
+          edgeEls[i].style.strokeDashoffset = "0";
+        }, i * stagger));
+        timers.push(setTimeout(() => {
+          labelsFor(i).forEach((l) => l.classList.add("show"));
+        }, i * stagger + strokeDur));
+      }
+
+      const afterEdges = 7 * stagger + strokeDur;
+      const vStart = afterEdges + 20, vDur = 110, vEnd = vStart + vDur;
+      timers.push(setTimeout(() => {
+        vAxis.style.transition = "stroke-dashoffset " + vDur + "ms ease";
+        vAxis.style.strokeDashoffset = "0";
+        vGroup.style.transition = "opacity " + vDur + "ms ease";
+        vGroup.style.opacity = "1";
+      }, vStart));
+
+      const hStart = vEnd - 15, hDur = 110, hEnd = hStart + hDur;
+      timers.push(setTimeout(() => {
+        hAxis.style.transition = "stroke-dashoffset " + hDur + "ms ease";
+        hAxis.style.strokeDashoffset = "0";
+        hGroup.style.transition = "opacity " + hDur + "ms ease";
+        hGroup.style.opacity = "1";
+      }, hStart));
+
+      return { doneAt: hEnd, timers, applyFinal };
+    },
+    stageWidth(mobile) { return mobile ? "min(360px, 92vw)" : "min(520px, 90vw)"; },
   },
 
   pyramid: {
     thumb() {
       const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
       svg.appendChild(svgEl("polygon", { points: "80,24 138,132 22,132", ...LINE }));
-      svg.appendChild(svgEl("line", { x1: 51, y1: 78, x2: 109, y2: 78, ...LINE, "stroke-width": "1" }));
-      svg.appendChild(svgEl("line", { x1: 36.5, y1: 105, x2: 123.5, y2: 105, ...LINE, "stroke-width": "1" }));
+      for (const y of PYR_DIVIDERS_Y) {
+        const b = pyrXAtY(y);
+        svg.appendChild(svgEl("line", { x1: b.left.toFixed(1), y1: y, x2: b.right.toFixed(1), y2: y, ...LINE, "stroke-width": "1" }));
+      }
       return svg;
+    },
+    buildStage() {
+      const svg = svgEl("svg", { viewBox: PYR_STAGE_VB, draggable: "false" });
+
+      const outline = svgEl("path", {
+        d: "M " + PYR.bl.x + " " + PYR.bl.y + " L " + PYR.br.x + " " + PYR.br.y + " L " + PYR.apex.x + " " + PYR.apex.y + " Z",
+        ...LINE, class: "pyr-outline", pathLength: "1",
+      });
+      outline.style.strokeDasharray = "1";
+      outline.style.strokeDashoffset = "1";
+      svg.appendChild(outline);
+
+      const topFillEdge = pyrXAtY(51);
+      const fillTop = svgEl("path", {
+        d: "M " + PYR.apex.x + " " + PYR.apex.y + " L " + topFillEdge.right.toFixed(1) + " 51 L " + topFillEdge.left.toFixed(1) + " 51 Z",
+        fill: "currentColor", class: "pyr-fill", style: "color: var(--red); opacity: 0;",
+      });
+      svg.appendChild(fillTop);
+
+      PYR_DIVIDERS_Y.forEach((y, i) => {
+        const b = pyrXAtY(y);
+        const line = svgEl("line", {
+          x1: b.left.toFixed(1), y1: y, x2: b.right.toFixed(1), y2: y,
+          ...LINE, "stroke-width": "1", class: "pyr-divider pyr-divider-" + i, pathLength: "1",
+        });
+        line.style.strokeDasharray = "1";
+        line.style.strokeDashoffset = "1";
+        svg.appendChild(line);
+      });
+
+      PYR_TICKS.forEach((t, i) => {
+        const g = svgEl("g", { class: "pyr-tick pyr-tick-" + i });
+        g.appendChild(svgEl("line", { x1: 146, y1: t.y, x2: 156, y2: t.y, ...LINE, "stroke-width": "1" }));
+        g.appendChild(svgText(163, t.y + 3, "start", t.label, "tool-label" + (t.accent ? "" : " neutral") + " show"));
+        g.style.opacity = "0";
+        g.style.transition = "opacity 0.3s ease";
+        svg.appendChild(g);
+      });
+
+      return svg;
+    },
+    assemble(diagramEl) {
+      const outline = diagramEl.querySelector(".pyr-outline");
+      const fillTop = diagramEl.querySelector(".pyr-fill");
+      const dividers = [0, 1, 2].map((i) => diagramEl.querySelector(".pyr-divider-" + i));
+      const ticks = [0, 1, 2, 3].map((i) => diagramEl.querySelector(".pyr-tick-" + i));
+
+      function applyFinal() {
+        outline.style.transition = "none"; outline.style.strokeDashoffset = "0";
+        dividers.forEach((d) => { d.style.transition = "none"; d.style.strokeDashoffset = "0"; });
+        ticks.forEach((t) => { t.style.transition = "none"; t.style.opacity = "1"; });
+        fillTop.style.transition = "none"; fillTop.style.opacity = "0";
+      }
+
+      if (reduced()) { applyFinal(); return { doneAt: 0, timers: [], applyFinal }; }
+
+      const timers = [];
+      const outlineDur = 220;
+      timers.push(setTimeout(() => {
+        outline.style.transition = "stroke-dashoffset " + outlineDur + "ms ease";
+        outline.style.strokeDashoffset = "0";
+      }, 0));
+
+      const divStagger = 60, divDur = 100;
+      dividers.forEach((d, i) => {
+        const start = outlineDur + i * divStagger;
+        timers.push(setTimeout(() => {
+          d.style.transition = "stroke-dashoffset " + divDur + "ms ease";
+          d.style.strokeDashoffset = "0";
+        }, start));
+      });
+      const afterDividers = outlineDur + (dividers.length - 1) * divStagger + divDur;
+
+      const tickStagger = 55;
+      ticks.forEach((t, i) => {
+        timers.push(setTimeout(() => { t.style.opacity = "1"; }, afterDividers + i * tickStagger));
+      });
+      const lastTickStart = afterDividers + (ticks.length - 1) * tickStagger;
+
+      timers.push(setTimeout(() => {
+        fillTop.style.transition = "opacity 110ms ease";
+        fillTop.style.opacity = "0.28";
+        setTimeout(() => { fillTop.style.opacity = "0"; }, 130);
+      }, lastTickStart));
+
+      return { doneAt: lastTickStart + 40, timers, applyFinal };
     },
   },
 
@@ -311,10 +777,61 @@ const TOOLS = [
     watchOut: "Useless once the decision is already made. Then it becomes a slide that justifies rather than a lens that tests.",
     source: "https://designthinking.ideo.com/introduction",
   },
-  { diagram: "triangle", ready: false, shortName: "Lean UX" },
-  { diagram: "curve", ready: false, shortName: "Behavior Model" },
-  { diagram: "octagon", ready: false, shortName: "Octalysis" },
-  { diagram: "pyramid", ready: false, shortName: "11-Star Experience" },
+  {
+    id: "lean-ux",
+    diagram: "triangle",
+    ready: true,
+    shortName: "Lean UX",
+    name: "Lean UX",
+    attribution: "Jeff Gothelf and Josh Seiden, Lean UX, 2013",
+    whatItIs: "Assumptions become hypotheses. Hypotheses get tested with the smallest thing that can answer the question. Research runs continuously instead of in a phase at the start.",
+    strongFor: "Turning \"make onboarding better\" into a claim that can be proven wrong. The hypothesis format is the real tool here, not the loop.",
+    howIUse: "When a team wants to specify everything before building anything. The prototype settles in a week what the document would have argued about for a month.",
+    watchOut: "Agree what counts as success before you run the test. Deciding afterwards is not research, it is decoration.",
+    source: "https://jeffgothelf.com/blog/category/lean-ux/",
+  },
+  {
+    id: "behavior-model",
+    diagram: "curve",
+    ready: true,
+    shortName: "Behavior Model",
+    name: "Behavior Model (B=MAP)",
+    attribution: "BJ Fogg, Stanford Behavior Design Lab",
+    whatItIs: "Behaviour happens when motivation, ability and a prompt land at the same moment. Take away any one of the three and nothing happens.",
+    strongFor: "Working out why people are not doing the thing. It is almost always ability. The room almost always reaches for motivation.",
+    howIUse: "When engagement is low and the instinct in the room is another campaign. The fix is usually removing a step, not adding a message.",
+    watchOut: "The prompt is the one everyone forgets. Perfect motivation and perfect ability still produce nothing if nobody is asked at the right moment.",
+    source: "https://behaviordesign.stanford.edu/people/bj-fogg",
+  },
+  {
+    id: "octalysis",
+    diagram: "octagon",
+    ready: true,
+    shortName: "Octalysis",
+    name: "Octalysis",
+    attribution: "Yu-kai Chou",
+    whatItIs: "Eight core drives behind why people engage with anything. The top four pull people in. The bottom four push them. Both work, and they do not feel the same to be on the receiving end of.",
+    strongFor: "Loyalty programmes. It makes the difference between pull and pressure impossible to ignore once you have seen where your own design sits.",
+    howIUse: "Before anything with points, tiers or rewards gets designed. Pressure works, right up until people notice they are being pushed.",
+    watchOut: "Most loyalty programmes cluster in the bottom right, around scarcity and reward, because those are the cheapest to build. That is exactly why so many of them feel identical.",
+    sources: [
+      { label: "The framework", url: "https://yukaichou.com/gamification-examples/octalysis-gamification-framework/" },
+      { label: "White hat vs black hat", url: "https://yukaichou.com/gamification-examples/white-hat-vs-black-hat-gamification/" },
+    ],
+  },
+  {
+    id: "11-star-experience",
+    diagram: "pyramid",
+    ready: true,
+    shortName: "11-Star Experience",
+    name: "The 11-Star Experience",
+    attribution: "Brian Chesky, Airbnb, on Masters of Scale, episode 1, 2017",
+    whatItIs: "Describe the ridiculous version first, the one nobody could possibly build, then scale back until it meets reality.",
+    strongFor: "Getting out of incremental thinking. Start from what is possible and you will land on a slightly better version of what already exists.",
+    howIUse: "At the very start of concept work, before constraints walk into the room. Where you land after scaling back is still somewhere you would never have reached from the budget.",
+    watchOut: "It works once. Run it after estimation has started and the room will treat it as a joke.",
+    source: "https://mastersofscale.com/brian-chesky/",
+  },
   { diagram: "grid9", ready: false, shortName: "Business Model Canvas" },
   { diagram: "grid6", ready: false, shortName: "Empathy Map" },
   { diagram: "layered", ready: false, shortName: "Service Blueprint" },
@@ -587,16 +1104,24 @@ function renderToolContent(tool) {
     toolContent.appendChild(sec);
   }
 
-  const source = document.createElement("p");
-  source.className = "tool-source";
-  const a = document.createElement("a");
-  a.href = tool.source;
-  a.target = "_blank";
-  a.rel = "noopener";
-  a.textContent = tool.source;
-  source.append("Source: ");
-  source.appendChild(a);
-  toolContent.appendChild(source);
+  // Most tools carry one source; a tool may instead carry a `sources`
+  // array of { label, url } so more than one link can render, each on
+  // its own line with its own label.
+  const sourceList = tool.sources || [{ label: "Source", url: tool.source }];
+  const sourceWrap = document.createElement("div");
+  sourceWrap.className = "tool-source";
+  for (const { label, url } of sourceList) {
+    const line = document.createElement("p");
+    const a = document.createElement("a");
+    a.href = url;
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.textContent = url;
+    line.append(label + ": ");
+    line.appendChild(a);
+    sourceWrap.appendChild(line);
+  }
+  toolContent.appendChild(sourceWrap);
 }
 
 function openTool(tool, triggerEl) {
@@ -610,6 +1135,8 @@ function openTool(tool, triggerEl) {
   document.body.classList.add("stage-open");
 
   const triggerRect = triggerEl.querySelector(".tool-diagram").getBoundingClientRect();
+
+  stageDiagramWrap.style.width = diagramDef.stageWidth ? diagramDef.stageWidth(isMobile()) : "";
 
   stageDiagramHost.innerHTML = "";
   const stageSvg = diagramDef.buildStage();
