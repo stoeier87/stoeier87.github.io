@@ -50,13 +50,21 @@ a { color: inherit; text-decoration: none; }
 .pill:focus-visible { outline: 2px solid var(--red); outline-offset: 4px; border-color: var(--red); }
 .pill .arrow { margin-right: 0.5em; }
 
-/* Sits at the top of the copy and scrolls away with it — no longer pinned to
-   the viewport. Icon only, so the pill collapses toward a circle. */
+/* Fixed top-left, same gutter as arcade/scoreboard/space-bar's nav so the
+   back pill sits on the same grid across every page. */
+.bio-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 20;
+  padding: 1rem clamp(1.25rem, 6vw, 4rem);
+}
+
+/* Icon only, so the pill collapses toward a circle. */
 .pill.back {
   animation: float 5s ease-in-out infinite;
   align-items: center;
   padding: 0.8rem 1rem;
-  margin-bottom: 1.75rem;
   overflow: hidden;
 }
 .pill.back .arrow { margin-right: 0; transition: transform 0.25s ease; }
@@ -109,8 +117,8 @@ main { position: relative; z-index: 2; }
 .bio-block {
   display: flex;
   justify-content: center;
-  /* No fixed topbar to clear any more, so the opening gap can come down */
-  padding: clamp(3rem, 9vh, 5.5rem) clamp(1.25rem, 6vw, 4rem) clamp(4rem, 8vh, 6rem);
+  /* Top padding clears the fixed .bio-nav back pill */
+  padding: clamp(5.5rem, 12vh, 7rem) clamp(1.25rem, 6vw, 4rem) clamp(4rem, 8vh, 6rem);
   min-height: 100vh;
 }
 
