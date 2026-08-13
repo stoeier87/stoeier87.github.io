@@ -24,6 +24,8 @@ body {
 }
 header {
   @apply text-center;
+  /* Clears the fixed .hall-nav so the title never sits under/behind it */
+  padding-top: clamp(4.5rem, 12vw, 5.5rem);
 }
 h1 {
   font-family: var(--font-display);
@@ -97,15 +99,78 @@ header p {
 .planet-card.locked {
   @apply opacity-[0.55] pointer-events-none;
 }
-footer {
-  @apply text-center flex justify-center gap-6 flex-wrap;
+
+/* ---- Top nav: same pill as the homepage/about-me, fixed like Space Bar's ---- */
+.hall-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem clamp(0.9rem, 3vw, 1.4rem);
 }
-footer a {
-  color: var(--color-ink-muted);
-  @apply no-underline;
+
+.pill {
+  display: inline-flex; align-items: center; font-family: var(--font-mono);
+  font-size: clamp(0.7rem, 1.8vw, 0.85rem); letter-spacing: 0.08em; color: var(--color-ink);
+  padding: 0.85rem 1.4rem; border: 1.5px solid rgba(255, 255, 255, 0.4); border-radius: 100px;
+  background: rgba(13, 20, 36, 0.6);
+  transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
 }
-footer a:hover {
-  @apply text-white;
+.pill:hover { border-color: var(--color-red); background: rgba(224, 58, 47, 0.12); }
+.pill:focus-visible { outline: 2px solid var(--color-red); outline-offset: 4px; border-color: var(--color-red); }
+.pill .arrow { margin-right: 0.5em; }
+
+/* Icon only, so the pill collapses toward a circle. An alien hitches a
+   ride on hover — same easter egg as about-me's back pill. */
+.pill.back {
+  animation: pillFloat 5s ease-in-out infinite;
+  padding: 0.8rem 1rem;
+  overflow: hidden;
+}
+.pill.back .arrow { margin-right: 0; transition: transform 0.25s ease; }
+.pill.back:hover .arrow { transform: translateX(-3px); }
+
+.pill.back .alien {
+  display: flex;
+  width: 0;
+  margin-left: 0;
+  opacity: 0;
+  transform: translateY(115%);
+  transition: transform 0.34s cubic-bezier(0.2, 0.8, 0.3, 1),
+              opacity 0.22s ease, width 0.34s ease, margin-left 0.34s ease;
+}
+.pill.back:hover .alien,
+.pill.back:focus-visible .alien {
+  width: 17px;
+  margin-left: 0.5em;
+  opacity: 1;
+  transform: translateY(0);
+}
+.pill.back .alien-arm { transform-origin: 20.5px 16.5px; }
+.pill.back:hover .alien-arm,
+.pill.back:focus-visible .alien-arm {
+  animation: alienWave 0.55s ease-in-out 0.24s 3;
+}
+
+@keyframes alienWave {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-42deg); }
+}
+
+@keyframes pillFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+
+@media (max-width: 520px) {
+  .hall-nav {
+    flex-wrap: wrap;
+  }
 }
 @media (max-width: 520px) {
   .planet-card {

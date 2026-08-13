@@ -168,15 +168,24 @@ a { color: inherit; text-decoration: none; }
   93% { opacity: 0.8; }
 }
 
-/* ── The host ──────────────────────────────────────────────── */
-/* Bubble stacked directly above the alien, so the tail points at it */
-.host {
+/* ── Host + filters share one row, so the alien sits in front of the
+   filter pills at the same baseline instead of floating above them ── */
+.bar-bottom {
   position: fixed; z-index: 6;
   left: clamp(0.9rem, 3vw, 1.4rem);
-  bottom: calc(4.4rem + env(safe-area-inset-bottom, 0px));
-  display: flex; flex-direction: column; align-items: flex-start;
-  pointer-events: none;
+  right: clamp(0.9rem, 3vw, 1.4rem);
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  display: flex; align-items: flex-end;
+  gap: 0.6rem;
+  flex-wrap: wrap;
 }
+
+/* Bubble stacked directly above the alien, so the tail points at it */
+.host {
+  position: relative;
+  flex: none;
+}
+.host .bubble { pointer-events: none; }
 .alien { flex: none; filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.6)); }
 .alien .arm { transform-origin: 27px 34px; }
 .alien .glass, .alien .cloth { opacity: 0; transition: opacity 0.4s ease; }
@@ -198,8 +207,13 @@ a { color: inherit; text-decoration: none; }
   95% { transform: scaleY(0.12); }
 }
 
+/* Anchored to the alien's own box (see .host) rather than stacked in
+   normal flow, so the tail keeps pointing at him now that he sits inline
+   with the filter row instead of above it. */
 .bubble {
-  position: relative;
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 0.7rem);
   max-width: min(22rem, 68vw);
   min-height: 2.7rem;
   background: var(--panel);
@@ -207,7 +221,6 @@ a { color: inherit; text-decoration: none; }
   border-radius: 14px;
   padding: 0.72rem 0.95rem;
   font-size: 0.87rem; line-height: 1.5; color: var(--ink-body);
-  margin-bottom: 0.7rem;
   opacity: 0; transform: translateY(6px);
   transition: opacity 0.25s ease, transform 0.25s ease;
 }
@@ -230,11 +243,10 @@ a { color: inherit; text-decoration: none; }
 @keyframes caret { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
 
 /* ── Filters ───────────────────────────────────────────────── */
+/* Laid out by .bar-bottom now, alongside the alien, rather than its own
+   fixed box — see .bar-bottom above. */
 .filters {
-  position: fixed; z-index: 7;
-  left: clamp(0.9rem, 3vw, 1.4rem);
-  right: clamp(0.9rem, 3vw, 1.4rem);
-  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  flex: 1 1 auto;
   display: flex; flex-wrap: wrap; gap: 0.5rem;
 }
 .pill.filter { padding: 0.7rem 1.05rem; font-size: 0.72rem; }
@@ -366,8 +378,7 @@ a { color: inherit; text-decoration: none; }
   }
   .filters { gap: 0.4rem; flex-wrap: nowrap; }
   .bubble { font-size: 0.8rem; max-width: 70vw; }
-  .alien svg { width: 54px; height: 50px; }
-  .host { bottom: calc(3.9rem + env(safe-area-inset-bottom, 0px)); }
+  .alien svg { width: 60px; height: 56px; }
   .no-id { bottom: 10.5rem; font-size: 0.5rem; letter-spacing: 0.2em; }
   .star .label { font-size: 0.55rem; }
 }

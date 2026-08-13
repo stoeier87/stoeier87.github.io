@@ -560,7 +560,11 @@
     drawStars._lastTime = time;
   }
 
-  /* ============ Bogstav-rejsen ============ */
+  /* ============ Bogstav-rejsen ============
+     Letters fly in and assemble the name during the first part of the
+     scroll. Each letter's local window is clamped [0,1] and simply holds
+     its resting transform once its window has passed — it settles into
+     place and stays there, it does not re-scatter later in the scroll. */
   let journey = document.querySelector(".journey");
   let hint = document.getElementById("hint");
   let contact = document.getElementById("contact");
@@ -616,7 +620,7 @@
     return 1 - Math.pow(1 - t, 3);
   }
 
-  function updateLetters(p) {
+  function updateHeadline(p) {
     for (let i = 0; i < letters.length; i++) {
       let l = letters[i];
       let t = (p - l.t0) / l.dur;
@@ -638,7 +642,7 @@
       l.el.style.opacity = Math.min(1, e * 1.8).toFixed(3);
     }
 
-    // B-mode: parallax resolves to centered at end (p=1 => y=0)
+    // Headline moves as one unit: parallax resolves to centered at end (p=1 => y=0)
     if (stageName) {
       let y = (1 - p) * stageParallaxMax;
       stageName.style.transform = "translate3d(0," + y.toFixed(1) + "px,0)";
@@ -806,39 +810,38 @@
     }
   }
 
-  /* On a phone the scroll journey overran the content and left letters
-     detached mid-flight, so narrow screens get the finished composition in
-     normal flow instead. Same engine, simply pinned at the end. */
-  let staticQ = window.matchMedia("(max-width: 760px)");
+  /* Reduced-motion users get the finished composition pinned in normal
+     flow instead of the scroll-driven journey. This is the only case that
+     disables the parallax — it is not tied to viewport width, so phones
+     get the same scroll experience as desktop. */
   let motionQ = window.matchMedia("(prefers-reduced-motion: reduce)");
-  let staticHome = staticQ.matches || motionQ.matches;
+  let staticHome = motionQ.matches;
 
   function applyHomeMode() {
     document.documentElement.classList.toggle("static-home", staticHome);
-    if (staticHome) updateLetters(1);
+    if (staticHome) updateHeadline(1);
     else { dirty = true; }
   }
 
   function onModeChange() {
-    let next = staticQ.matches || motionQ.matches;
+    let next = motionQ.matches;
     if (next === staticHome) return;
     staticHome = next;
     applyHomeMode();
   }
-  staticQ.addEventListener("change", onModeChange);
   motionQ.addEventListener("change", onModeChange);
 
   splitLetters();
   initTitleSats();
   applyHomeMode();
-  if (!staticHome) updateLetters(0);
+  if (!staticHome) updateHeadline(0);
   let ufoActive = finePointer && ufo;
   (function frame(time) {
     drawStars(scrollPos, time);
     if (dirty && !staticHome) {
       dirty = false;
       let p = scrollPos / journeyEnd;
-      updateLetters(p < 0 ? 0 : p > 1 ? 1 : p);
+      updateHeadline(p < 0 ? 0 : p > 1 ? 1 : p);
     }
     updateTitleSats(time);
     if (ufoActive) updateUfo();
