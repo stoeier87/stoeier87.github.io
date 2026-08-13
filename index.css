@@ -218,9 +218,17 @@ html.js-anim .contact {
   color: var(--color-red);
 }
 
-/* The headline is always intact — three whole lines of type, visible
-   from the start. It only ever moves as a single block (see stageName's
-   scroll-driven transform in script.js), never splits apart. */
+/* Ordene i rejsen er skjult til JS har splittet dem i bogstaver,
+   saa navnet aldrig staar statisk fra start */
+html.js-anim #stageName .word {
+  visibility: hidden;
+}
+
+.stage .word .ltr {
+  display: inline-block;
+  opacity: 0;
+  will-change: transform, opacity;
+}
 
 .hint {
   position: absolute;
@@ -393,6 +401,13 @@ footer a:focus-visible {
   .pill {
     width: min(300px, 78vw);
     text-align: center;
+  }
+
+  /* Near the end of the journey the contact pills fill out the flex
+     column, re-centering it and pushing the headline up toward the fixed
+     topbar. Reserve clearance so "Space Bar" never lands on "TOBIAS". */
+  .stage {
+    padding-top: 6rem;
   }
 }
 

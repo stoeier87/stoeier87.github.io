@@ -560,25 +560,88 @@
     drawStars._lastTime = time;
   }
 
-  /* ============ Scroll-rejsen ============
-     The headline is always intact, rendered as three whole lines of type.
-     It never splits into letters — it only moves as a single rigid block
-     for a parallax depth effect as the user scrolls. */
+  /* ============ Bogstav-rejsen ============
+     Letters fly in and assemble the name during the first part of the
+     scroll. Each letter's local window is clamped [0,1] and simply holds
+     its resting transform once its window has passed — it settles into
+     place and stays there, it does not re-scatter later in the scroll. */
   let journey = document.querySelector(".journey");
   let hint = document.getElementById("hint");
   let contact = document.getElementById("contact");
   let arcadePills = document.getElementById("arcadePills");
   let stageName = document.getElementById("stageName");
+  let letters = [];
   let journeyEnd = 1;
   let lastContactT = -1;
   let lastArcadePillsT = -1;
   let stageParallaxMax = 38; // px
+
+  let WINDOWS = [
+    [0.03, 0.3],
+    [0.36, 0.62],
+    [0.68, 0.9],
+  ];
+
+  function splitLetters() {
+    let words = document.querySelectorAll("#stageName .word");
+    let idx = 0;
+    words.forEach(function (word, wi) {
+      let chars = Array.from(word.textContent);
+      word.textContent = "";
+      let n = chars.length;
+      chars.forEach(function (ch, ci) {
+        let span = document.createElement("span");
+        span.className = "ltr";
+        span.textContent = ch;
+        word.appendChild(span);
+        let w0 = WINDOWS[wi][0],
+          w1 = WINDOWS[wi][1],
+          range = w1 - w0;
+        let seed = idx * 13 + 5,
+          angle = rand(seed + 1) * Math.PI * 2;
+        let vmax = Math.max(window.innerWidth, window.innerHeight);
+        letters.push({
+          el: span,
+          t0: w0 + (ci / n) * range * 0.65,
+          dur: range * 0.35,
+          dx: Math.cos(angle) * (0.55 + rand(seed + 2) * 0.7) * vmax,
+          dy: Math.sin(angle) * (0.55 + rand(seed + 3) * 0.7) * vmax,
+          scale: 0.3 + rand(seed + 4) * 2.4,
+          rot: (rand(seed + 5) - 0.5) * 90,
+          last: -1,
+        });
+        idx++;
+      });
+      word.style.visibility = "visible";
+    });
+  }
 
   function easeOutCubic(t) {
     return 1 - Math.pow(1 - t, 3);
   }
 
   function updateHeadline(p) {
+    for (let i = 0; i < letters.length; i++) {
+      let l = letters[i];
+      let t = (p - l.t0) / l.dur;
+      t = t < 0 ? 0 : t > 1 ? 1 : t;
+      if (t === l.last) continue;
+      l.last = t;
+      let e = easeOutCubic(t),
+        inv = 1 - e;
+      l.el.style.transform =
+        "translate3d(" +
+        (l.dx * inv).toFixed(1) +
+        "px," +
+        (l.dy * inv).toFixed(1) +
+        "px,0) rotate(" +
+        (l.rot * inv).toFixed(2) +
+        "deg) scale(" +
+        (l.scale + (1 - l.scale) * e).toFixed(3) +
+        ")";
+      l.el.style.opacity = Math.min(1, e * 1.8).toFixed(3);
+    }
+
     // Headline moves as one unit: parallax resolves to centered at end (p=1 => y=0)
     if (stageName) {
       let y = (1 - p) * stageParallaxMax;
@@ -768,6 +831,7 @@
   }
   motionQ.addEventListener("change", onModeChange);
 
+  splitLetters();
   initTitleSats();
   applyHomeMode();
   if (!staticHome) updateHeadline(0);

@@ -5,6 +5,7 @@ on:
     branches:
       - "feature/**"
       - "stage/**"
+      - "preview/**"
 
 concurrency:
   group: gh-pages-write
