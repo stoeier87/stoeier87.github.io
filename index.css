@@ -94,7 +94,7 @@ html.ufo-on .ufo.live {
   inset: 0;
   width: 100%;
   height: 100%;
-  z-index: 3;
+  z-index: 2;
   display: block;
   pointer-events: none;
 }
@@ -151,10 +151,13 @@ header.topbar {
 }
 
 /* ---- Scroll-rejsen ---- */
+/* Layering is explicit and unconditional: dotgrid(1) < starfield/planets(2)
+   < journey content incl. headline & buttons(5) < topbar(20). Content never
+   depends on DOM paint order to stay above the planets. */
 .journey {
   position: relative;
   height: 650vh;
-  z-index: 3;
+  z-index: 5;
 }
 
 .stage {
@@ -168,6 +171,24 @@ header.topbar {
   align-items: center;
   gap: clamp(2rem, 5vh, 4rem);
   overflow: hidden;
+}
+
+/* Soft readability scrim behind the headline/buttons so a planet passing
+   underneath never fights with text contrast. position:sticky establishes
+   its own stacking context, so a negative z-index here always stays below
+   .name/.contact/.hint regardless of their own z-index. */
+.stage::before {
+  content: "";
+  position: absolute;
+  inset: -10% -20%;
+  background: radial-gradient(
+    ellipse 60% 55% at 50% 42%,
+    rgba(6, 10, 20, 0.55) 0%,
+    rgba(6, 10, 20, 0.22) 55%,
+    transparent 78%
+  );
+  pointer-events: none;
+  z-index: -1;
 }
 
 /* Kontakt-pills toner frem til sidst paa rejsen — samme scroll-motor */
@@ -197,17 +218,9 @@ html.js-anim .contact {
   color: var(--color-red);
 }
 
-/* Ordene i rejsen er skjult til JS har splittet dem i bogstaver,
-   saa navnet aldrig staar statisk fra start */
-html.js-anim #stageName .word {
-  visibility: hidden;
-}
-
-.stage .word .ltr {
-  display: inline-block;
-  opacity: 0;
-  will-change: transform, opacity;
-}
+/* The headline is always intact — three whole lines of type, visible
+   from the start. It only ever moves as a single block (see stageName's
+   scroll-driven transform in script.js), never splits apart. */
 
 .hint {
   position: absolute;
@@ -369,22 +382,26 @@ footer a:focus-visible {
   .name {
     letter-spacing: -0.01em;
   }
+  /* Equal-width, single centred column of pill buttons on narrow screens.
+     Applies regardless of motion/parallax state — keep this. */
   .pills {
     flex-direction: column;
     align-items: center;
+    gap: 0.75rem;
+    margin: 0 auto;
   }
-  #starfield {
-    z-index: 2;
+  .pill {
+    width: min(300px, 78vw);
+    text-align: center;
   }
 }
 
 /* ---- Static home ----------------------------------------------------
-   On a phone the 650vh scroll journey meant the page ran far past its
-   content, the fixed topbar sat on top of the headline, and the letters
-   spent most of the scroll detached mid-flight. Narrow screens (and anyone
-   who asked for reduced motion) get the finished composition instead, laid
-   out in normal flow: buttons, headline, contact, footer. JS pins the
-   letter animation at its end state, so nothing is ever left scattered. */
+   Reduced-motion only (see motionQ in script.js) — not tied to viewport
+   width, so phones keep the full scroll-driven parallax journey. Anyone
+   who asked for reduced motion gets the finished composition instead, laid
+   out in normal flow: buttons, headline, contact, footer. The headline was
+   already static content (see above), so this just skips the scroll rig. */
 html.static-home body { overflow-x: hidden; }
 
 html.static-home .topbar {
@@ -404,17 +421,7 @@ html.static-home .stage {
   gap: 2.5rem;
 }
 
-/* One column, one axis, one width — the stack read as ragged before */
-html.static-home .pills {
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-  margin: 0 auto;
-}
-html.static-home .pill {
-  width: min(300px, 78vw);
-  text-align: center;
-}
+html.static-home .stage::before { content: none; }
 
 html.static-home .hint,
 html.static-home .title-sat { display: none; }
