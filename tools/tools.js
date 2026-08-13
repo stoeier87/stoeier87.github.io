@@ -93,8 +93,19 @@ const VENN = {
   feasible:  { cx: 100, cy: 98, r: 44 },
 };
 
-function vennCirclesSvg(pathLength) {
-  const svg = svgEl("svg", { viewBox: VB });
+/* The stage version needs breathing room outside the circles for its
+   labels, so it uses a wider viewBox than the thumbnail while keeping
+   the same circle geometry — the labels are true SVG children of this
+   box, positioned relative to their own circle, not page elements. */
+const VENN_STAGE_VB = "-60 -20 280 180";
+const VENN_LABELS = [
+  { key: "viable", text: "Viable", x: 80, y: 4, anchor: "middle" },
+  { key: "desirable", text: "Desirable", x: 10, y: 98, anchor: "end" },
+  { key: "feasible", text: "Feasible", x: 150, y: 98, anchor: "start" },
+];
+
+function vennCirclesSvg(viewBox, pathLength) {
+  const svg = svgEl("svg", { viewBox, draggable: "false" });
   for (const key of ["viable", "desirable", "feasible"]) {
     const c = VENN[key];
     const attrs = { cx: c.cx, cy: c.cy, r: c.r, ...LINE, class: "venn-circle venn-" + key };
@@ -106,12 +117,12 @@ function vennCirclesSvg(pathLength) {
 
 const DIAGRAMS = {
   venn: {
-    thumb() { return vennCirclesSvg(false); },
-    /* Builds the full interactive stage version: three drawable circles
-       plus the true triple-intersection fill via nested clipPaths. */
+    thumb() { return vennCirclesSvg(VB, false); },
+    /* Builds the full interactive stage version: three drawable circles,
+       the true triple-intersection fill via nested clipPaths, and the
+       three labels as SVG text anchored to their own circle. */
     buildStage() {
-      const svg = vennCirclesSvg(true);
-      const ns = SVG_NS;
+      const svg = vennCirclesSvg(VENN_STAGE_VB, true);
       const defs = svgEl("defs", {});
       const clipA = svgEl("clipPath", { id: "vennClipA" });
       clipA.appendChild(svgEl("circle", { cx: VENN.viable.cx, cy: VENN.viable.cy, r: VENN.viable.r }));
@@ -133,21 +144,22 @@ const DIAGRAMS = {
         c.style.strokeDasharray = "1";
         c.style.strokeDashoffset = "1";
       });
+      for (const l of VENN_LABELS) {
+        const t = svgEl("text", {
+          class: "venn-label venn-label-" + l.key,
+          x: l.x, y: l.y,
+          "text-anchor": l.anchor,
+        });
+        t.textContent = l.text;
+        svg.appendChild(t);
+      }
       return svg;
     },
-    /* Order + label anchors for the draw sequence, expressed as
-       viewBox-relative percentages so the HTML labels can sit outside
-       the SVG and stay aligned as the container is resized/scaled. */
-    labels: [
-      { key: "viable", text: "Viable", x: 50, y: 5 },
-      { key: "desirable", text: "Desirable", x: 14, y: 92 },
-      { key: "feasible", text: "Feasible", x: 86, y: 92 },
-    ],
-    assemble(diagramEl, labelsEl) {
+    assemble(diagramEl) {
       const order = ["viable", "desirable", "feasible"];
-      const strokeDur = 220, stagger = 150;
+      const strokeDur = 200, stagger = 130;
       const circleEls = order.map((k) => diagramEl.querySelector(".venn-" + k));
-      const labelEls = order.map((k) => labelsEl.querySelector('[data-key="' + k + '"]'));
+      const labelEls = order.map((k) => diagramEl.querySelector(".venn-label-" + k));
       const fillEl = diagramEl.querySelector(".venn-fill");
 
       function applyFinal() {
@@ -172,17 +184,17 @@ const DIAGRAMS = {
       });
       const afterStrokes = (order.length - 1) * stagger + strokeDur;
       timers.push(setTimeout(() => {
-        fillEl.style.transition = "opacity 180ms ease";
+        fillEl.style.transition = "opacity 160ms ease";
         fillEl.style.opacity = "0.28";
       }, afterStrokes + 40));
 
-      return { doneAt: afterStrokes + 40 + 180, timers, applyFinal };
+      return { doneAt: afterStrokes + 40 + 160, timers, applyFinal };
     },
   },
 
   triangle: {
     thumb() {
-      const svg = svgEl("svg", { viewBox: VB });
+      const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
       svg.appendChild(svgEl("polygon", { points: pointsAttr(polygonPoints(80, 80, 58, 3)), ...LINE }));
       return svg;
     },
@@ -190,7 +202,7 @@ const DIAGRAMS = {
 
   curve: {
     thumb() {
-      const svg = svgEl("svg", { viewBox: VB });
+      const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
       svg.appendChild(svgEl("line", { x1: 18, y1: 122, x2: 142, y2: 122, ...LINE, "stroke-width": "1" }));
       svg.appendChild(svgEl("path", {
         d: "M 18 118 C 55 118, 60 30, 80 30 C 100 30, 105 118, 142 118",
@@ -202,7 +214,7 @@ const DIAGRAMS = {
 
   octagon: {
     thumb() {
-      const svg = svgEl("svg", { viewBox: VB });
+      const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
       svg.appendChild(svgEl("polygon", { points: pointsAttr(polygonPoints(80, 80, 56, 8, -Math.PI / 8)), ...LINE }));
       return svg;
     },
@@ -210,7 +222,7 @@ const DIAGRAMS = {
 
   pyramid: {
     thumb() {
-      const svg = svgEl("svg", { viewBox: VB });
+      const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
       svg.appendChild(svgEl("polygon", { points: "80,24 138,132 22,132", ...LINE }));
       svg.appendChild(svgEl("line", { x1: 51, y1: 78, x2: 109, y2: 78, ...LINE, "stroke-width": "1" }));
       svg.appendChild(svgEl("line", { x1: 36.5, y1: 105, x2: 123.5, y2: 105, ...LINE, "stroke-width": "1" }));
@@ -220,7 +232,7 @@ const DIAGRAMS = {
 
   grid9: {
     thumb() {
-      const svg = svgEl("svg", { viewBox: VB });
+      const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
       svg.appendChild(svgEl("rect", { x: 24, y: 24, width: 112, height: 112, ...LINE }));
       for (const p of [24 + 112 / 3, 24 + (112 / 3) * 2]) {
         svg.appendChild(svgEl("line", { x1: p, y1: 24, x2: p, y2: 136, ...LINE, "stroke-width": "1" }));
@@ -232,7 +244,7 @@ const DIAGRAMS = {
 
   grid6: {
     thumb() {
-      const svg = svgEl("svg", { viewBox: VB });
+      const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
       svg.appendChild(svgEl("rect", { x: 22, y: 40, width: 116, height: 80, ...LINE }));
       for (const p of [22 + 116 / 3, 22 + (116 / 3) * 2]) {
         svg.appendChild(svgEl("line", { x1: p, y1: 40, x2: p, y2: 120, ...LINE, "stroke-width": "1" }));
@@ -244,7 +256,7 @@ const DIAGRAMS = {
 
   layered: {
     thumb() {
-      const svg = svgEl("svg", { viewBox: VB });
+      const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
       svg.appendChild(svgEl("line", { x1: 26, y1: 26, x2: 26, y2: 134, ...LINE, "stroke-width": "1" }));
       const widths = [92, 68, 104, 50];
       widths.forEach((w, i) => {
@@ -257,7 +269,7 @@ const DIAGRAMS = {
 
   matrix: {
     thumb() {
-      const svg = svgEl("svg", { viewBox: VB });
+      const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
       svg.appendChild(svgEl("rect", { x: 28, y: 28, width: 104, height: 104, ...LINE }));
       svg.appendChild(svgEl("line", { x1: 80, y1: 16, x2: 80, y2: 144, ...LINE, "stroke-width": "1" }));
       svg.appendChild(svgEl("line", { x1: 16, y1: 80, x2: 144, y2: 80, ...LINE, "stroke-width": "1" }));
@@ -267,7 +279,7 @@ const DIAGRAMS = {
 
   radial7: {
     thumb() {
-      const svg = svgEl("svg", { viewBox: VB });
+      const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
       const pts = polygonPoints(80, 80, 54, 7);
       svg.appendChild(svgEl("polygon", { points: pointsAttr(pts), ...LINE, "stroke-width": "1" }));
       for (const p of pts) {
@@ -281,13 +293,16 @@ const DIAGRAMS = {
 /* ============================================================
    Tool data — content lives here, separate from rendering, so
    the remaining nine can be added without touching the logic
-   below. Only `ready: true` tools are interactive.
+   below. Only `ready: true` tools are interactive. `shortName`
+   is the single-line overview label; `name` is the full title
+   used once a tool is expanded.
    ============================================================ */
 const TOOLS = [
   {
     id: "design-thinking",
     diagram: "venn",
     ready: true,
+    shortName: "Design Thinking",
     name: "Design Thinking: The Three Lenses",
     attribution: "IDEO / Tim Brown, Change by Design, 2009",
     whatItIs: "Desirable, viable, feasible. A solution has to sit where all three meet.",
@@ -296,20 +311,23 @@ const TOOLS = [
     watchOut: "Useless once the decision is already made. Then it becomes a slide that justifies rather than a lens that tests.",
     source: "https://designthinking.ideo.com/introduction",
   },
-  { diagram: "triangle", ready: false },
-  { diagram: "curve", ready: false },
-  { diagram: "octagon", ready: false },
-  { diagram: "pyramid", ready: false },
-  { diagram: "grid9", ready: false },
-  { diagram: "grid6", ready: false },
-  { diagram: "layered", ready: false },
-  { diagram: "matrix", ready: false },
-  { diagram: "radial7", ready: false },
+  { diagram: "triangle", ready: false, shortName: "Lean UX" },
+  { diagram: "curve", ready: false, shortName: "Behavior Model" },
+  { diagram: "octagon", ready: false, shortName: "Octalysis" },
+  { diagram: "pyramid", ready: false, shortName: "11-Star Experience" },
+  { diagram: "grid9", ready: false, shortName: "Business Model Canvas" },
+  { diagram: "grid6", ready: false, shortName: "Empathy Map" },
+  { diagram: "layered", ready: false, shortName: "Service Blueprint" },
+  { diagram: "matrix", ready: false, shortName: "Value / Complexity" },
+  { diagram: "radial7", ready: false, shortName: "Muda" },
 ];
 
 /* ============================================================
    Field — pannable, larger than the viewport, gentle momentum.
-   Structurally the same drag/glide physics as the space-bar map.
+   Kept close to the viewport size (roughly 1.5x) so most or all
+   models are visible without panning on desktop, three or four
+   at a time on mobile. A grid with light jitter replaces random
+   placement so the field fills evenly instead of clumping.
    ============================================================ */
 const viewport = $("viewport"), field = $("field");
 let fieldSize = { w: 0, h: 0 };
@@ -321,8 +339,8 @@ function computeField() {
   const vw = window.innerWidth, vh = window.innerHeight;
   const m = isMobile();
   fieldSize = {
-    w: Math.round(Math.max(vw * (m ? 2.6 : 2.0), 1500)),
-    h: Math.round(Math.max(vh * (m ? 2.6 : 2.0), 1400)),
+    w: Math.round(vw * (m ? 1.3 : 1.5)),
+    h: Math.round(vh * (m ? 1.9 : 1.5)),
   };
   field.style.width = fieldSize.w + "px";
   field.style.height = fieldSize.h + "px";
@@ -330,30 +348,48 @@ function computeField() {
 
 function layout() {
   const rnd = mulberry32(20260813);
-  const pad = 110;
-  const minDist = isMobile() ? 170 : 210;
-  const placed = [];
+  const m = isMobile();
+  const cols = m ? 2 : 5;
+  const rows = Math.ceil(TOOLS.length / cols);
+  // Desktop: cluster the grid within roughly the viewport itself, centred
+  // in the larger field, so most or all models are visible without panning.
+  // Mobile: let it span the taller field — three or four visible at a time,
+  // found with a short scroll, is the goal there, not everything at once.
+  const areaW = m ? Math.min(fieldSize.w, window.innerWidth * 0.98) : Math.min(fieldSize.w, window.innerWidth * 0.94);
+  const areaH = m ? Math.min(fieldSize.h, window.innerHeight * 1.6) : Math.min(fieldSize.h, window.innerHeight * 0.86);
+  const offsetX = (fieldSize.w - areaW) / 2;
+  const offsetY = (fieldSize.h - areaH) / 2 + (m ? 30 : 0);
+  const cellW = areaW / cols;
+  const cellH = areaH / rows;
+  const jitterX = cellW * 0.14;
+  const jitterY = cellH * 0.14;
+  const pad = 60;
+  const spots = [];
   for (let i = 0; i < TOOLS.length; i++) {
-    let best = null;
-    let dist = minDist;
-    for (let tries = 0; tries < 300; tries++) {
-      const p = { x: pad + rnd() * (fieldSize.w - pad * 2), y: pad + rnd() * (fieldSize.h - pad * 2) };
-      let ok = true;
-      for (const q of placed) {
-        if (Math.hypot(p.x - q.x, p.y - q.y) < dist) { ok = false; break; }
-      }
-      if (ok) { best = p; break; }
-    }
-    if (!best) { dist *= 0.85; i--; continue; }
-    placed.push(best);
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const cx = offsetX + cellW * (col + 0.5);
+    const cy = offsetY + cellH * (row + 0.5);
+    const x = clamp(cx + (rnd() * 2 - 1) * jitterX, pad, fieldSize.w - pad);
+    const y = clamp(cy + (rnd() * 2 - 1) * jitterY, pad, fieldSize.h - pad);
+    spots.push({ x, y });
   }
-  return placed;
+  return spots;
+}
+
+function fitLabelFontSize(text, maxWidthPx, maxPx, minPx) {
+  const estWidth = text.length * 0.68 * maxPx;
+  if (estWidth <= maxWidthPx) return maxPx;
+  return Math.max(minPx, maxWidthPx / (text.length * 0.68));
 }
 
 function buildNodes() {
   field.querySelectorAll(".tool-node").forEach((n) => n.remove());
-  const rnd = mulberry32(9042);
   const spots = layout();
+  const m = isMobile();
+  const labelMaxWidth = m ? 118 : 150;
+  const labelMaxPx = m ? 9.9 : 10.56;
+  const labelMinPx = m ? 7.5 : 8.5;
   nodes = TOOLS.map((tool, i) => {
     const isReady = !!tool.ready;
     const el = document.createElement(isReady ? "button" : "div");
@@ -368,12 +404,14 @@ function buildNodes() {
     const diagram = DIAGRAMS[tool.diagram].thumb();
     diagram.setAttribute("class", "tool-diagram");
     diagram.setAttribute("aria-hidden", "true");
+    diagram.setAttribute("draggable", "false");
     el.appendChild(diagram);
 
     if (isReady) {
       const label = document.createElement("span");
       label.className = "tool-name";
-      label.textContent = tool.name;
+      label.textContent = tool.shortName;
+      label.style.fontSize = fitLabelFontSize(tool.shortName, labelMaxWidth, labelMaxPx, labelMinPx) + "px";
       el.appendChild(label);
       el.setAttribute("aria-label", tool.name);
       el.addEventListener("click", () => { if (!suppressClick) openTool(tool, el); });
@@ -411,8 +449,13 @@ function markNear() {
   }
 }
 
+/* Dragging only ever pans the field — a node has no pointer handlers
+   of its own, and native image/SVG drag is switched off below so a
+   press-and-pull on a model can't be mistaken for grabbing it. */
 let dragging = false, suppressClick = false, pointerId = null;
 let lastPt = { x: 0, y: 0, t: 0 }, startPt = { x: 0, y: 0 }, glideRaf = null;
+
+field.addEventListener("dragstart", (e) => e.preventDefault());
 
 viewport.addEventListener("pointerdown", (e) => {
   if (stageOpen) return;
@@ -498,10 +541,6 @@ function centreOn(x, y, animate = true) {
   glideRaf = requestAnimationFrame(step);
 }
 
-$("recentreBtn").addEventListener("click", () => {
-  centreOn(fieldSize.w / 2, fieldSize.h / 2);
-});
-
 /* ============================================================
    Assembly stage — a selected model animates from the field into
    the centre and draws itself. Runs as a fresh overlay render
@@ -511,7 +550,7 @@ $("recentreBtn").addEventListener("click", () => {
    ============================================================ */
 const stage = $("stage"), stageScrim = $("stageScrim"), stageClose = $("stageClose");
 const stageDiagramWrap = document.querySelector(".stage-diagram-wrap");
-const stageDiagramHost = $("stageDiagram"), stageLabels = $("stageLabels");
+const stageDiagramHost = $("stageDiagram");
 const toolContent = $("toolContent");
 
 let stageOpen = false;
@@ -568,6 +607,7 @@ function openTool(tool, triggerEl) {
   stageOpen = true;
   lastTrigger = triggerEl;
   cancelAnimationFrame(glideRaf);
+  document.body.classList.add("stage-open");
 
   const triggerRect = triggerEl.querySelector(".tool-diagram").getBoundingClientRect();
 
@@ -575,19 +615,6 @@ function openTool(tool, triggerEl) {
   const stageSvg = diagramDef.buildStage();
   stageSvg.setAttribute("class", "stage-diagram");
   stageDiagramHost.appendChild(stageSvg);
-
-  stageLabels.innerHTML = "";
-  stageLabels.style.aspectRatio = "1 / 1";
-  for (const l of diagramDef.labels || []) {
-    const el = document.createElement("span");
-    el.className = "stage-label";
-    el.dataset.key = l.key;
-    el.textContent = l.text;
-    el.style.left = l.x + "%";
-    el.style.top = l.y + "%";
-    el.style.transform = "translate(-50%, -50%)";
-    stageLabels.appendChild(el);
-  }
 
   toolContent.classList.remove("show");
   renderToolContent(tool);
@@ -614,7 +641,7 @@ function openTool(tool, triggerEl) {
       stageDiagramWrap.style.transform = "translate(0,0) scale(1)";
       stageDiagramWrap.style.opacity = "1";
 
-      const anim = diagramDef.assemble(stageSvg, stageLabels);
+      const anim = diagramDef.assemble(stageSvg);
       activeAnim = anim;
       const textTimer = setTimeout(() => {
         toolContent.classList.add("show");
@@ -644,6 +671,7 @@ function closeTool() {
   stage.classList.remove("show");
   stage.setAttribute("aria-hidden", "true");
   stage.inert = true;
+  document.body.classList.remove("stage-open");
   if (activeAnim) { activeAnim.timers.forEach(clearTimeout); activeAnim = null; }
   document.removeEventListener("keydown", onStageKeydown);
   if (lastTrigger) { lastTrigger.focus(); lastTrigger = null; }

@@ -79,13 +79,9 @@ a { color: inherit; text-decoration: none; }
   gap: 0.75rem;
   padding: 1rem clamp(1.25rem, 6vw, 4rem);
   pointer-events: none;
+  transition: opacity 0.25s ease;
 }
 .tools-nav > * { pointer-events: auto; }
-
-.recentre {
-  padding: 0.8rem 1rem;
-}
-.recentre .arrow { margin-right: 0; }
 
 /* ── Field ─────────────────────────────────────────────────── */
 .viewport {
@@ -93,6 +89,7 @@ a { color: inherit; text-decoration: none; }
   overflow: hidden;
   touch-action: none;
   cursor: grab;
+  transition: opacity 0.3s ease;
 }
 .viewport.dragging { cursor: grabbing; }
 
@@ -100,6 +97,18 @@ a { color: inherit; text-decoration: none; }
   position: absolute; top: 0; left: 0;
   transform: translate3d(0, 0, 0);
   will-change: transform;
+}
+
+/* Both models expanding and the overview retreating are driven by this
+   one body class, so there is never a moment with two things reading
+   as "the current screen" at once. */
+body.stage-open .tools-nav {
+  opacity: 0;
+  pointer-events: none;
+}
+body.stage-open .viewport {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .tool-node {
@@ -116,6 +125,10 @@ a { color: inherit; text-decoration: none; }
   cursor: pointer;
   color: inherit;
   font-family: inherit;
+  touch-action: none;
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-touch-callout: none;
   animation: driftY var(--drift-dur, 9s) ease-in-out infinite;
   animation-delay: var(--drift-delay, 0s);
 }
@@ -129,6 +142,7 @@ a { color: inherit; text-decoration: none; }
   overflow: visible;
   color: var(--ink-muted);
   opacity: 0.85;
+  -webkit-user-drag: none;
   transition: opacity 0.3s ease, color 0.3s ease, filter 0.3s ease;
 }
 
@@ -140,7 +154,8 @@ a { color: inherit; text-decoration: none; }
   opacity: 0.7;
   transition: opacity 0.35s ease, color 0.35s ease;
   line-height: 1.35;
-  max-width: 140px;
+  max-width: 150px;
+  white-space: nowrap;
 }
 
 .tool-node.near .tool-diagram { opacity: 1; color: var(--ink); }
@@ -188,7 +203,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .stage-diagram-wrap {
-  width: min(260px, 60vw);
+  width: min(380px, 78vw);
   flex: none;
 }
 .stage-diagram {
@@ -197,21 +212,31 @@ a { color: inherit; text-decoration: none; }
   color: var(--ink);
 }
 
-.stage-labels {
-  position: relative;
-  width: 100%;
-}
-.stage-label {
-  position: absolute;
-  font-size: 0.7rem;
+/* Labels live inside the diagram's own SVG, anchored to their circle,
+   so they can never drift away from the model that owns them. */
+.venn-label {
+  font-family: var(--mono);
+  font-size: 9px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--red);
+  fill: var(--red);
   opacity: 0;
   transition: opacity 0.3s ease;
-  white-space: nowrap;
 }
-.stage-label.show { opacity: 1; }
+.venn-label.show { opacity: 1; }
+
+@media (min-width: 760px) {
+  .stage-inner {
+    flex-direction: row;
+    align-items: center;
+    gap: 2.75rem;
+    width: min(920px, 90vw);
+    text-align: left;
+  }
+  .stage-diagram-wrap { width: min(360px, 40vw); }
+  .tool-content { text-align: left; }
+  .tool-title, .tool-attribution { text-align: left; }
+}
 
 .stage-close {
   position: fixed;
@@ -235,7 +260,7 @@ a { color: inherit; text-decoration: none; }
   width: 100%;
   opacity: 0;
   transform: translateY(10px);
-  transition: opacity 0.4s ease, transform 0.4s ease;
+  transition: opacity 0.28s ease, transform 0.28s ease;
   display: flex;
   flex-direction: column;
   gap: 1.4rem;
@@ -290,11 +315,11 @@ a { color: inherit; text-decoration: none; }
   .tool-node { width: 128px; }
   .tool-diagram { width: 88px; height: 88px; }
   .stage-inner { padding: 4.5rem 1.25rem 2rem; gap: 1.2rem; }
-  .stage-diagram-wrap { width: min(220px, 68vw); }
+  .stage-diagram-wrap { width: min(300px, 82vw); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .tool-node { animation: none; }
   .pill.back { animation: none; }
-  .stage, .tool-content, .stage-label { transition-duration: 0.01ms; }
+  .stage, .tool-content, .venn-label, .tools-nav, .viewport { transition-duration: 0.01ms; }
 }
