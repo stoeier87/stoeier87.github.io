@@ -223,3 +223,26 @@ main { position: relative; z-index: 2; }
   .block { transition: none; }
   .bio-body p { opacity: 1; transform: none; animation: none; }
 }
+
+/* ---- Footer: same servicedesign.dk mark as the homepage ---- */
+footer {
+  position: relative;
+  z-index: 2;
+  padding: 1.1rem 1.25rem;
+  text-align: center;
+  font-size: 0.65rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+footer a {
+  color: inherit;
+  text-decoration: none;
+}
+footer a:hover {
+  color: var(--ink-muted);
+}
+footer a:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 4px;
+}

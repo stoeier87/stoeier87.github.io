@@ -329,25 +329,44 @@ function centreOn(x, y, animate = true) {
   glideRaf = requestAnimationFrame(step);
 }
 
-$("recentreBtn").addEventListener("click", () => {
-  centreOn(field.w / 2, field.h / 2);
-  nudgeIdle();
-});
-
 /* ============================================================
    Black hole filtering
    ============================================================ */
 /* The bartender's whole vocabulary. Nothing here counts anything. */
 const GREETINGS = [
   "Evening. What are we drinking?",
-  "You made it. Pick a star, any star.",
-  "Bar's open. Pull up a moon.",
+  "Bar's open. It's always night here.",
+  "Sit anywhere. House rules: no yellow and blue.",
+  "Welcome in. #KSDH",
 ];
 const FILTER_LINES = {
-  all: ["Everything we've got. Take your time.", "The whole sky. Good luck."],
-  strong: ["Good. The universe is cold.", "Say no more.", "Hope you're not flying the ship home."],
-  weird: ["Ah. A person of taste.", "These ones do things. Watch closely.", "Nothing here behaves normally."],
-  "zero-proof": ["Smart. Someone has to fly home.", "Respect. The stars look better sober anyway.", "All the theatre, none of the regret."],
+  all: [
+    "Everything we've got. Take your time.",
+    "All of it. Like a forty-year wait, but shorter.",
+    "Nine cups. Nobody's caught us yet.",
+    "Since 1880. We've had time to collect a few.",
+  ],
+  strong: [
+    "Good. The universe is cold.",
+    "Head first. Like Flo.",
+    "One-four down. Still went for it.",
+    "Vodka. Like the miracle in Poznań.",
+    "Three down with twenty left. Ask Jelle.",
+  ],
+  weird: [
+    "Ah. A person of taste.",
+    "Scored in both nets in two minutes. Ask Gunnar Lind.",
+    "Second-choice keeper. First-choice hero.",
+    "Give it four minutes. Then we'll know if it counts.",
+    "Fourteen minutes added on. Nothing is over out here.",
+  ],
+  "zero-proof": [
+    "Smart. Someone has to fly home.",
+    "All the theatre, none of the regret.",
+    "Ceres Top stays in the fridge tonight. Understood.",
+    "Sober through a penalty shootout. That takes nerve.",
+    "I waited forty years for one of those. Stayed sober. Mostly.",
+  ],
 };
 
 /* Never the same line twice running, per pool */

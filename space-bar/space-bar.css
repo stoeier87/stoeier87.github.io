@@ -355,8 +355,6 @@ a { color: inherit; text-decoration: none; }
     border-radius: 20px 20px 0 0;
     padding: 1.6rem 1.15rem calc(1.6rem + env(safe-area-inset-bottom, 0px));
   }
-  .pill.recentre { padding: 0.7rem 0.9rem; font-size: 0; }
-  .pill.recentre .arrow { margin-right: 0; font-size: 0.85rem; }
   /* Tightened so all four sit on one row — wrapping pushed them up into the host */
   .pill.filter {
     padding: 0.6rem 0.72rem;
@@ -367,6 +365,34 @@ a { color: inherit; text-decoration: none; }
   .bubble { font-size: 0.8rem; max-width: 70vw; }
   .alien svg { width: 60px; height: 56px; }
   .star .label { font-size: 0.55rem; }
+}
+
+/* ── Footer: same servicedesign.dk mark as the homepage, adapted to this
+   full-viewport layout — no scroll, so it sits fixed top-right, in the
+   nav's own row, rather than at the bottom of a page that never scrolls. ── */
+.bar > footer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 8;
+  padding: 1.4rem clamp(1.25rem, 6vw, 4rem);
+  font-size: 0.65rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  pointer-events: none;
+}
+.bar > footer a {
+  color: inherit;
+  text-decoration: none;
+  pointer-events: auto;
+}
+.bar > footer a:hover {
+  color: var(--ink-muted);
+}
+.bar > footer a:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 4px;
 }
 
 /* ── Reduced motion: keep the information, drop the theatre ── */
