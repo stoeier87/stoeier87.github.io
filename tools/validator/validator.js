@@ -226,8 +226,51 @@ function roundFor(i) {
    ============================================================ */
 let answers = new Array(QUESTIONS.length).fill(null);
 let current = 0;
+let started = false;
 
 const stage = $("stage");
+
+/* ============================================================
+   Intro — shown once, before question one.
+   ============================================================ */
+function renderIntro() {
+  const screen = document.createElement("div");
+  screen.className = "q-screen intro-screen";
+
+  const heading = document.createElement("h1");
+  heading.className = "intro-heading";
+  heading.textContent = "Idea Validator";
+  screen.appendChild(heading);
+
+  const body = document.createElement("div");
+  body.className = "intro-body";
+  const paragraphs = [
+    "This is the third step in a process, not the first.",
+    "Start by brainstorming everything you could imagine doing. Do not filter, do not cost anything out, and do not stop at what seems realistic. Then write each idea up as a project card: what it is, who it is for, what it would change, what it would take. The card is the work. If you cannot describe an idea properly, your answers below are guesses.",
+    "Once you have the cards, run each idea through the twelve questions here. You will get a position on three matrices and a recommendation on how to treat it.",
+    "Twelve questions, one idea at a time, about two minutes.",
+    "Nothing is stored. Nothing is sent anywhere. If you want to compare several ideas, write the results down as you go.",
+  ];
+  for (const text of paragraphs) {
+    const p = document.createElement("p");
+    p.textContent = text;
+    body.appendChild(p);
+  }
+  screen.appendChild(body);
+
+  const start = document.createElement("button");
+  start.type = "button";
+  start.className = "intro-start";
+  start.textContent = "Start";
+  start.addEventListener("click", () => {
+    started = true;
+    render();
+  });
+  screen.appendChild(start);
+
+  stage.innerHTML = "";
+  stage.appendChild(screen);
+}
 
 /* ============================================================
    Question flow
@@ -238,6 +281,11 @@ function renderQuestion(i) {
 
   const screen = document.createElement("div");
   screen.className = "q-screen";
+
+  const privacy = document.createElement("p");
+  privacy.className = "q-privacy";
+  privacy.textContent = "Nothing is stored. Nothing is sent anywhere.";
+  screen.appendChild(privacy);
 
   const roundEl = document.createElement("p");
   roundEl.className = "q-round";
@@ -516,7 +564,8 @@ function renderResults() {
    Boot
    ============================================================ */
 function render() {
-  if (current < QUESTIONS.length) renderQuestion(current);
+  if (!started) renderIntro();
+  else if (current < QUESTIONS.length) renderQuestion(current);
   else renderResults();
 }
 render();

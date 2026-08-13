@@ -3,22 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Selected Tools — Tobias Fullerton Støier</title>
-    <meta
-      name="description"
-      content="Service design and strategy tools I actually use, one geometric model at a time."
-    />
+    <title>Behavior Model (B=MAP) — Tobias Fullerton Støier</title>
+    <meta name="description" content="Behaviour happens when motivation, ability and a prompt land at the same moment." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="./tools.css" />
-    <link href="../css/all.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="../tailwind.css" />
+    <link rel="stylesheet" href="../shared/tool-page.css" />
+    <link href="../../css/all.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="../../tailwind.css" />
   </head>
   <body>
     <canvas id="backdrop" aria-hidden="true"></canvas>
 
-    <nav class="tools-nav" aria-label="Tools navigation">
-      <a class="pill back" href="../" aria-label="Back to homepage" title="Back to homepage">
+    <nav class="tool-page-nav" aria-label="Tool navigation">
+      <a class="pill back" href="../" aria-label="Back to tools" title="Back to tools">
         <span class="arrow"><i class="fa-solid fa-arrow-left-long"></i></span>
         <span class="alien" aria-hidden="true">
           <svg viewBox="0 0 26 26" width="17" height="17">
@@ -32,15 +29,20 @@
           </svg>
         </span>
       </a>
-      <a class="pill" href="./validator/">
-        <span class="arrow"><i class="fa-solid fa-list-check"></i></span>
-        Idea Validator
-      </a>
     </nav>
 
-    <!-- The space the models drift in. Fills the viewport; nothing pans. -->
-    <div class="space" id="space"></div>
+    <main class="tool-page">
+      <div class="tool-page-body">
+        <div class="tool-page-diagram-wrap">
+          <div id="diagramHost"></div>
+        </div>
+        <div id="toolContent"></div>
+      </div>
+    </main>
 
-    <script type="module" src="./tools.js"></script>
+    <script type="module">
+      import { boot } from "../shared/tool-page.js";
+      boot("behavior-model");
+    </script>
   </body>
 </html>
