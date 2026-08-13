@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Selected Tools — Tobias Fullerton Støier</title>
+    <meta
+      name="description"
+      content="Service design and strategy tools I actually use, one geometric model at a time."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="./tools.css" />
+    <link href="../css/all.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="../tailwind.css" />
+  </head>
+  <body>
+    <canvas id="backdrop" aria-hidden="true"></canvas>
+
+    <nav class="tools-nav" aria-label="Tools navigation">
+      <a class="pill back" href="../" aria-label="Back to homepage" title="Back to homepage">
+        <span class="arrow"><i class="fa-solid fa-arrow-left-long"></i></span>
+        <span class="alien" aria-hidden="true">
+          <svg viewBox="0 0 26 26" width="17" height="17">
+            <ellipse cx="13" cy="15" rx="8.5" ry="10" fill="#7eb08a" />
+            <ellipse cx="9.6" cy="13.4" rx="2.1" ry="3" fill="#0a1018"
+                     transform="rotate(-18 9.6 13.4)" />
+            <ellipse cx="16.4" cy="13.4" rx="2.1" ry="3" fill="#0a1018"
+                     transform="rotate(18 16.4 13.4)" />
+            <path class="alien-arm" d="M20.5 16.5 L25 11"
+                  stroke="#7eb08a" stroke-width="2.3" stroke-linecap="round" fill="none" />
+          </svg>
+        </span>
+      </a>
+      <button class="pill recentre" id="recentreBtn" type="button" title="Recentre">
+        <span class="arrow"><i class="fa-solid fa-crosshairs"></i></span>
+      </button>
+    </nav>
+
+    <!-- The pannable field. Tool models are injected here. -->
+    <div class="viewport" id="viewport">
+      <div class="field" id="field"></div>
+    </div>
+
+    <!-- Assembly stage: a selected model moves here, draws itself, then its
+         content fades in. Hidden until a tool is selected. -->
+    <div class="stage" id="stage" role="dialog" aria-modal="true" aria-hidden="true" inert>
+      <div class="stage-scrim" id="stageScrim"></div>
+      <button class="stage-close" id="stageClose" type="button" aria-label="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <div class="stage-inner" id="stageInner">
+        <div class="stage-diagram-wrap">
+          <div id="stageDiagram"></div>
+          <div class="stage-labels" id="stageLabels"></div>
+        </div>
+        <div class="tool-content" id="toolContent"></div>
+      </div>
+    </div>
+
+    <script type="module" src="./tools.js"></script>
+  </body>
+</html>

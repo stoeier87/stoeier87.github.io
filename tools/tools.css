@@ -1,0 +1,300 @@
+:root {
+  --bg: #05070f;
+  --ink: #ffffff;
+  --ink-body: rgba(255, 255, 255, 0.88);
+  --ink-muted: rgba(255, 255, 255, 0.55);
+  --ink-dim: rgba(255, 255, 255, 0.3);
+  --red: #e03a2f;
+  --mono: "Space Mono", ui-monospace, monospace;
+  --display: "Archivo Black", sans-serif;
+  --panel: rgba(9, 13, 24, 0.94);
+  --edge: rgba(255, 255, 255, 0.14);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body { height: 100%; }
+body {
+  font-family: var(--mono);
+  background: var(--bg);
+  color: var(--ink);
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+a { color: inherit; text-decoration: none; }
+
+#backdrop {
+  position: fixed; inset: 0; width: 100%; height: 100%;
+  display: block; z-index: 0;
+}
+
+/* ── Pills: same box as the rest of the site ───────────────── */
+.pill {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: clamp(0.7rem, 1.8vw, 0.85rem);
+  letter-spacing: 0.08em; color: var(--ink);
+  padding: 0.85rem 1.4rem;
+  border: 1.5px solid rgba(255, 255, 255, 0.4); border-radius: 100px;
+  background: rgba(13, 20, 36, 0.72);
+  cursor: pointer;
+  transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease, color 0.25s ease;
+}
+.pill:hover { border-color: var(--red); background: rgba(224, 58, 47, 0.12); }
+.pill:focus-visible { outline: 2px solid var(--red); outline-offset: 4px; border-color: var(--red); }
+.pill .arrow { margin-right: 0.5em; }
+.pill.back { padding: 0.8rem 1rem; }
+.pill.back .arrow { margin-right: 0; }
+
+/* An alien hitches a ride: ducked out of sight until the pill is hovered */
+.pill.back .alien {
+  display: flex;
+  width: 0;
+  margin-left: 0;
+  opacity: 0;
+  transform: translateY(115%);
+  transition: transform 0.34s cubic-bezier(0.2, 0.8, 0.3, 1),
+              opacity 0.22s ease, width 0.34s ease, margin-left 0.34s ease;
+}
+.pill.back:hover .alien,
+.pill.back:focus-visible .alien {
+  width: 17px;
+  margin-left: 0.5em;
+  opacity: 1;
+  transform: translateY(0);
+}
+.pill.back .alien-arm { transform-origin: 20.5px 16.5px; }
+.pill.back:hover .alien-arm,
+.pill.back:focus-visible .alien-arm {
+  animation: alienWave 0.55s ease-in-out 0.24s 3;
+}
+@keyframes alienWave {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-42deg); }
+}
+
+/* ── Top nav ───────────────────────────────────────────────── */
+.tools-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem clamp(1.25rem, 6vw, 4rem);
+  pointer-events: none;
+}
+.tools-nav > * { pointer-events: auto; }
+
+.recentre {
+  padding: 0.8rem 1rem;
+}
+.recentre .arrow { margin-right: 0; }
+
+/* ── Field ─────────────────────────────────────────────────── */
+.viewport {
+  position: fixed; inset: 0; z-index: 2;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+}
+.viewport.dragging { cursor: grabbing; }
+
+.field {
+  position: absolute; top: 0; left: 0;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+
+.tool-node {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  width: 148px;
+  background: none;
+  border: 0;
+  padding: 12px;
+  margin: -12px;
+  cursor: pointer;
+  color: inherit;
+  font-family: inherit;
+  animation: driftY var(--drift-dur, 9s) ease-in-out infinite;
+  animation-delay: var(--drift-delay, 0s);
+}
+@keyframes driftY {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-9px); }
+}
+
+.tool-diagram {
+  width: 108px; height: 108px;
+  overflow: visible;
+  color: var(--ink-muted);
+  opacity: 0.85;
+  transition: opacity 0.3s ease, color 0.3s ease, filter 0.3s ease;
+}
+
+.tool-name {
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-align: center;
+  color: var(--ink-dim);
+  opacity: 0.7;
+  transition: opacity 0.35s ease, color 0.35s ease;
+  line-height: 1.35;
+  max-width: 140px;
+}
+
+.tool-node.near .tool-diagram { opacity: 1; color: var(--ink); }
+.tool-node.near .tool-name { opacity: 1; color: var(--ink-muted); }
+.tool-node:hover .tool-diagram,
+.tool-node:focus-visible .tool-diagram { opacity: 1; color: var(--red); }
+.tool-node:hover .tool-name,
+.tool-node:focus-visible .tool-name { opacity: 1; color: var(--ink-body); }
+.tool-node:focus-visible { outline: 2px solid var(--red); outline-offset: 6px; border-radius: 10px; }
+
+/* Development scaffolding — dimmed, inert, unlabelled. Not a button. */
+.tool-node.placeholder {
+  animation-duration: calc(var(--drift-dur, 9s) * 1.3);
+}
+.tool-node.placeholder .tool-diagram {
+  opacity: 0.16;
+  color: var(--ink-dim);
+}
+
+/* ── Assembly stage ────────────────────────────────────────── */
+.stage {
+  position: fixed; inset: 0; z-index: 30;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.stage.show { opacity: 1; pointer-events: auto; }
+.stage-scrim {
+  position: absolute; inset: 0;
+  background: rgba(3, 5, 11, 0.82);
+}
+
+.stage-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.6rem;
+  width: min(640px, 92vw);
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: 2.5rem 1.5rem 2.5rem;
+}
+
+.stage-diagram-wrap {
+  width: min(260px, 60vw);
+  flex: none;
+}
+.stage-diagram {
+  width: 100%; height: auto;
+  overflow: visible;
+  color: var(--ink);
+}
+
+.stage-labels {
+  position: relative;
+  width: 100%;
+}
+.stage-label {
+  position: absolute;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--red);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  white-space: nowrap;
+}
+.stage-label.show { opacity: 1; }
+
+.stage-close {
+  position: fixed;
+  top: 1rem;
+  right: clamp(1.25rem, 6vw, 4rem);
+  z-index: 2;
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 100px;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  background: rgba(13, 20, 36, 0.72);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+.stage-close:hover { border-color: var(--red); background: rgba(224, 58, 47, 0.12); }
+.stage-close:focus-visible { outline: 2px solid var(--red); outline-offset: 4px; }
+
+.tool-content {
+  width: 100%;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+.tool-content.show { opacity: 1; transform: translateY(0); }
+
+.tool-title {
+  font-family: var(--display);
+  text-transform: uppercase;
+  font-size: clamp(1.3rem, 4vw, 1.8rem);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-align: center;
+}
+.tool-attribution {
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+  text-align: center;
+  margin-top: -0.6rem;
+}
+
+.tool-section h3 {
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 0.4rem;
+}
+.tool-section p {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--ink-body);
+}
+
+.tool-source {
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+  border-top: 1px solid var(--edge);
+  padding-top: 1.1rem;
+}
+.tool-source a {
+  color: var(--ink-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.2s ease;
+}
+.tool-source a:hover,
+.tool-source a:focus-visible { color: var(--red); }
+
+/* ── Small screens: spread nodes out, keep tap targets generous ── */
+@media (max-width: 640px) {
+  .tool-node { width: 128px; }
+  .tool-diagram { width: 88px; height: 88px; }
+  .stage-inner { padding: 4.5rem 1.25rem 2rem; gap: 1.2rem; }
+  .stage-diagram-wrap { width: min(220px, 68vw); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tool-node { animation: none; }
+  .pill.back { animation: none; }
+  .stage, .tool-content, .stage-label { transition-duration: 0.01ms; }
+}
