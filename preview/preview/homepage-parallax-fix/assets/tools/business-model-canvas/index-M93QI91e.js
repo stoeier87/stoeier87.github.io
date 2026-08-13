@@ -1,0 +1,1 @@
+import"../../tailwind-BawHnMd-.js";import{t as e}from"../../tool-page-Dl8Bbeqb.js";e(`business-model-canvas`);
