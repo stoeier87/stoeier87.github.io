@@ -25,12 +25,15 @@
     },
     {
       "id": "no-runtime-deps",
-      "title": "No runtime dependencies",
-      "rule": "package.json \"dependencies\" stays empty. devDependencies are fine.",
-      "why": "This is a static site on GitHub Pages with zero runtime deps today. Firebase is loaded from a CDN URL, not npm. A runtime dep is the one change that ends that quietly.",
+      "title": "Runtime dependencies are an allowlist",
+      "rule": "package.json \"dependencies\" may contain ONLY the packages named in `allowed` below. devDependencies are fine. Adding a name to `allowed` needs an ADR in the same change.",
+      "why": "This is a static site on GitHub Pages. Every runtime dep ships to every visitor, and the failure mode is silence -- nobody notices the bundle grew. The list was empty until ADR-025 admitted three.js for the planet background; keeping it a list rather than a boolean means the next one is a decision someone had to write down, not a diff nobody read.",
       "enforcement": "hook-block",
       "severity": "fatal",
-      "appliesTo": ["package.json"]
+      "appliesTo": ["package.json"],
+      "allowed": ["three"],
+      "$allowed": "Read by .claude/hooks/guard.mjs. Adding a name here is what unblocks the hook -- do it in the same commit as the ADR that justifies it, never on its own.",
+      "adr": "DECISIONS.md ADR-025 -- three.js, bundled by Vite rather than loaded from a CDN."
     },
     {
       "id": "page-exists-when-built",

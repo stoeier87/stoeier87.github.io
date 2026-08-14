@@ -491,3 +491,52 @@ generator each land as their own PR before the first element, ahead of ADR-023's
 **The `.prettierignore` prefixes are load-bearing.** ADR-019's amnesty is expressed as a list of literal root paths. An entry that stops matching does not fail — it silently un-freezes the file, and the next `npm run format` rewrites thousands of lines of the most fragile code here. Every frozen entry gained `src/`, and `format:check` passing with no diff is the proof the amnesty survived.
 
 **Why `docs/` and not `agents/`, which was the first instinct.** Claude Code discovers context by filename at repo root — `CLAUDE.md`, `CLAUDE.local.md`, `.claude/rules/**/*.md` — and by no directory name at all, identically on the CLI, web, iOS and the IDE extensions. So no folder name buys discovery, and the root `CLAUDE.md` becomes a stub that `@`-imports `docs/CLAUDE.md`. It imports only the contract: `DECISIONS.md`, `ANALYSIS.md` and `BACKLOG.md` total ~50KB, they are read on demand today, and importing them would load all of it into every session for documents most turns never open. `AGENTS.md` stays at root for the inverse reason — Claude Code never reads it, but the tools that do look for it there. `agents/` was rejected additionally because `.claude/agents/` already exists and means something else.
+
+---
+
+## ADR-025 — `no-runtime-deps` becomes an allowlist, and three.js is the first name on it
+
+**Decided:** 2026-08-14
+**Status:** active · **amends ADR-010's hook set and the `no-runtime-deps` rule**
+
+`standards.json` → `no-runtime-deps` changes from "`dependencies` stays empty" to "`dependencies`
+may contain only the names in `allowed`". `allowed` is `["three"]`. `.claude/hooks/guard.mjs`
+reads that array the same way it already reads `routePrefixes`, and blocks any name not on it.
+
+**Why the rule had to change rather than be worked around.** Issue #61 asks for a three.js
+background. `no-runtime-deps` is `fatal` and `hook-block` with no escape comment — deliberately,
+because it is the one rule whose violation is invisible. The hook's own block message names the
+sanctioned route: edit the rule in the same change. This is that change.
+
+**Why an allowlist and not a boolean flip.** "Zero deps" was never really the value; "no dep
+arrives without someone deciding" was. A list keeps the decision explicit and keeps the hook
+useful — adding `react` still blocks tomorrow. The fallback in `guard.mjs` is an **empty** list, so
+an unreadable `standards.json` fails closed to the old behaviour instead of waving everything
+through.
+
+**Why bundled from npm and not a CDN import, which was the obvious alternative.**
+`src/arcade/shared/score-submit.js:1-4` loads Firebase from `https://www.gstatic.com/firebasejs/…`,
+and copying that would have kept `dependencies` empty with no rule change at all. Rejected on
+verification grounds: **external CDNs are blocked in the sandbox `/verify` runs in** — the skill
+already documents Google Fonts being unreachable there. A CDN-loaded background could never satisfy
+the "canvas actually paints" check at six viewports, which is the check that catches this
+codebase's most common regression. Bundling also tree-shakes (three.js ships `three.webgpu.js`,
+`three.tsl.js` and more that a 2D-projected planet scene never touches) and removes a third-party
+runtime fetch from every page load.
+
+**Consequences:**
+
+- `docs/CLAUDE.md` §2's "Zero runtime dependencies" bullet and §3 rule 2 are rewritten. Both
+  asserted zero deps as a fact about the repo.
+- Known issue 5 (no lockfile) gets sharper, not new: an unpinned transitive tree now includes a
+  rendering engine. `package-lock.json` is still gitignored and CI still runs `npm install`.
+  Backlog B7 was already the fix; this raises its priority rather than changing it.
+- The guard's dependency check was rewritten from a substring test to a brace-matched key parse.
+  The old version only recognised a truncated `Edit` fragment when it happened to contain `{ "`,
+  so a fragment shaped differently added a dep silently. Seven cases are covered now, including
+  that one.
+
+**Also recorded here, because it is a departure:** ADR-024's migration order puts the
+`generate-theme.mjs` groundwork PR before the first custom element. This work lands the first
+element first. `scripts/tokens-check.mjs` and `npm run tokens` are untouched, so ADR-024 remains
+open exactly as written — the order slipped, the decision did not.

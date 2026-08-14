@@ -68,7 +68,7 @@ Personal portfolio and browser arcade for Tobias Fullerton Støier, at `stoeier.
 - **Vite 8 as a pure MPA bundler.** `vite.config.js` sets `root: "src"` and globs `src/**/*.html` into `rollupOptions.input`, so **routing is the filesystem** — drop an HTML file anywhere under `src/` and it ships. `src/` _is_ the route table, and `root` is the only thing mapping it onto URLs: Vite emits each page at its path relative to `root`, so `src/arcade/comet-pong/index.html` ships as `/arcade/comet-pong/`. Renaming Rollup input keys does not do this. See `DECISIONS.md` ADR-022.
 - **Tailwind v4** via `@tailwindcss/vite`, CSS-first config, no `tailwind.config.js`. Used as a **design-token layer plus a shared component layer**, not as a utility framework — only `index.html` uses utilities in markup today.
 - **Firebase Realtime Database** for arcade leaderboards only, loaded from a CDN URL rather than npm.
-- **Zero runtime dependencies.** Four devDependencies before this setup; `prettier`, `eslint` and `typescript` were added with it.
+- **One runtime dependency, allowlisted.** `three`, bundled by Vite, for the `<st-planet-field>` background on the homepage and the arcade lobby (`DECISIONS.md` ADR-025). It is the only name in `standards.json` → `no-runtime-deps` → `allowed`; anything else is still hook-blocked.
 
 25 pages, 8 Canvas games — 14 original plus the 11 that arrived with `tools/` in #56 (`DECISIONS.md` ADR-019). `envs.json` carries the count as `expectedHtmlCount`, and the build emitting a different number is the signal that the glob is anchored wrong. `dist/` on disk is stale — rebuild rather than reading it as ground truth.
 
@@ -81,7 +81,7 @@ The machine-readable version is `standards.json`, which `page-critic` and the ho
 **Paths and builds**
 
 1. **Every path is relative** — `./` or `../`. `base: "./"` in `vite.config.js` is the only reason sub-directory deploys work; a root-absolute path resolves against the host root and silently escapes `/preview/…/` and `/stage/` onto production. **Hook-blocked.** Escape hatch if you truly need one: `guard:allow-absolute` on the same line.
-2. **No runtime dependencies.** `devDependencies` are fine. **Hook-blocked.**
+2. **Runtime dependencies are an allowlist**, currently `["three"]` in `standards.json`. `devDependencies` are fine and unrestricted. **Hook-blocked**, with no escape comment — adding a name needs an ADR in the same change (ADR-025).
 3. **A page exists when the build emits it.** After adding or moving HTML, confirm it's in `dist/`.
 
 **Page contract** — every page, no exceptions
@@ -151,7 +151,7 @@ Trimmed once already (`DECISIONS.md` ADR-020) — four things that looked like s
 
 ### Hooks — two hard blocks, nothing else
 
-Root-absolute paths, and `dependencies` in `package.json`. Everything else teaches inline. Noisy hooks get disabled, and a disabled hook protects nothing.
+Root-absolute paths, and non-allowlisted `dependencies` in `package.json`. Everything else teaches inline. Noisy hooks get disabled, and a disabled hook protects nothing.
 
 ---
 
