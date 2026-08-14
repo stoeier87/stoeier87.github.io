@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://stoeier.dk/sitemap.xml
