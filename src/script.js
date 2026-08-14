@@ -38,6 +38,7 @@ import { color } from "./tokens.ts";
       hi: color.planet.merkurHi,
       lo: color.planet.merkurLo,
       spin: 0.05,
+      depth: -80,
       link: "./arcade/orbit-runner/",
     },
     {
@@ -49,6 +50,7 @@ import { color } from "./tokens.ts";
       hi: color.planet.venusHi,
       lo: color.planet.venusLo,
       spin: 0.035,
+      depth: -40,
       link: "./arcade/meteor-dodge/",
     },
     {
@@ -61,6 +63,7 @@ import { color } from "./tokens.ts";
       lo: color.planet.jordenLo,
       earth: true,
       spin: 0.08,
+      depth: 0,
       link: "./arcade/iss-docking/",
     },
     {
@@ -72,6 +75,7 @@ import { color } from "./tokens.ts";
       hi: color.planet.marsHi,
       lo: color.planet.marsLo,
       spin: 0.075,
+      depth: -60,
       link: "./arcade/phobos-lander/",
     },
     {
@@ -84,6 +88,7 @@ import { color } from "./tokens.ts";
       lo: color.planet.jupiterLo,
       bands: true,
       spin: 0.16,
+      depth: 150,
       link: "./arcade/comet-pong/",
     },
     {
@@ -96,6 +101,7 @@ import { color } from "./tokens.ts";
       lo: color.planet.saturnLo,
       ring: true,
       spin: 0.15,
+      depth: 80,
       link: "./arcade/star-memory/",
     },
     {
@@ -106,8 +112,9 @@ import { color } from "./tokens.ts";
       pf: 0.48,
       hi: color.planet.uranusHi,
       lo: color.planet.uranusLo,
-      ring: true,
+      ring: false,
       spin: 0.09,
+      depth: -100,
       link: "./arcade/nebula-trail/",
     },
     {
@@ -119,6 +126,7 @@ import { color } from "./tokens.ts";
       hi: color.planet.neptunHi,
       lo: color.planet.neptunLo,
       spin: 0.095,
+      depth: -130,
       link: "./arcade/asteroid-breaker/",
     },
     {
@@ -133,6 +141,7 @@ import { color } from "./tokens.ts";
       hi: color.planet.plutoHi,
       lo: color.planet.plutoLo,
       spin: 0.03,
+      depth: -180,
       link: "./arcade/",
     },
   ];

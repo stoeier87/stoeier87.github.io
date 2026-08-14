@@ -98,6 +98,13 @@ export interface PlanetSpec extends SurfaceSpec {
   spin?: number;
   /** Where a click goes. Relative, always — the host page owns this. */
   link?: string;
+  /**
+   * Z-axis depth in pixels. Positive = closer to the viewer (appears larger),
+   * negative = farther (appears smaller). The placement formula compensates
+   * the perspective shift so the planet stays at its intended screen position
+   * (px, s0) — only its apparent size changes with depth.
+   */
+  depth?: number;
 }
 
 export interface StarLayer {
@@ -163,6 +170,13 @@ const STAR_FRAG = /* glsl */ `
 
 const DEG = Math.PI / 180;
 
+/**
+ * Focal depth: the Z distance at which one world unit equals one screen pixel.
+ * The camera sits at z = ZF; objects at z = 0 are pixel-exact. Positive depth
+ * values (closer) scale up; negative values (farther) scale down.
+ */
+const ZF = 1000;
+
 export class PlanetFieldElement extends HTMLElement {
   /* --- host-facing state --- */
   #planets: PlanetSpec[] = [];
@@ -171,6 +185,7 @@ export class PlanetFieldElement extends HTMLElement {
   /** 0 means "never set", which resolves to the viewport height — see #updatePlanets. */
   #journeyEnd = 0;
   #drift = 0;
+  #focusY = 0.5;
 
   /* --- three.js --- */
   #canvas: HTMLCanvasElement | null = null;
@@ -183,6 +198,16 @@ export class PlanetFieldElement extends HTMLElement {
   #traffic: SkyTraffic | null = null;
   #glow: CanvasTexture | null = null;
   #streak: CanvasTexture | null = null;
+  /** A single extra planet body shown large and centred on card hover. */
+  #featured: PlanetBody | null = null;
+  #featuredAlpha = 0;
+  #featuredAlphaTarget = 0;
+  /** Camera pan for setTravelTarget — world-space offset applied to all planets. */
+  #panX = 0;
+  #panY = 0;
+  #panXTarget = 0;
+  #panYTarget = 0;
+  #travelIndex = -1;
   #raycaster = new Raycaster();
   #pointer = new Vector2(-10, -10);
   #pointerInside = false;
@@ -261,6 +286,20 @@ export class PlanetFieldElement extends HTMLElement {
     this.#drift = Number.isFinite(value) ? value : 0;
   }
 
+  /**
+   * Where setTravelTarget centres its target vertically, as a fraction of
+   * viewport height. Defaults to 0.5 (dead centre). A host page with other
+   * fixed content sharing the viewport — the arcade lobby's header and card
+   * grid — can point this at the open space between them instead, so the
+   * planet a card hovers on doesn't centre under either one.
+   */
+  get focusY(): number {
+    return this.#focusY;
+  }
+  set focusY(value: number) {
+    this.#focusY = Number.isFinite(value) ? value : 0.5;
+  }
+
   /** True when the host page drives the loop and calls tick() itself. */
   get driven(): boolean {
     return this.hasAttribute("driven");
@@ -336,7 +375,7 @@ export class PlanetFieldElement extends HTMLElement {
     this.#renderer = renderer;
     this.#scene = new Scene();
     this.#camera = new OrthographicCamera(0, 1, 0, -1, 0.1, 4000);
-    this.#camera.position.z = 1000;
+    this.#camera.position.z = ZF;
     this.#glow = glowTexture();
 
     // Light from the upper left, reproducing the highlight the 2D gradient
@@ -383,6 +422,8 @@ export class PlanetFieldElement extends HTMLElement {
 
     this.#disposeStars();
     this.#disposePlanets();
+    this.#featured?.dispose();
+    this.#featured = null;
     this.#traffic?.dispose();
     this.#traffic = null;
     this.#glow?.dispose();
@@ -417,10 +458,59 @@ export class PlanetFieldElement extends HTMLElement {
     const scroll = this.#scroll + this.#drift * this.#elapsed;
     this.#updateStars(scroll);
     this.#updatePlanets(scroll, dt);
+    this.#updateFeatured(dt);
     if (!this.#reduced) this.#traffic?.update(dt, this.#elapsed, time);
     if (this.interactive) this.#updateHover();
 
     this.#renderer.render(this.#scene, this.#camera);
+  }
+
+  /**
+   * Show a planet large and centred in the background — intended for arcade
+   * card hover. Pass `null` to animate it back out.
+   *
+   * When swapping to a different spec mid-animation the new body appears at
+   * the current alpha so the size doesn't jump during rapid card traversal.
+   */
+  setFeatured(spec: PlanetSpec | null): void {
+    if (spec === null) {
+      this.#featuredAlphaTarget = 0;
+      return;
+    }
+    this.#featuredAlphaTarget = 1;
+    if (this.#featured?.spec === spec) return;
+    // Swap immediately at the current alpha so size is continuous across cards.
+    this.#featured?.dispose();
+    if (this.#glow) {
+      this.#featured = new PlanetBody(spec, 99, this.#glow);
+      this.#scene?.add(this.#featured.group);
+    }
+  }
+
+  /**
+   * Pan and zoom the backdrop to centre the named planet — "travel to it."
+   * Pass `null` to pan back to the home position.
+   *
+   * Unlike `setFeatured`, no extra body is created: the planet that already
+   * exists in the scene zooms in from its position as the camera glides to it.
+   */
+  setTravelTarget(name: string | null): void {
+    if (!name) {
+      this.#panXTarget = 0;
+      this.#panYTarget = 0;
+      if (this.#travelIndex >= 0) this.#bodies[this.#travelIndex]?.setHovered(false);
+      this.#travelIndex = -1;
+      return;
+    }
+    const idx = this.#planets.findIndex(p => p.name === name);
+    if (idx < 0) return;
+    if (this.#travelIndex !== idx) {
+      if (this.#travelIndex >= 0) this.#bodies[this.#travelIndex]?.setHovered(false);
+      this.#travelIndex = idx;
+      this.#bodies[idx]?.setHovered(true);
+    }
+    // Pan target is recomputed each frame inside #updatePlanets so it follows
+    // scroll/drift correctly. Nothing else needed here.
   }
 
   /** Re-measure and redraw. Called on window resize; safe to call by hand. */
@@ -442,7 +532,8 @@ export class PlanetFieldElement extends HTMLElement {
     this.#renderer.setPixelRatio(this.#dpr);
     this.#renderer.setSize(this.#w, this.#h, false);
 
-    // Pixel space: (x, -y) in world is (x, y) on screen.
+    // Pixel space: (x, -y) in world maps to pixel (x, y) on screen.
+    // Orthographic projection keeps every sphere circular regardless of position.
     this.#camera.left = 0;
     this.#camera.right = this.#w;
     this.#camera.top = 0;
@@ -599,9 +690,14 @@ export class PlanetFieldElement extends HTMLElement {
       const material = this.#starMaterials[i];
       if (!group || !material) continue;
       const parallax = (group.userData.parallax as number) ?? 0;
-      const offset = scroll * parallax;
       // Screen y = st.y - offset, so world y = y0 + offset, wrapped by H.
-      group.position.y = ((offset % H) + H) % H;
+      const offsetY = scroll * parallax + this.#panY * parallax;
+      group.position.y = ((offsetY % H) + H) % H;
+      // panX is a bounded glide toward a target and back to 0 (never
+      // unbounded like scroll), so a direct assignment is correct here — no
+      // wraparound tiling needed. Zero on pages that never call
+      // setTravelTarget, so this is a no-op for the homepage's star field.
+      group.position.x = this.#panX * parallax;
       material.uniforms.uTime!.value = this.#elapsed;
       material.uniforms.uTwinkle!.value = this.#reduced ? 0 : 1;
     }
@@ -625,6 +721,29 @@ export class PlanetFieldElement extends HTMLElement {
     const vmin = Math.min(this.#w, this.#h);
     const S = this.#journeyEnd || this.#h;
 
+    // Recompute pan target each frame — depends on current scroll/drift.
+    if (this.#travelIndex >= 0 && this.#bodies[this.#travelIndex]) {
+      const tp = this.#bodies[this.#travelIndex]!.spec;
+      const tX = tp.px * this.#w;
+      const tY = this.#h * 0.55 + tp.s0 * S * tp.pf - scroll * tp.pf;
+      // World pan that brings (tX, tY) to screen centre (W/2, H/2). Per-body
+      // application below scales by each planet's own pf for parallax, so the
+      // target is pre-divided by its own pf here — multiplying back by tp.pf
+      // in the loop cancels out to exactly W/2 - tX, pixel-exact centring,
+      // regardless of what tp.pf is.
+      const targetPf = tp.pf || 1;
+      this.#panXTarget = (this.#w / 2 - tX) / targetPf;
+      this.#panYTarget = (tY - this.#h * this.#focusY) / targetPf;
+    } else {
+      this.#panXTarget = 0;
+      this.#panYTarget = 0;
+    }
+
+    // Cinematic glide — slow enough to feel like travelling, fast enough to
+    // respond before the user's cursor moves to the next card.
+    this.#panX += (this.#panXTarget - this.#panX) * Math.min(1, dt * 1.5);
+    this.#panY += (this.#panYTarget - this.#panY) * Math.min(1, dt * 1.5);
+
     for (const body of this.#bodies) {
       const p = body.spec;
       const r = p.r * vmin;
@@ -632,14 +751,48 @@ export class PlanetFieldElement extends HTMLElement {
       const y = worldY - scroll * p.pf;
       const x = p.px * this.#w;
 
-      // Same ±3r cull as drawPlanets(). It also gates the raycast set, which is
-      // why it stays on the CPU rather than being left to frustum culling.
-      const visible = y >= -r * 3 && y <= this.#h + r * 3;
+      // Cull using the panned screen position so off-screen planets are skipped.
+      const py = y - this.#panY;
+      const visible = py >= -r * 3 && py <= this.#h + r * 3;
       body.setVisible(visible);
       if (!visible) continue;
 
-      body.place(x, -y, r);
+      // Depth: scale apparent radius as if the planet were ZF/(ZF-depth) closer.
+      // depthBoost animates toward its target each frame, giving the fly-toward
+      // zoom on hover. Orthographic projection keeps planets perfectly circular.
+      const depth = (p.depth ?? 0) + body.depthBoost;
+      const apparentR = r * ZF / (ZF - depth);
+      // Apply the camera pan scaled by this planet's own pf: planets with a
+      // higher pf (feel nearer) shift more than ones with a lower pf (feel
+      // farther), so the pan reads as real depth-parallax instead of one
+      // rigid field. See the panXTarget/panYTarget comment above for why the
+      // target planet still lands pixel-exact at centre despite this.
+      body.place(x + this.#panX * p.pf, -(y - this.#panY * p.pf), apparentR, depth);
       body.advance(dt, this.#elapsed);
+    }
+  }
+
+  /* ---------- featured ---------- */
+
+  #updateFeatured(dt: number): void {
+    if (!this.#featured && this.#featuredAlphaTarget === 0) return;
+
+    // Slow enough to feel like approaching, fast enough to respond to quick
+    // card traversal without lagging behind the pointer.
+    this.#featuredAlpha += (this.#featuredAlphaTarget - this.#featuredAlpha) * Math.min(1, dt * 2.5);
+
+    if (this.#featured) {
+      const r = this.#featuredAlpha * Math.min(this.#w, this.#h) * 0.16;
+      // Centre it slightly above mid-screen so it reads as background of the
+      // card grid rather than overlapping the cards directly.
+      this.#featured.place(this.#w * 0.5, -this.#h * 0.42, r, 0);
+      this.#featured.advance(dt, this.#elapsed);
+
+      if (this.#featuredAlpha < 0.005 && this.#featuredAlphaTarget === 0) {
+        this.#featured.dispose();
+        this.#featured = null;
+        this.#featuredAlpha = 0;
+      }
     }
   }
 
@@ -698,7 +851,7 @@ export class PlanetFieldElement extends HTMLElement {
  * moon and ISS. Built once at unit radius and scaled per frame, so a resize
  * never regenerates geometry or textures.
  */
-class PlanetBody {
+export class PlanetBody {
   readonly group = new Group();
   readonly surface: Mesh;
   readonly spec: PlanetSpec;
@@ -714,6 +867,11 @@ class PlanetBody {
   #disposables: { dispose(): void }[] = [];
   #baseGlow: number;
   #glowBoost = 0;
+  /** Animated extra depth offset in pixels when hovered — drives the fly-toward zoom. */
+  #depthBoost = 0;
+  #depthBoostTarget = 0;
+  /** Exposes the live depth boost so #updatePlanets can fold it into apparentR. */
+  get depthBoost(): number { return this.#depthBoost; }
 
   constructor(spec: PlanetSpec, index: number, glowMap: CanvasTexture) {
     this.spec = spec;
@@ -826,8 +984,8 @@ class PlanetBody {
   }
 
   /** Position in world units and scale to a pixel radius. */
-  place(x: number, y: number, r: number): void {
-    this.group.position.set(x, y, 0);
+  place(x: number, y: number, r: number, z = 0): void {
+    this.group.position.set(x, y, z);
     this.group.scale.setScalar(r);
   }
 
@@ -848,15 +1006,20 @@ class PlanetBody {
     }
     if (this.#ring) this.#ring.rotation.z = -0.32;
 
-    // Hover reads as the planet brightening rather than a cursor change, which
-    // is the only affordance a pointer-events: none canvas can offer.
+    // Glow brightens on hover — the only affordance a pointer-events:none canvas can show.
     const material = this.#glowSprite.material as SpriteMaterial;
-    const target = this.#baseGlow + this.#glowBoost;
-    material.opacity += (target - material.opacity) * Math.min(1, dt * 8);
+    const glowTarget = this.#baseGlow + this.#glowBoost;
+    material.opacity += (glowTarget - material.opacity) * Math.min(1, dt * 8);
+
+    // Depth boost animates more slowly so the fly-toward zoom feels deliberate.
+    this.#depthBoost += (this.#depthBoostTarget - this.#depthBoost) * Math.min(1, dt * 3);
   }
 
   setHovered(hovered: boolean): void {
     this.#glowBoost = hovered ? 1.5 : 0;
+    // Bring every planet to the same effective depth (~250) so the zoom feels
+    // consistent regardless of each planet's base depth value.
+    this.#depthBoostTarget = hovered ? 250 - (this.spec.depth ?? 0) : 0;
   }
 
   dispose(): void {
