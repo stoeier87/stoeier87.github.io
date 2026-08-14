@@ -65,21 +65,33 @@ document.querySelectorAll(".planet-card").forEach((card) => {
 
 /* Card hover:
    - backdrop pans + zooms to the hovered planet (setTravelTarget)
-   - header padding collapses so the planet has room to breathe */
+   - header padding collapses so the planet has room to breathe
+
+   Gated on actual hover capability, not viewport width — a touch tap fires
+   a synthetic mouseenter with no matching mouseleave until the next tap
+   elsewhere, so on a device that can't hover this would fire the travel-pan
+   once and leave it stuck aimed at whatever card was tapped last. Same
+   pointer-capability check script.js already uses for the UFO cursor. The
+   backdrop itself (stars, planets) still renders everywhere — this only
+   stops the pan/zoom animation from ever starting on a device that can't
+   trigger it on purpose. */
+const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 const hall = document.querySelector(".hall");
-document.querySelectorAll(".planet-card.live").forEach((card) => {
-  const key = card.getAttribute("data-planet");
-  const spec = FEATURED_SPECS[key];
-  if (!spec || !backdrop) return;
-  card.addEventListener("mouseenter", () => {
-    backdrop.setTravelTarget(spec.name);
-    hall?.classList.add("card-hovered");
+if (canHover) {
+  document.querySelectorAll(".planet-card.live").forEach((card) => {
+    const key = card.getAttribute("data-planet");
+    const spec = FEATURED_SPECS[key];
+    if (!spec || !backdrop) return;
+    card.addEventListener("mouseenter", () => {
+      backdrop.setTravelTarget(spec.name);
+      hall?.classList.add("card-hovered");
+    });
+    card.addEventListener("mouseleave", () => {
+      backdrop.setTravelTarget(null);
+      hall?.classList.remove("card-hovered");
+    });
   });
-  card.addEventListener("mouseleave", () => {
-    backdrop.setTravelTarget(null);
-    hall?.classList.remove("card-hovered");
-  });
-});
+}
 
 /* ============ Single rAF loop ============
    Drives the backdrop (driven) and the card renderer. One loop, two renderers.
