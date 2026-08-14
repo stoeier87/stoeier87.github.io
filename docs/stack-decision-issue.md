@@ -1,3 +1,7 @@
+> **Superseded by `DECISIONS.md` ADR-023 (2026-08-14).** React is not the direction — native
+> custom elements, light DOM only, are. This file is kept for the reasoning trail; it was never
+> filed as a `gh issue`, so there is nothing external to close.
+
 **Decision recorded, deliberately not started.** This issue is the anchor for the component-system migration. Nothing in the codebase depends on it yet, and everything currently being built is shaped so that starting it is a port rather than a rewrite.
 
 Full record: `DECISIONS.md` ADR-011 and ADR-012.

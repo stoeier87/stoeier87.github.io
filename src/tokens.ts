@@ -10,9 +10,11 @@
  *   - tokens-sole-sourced : nothing hardcodes a colour
  *   - no-new-css-files    : styling lives in JS from here on
  *
- * When the React migration issue is picked up, flip this from mirror to source
- * and generate the @theme block from it. Not now — that would mean editing
- * tailwind.css, and the existing CSS is deliberately frozen.
+ * DECISIONS.md ADR-024 flips this from mirror to source: a prebuild script
+ * (scripts/generate-theme.mjs, replacing tokens-check.mjs) will generate the
+ * @theme block in tailwind.css from the objects below, between marker
+ * comments, leaving the rest of the file untouched. Not yet wired up — this
+ * file is still hand-authored and the generator is a separate PR.
  */
 
 /** A CSS custom-property reference, e.g. `var(--color-red)`. */

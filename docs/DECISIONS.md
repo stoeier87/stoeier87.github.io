@@ -141,7 +141,7 @@ Hooks block exactly two things: root-absolute paths, and touching `dependencies`
 ## ADR-011 — Component system: TypeScript + React, hybrid architecture
 
 **Decided:** 2026-08-13
-**Status:** **deferred** — filed as a GitHub issue, deliberately not started
+**Status:** superseded by ADR-023
 
 TypeScript + React, with a hybrid architecture: SPA for the content pages (home, about-me, space-bar, arcade lobby), standalone entries for the 8 games and the scoreboard.
 
@@ -351,6 +351,136 @@ Three consequences follow from `root`, and each of them is a trap on its own:
 **Nothing inside the source changed.** Every page reaches shared files by depth-relative path (`../tailwind.css`, `../../css/all.min.css`), so a tree that translates wholesale keeps every one of those strings valid. Not one line of page HTML, CSS or JS was edited.
 
 **Verified rather than asserted.** `dist/` was built before the move and diffed against `dist/` after. With content hashes normalised, all 25 pages and all 96 files are byte-identical, and the whole build output differs by exactly one line.
+
+---
+
+## ADR-023 — Component system: native custom elements, light DOM, TypeScript. Supersedes ADR-011.
+
+**Decided:** 2026-08-14
+**Status:** active — supersedes ADR-011 (status: superseded by ADR-023)
+
+Native custom elements (`class extends HTMLElement`), **light DOM only — no Shadow DOM** —
+plus TypeScript. No runtime framework, no client-side router.
+
+**Why this and not React.** ADR-011 picked React specifically because "models generate React
+more reliably than Lit or vanilla custom elements" — the deciding factor, not architecture fit.
+But its own hybrid split exposed the architecture mismatch: the SPA half needs a client-side
+router that works under an arbitrary path prefix, because previews live at
+`/preview/<topic>/` and stage at `/stage/` (`stack-decision-issue.md` blocker 3, never solved,
+only deferred), and the 8 canvas games had to be routed _around_ React entirely because
+imperative rAF loops fight its render model — which is exactly why they became "standalone
+entries" in the hybrid design rather than React components. Custom elements need neither
+concession: `connectedCallback`/`disconnectedCallback` fits an rAF loop directly, and nothing
+about `root: "src"` filesystem routing (ADR-022) needs to change, because there is no router.
+
+**Why light DOM specifically.** `tailwind.css` is a flat global class layer —
+`.pill`, `.topbar`, `.badge`, `.stat`, `.gameover` — that every one of the 8 in-game HUDs
+depends on (ADR-002). Shadow DOM's style encapsulation would sever exactly that layer. Light
+DOM also lets an element _wrap_ markup that already exists in the 25 pages rather than move it
+into a JS template string — a wrapper first, not a rewrite first. This is a hard rule with no
+exceptions; `page-critic` rejects any new element that attaches a shadow root.
+
+**Why now costs nothing.** ADR-012 already mandates "props in, markup out, no module-scope
+side effects, no globals, setup returns its own cleanup" for every component written since
+2026-08-13 — that is the custom-element lifecycle contract under a different name. No component
+written to that rule needs to change shape. Custom elements are also a zero-byte, zero-dependency
+browser API, against React's ~45KB where `no-runtime-deps` is hook-enforced today.
+
+**Consequences:**
+
+- `standards.json`'s `react-shaped` rule is renamed `element-shaped` — the rule text is
+  unchanged, only its `why` and its framing stop naming React.
+- `no-runtime-deps`'s deferred-supersession note is deleted; there is no future framework this
+  decision is waiting on.
+- The `tsconfig.json` strict-mode tightening trigger (flip `strict: true` and
+  `noUncheckedIndexedAccess: true` on the first `.ts` file in `src/shared/`) fires unchanged —
+  it was never keyed to React specifically, only to the first real TypeScript file in a shared
+  directory, which the first custom element now supplies.
+- No shared base class ships on day one. Each element is a plain `class extends HTMLElement` in
+  its own file. A base class is the rule-of-three's own concern — extract one only after a
+  third or fourth element reveals genuine repeated boilerplate, not before.
+- `docs/stack-decision-issue.md` is kept as historical record (never filed as a `gh issue`, so
+  nothing external to close) with a one-line banner at the top marking it superseded. It is no
+  longer the ready-to-file issue body referenced by `CLAUDE.md` §7.
+- **Trip-wire to reopen this decision:** the first time a single page needs keyed-diffing of a
+  list of roughly a dozen or more sibling DOM nodes — items added, removed, or reordered
+  independently of a full page reload, with animation on the change itself and stable identity
+  across reordering (e.g. the scoreboard's `#boards` list becoming live-updating instead of
+  reload-per-fetch) — or the first time state needs to fan out to more than roughly 5 sibling
+  custom elements that must stay in sync without a shared parent (e.g. a live filter on `/tools`
+  driving a dozen cards' visibility at once). Neither exists anywhere in the current 25-page,
+  mostly-static, canvas-heavy site. Until one does, hand-written DOM updates are adequate and a
+  reconciliation library is not worth its cost.
+
+**Non-goals, so scope cannot creep:** the 8 games are not ported to custom elements in this
+work — they stay exactly what they are, imperative canvas modules; a game only becomes a custom
+element if and when its outer HUD shell is extracted, which is not part of this ADR. The 17
+frozen page-local CSS files (ADR-009, ADR-019) are not migrated or rewritten — new elements
+consume Tailwind utilities and the existing global `tailwind.css` layer, never new per-component
+CSS. No page is rewritten wholesale; every step wraps existing markup in place.
+
+**First element:** back-pill (`.pill.back`), ×5 across `about-me.css:64-94`, `arcade.css:137-164`,
+`tools/shared/tool-page.css:46-68`, `scoreboard/style.css:208-236`, plus a partial copy in
+`space-bar.css:45-46` — the count ADR-008 recorded as ×4 is stale by one. It ships as
+`<st-back-pill>` in `src/shared/elements/back-pill.ts`, `st-` prefixed per the collision risk
+light DOM carries (no style scoping), rolled out page by page starting with `about-me`. The same
+PR fixes a standing rule-9 violation it sits directly on top of: `tailwind.css:110-116`'s `.pill`
+hardcodes `background: rgba(10, 14, 24, .6)` instead of using `--color-pill-bg`, declared at
+`tailwind.css:17` as `rgba(13,20,36,0.6)` — a different literal, not a stale copy of the token.
+Fixed the ADR-002-sidestep way: a new element-owned class, never editing the shared `.pill` rule.
+
+`drawPlanet` (×3: `script.js:197`, `arcade.js:83`, `starfield.js:55`) is explicitly **not** a
+custom-element candidate — it draws into someone else's canvas and has no DOM presence of its
+own; it stays a plain shared-function extraction. Starfield init (×5) is left untouched in this
+pass: two of the five copies diverge in real behaviour (space-bar's UFO event, scoreboard's
+unseeded `Math.random()` against the other four's seeded `mulberry32`), so extraction now risks
+silently normalising that divergence in a way a screenshot diff won't catch.
+
+---
+
+## ADR-024 — `tokens.ts` becomes the theme source; `@theme` in `tailwind.css` is generated
+
+**Decided:** 2026-08-14
+**Status:** active
+
+`src/tokens.ts` generates the `@theme { ... }` block in `src/tailwind.css` via a prebuild
+script. It stops being a hand-maintained mirror.
+
+**Why a generated literal block and not `tailwind.config.ts` + `@config`.** v4.3.3 still
+supports `@config` as a compat path, but it means Tailwind computes the CSS custom properties
+from the JS config at build time — the `@theme` block never exists as a file to diff. That
+converts "prove byte-identical output" from a `git diff` into a matter of trusting Tailwind's
+conversion, and it inverts today's model where `@theme` is the documented runtime source
+(`tokens-check.mjs`'s and `tokens.ts`'s own docblocks both say so). The literal-block generator
+keeps `@tailwindcss/vite` reading exactly what it reads today — unchanged CSS, in the same
+file, at the same location — and makes the zero-diff proof trivial: run the generator, `git
+diff tailwind.css`, expect no output, because the hand-written block already matches `tokens.ts`
+by construction (`npm run tokens` passes today).
+
+**Mechanics:** `scripts/tokens-check.mjs` is deleted and replaced by
+`scripts/generate-theme.mjs`, which writes the `@theme { ... }` block into `tailwind.css`
+between two marker comments (`/* GENERATED — see scripts/generate-theme.mjs, do not hand-edit
+*/` ... `/* END GENERATED */`), leaving every other rule in the file (`.pill`, `.topbar`, etc.)
+untouched. It runs as a prebuild step (`"build": "node scripts/generate-theme.mjs && vite
+build"`, and the equivalent before `npm run dev`), not a Vite plugin — a plugin re-runs on every
+save with a less obvious failure mode; a prebuild script fails loudly and stops the build,
+exactly like the check it replaces. A `--check` mode generates into memory, diffs against the
+committed file without writing, and is what `npm run gates` calls — so a hand-edit inside the
+generated markers still gets caught, the same protection `tokens-check.mjs` gives today.
+
+**Consequences:**
+
+- Generating the `@theme` block is not "editing tailwind.css" for the purposes of ADR-009's
+  frozen-CSS rule — it is the one block in that file that was never page-styling, and it stays
+  machine-written from the same source it already matches.
+- `npm run tokens` is replaced by the `--check` invocation of `generate-theme.mjs`. Add it to
+  `envs.json`'s gate lists — it is part of `npm run gates` today but not wired into any rung's
+  `gates` array, which means drift is currently only caught when a human runs it by hand.
+  Recommend adding it to the `stage` gate list alongside format/lint/typecheck in the same PR.
+
+**Migration:** groundwork (`src/shared/elements/` directory, the strict-mode flip) and the
+generator each land as their own PR before the first element, ahead of ADR-023's back-pill work
+— both are described in full in the ADR-023/024 planning session, not repeated here.
 
 **That one line is the honest surprise, and it is an improvement.** The Tailwind stylesheet shrank 159 bytes because six utilities stopped being generated: `.absolute`, `.sticky`, `.contents`, `.inline`, `.table`, `.lowercase`. Tailwind v4 auto-detects sources from the stylesheet's own location, so while `tailwind.css` sat at the repo root it was harvesting English words out of prose and tooling as candidate class names — `sticky` from `ANALYSIS.md`, `lowercase` from `.claude/hooks/guard.mjs`. None of the six appears in any markup in the repo. Scoping the scan to `src/` deleted dead CSS; it did not remove anything a page uses.
 
