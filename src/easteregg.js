@@ -87,6 +87,17 @@ const CSS = `
   100% { opacity: 0; transform: translateY(9px); }
 }
 
+/* The pair drifts gently side to side across the name and back. The
+   travel is capped on phones so the bubble can never leave the left
+   edge while the scene is fully drifted. */
+.egg-layer { --egg-drift-x: min(42vw, 560px); }
+.egg-drift { will-change: transform; }
+.egg-idle .egg-drift { animation: eggDrift 26s ease-in-out infinite; }
+@keyframes eggDrift {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(calc(-1 * var(--egg-drift-x))); }
+}
+
 .egg-idle .egg-alien-float { animation: eggFloat 4s ease-in-out infinite; }
 .egg-idle .egg-alien-tilt { animation: eggTilt 5.3s ease-in-out infinite; }
 .egg-idle .egg-eyes { animation: eggBlink 3s ease-in-out infinite; }
@@ -148,10 +159,12 @@ const CSS = `
 }
 .egg-label {
   margin-top: 2px;
-  font-size: 0.55rem;
+  font-size: 0.6rem;
+  font-weight: 700;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--color-red);
+  color: #ff5040;
+  text-shadow: 0 0 6px rgba(224, 58, 47, 0.9);
   white-space: nowrap;
 }
 
@@ -178,13 +191,14 @@ const CSS = `
   position: absolute;
   right: 0;
   bottom: calc(100% + 14px);
-  max-width: min(210px, calc(100vw - 32px));
-  padding: 8px 12px;
+  max-width: min(300px, calc(100vw - 32px));
+  width: max-content;
+  padding: 6px 11px;
   border: 1.5px solid rgba(255, 255, 255, 0.5);
   border-radius: 10px;
   background: rgba(5, 7, 15, 0.85);
   color: var(--color-ink);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   line-height: 1.45;
   white-space: normal;
   opacity: 0;
@@ -307,14 +321,15 @@ const CSS = `
 
 /* ── Small screens ─────────────────────────────────────── */
 @media (max-width: 500px) {
-  .egg-layer { right: 8px; }
+  .egg-layer { right: 8px; --egg-drift-x: 100px; }
   .egg-alien { height: 64px; }
   .egg-console { width: 62px; }
   .egg-label { font-size: 0.48rem; }
-  .egg-bubble { font-size: 0.66rem; max-width: min(180px, calc(100vw - 24px)); }
+  .egg-bubble { font-size: 0.64rem; max-width: min(250px, calc(100vw - 24px)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .egg-idle .egg-drift,
   .egg-idle .egg-alien-float,
   .egg-idle .egg-alien-tilt,
   .egg-idle .egg-eyes,
@@ -423,6 +438,7 @@ function buildLayer() {
   const layer = document.createElement("div");
   layer.className = "egg-layer" + (reduced ? "" : " egg-idle");
   layer.innerHTML = `
+    <div class="egg-drift">
     <div class="egg-scene">
       <div class="egg-bubble" role="status" aria-live="polite"></div>
       <div class="egg-console-wrap">
@@ -431,6 +447,7 @@ function buildLayer() {
         <div class="egg-label">Do not push</div>
       </div>
       <div class="egg-alien-float"><div class="egg-alien-tilt"><div class="egg-alien-turn">${ALIEN_SVG}</div></div></div>
+    </div>
     </div>`;
   return layer;
 }
