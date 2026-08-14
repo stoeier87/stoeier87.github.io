@@ -546,7 +546,8 @@ function initEasterEgg() {
     const cy = window.innerHeight / 2;
     for (let i = 0; i < 9; i++) {
       let a = (i / 9) * Math.PI * 2 + Math.random() * 0.5;
-      let x = cx, y = cy;
+      let x = cx,
+        y = cy;
       let d = `M ${x.toFixed(0)} ${y.toFixed(0)}`;
       const segs = 5 + Math.floor(Math.random() * 3);
       for (let s = 0; s < segs; s++) {
@@ -575,7 +576,7 @@ function initEasterEgg() {
     requestAnimationFrame(() =>
       requestAnimationFrame(() => {
         svg.querySelectorAll("path").forEach((p) => (p.style.strokeDashoffset = "0"));
-      })
+      }),
     );
     return svg;
   }
@@ -612,14 +613,21 @@ function initEasterEgg() {
     ].filter(Boolean);
     shakeEls.forEach((el) => el.classList.add("egg-shaken"));
 
-    let amp = 9, hSpike = 0, rot = 0, scl = 1, ramping = false;
+    let amp = 9,
+      hSpike = 0,
+      rot = 0,
+      scl = 1,
+      ramping = false;
     const shaker = setInterval(() => {
       if (ramping) {
         amp = Math.min(15, amp + 0.4);
         rot = Math.min(4, rot + 0.27);
         scl = Math.min(1.08, scl + 0.0054);
       }
-      root.style.setProperty("--egg-sx", ((Math.random() * 2 - 1) * (amp + hSpike)).toFixed(1) + "px");
+      root.style.setProperty(
+        "--egg-sx",
+        ((Math.random() * 2 - 1) * (amp + hSpike)).toFixed(1) + "px",
+      );
       root.style.setProperty("--egg-sy", ((Math.random() * 2 - 1) * amp).toFixed(1) + "px");
       root.style.setProperty("--egg-rot", rot.toFixed(2) + "deg");
       root.style.setProperty("--egg-scl", scl.toFixed(4));
@@ -670,8 +678,19 @@ function initEasterEgg() {
       });
       document.querySelectorAll(".topbar .pill, #contact .pill").forEach((el) => {
         const r = el.getBoundingClientRect();
-        const ang = (Math.atan2(window.innerHeight / 2 - (r.top + r.height / 2), window.innerWidth / 2 - (r.left + r.width / 2)) * 180) / Math.PI;
-        flingToCentre(el, `rotate(${ang.toFixed(0)}deg) scaleX(1.7)`, 1.0, 0.15 + Math.random() * 0.35);
+        const ang =
+          (Math.atan2(
+            window.innerHeight / 2 - (r.top + r.height / 2),
+            window.innerWidth / 2 - (r.left + r.width / 2),
+          ) *
+            180) /
+          Math.PI;
+        flingToCentre(
+          el,
+          `rotate(${ang.toFixed(0)}deg) scaleX(1.7)`,
+          1.0,
+          0.15 + Math.random() * 0.35,
+        );
       });
     });
 
@@ -716,7 +735,9 @@ function initEasterEgg() {
     at(4700, () => {
       clearInterval(shaker);
       shakeEls.forEach((el) => el.classList.remove("egg-shaken"));
-      ["--egg-sx", "--egg-sy", "--egg-rot", "--egg-scl"].forEach((v) => root.style.removeProperty(v));
+      ["--egg-sx", "--egg-sy", "--egg-rot", "--egg-scl"].forEach((v) =>
+        root.style.removeProperty(v),
+      );
       cracksSvg?.remove();
       scan?.remove();
       border.remove();
