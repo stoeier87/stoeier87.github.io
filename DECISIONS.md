@@ -282,3 +282,29 @@ Contributors (currently the CEO and CFO, non-technical) develop on their own **l
 - **Three more page-local CSS files** (`tools/tools.css`, `tools/shared/tool-page.css`, `tools/validator/validator.css`) landed after ADR-009 said no new ones. They predate the rule reaching `main`, so they are not violations — but they do mean the frozen-stylesheet count is 17, not 14.
 - **The duplication counts in ADR-008 are stale.** `tools/` almost certainly adds another canvas/animation cluster. Left for `/dedupe` to recount rather than guessed at here.
 - **Lint on the new code is clean**: 3 warnings across ~4200 lines, all genuine dead code (`MUDA` unused in `tools-data.js`, an unused catch binding in `tools.js`, an unused arg in `validator.js`). Typecheck and tokens pass untouched.
+
+---
+
+## ADR-020 — The toolbox got smaller, and the role split got a real enforcement mechanism
+
+**Decided:** 2026-08-14
+**Status:** active
+
+PR #57 shipped 14 skills and 4 agents in one pass, on the day it was written. For a two-person team — Jesper as integrator, Tobias as prototyper — that surface was bigger than either of them reached for, and some of it was genuine overlap rather than a real distinction. Four consolidations:
+
+- **`/deploy` absorbs `/deploy-watch`.** Watching a run was never a separate decision from pushing one — every deploy gets watched now, folded into the last step of `/deploy` itself. `deploy-watch/SKILL.md` is deleted; nothing else referenced it directly.
+- **`redundancy-scout` is invoked by `/dedupe`, not run standalone.** It always was, in practice — `/dedupe` was already a thin wrapper around it. The change is presentation, not behavior: the toolbox table stops listing the agent as a peer entry point.
+- **`ship` folds into `/promote`'s presentation.** `promote` already called `ship` at the end. `ship` still exists as its own skill file — still useful for an already-clean change with nothing to extract — but stops being listed as a second top-level PR-composition command.
+- **`env-verifier` is invoked by `/envs --verify <rung>`.** Same pattern as `redundancy-scout`: `/envs` gains a deep-check mode instead of the agent being a separate thing to remember.
+
+What's genuinely different and was kept apart on purpose: `verify` (runtime/browser proof), `page-critic` (static code review against `standards.json`), `env-verifier`'s checks (deployed-environment correctness), and `ux-polish` (subjective visual critique) each catch a different failure class. Collapsing these would have lost real coverage, not just trimmed a redundant name.
+
+**PR watching becomes event-driven by default.** `/loop /pr-watch` required remembering to start a poll loop for a PR you just opened. `subscribe_pr_activity` already exists in this environment and delivers CI failures, review comments, and merge-conflict notices as they happen — so that's now the default for a single PR. `/pr-watch` stays for its actual distinct job: a point-in-time sweep across every open PR at once, which event subscription doesn't give you.
+
+**`ship` gets a second, lighter PR template** for single-file, `content:`-type or trivially-scoped edits — preview URL, one paragraph, a verification line, the footer, no root-cause table. The full template (root cause bolded, before/after numbers, verification count, `⚠️` caveat) stays mandatory for anything touching a gated rule, a workflow, or more than one surface — it's the only review mechanism `main` has, so this isn't a place to cut ceremony, only to stop forcing a table onto a change with no root cause to report.
+
+**Why branch protection, now, instead of staying on `BACKLOG.md` as B3.** The Prototyper/Integrator split in `CLAUDE.md` §1b was written in the same commit as this toolbox — it has no track record yet. Pre-contract git history shows exactly the pattern it exists to prevent: Tobias's account merging directly to `main` and pushing to `stage/*` branches, repeatedly, before the rule existed. Right now the rule is a paragraph in a markdown file that a git identity can simply not read. A streamlining pass that shrank the tooling without also giving the split a mechanism would have left the actual risk exactly where it was.
+
+Settings (`main`): require the `build` status check (already runs on every PR via `deploy.yml`'s `pull_request` trigger, no new CI needed) before merge; restrict push/merge rights to Jesper's account. Settings (`stage`): restrict push rights to Jesper's account plus `github-actions[bot]` (needed for `stage-reset.yml`'s nightly force-push). Neither setting was applied by an agent — GitHub repo permissions are a shared-system change requiring the account owner's own action, consistent with `CLAUDE.md` §8.
+
+**Consequences:** the toolbox table in `CLAUDE.md` §4 was rewritten to match — fewer top-level rows, `ship`/`redundancy-scout`/`env-verifier` reframed as subroutines rather than peers. No skill's underlying logic changed except `/deploy` (which now blocks on `gh run watch`) and `/envs` (which gained `--verify`). `BACKLOG.md` B3 should be marked ready-to-apply against this ADR's exact settings once branch protection is turned on.

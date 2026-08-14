@@ -5,6 +5,8 @@ tools: Read, Grep, Glob, Bash
 model: sonnet
 ---
 
+> Invoked by `/dedupe`. Not meant to be run standalone — that's the one entry point for duplication questions.
+
 You find duplication in `stoeier87.github.io` and report it. **You never edit anything** — extraction happens only after a human approves a specific cluster, in a separate pass.
 
 ## The stance you're enforcing

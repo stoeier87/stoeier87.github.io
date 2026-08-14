@@ -1,6 +1,6 @@
 ---
 name: deploy
-description: The one deploy verb. Put work on a rung of the ladder — preview, stage, or prod. Reads envs.json, explains what it's about to do, handles the preview path-doubling quirk, and never merges. Use when the user says deploy, ship it to preview, put it on stage, get me a URL, or asks where something is live.
+description: The one deploy verb. Put work on a rung of the ladder — preview, stage, or prod — then watch the run and hand back a verified URL. Reads envs.json, explains what it's about to do, handles the preview path-doubling quirk, and never merges. Use when the user says deploy, ship it to preview, put it on stage, get me a URL, or asks where something is live.
 ---
 
 # /deploy
@@ -38,7 +38,7 @@ The fast lane. Sloppy code is allowed here on purpose — the only gate is that 
 3. Commit in house style — see `CLAUDE.md` §5. Conventional Commits, page-level scope, a prose-judgment subject, a body that explains cause and measurement, `Co-Authored-By` with your exact model, and a `Claude-Session:` trailer. **No 🤖 line in commits.**
 4. **Confirm once before pushing**, then push with `-u`.
 5. Report the URL. **`preview.yml` uses `destination_dir: preview/${{ github.ref_name }}` and `ref_name` already contains the slash**, so the branch `preview/foo` actually publishes to `/preview/preview/foo/`. Report the real, doubled URL — do not report the tidy one and let the user hit a 404. Say plainly that the doubling is a known quirk (`CLAUDE.md` known issue 2).
-6. Offer `/loop /deploy-watch` to watch the run and hand back the verified URL.
+6. **Watch and verify — see below.** Don't stop at "pushed."
 
 ## `/deploy stage`
 
@@ -48,8 +48,44 @@ The fast lane. Sloppy code is allowed here on purpose — the only gate is that 
 2. Get the work onto `stage`. Fast-forward if it's clean; **force-push if it isn't.** Divergence on a workbench is normal, not an incident.
 3. Confirm, push, report `/stage/`.
 4. Say explicitly what this replaced, and — if `stage` was ahead of `main` — name the commits being dropped and where they still live, so re-picking is one command rather than an archaeology exercise.
+5. **Watch and verify — see below.**
 
 **Never rescue work off `stage`.** If something looks like it exists only there, that is a signal the contributor branch was deleted or rewritten — say so, because the actual problem is upstream. The fix is never to preserve `stage`.
+
+## Watching and verifying, after every `preview`/`stage` push
+
+Every push gets watched — this is not a separate step to remember, it's how `/deploy` finishes.
+
+**1. Find the run.**
+
+```
+gh run list --branch <branch> --limit 1 --json databaseId,status,conclusion,workflowName,createdAt
+```
+
+No run at all is a finding, not a no-op: a push to a branch outside `preview.yml`/`stage.yml`'s trigger globs deploys nothing and nobody is told. Say so.
+
+**2. Block on it.** `gh run watch <id>`. That's the primary wake signal — don't poll around it.
+
+**3. If it failed**, read the log and **name the cause**, don't dump it: `gh run view <id> --log-failed`. Recognisable failure modes:
+
+- **Missing `FIREBASE_*` repo variable.** `build.yml` validates seven and `exit 1`s, naming the key. `FIREBASE_MEASUREMENT_ID` is written but not validated, so an empty one fails later and stranger.
+- **Vite build error.** Usually a bad import path or an HTML file that moved — `rollupOptions.input` comes from `globSync("**/*.html")`.
+- **`npm install` resolution.** No committed lockfile, CI runs `npm install` — a transitive change can break CI with no diff to review.
+- **Gate failure on `stage`** — format, lint or typecheck. Report which and the file:line. The ladder working as designed, not a broken pipeline.
+- **Concurrency wait.** All publishing workflows share `gh-pages-write` with `cancel-in-progress: false` — a queued run is correct, not a hang.
+
+**4. If it succeeded**, verify, don't just print the URL:
+
+- HTTP 200 on the real (possibly doubled) URL. A 404 in the first ~30 seconds is `gh-pages` propagation, not failure — re-check once.
+- Every expected page from `envs.json` → `pages.routes`, prefixed with the rung's base, reachable.
+- No root-absolute path escapes — grep the deployed HTML/JS for `"/arcade`, `"/about-me`, `"/space-bar`, `"/scoreboard`. `script.js`'s homepage planet links are the known offender (known issue 1); report any new one as a finding.
+
+```
+deploy  preview/foo
+  run       preview.yml #1234  success  1m 42s
+  url       https://stoeier87.github.io/preview/preview/foo/   (doubling is expected)
+  verified  200 · 14 pages · assets resolve · no absolute-path escapes
+```
 
 ## `/deploy prod`
 
