@@ -52,30 +52,66 @@
     }
   },
   "viewports": [
-    { "w": 1440, "h": 900, "label": "desktop" },
-    { "w": 1280, "h": 800, "label": "laptop" },
-    { "w": 390, "h": 844, "label": "iphone-14" },
-    { "w": 375, "h": 812, "label": "iphone-x" },
-    { "w": 360, "h": 640, "label": "android-small" },
-    { "w": 320, "h": 568, "label": "narrow" }
+    {
+      "w": 1440,
+      "h": 900,
+      "label": "desktop"
+    },
+    {
+      "w": 1280,
+      "h": 800,
+      "label": "laptop"
+    },
+    {
+      "w": 390,
+      "h": 844,
+      "label": "iphone-14"
+    },
+    {
+      "w": 375,
+      "h": 812,
+      "label": "iphone-x"
+    },
+    {
+      "w": 360,
+      "h": 640,
+      "label": "android-small"
+    },
+    {
+      "w": 320,
+      "h": 568,
+      "label": "narrow"
+    }
   ],
   "pages": {
     "$comment": "Routing is the filesystem: vite.config.js globs **/*.html into rollupOptions.input. This list is for skills that need to enumerate routes; verify against dist/ after a build rather than trusting it.",
-    "expectedHtmlCount": 13,
+    "expectedHtmlCount": 25,
     "routes": [
-      "/",
       "/about-me/",
-      "/space-bar/",
-      "/scoreboard/",
-      "/arcade/",
-      "/arcade/orbit-runner/",
-      "/arcade/meteor-dodge/",
-      "/arcade/iss-docking/",
-      "/arcade/phobos-lander/",
+      "/arcade/asteroid-breaker/",
       "/arcade/comet-pong/",
-      "/arcade/star-memory/",
+      "/arcade/",
+      "/arcade/iss-docking/",
+      "/arcade/meteor-dodge/",
       "/arcade/nebula-trail/",
-      "/arcade/asteroid-breaker/"
+      "/arcade/orbit-runner/",
+      "/arcade/phobos-lander/",
+      "/arcade/star-memory/",
+      "/",
+      "/scoreboard/",
+      "/space-bar/",
+      "/tools/11-star-experience/",
+      "/tools/behavior-model/",
+      "/tools/business-model-canvas/",
+      "/tools/design-thinking/",
+      "/tools/empathy-map/",
+      "/tools/",
+      "/tools/lean-ux/",
+      "/tools/muda/",
+      "/tools/octalysis/",
+      "/tools/service-blueprint/",
+      "/tools/validator/",
+      "/tools/value-complexity/"
     ]
   },
   "concurrency": {

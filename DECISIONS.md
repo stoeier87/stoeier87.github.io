@@ -262,3 +262,23 @@ Contributors (currently the CEO and CFO, non-technical) develop on their own **l
 - The nightly job reports which commits it is discarding and where they still live, so a re-pick is a command rather than an archaeology exercise.
 
 **When to revisit.** The strict chain is the right answer at larger scale — this one works because **one person owns the production server and does all the integration**. Revisit when that stops being true: a second integrator, someone else responsible for prod, or contributors who merge their own work. At that point the safety the chain buys stops being ceremony and starts being necessary.
+
+---
+
+## ADR-019 — `tools/` gets a one-time formatting amnesty; the format gate is thin for now
+
+**Decided:** 2026-08-14
+**Status:** active
+
+`tools/` is added to `.prettierignore` alongside the original 14 pages. It is **an amnesty at the boundary, not a policy.**
+
+**Why:** the `/tools` section — 11 pages, an idea validator, `tools/shared/` modules, ~4200 lines — landed on `main` in #56 while the toolbox was still on a branch, so it was written before this config existed. Measured rather than assumed: formatting it would rewrite **2763 lines across 7 files**, and `tools/shared/tools-data.js` alone goes 1809-changed-of-1661 because it is compact content data that Prettier would explode. That diff would bury the next real content change and conflict with anything still in flight.
+
+**The honest cost, stated so nobody misreads a green gate:** `format:check` currently covers almost nothing real — the toolbox's own files and little else. If every new section is frozen on arrival, the gate never means anything. The rule that keeps it honest: **code created after the toolbox lands on `main` is formatted from birth and is not added to the ignore list.** Files opt in by having their line deleted when someone is already working in them.
+
+**Also observed on the merge, recorded rather than corrected:**
+
+- **`<section>/shared/` is emerging as the real convention** — `arcade/shared/` and now `tools/shared/`. ADR-008 proposed a single root `shared/` for site-wide code. The section-scoped pattern is arguably better and it arrived on its own; leave it, and reserve root `shared/` for genuinely cross-section code.
+- **Three more page-local CSS files** (`tools/tools.css`, `tools/shared/tool-page.css`, `tools/validator/validator.css`) landed after ADR-009 said no new ones. They predate the rule reaching `main`, so they are not violations — but they do mean the frozen-stylesheet count is 17, not 14.
+- **The duplication counts in ADR-008 are stale.** `tools/` almost certainly adds another canvas/animation cluster. Left for `/dedupe` to recount rather than guessed at here.
+- **Lint on the new code is clean**: 3 warnings across ~4200 lines, all genuine dead code (`MUDA` unused in `tools-data.js`, an unused catch binding in `tools.js`, an unused arg in `validator.js`). Typecheck and tokens pass untouched.

@@ -41,3 +41,16 @@ about-me/
 space-bar/
 scoreboard/
 arcade/
+
+# tools/ — a ONE-TIME AMNESTY, not a precedent. See DECISIONS.md ADR-019.
+#
+# The /tools section (11 pages, validator, shared modules) landed on main in
+# #56 while the toolbox was still on a branch, so it was written before this
+# config existed. Measured: formatting it would rewrite 2763 lines across 7
+# files — tools-data.js alone goes 1809-changed-of-1661, because it is compact
+# content data that Prettier would explode. That diff would bury the next real
+# content change and conflict with anything still in flight.
+#
+# Anything created AFTER the toolbox lands on main is formatted from birth and
+# does not get added here.
+tools/
