@@ -11,11 +11,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="../css/all.min.css" rel="stylesheet" />
-    <script type="module" crossorigin src="../assets/tools/index-y9haKtPy.js"></script>
+    <script type="module" crossorigin src="../assets/tools/index-DtWqRw4J.js"></script>
     <link rel="modulepreload" crossorigin href="../assets/tailwind-BawHnMd-.js">
-    <link rel="modulepreload" crossorigin href="../assets/tools-data-C7_Fp8Ji.js">
+    <link rel="modulepreload" crossorigin href="../assets/tools-data-9ZfRep2U.js">
     <link rel="stylesheet" crossorigin href="../assets/tailwind-B6W7fvP9.css">
-    <link rel="stylesheet" crossorigin href="../assets/index-CAaFy1Ph.css">
+    <link rel="stylesheet" crossorigin href="../assets/index-B2joLurr.css">
   </head>
   <body>
     <canvas id="backdrop" aria-hidden="true"></canvas>
@@ -41,7 +41,16 @@
       </a>
     </nav>
 
-    <!-- The space the models drift in. Fills the viewport; nothing pans. -->
+    <svg class="satellite" viewBox="0 0 40 18" aria-hidden="true" focusable="false">
+      <rect class="body" x="14" y="6" width="12" height="6" />
+      <rect class="body" x="2" y="5" width="10" height="8" />
+      <rect class="body" x="28" y="5" width="10" height="8" />
+      <line class="body" x1="14" y1="9" x2="12" y2="9" />
+      <line class="body" x1="26" y1="9" x2="28" y2="9" />
+    </svg>
+
+    <!-- The grid the models sit on. Normal page flow — scrolls if the
+         grid needs more room than the viewport. -->
     <div class="space" id="space"></div>
 
   </body>
