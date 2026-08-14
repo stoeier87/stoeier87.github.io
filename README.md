@@ -4,7 +4,7 @@ Personal portfolio and browser arcade for Tobias Fullerton Støier, live at [sto
 
 Vanilla ES modules + Canvas 2D, Tailwind v4, Vite as a pure multi-page bundler. No framework, no SPA router — routing is the filesystem. Zero runtime dependencies.
 
-**This file is the front door. `CLAUDE.md` is the canonical contract** — deploy mechanics, standards, the full toolbox, commit/PR conventions. Read that before touching CI, `.claude/`, or anything gated. This file exists so a clone doesn't start with `CLAUDE.md`'s wall of text.
+**This file is the front door. [`docs/CLAUDE.md`](./docs/CLAUDE.md) is the canonical contract** — deploy mechanics, standards, the full toolbox, commit/PR conventions. Read that before touching CI, `.claude/`, or anything gated. This file exists so a clone doesn't start with the contract's wall of text.
 
 ---
 
@@ -112,10 +112,14 @@ envs.json                 # deploy ladder ground truth — what's live on each r
 
 ## Docs, in reading order
 
-1. **`CLAUDE.md`** — canonical contract: deploy truth, role split, standards, full toolbox, commit/PR conventions.
-2. **`DECISIONS.md`** — the ADR log, why things are the way they are, sequential.
-3. **`BACKLOG.md`** — known debt, one PR each, grouped by what happens if ignored. Nothing in it is in progress.
-4. **`ANALYSIS.md`** — how the repo and the prototyping method actually work in practice.
+They all live in `docs/`. The `CLAUDE.md` at repo root is a stub that imports `docs/CLAUDE.md` —
+Claude Code discovers context by filename at root, never by directory name, so the stub is what
+keeps the contract loading automatically.
+
+1. **[`docs/CLAUDE.md`](./docs/CLAUDE.md)** — canonical contract: deploy truth, role split, standards, full toolbox, commit/PR conventions.
+2. **[`docs/DECISIONS.md`](./docs/DECISIONS.md)** — the ADR log, why things are the way they are, sequential.
+3. **[`docs/BACKLOG.md`](./docs/BACKLOG.md)** — known debt, one PR each, grouped by what happens if ignored. Nothing in it is in progress.
+4. **[`docs/ANALYSIS.md`](./docs/ANALYSIS.md)** — how the repo and the prototyping method actually work in practice.
 
 ## Known issues
 
