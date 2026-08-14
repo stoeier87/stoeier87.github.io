@@ -286,9 +286,10 @@ const CSS = `
 
 /* ── Small screens ─────────────────────────────────────── */
 @media (max-width: 500px) {
-  /* bottom is 44px rather than 24 so the DO NOT PUSH label clears the
-     footer link at full scroll */
-  .egg-layer { right: 24px; bottom: 44px; }
+  /* On phones the scene sits centred over the footer area rather than
+     in the right corner, where it hovered over the Spotify pill. 36px
+     keeps the DO NOT PUSH label clear of the servicedesign.dk link. */
+  .egg-layer { right: 50%; bottom: 36px; transform: translateX(50%); }
   .egg-alien { height: 64px; }
   .egg-console { width: 62px; }
   .egg-label { font-size: 0.48rem; }
