@@ -24,7 +24,7 @@ st-planet-field {
   @apply gap-y-20 px-4 py-4;
 }
 header {
-  @apply text-center;
+  @apply text-center pt-[clamp(4.5rem,12vw,5.5rem)] md:pt-0;
   /* Clears the fixed .hall-nav so the title never sits under/behind it */
   /* padding-top: clamp(4.5rem, 12vw, 5.5rem); */
   transition: padding-top 0.5s ease;
@@ -65,7 +65,10 @@ header p {
 }
 
 .solar-system:hover {
-  transform: scale(0.92);
+  @apply lg:scale-[0.92];
+}
+st-planet-field#bg {
+  @apply opacity-10 md:opacity-100 pointer-events-none fixed inset-0 z-0 block;
 }
 .planet-card {
   @apply border-2 border-white/[0.28] rounded-[18px];

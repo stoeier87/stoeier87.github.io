@@ -95,10 +95,11 @@ Rules 6 and 7 are not preferences. They are the two halves of the regression PR 
 
 **Change discipline**
 
-8. **Rule of three.** Two copies are fine when the variants genuinely differ; a third means stop and propose an extraction. Never extract silently as a side effect of another change. Current clusters: `drawPlanet` ×3, back-pill CSS ×5 (ADR-008's ×4 was stale by one — a partial copy in `space-bar.css:45-46` was missed), starfield init ×5.
+8. **Rule of three.** Two copies are fine when the variants genuinely differ; a third means stop and propose an extraction. Never extract silently as a side effect of another change. Current clusters: back-pill CSS ×5 (ADR-008's ×4 was stale by one — a partial copy in `space-bar.css:45-46` was missed), starfield init ×5. `drawPlanet` was a ×3 cluster; #61 resolved it by reuse (one shared `PlanetBody` class), not extraction — see rule 12 below and `standards.json`'s `reuse-threejs-universe`.
 9. **Design tokens are sole-sourced** in `tailwind.css` `@theme`, mirrored typed in `tokens.ts`. Nothing hardcodes a colour. The `--color-scoreboard-*` sub-palette is a deliberate documented drift — leave it.
 10. **Styling lives in JS from here on.** New components carry Tailwind utility classes in their templates. **No new page-local `.css` files.** The 14 existing ones are frozen: they keep working, they stop growing.
 11. **Write components element-shaped** — props in, markup out, no module-scope side effects, no globals, setup returns its own cleanup. See §7.
+12. **The three.js universe is shared primitives, not new scenes.** A new planet, star layer, satellite or space-backdrop visual is built by composing `PlanetBody`/`PlanetSpec`, `PlanetFieldElement` (`<st-planet-field>`), `CardPlanetRenderer` and `SkyTraffic` (all in `src/shared/elements/`) through their existing props — position, parallax, depth, star-layer density/alpha — not by hand-rolling a new `WebGLRenderer`/`Scene` or a second planet-drawing function. `planet-textures.ts` is the only place that generates a texture; its `rand()` is what keeps every sky deterministic. See `standards.json`'s `reuse-threejs-universe` and `ANALYSIS.md` §2b for the full prop surface.
 
 ### Canvas contract
 

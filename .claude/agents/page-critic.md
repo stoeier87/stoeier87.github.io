@@ -35,6 +35,8 @@ Walk every rule in `standards.json`. The ones that actually get violated:
 
 **`react-shaped`** (new code in `src/shared/` and `src/proto/`) — props in, markup out, no module-scope side effects, no globals, and **cleanup actually returned and actually called**. A `requestAnimationFrame` or listener with no matching teardown is a finding.
 
+**`reuse-threejs-universe`** — a new `WebGLRenderer`/`Scene`, or a new planet- or star-drawing function, anywhere a variation on the existing `PlanetBody`/`PlanetFieldElement`/`CardPlanetRenderer`/`SkyTraffic` primitives (`src/shared/elements/`) would produce the same result through different props (position, parallax, depth, star-layer density/alpha). Check `standards.json`'s `primitives` field for the current prop surface before flagging — a request the existing props genuinely can't satisfy is not a violation.
+
 **`page-exists-when-built`** — a new or moved HTML file that hasn't been confirmed in `dist/`.
 
 Also flag, as a lower-severity note: seeded randomness replaced with `Math.random()` (skies are deterministic on purpose), and any edit to a shared rule in `tailwind.css` rather than sidestepping it with a new class.
