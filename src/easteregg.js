@@ -800,7 +800,8 @@ function initEasterEgg() {
       void alien.offsetWidth; // settle the base style so the glide actually glides
       alien.style.transition = "transform 0.55s cubic-bezier(0.5, 0, 0.6, 1)";
       alien.style.transform = `translate(${dx.toFixed(0)}px, ${dy.toFixed(0)}px) rotate(360deg) scale(${zoom.toFixed(2)})`;
-      consoleWrap.style.animation = "eggConsoleOut 0.5s cubic-bezier(0.55, -0.15, 0.75, 0.5) 0.12s forwards";
+      consoleWrap.style.animation =
+        "eggConsoleOut 0.5s cubic-bezier(0.55, -0.15, 0.75, 0.5) 0.12s forwards";
     });
 
     // 4.2s FLASH TWO (permitted): white, hold, then to solid black
