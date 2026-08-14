@@ -12,7 +12,9 @@
     <link rel="stylesheet" href="../tailwind.css" />
   </head>
   <body>
-    <canvas id="bg"></canvas>
+    <!-- No `driven` here: this page has no scroll journey to sync with, so the
+         element runs its own loop. `drift` replaces the old downward star fall. -->
+    <st-planet-field id="bg" drift="-9" aria-hidden="true"></st-planet-field>
     <nav class="hall-nav" aria-label="Arcade navigation">
       <a class="pill back" href="../" aria-label="Back to homepage" title="Back to homepage">
         <span class="arrow"><i class="fa-solid fa-arrow-left-long"></i></span>

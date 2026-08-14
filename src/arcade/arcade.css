@@ -13,8 +13,9 @@ body {
   overflow-y: auto;
 }
 
-#bg {
-  @apply fixed inset-0 z-0;
+/* Was #bg, a 2D starfield canvas. Same box, same layer — see arcade.js. */
+st-planet-field {
+  @apply pointer-events-none fixed inset-0 z-0 block;
 }
 .hall {
   @apply relative z-1 min-h-screen;

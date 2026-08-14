@@ -1,47 +1,55 @@
 import { PLANETS } from "./shared/starfield.js";
+import { definePlanetField } from "../shared/elements/planet-field.ts";
+import { color } from "../tokens.ts";
 
-// Background starfield
-const c = document.getElementById("bg");
-const x = c.getContext("2d");
-let w = 0,
-  h = 0,
-  dpr = 1,
-  stars = [];
+/* Background — <st-planet-field> (issue #61), replacing the hand-rolled 2D
+   starfield that used to live here. Three planets drift behind the cards at
+   low parallax, far enough out on the sides to stay clear of them.
 
-function rs() {
-  dpr = Math.min(devicePixelRatio || 1, 2);
-  w = innerWidth;
-  h = innerHeight;
-  c.width = w * dpr;
-  c.height = h * dpr;
-  x.setTransform(dpr, 0, 0, dpr, 0, 0);
-  stars = [...Array(Math.max(80, Math.round((w * h) / 14000)))].map(() => ({
-    x: Math.random() * w,
-    y: Math.random() * h,
-    r: Math.random() * 1.6 + 0.4,
-    s: Math.random() * 0.6 + 0.2,
-  }));
+   The eight per-card planets below are deliberately NOT converted: they are UI
+   rather than background, and nine WebGL contexts on one page would sit at the
+   browser's per-page limit for no gain. */
+definePlanetField();
+
+const backdrop = document.getElementById("bg");
+if (backdrop) {
+  backdrop.planets = [
+    // s0 is negative here on purpose: worldY starts at 0.55 * viewport height,
+    // so a positive s0 would push every one of them below the fold.
+    {
+      name: "JUPITER",
+      r: 0.13,
+      s0: -0.55,
+      px: -0.09,
+      pf: 0.6,
+      hi: color.planet.jupiterHi,
+      lo: color.planet.jupiterLo,
+      bands: true,
+      spin: 0.1,
+    },
+    {
+      name: "SATURN",
+      r: 0.085,
+      s0: 0.35,
+      px: 1.09,
+      pf: 0.6,
+      hi: color.planet.saturnHi,
+      lo: color.planet.saturnLo,
+      ring: true,
+      spin: 0.09,
+    },
+    {
+      name: "NEPTUN",
+      r: 0.035,
+      s0: 0.5,
+      px: 0.05,
+      pf: 0.6,
+      hi: color.planet.neptunHi,
+      lo: color.planet.neptunLo,
+      spin: 0.06,
+    },
+  ];
 }
-
-addEventListener("resize", rs, { passive: true });
-rs();
-
-function f(t) {
-  x.clearRect(0, 0, w, h);
-  for (const s of stars) {
-    s.y += s.s;
-    if (s.y > h) s.y = -2;
-    x.globalAlpha = 0.5 + Math.sin(t * 0.001 + s.x) * 0.5;
-    x.beginPath();
-    x.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-    x.fillStyle = "#fff";
-    x.fill();
-  }
-  x.globalAlpha = 1;
-  requestAnimationFrame(f);
-}
-
-requestAnimationFrame(f);
 
 // Planet cards
 const planetMap = {
