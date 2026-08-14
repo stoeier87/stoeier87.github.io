@@ -7,11 +7,11 @@ description: Scaffold a new page that satisfies the page contract by constructio
 
 Usage: `/new-page <name>` — creates `<name>/index.html` and `<name>/<name>.js`
 
-For a page that belongs in the site. For a throwaway experiment use `/idea`, which scaffolds into `proto/` instead.
+For a page that belongs in the site. For a throwaway experiment use `/idea`, which scaffolds into `src/proto/` instead.
 
 ## Why `index.html` and not `<name>.html`
 
-Routing is the filesystem and `vite.config.js` globs `**/*.html` into entries. `<name>/index.html` gives you the clean URL `/<name>/` on GitHub Pages. The repo already renamed away from `<name>/<name>.html` for exactly this reason — the stale `dist/` on disk still shows the old shape, which is why it isn't ground truth.
+Routing is the filesystem and `vite.config.js` globs `**/*.html` under `src/` into entries. `src/<name>/index.html` gives you the clean URL `/<name>/` on GitHub Pages — `root: "src"` is what strips the prefix. The repo already renamed away from `<name>/<name>.html` for exactly this reason — the stale `dist/` on disk still shows the old shape, which is why it isn't ground truth.
 
 ## The head block, in this order
 
@@ -24,7 +24,7 @@ Routing is the filesystem and `vite.config.js` globs `**/*.html` into entries. `
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>…</title>
     <link href="../css/all.min.css" rel="stylesheet" />
-    <!-- icons, from public/ -->
+    <!-- icons, from src/public/ -->
     <link rel="stylesheet" href="../tailwind.css" />
     <!-- LAST. always. -->
     <script>

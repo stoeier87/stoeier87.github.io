@@ -1,6 +1,6 @@
 ---
 name: idea
-description: Turn a one-sentence idea into a running page in about a minute. Scaffolds proto/<slug>/ React-shaped with Tailwind utilities and no CSS file, satisfying the page contract, then starts the dev server. Use when someone describes something they want to see, sketches a concept, or says wouldn't it be cool if.
+description: Turn a one-sentence idea into a running page in about a minute. Scaffolds src/proto/<slug>/ React-shaped with Tailwind utilities and no CSS file, satisfying the page contract, then starts the dev server. Use when someone describes something they want to see, sketches a concept, or says wouldn't it be cool if.
 ---
 
 # /idea
@@ -17,26 +17,26 @@ If the working branch isn't already a `preview/**` one, create `preview/<slug>` 
 
 Ask at most **one** short question, and only if the answer changes the scaffold — which page it lives near, or whether it's canvas or DOM. If you can guess sensibly, guess and say what you assumed. A second question costs more than a wrong guess you can iterate on.
 
-## 2. Scaffold `proto/<slug>/`
+## 2. Scaffold `src/proto/<slug>/`
 
 Slug is kebab-case from the idea. Three files, no more:
 
 ```
-proto/<slug>/index.html    the page
-proto/<slug>/<slug>.js     one component, React-shaped
-proto/<slug>/README.md     the idea in one line + what to try
+src/proto/<slug>/index.html    the page
+src/proto/<slug>/<slug>.js     one component, React-shaped
+src/proto/<slug>/README.md     the idea in one line + what to try
 ```
 
 **No `.css` file.** Styling is Tailwind utility classes in the JS template — `standards.json` → `no-new-css-files`, and it's what makes the component a mechanical React port later.
 
-`proto/` is inside the glob, so Vite picks the page up automatically and it ships with a build. That is intentional: a prototype you can send someone is worth more than one you can describe. It also means **prototypes reach production if you merge them** — `/promote` exists so that's a decision, not an accident.
+`src/proto/` is inside the glob, so Vite picks the page up automatically and it ships with a build. That is intentional: a prototype you can send someone is worth more than one you can describe. It also means **prototypes reach production if you merge them** — `/promote` exists so that's a decision, not an accident.
 
 ## 3. The component shape — React-shaped on purpose
 
 `standards.json` → `react-shaped`. Props in, markup out, no module-scope side effects, no globals, and **setup returns its own cleanup**:
 
 ```js
-// proto/<slug>/<slug>.js
+// src/proto/<slug>/<slug>.js
 export function createThing(host, { speed = 1, accent = "text-accent" } = {}) {
   const el = document.createElement("div");
   el.className = `${accent} font-mono text-body`; // tokens via utilities
@@ -80,4 +80,4 @@ When it has earned a place in the codebase, that's `/promote <slug>` — but say
 
 ## Keep out of scope
 
-Don't touch existing pages, don't extract anything into `shared/`, don't add dependencies, don't write tests. A prototype that reaches into the rest of the site stops being disposable, and disposability is the whole point.
+Don't touch existing pages, don't extract anything into `src/shared/`, don't add dependencies, don't write tests. A prototype that reaches into the rest of the site stops being disposable, and disposability is the whole point.

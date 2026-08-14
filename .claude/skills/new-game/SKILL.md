@@ -5,7 +5,7 @@ description: Scaffold a new arcade game with the canvas contract satisfied by co
 
 # /new-game
 
-Usage: `/new-game <name>` — creates `arcade/<name>/index.html` and `arcade/<name>/<name>.js`
+Usage: `/new-game <name>` — creates `src/arcade/<name>/index.html` and `src/arcade/<name>/<name>.js`
 
 Everything in `/new-page` applies. This adds the game layer.
 
@@ -56,7 +56,7 @@ One-time actions are gated by flags: `gameOver`, `scoreSubmitted`, `landed`. Exp
 import { submitScoreOnGameOver, fetchGlobalBest } from "../shared/score-submit.js";
 ```
 
-`submitScoreOnGameOver(options)` handles the confirm/prompt flow and the push. `fetchGlobalBest(gameKey)` returns the top score or `0`. `arcade/shared/firebase-config.js` is **generated in CI** from repo variables — don't edit it, and don't add a second config.
+`submitScoreOnGameOver(options)` handles the confirm/prompt flow and the push. `fetchGlobalBest(gameKey)` returns the top score or `0`. `src/arcade/shared/firebase-config.js` is **generated in CI** from repo variables — don't edit it, and don't add a second config.
 
 ## Theming and HUD
 
@@ -78,7 +78,7 @@ Mouse **and** touch, both through `screenToWorld`. Listeners `{ passive: false }
 
 ## Register it in the lobby
 
-`arcade/index.html` holds the planet cards. Add a `.planet-card live` with `data-planet="<planet>"`, and check `arcade/arcade.js`'s `planetMap` for the key spelling.
+`src/arcade/index.html` holds the planet cards. Add a `.planet-card live` with `data-planet="<planet>"`, and check `src/arcade/arcade.js`'s `planetMap` for the key spelling.
 
 **The known trap:** the HTML once said `data-planet="neptune"` while `planetMap` had `neptun` — Danish against English. `planetMap["neptune"]` was `undefined`, so `initCardPlanet` returned early and that card silently never got its planet. PR #43 root-caused it. Check both spellings match before you finish.
 

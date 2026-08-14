@@ -17,7 +17,7 @@ But the inverse error is worse. **Some duplication here is correct, and reportin
 
 ## Duplication that must be marked `keep`
 
-**Per-page back-pill CSS** — `index.css`, `about-me/about-me.css`, `space-bar/space-bar.css`, `arcade/arcade.css`. ADR-002. The shared `.pill` in `tailwind.css` is load-bearing for every in-game canvas HUD, `tailwind.css` loads last so it wins on equal specificity, and `.topbar { pointer-events: none }` already made the About-me back arrow unclickable once. PR #53 confirmed this duplication as intentional. Mark `keep`, cite the reason.
+**Per-page back-pill CSS** — `src/index.css`, `src/about-me/about-me.css`, `src/space-bar/space-bar.css`, `src/arcade/arcade.css`. ADR-002. The shared `.pill` in `tailwind.css` is load-bearing for every in-game canvas HUD, `tailwind.css` loads last so it wins on equal specificity, and `.topbar { pointer-events: none }` already made the About-me back arrow unclickable once. PR #53 confirmed this duplication as intentional. Mark `keep`, cite the reason.
 
 **The scoreboard palette** — `--color-scoreboard-*` is a deliberate documented drift, not a copy to merge.
 
@@ -25,12 +25,12 @@ But the inverse error is worse. **Some duplication here is correct, and reportin
 
 ## How to sweep
 
-Work over `*.js`, `*.ts`, `*.css` and `*.html`, ignoring `node_modules/`, `dist/`, `public/`.
+Work over `*.js`, `*.ts`, `*.css` and `*.html`, ignoring `node_modules/`, `dist/`, `src/public/`.
 
 - **Function-level.** Same name in multiple files (`drawPlanet`, `drawStars`, `resize`, `screenToWorld`, `mulberry32`, `rand`, `easeOutCubic`). Read each body and describe _how they differ_ — that's the part that decides the verdict.
 - **CSS rule-level.** The same selector or near-identical declaration block across stylesheets.
 - **Markup-level.** Repeated blocks across pages — the `<head>` block is duplicated 14 times, the back-pill nav several times.
-- **Inline scripts.** `scoreboard/index.html:43-87` holds a starfield IIFE inline, the only one in the repo — easy to miss with a `.js`-only sweep.
+- **Inline scripts.** `src/scoreboard/index.html:43-87` holds a starfield IIFE inline, the only one in the repo — easy to miss with a `.js`-only sweep.
 - **Constant-level.** The same magic numbers repeated: DPR cap, `dt` clamp, parallax factors, viewport breakpoints.
 
 ## Rank by divergence risk, not copy count
@@ -49,15 +49,15 @@ Three copies of a pure drawing routine that will never need to differ is a stron
 redundancy-scout — 6 clusters
 
 1. drawPlanet — 3 copies — EXTRACT
-   script.js:197                  8 planets, ring/bands/earth flags, vmin radius
-   arcade/arcade.js:83            card-sized, no rings
-   arcade/shared/starfield.js:55  the most general — this is the seed
+   src/script.js:197              8 planets, ring/bands/earth flags, vmin radius
+   src/arcade/arcade.js:83        card-sized, no rings
+   src/arcade/shared/starfield.js:55  the most general — this is the seed
    differences   radius source and which features are drawn; all three share
                  the same gradient-stop structure
-   target        shared/space/draw.js — drawPlanet(ctx, p, x, y, r, opts)
+   target        src/shared/space/draw.js — drawPlanet(ctx, p, x, y, r, opts)
                  variants as options, NOT boolean flags
    risk          low. Pure drawing, no shared CSS, no seeded randomness.
-   note          arcade/shared/ is arcade-scoped; site-wide code belongs in shared/
+   note          src/arcade/shared/ is arcade-scoped; site-wide code belongs in src/shared/
 
 2. <head> block — 14 copies — EXTRACT
    every page
@@ -76,7 +76,7 @@ End with one line: which cluster you'd take first and why.
 
 ## Boundaries
 
-- Never edit, never create a `shared/` module, never migrate a call site. Report and stop.
-- Don't propose extracting into `arcade/shared/` for anything used outside the arcade.
+- Never edit, never create a `src/shared/` module, never migrate a call site. Report and stop.
+- Don't propose extracting into `src/arcade/shared/` for anything used outside the arcade.
 - Don't count near-misses as copies without reading them. Two functions named `resize` that do different things are not duplication.
 - If a cluster is genuinely ambiguous, say so and give the human the trade-off rather than picking for them.

@@ -28,7 +28,7 @@ envs --verify preview/foo
   pages        13/13 reachable
   assets       41 requests, all resolve under the prefix
   ESCAPES      2 root-absolute paths would leave this environment:
-                 script.js  link: "/arcade/orbit-runner"  → production
+                 src/script.js  link: "/arcade/orbit-runner"  → production
   verdict      SERVES, but canvas planet links escape to production
 ```
 

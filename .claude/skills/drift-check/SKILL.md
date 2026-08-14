@@ -23,7 +23,7 @@ Walk `CLAUDE.md` and treat every factual assertion as a testable claim. Verify a
 - Do all publishing workflows still share `concurrency: gh-pages-write` with `cancel-in-progress: false` and `keep_files: true`?
 - Is the `FIREBASE_*` validation list still seven keys, and is `FIREBASE_MEASUREMENT_ID` still generated-but-unvalidated?
 
-**File and line references.** Every `file:line` citation in `CLAUDE.md`, `DECISIONS.md`, `ANALYSIS.md` and `standards.json`. Do the files exist, and does the cited line still contain what the doc says it does? Line numbers rot fastest — `script.js:52-125`, `arcade/arcade.js:83`, `index.css:104`, `scoreboard/index.html:43-87`.
+**File and line references.** Every `file:line` citation in `CLAUDE.md`, `DECISIONS.md`, `ANALYSIS.md` and `standards.json`. Do the files exist, and does the cited line still contain what the doc says it does? Line numbers rot fastest — `src/script.js:52-125`, `src/arcade/arcade.js:83`, `src/index.css:104`, `src/scoreboard/index.html:43-87`.
 
 **Config coherence.**
 
@@ -52,11 +52,11 @@ CLAUDE.md:214  known issue 2 says "eight stale previews are up now"
                → recount: 5. Number is stale.
                evidence: git ls-tree -d origin/gh-pages preview/
 
-ANALYSIS.md:88 cites script.js:197 for drawPlanet
-               → drawPlanet is now at script.js:203 (file grew by 6 lines above it)
+ANALYSIS.md:88 cites src/script.js:197 for drawPlanet
+               → drawPlanet is now at src/script.js:203 (file grew by 6 lines above it)
 
 standards.json rule-of-three.knownClusters
-               → back-pill is now ×5; space-bar/space-bar.css picked up a second
+               → back-pill is now ×5; src/space-bar/space-bar.css picked up a second
                  definition in <commit>. ADR-008 count is out of date.
 ```
 

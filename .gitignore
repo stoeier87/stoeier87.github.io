@@ -1,4 +1,4 @@
-scoreboard/firebase-config.js
+src/scoreboard/firebase-config.js
 
 # Node.js
 node_modules/

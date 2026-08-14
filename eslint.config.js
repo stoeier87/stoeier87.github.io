@@ -143,10 +143,15 @@ export default [
     ignores: [
       "dist/**",
       "node_modules/**",
-      "public/**",
+      "src/public/**",
       ".vite/**",
+      // A git worktree holds a FULL second copy of the repo. ESLint, unlike
+      // glob, happily descends into dot-directories, so without this every
+      // worktree gets linted twice over and reports errors against files that
+      // are not the ones you are editing. Same failure class as ADR-014.
+      ".claude/worktrees/**",
       // Generated in CI from repo variables — never hand-edited, never linted.
-      "arcade/shared/firebase-config.js",
+      "src/arcade/shared/firebase-config.js",
     ],
   },
 
@@ -183,8 +188,8 @@ export default [
    */
   {
     files: [
-      "shared/**/*.{js,mjs,ts}",
-      "proto/**/*.{js,mjs,ts}",
+      "src/shared/**/*.{js,mjs,ts}",
+      "src/proto/**/*.{js,mjs,ts}",
       "scripts/**/*.mjs",
       ".claude/hooks/*.mjs",
       "eslint.config.js",
@@ -206,7 +211,7 @@ export default [
    * meaningless on day one.
    */
   {
-    files: ["shared/**/*.{js,mjs,ts}", "proto/**/*.{js,mjs,ts}"],
+    files: ["src/shared/**/*.{js,mjs,ts}", "src/proto/**/*.{js,mjs,ts}"],
     rules: {
       "no-restricted-syntax": [
         "error",

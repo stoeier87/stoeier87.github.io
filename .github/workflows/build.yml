@@ -55,7 +55,7 @@ jobs:
           FIREBASE_MEASUREMENT_ID: ${{ vars.FIREBASE_MEASUREMENT_ID }}
           FIREBASE_DATABASE_URL: ${{ vars.FIREBASE_DATABASE_URL }}
         run: |
-          cat <<EOF > arcade/shared/firebase-config.js
+          cat <<EOF > src/arcade/shared/firebase-config.js
           export const ARCADE_FIREBASE_CONFIG = {
             apiKey: "${FIREBASE_API_KEY}",
             authDomain: "${FIREBASE_AUTH_DOMAIN}",

@@ -17,7 +17,7 @@ Then read the target: a diff (`git diff main...HEAD`), specific files, or a page
 
 Walk every rule in `standards.json`. The ones that actually get violated:
 
-**`relative-paths`** — any root-absolute `href`, `src`, import, or `location.href`. Hook-blocked at write time, but check anyway: pre-existing code was never gated. The standing violation is `script.js:52-125`.
+**`relative-paths`** — any root-absolute `href`, `src`, import, or `location.href`. Hook-blocked at write time, but check anyway: pre-existing code was never gated. The standing violation is `src/script.js:52-125`.
 
 **`head-order`** — `tailwind.css` must be the last stylesheet. It carries the shared component layer and loading last is what makes it win on equal specificity. If a page loads it earlier, say what breaks.
 
@@ -33,7 +33,7 @@ Walk every rule in `standards.json`. The ones that actually get violated:
 
 **`no-new-css-files`** — a new page-local `.css` file. The 14 existing ones are frozen, not a precedent. The one allowed exception is a game's two `--game-accent` custom properties.
 
-**`react-shaped`** (new code in `shared/` and `proto/`) — props in, markup out, no module-scope side effects, no globals, and **cleanup actually returned and actually called**. A `requestAnimationFrame` or listener with no matching teardown is a finding.
+**`react-shaped`** (new code in `src/shared/` and `src/proto/`) — props in, markup out, no module-scope side effects, no globals, and **cleanup actually returned and actually called**. A `requestAnimationFrame` or listener with no matching teardown is a finding.
 
 **`page-exists-when-built`** — a new or moved HTML file that hasn't been confirmed in `dist/`.
 
@@ -44,17 +44,17 @@ Also flag, as a lower-severity note: seeded randomness replaced with `Math.rando
 Findings only, most severe first. Nothing else — no summary of what the code does well, no restating the diff.
 
 ```
-FATAL  space-bar/space-bar.js:214   reduced-motion-only-fallback
+FATAL  src/space-bar/space-bar.js:214   reduced-motion-only-fallback
   Motion gated on `if (innerWidth < 760) return;`
   This is the PR #53 incident pattern. Below 760px the star map renders
   static with no fallback composition. Gate on prefers-reduced-motion and
   provide a finished static state.
 
-HIGH   proto/shout/index.html:9     head-order
+HIGH   src/proto/shout/index.html:9     head-order
   tailwind.css loads before shout.css, so the shared `.pill` 10px radius
   overrides the page's rounded-pill. Move tailwind.css last.
 
-MED    proto/shout/shout.js:8       tokens-sole-sourced
+MED    src/proto/shout/shout.js:8       tokens-sole-sourced
   Hardcoded `#e03a2f`. Use the accent token — cls.textColor.accent.
 ```
 

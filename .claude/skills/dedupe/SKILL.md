@@ -19,18 +19,18 @@ The report ranks clusters by `occurrences × risk-of-divergence ÷ extraction-ri
 
 ### Two things the report must get right
 
-**Some duplication is correct, and calling it a defect is a real error.** The per-page back-pill CSS in `index.css`, `about-me/about-me.css`, `space-bar/space-bar.css` and `arcade/arcade.css` is **deliberate** — ADR-002. The shared `.pill` in `tailwind.css` is load-bearing for every in-game canvas HUD, `tailwind.css` loads last so it wins on equal specificity, and `.topbar { pointer-events: none }` already broke the About-me back arrow once. PR #53 confirmed the per-page duplication as intentional. Mark it `keep`, with the reason.
+**Some duplication is correct, and calling it a defect is a real error.** The per-page back-pill CSS in `src/index.css`, `src/about-me/about-me.css`, `src/space-bar/space-bar.css` and `src/arcade/arcade.css` is **deliberate** — ADR-002. The shared `.pill` in `tailwind.css` is load-bearing for every in-game canvas HUD, `tailwind.css` loads last so it wins on equal specificity, and `.topbar { pointer-events: none }` already broke the About-me back arrow once. PR #53 confirmed the per-page duplication as intentional. Mark it `keep`, with the reason.
 
 **Divergence risk is the real ranking signal, not copy count.** Three copies of a pure drawing routine that will never need to differ is a genuine extraction candidate. Three copies that each have hand-tuned visual differences are three components that happen to look similar, and merging them produces a function with five boolean flags — worse than the duplication.
 
 ### Standing clusters
 
-| Cluster        | Copies | Verdict                                                                                                                     |
-| -------------- | ------ | --------------------------------------------------------------------------------------------------------------------------- |
-| `drawPlanet`   | 3      | extract — `script.js:197`, `arcade/arcade.js:83`, `arcade/shared/starfield.js:55`. `arcade/shared/starfield.js` is the seed |
-| head block     | 14     | extract — build-time partial, zero runtime cost                                                                             |
-| starfield init | 5      | extract — incl. one inlined in `scoreboard/index.html:43-87`                                                                |
-| back-pill CSS  | 4      | **keep** — ADR-002                                                                                                          |
+| Cluster        | Copies | Verdict                                                                                                                                     |
+| -------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `drawPlanet`   | 3      | extract — `src/script.js:197`, `src/arcade/arcade.js:83`, `src/arcade/shared/starfield.js:55`. `src/arcade/shared/starfield.js` is the seed |
+| head block     | 14     | extract — build-time partial, zero runtime cost                                                                                             |
+| starfield init | 5      | extract — incl. one inlined in `src/scoreboard/index.html:43-87`                                                                            |
+| back-pill CSS  | 4      | **keep** — ADR-002                                                                                                                          |
 
 ---
 
@@ -38,7 +38,7 @@ The report ranks clusters by `occurrences × risk-of-divergence ÷ extraction-ri
 
 **Only after a human names a cluster to extract.** Never infer approval from a previous tick.
 
-**1. Create the shared module.** Site-wide code goes in `shared/` at the repo root, not `arcade/shared/` — that directory is arcade-scoped. Written React-shaped: props in, markup out, no module-scope side effects, cleanup returned (`standards.json` → `react-shaped`).
+**1. Create the shared module.** Site-wide code goes in `src/shared/`, not `src/arcade/shared/` — that directory is arcade-scoped. Written React-shaped: props in, markup out, no module-scope side effects, cleanup returned (`standards.json` → `react-shaped`).
 
 Handle variation with **options, not flags**. `drawPlanet(ctx, p, x, y, r, { ring, bands, earth })` is fine because those are data-driven features the callers already carry. Five booleans that each switch a code path is not.
 
@@ -53,7 +53,7 @@ Handle variation with **options, not flags**. `drawPlanet(ctx, p, x, y, r, { rin
 - **Seeded randomness.** Skies are identical on every visit on purpose. If a copy uses `rand(seed)` with a hash PRNG and another uses `mulberry32(9137)`, they produce _different_ skies from the same input. Extracting naively changes what every page looks like. Preserve each call site's seed and generator, or the "pixel-identical" check will fail and it will be right to.
 - **`tailwind.css`'s component layer.** Eight games depend on `.pill`, `.topbar`, `.badge`, `.stat`, `.gameover`. Migrate additively — add a new class, move one page, verify, repeat. **Never edit a shared rule and hope.**
 - **The scroll pipeline in `script.js` is explicitly out of scope** unless asked. It's the most fragile system here, PR #53 rescued it twice, and it's intentionally self-contained. It's the last thing to touch, not the first.
-- **`arcade/shared/backgrounds-iss.js` uses deterministic crater seeds.** Same hazard as above.
+- **`src/arcade/shared/backgrounds-iss.js` uses deterministic crater seeds.** Same hazard as above.
 
 ## As a loop
 
