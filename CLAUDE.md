@@ -32,6 +32,8 @@ All three publishing workflows share `concurrency: gh-pages-write, cancel-in-pro
 
 `build.yml` is reusable (`workflow_call`), hard-fails if any of seven `FIREBASE_*` repo _variables_ is empty, and regenerates `arcade/shared/firebase-config.js`. `FIREBASE_MEASUREMENT_ID` is written but not validated.
 
+**`stage` is open, `main` is not.** Anyone can push straight to `stage` — no approval, no gate, that's deliberate. A PR into `main` is a different matter: `pr-source-guard.yml` fails the PR outright unless its source branch is exactly `stage`, and branch protection on `main` requires one approval — which GitHub already refuses to let the PR's own author give, so it's structurally a second person's sign-off. `stage → main` is the one hop in this repo that's actually gated.
+
 ---
 
 ## 1b. Who does what
