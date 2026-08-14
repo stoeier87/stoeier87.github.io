@@ -93,6 +93,9 @@ a { color: inherit; text-decoration: none; }
   display: flex; align-items: center; justify-content: center;
   padding: 6.5rem 1.5rem 2rem;
 }
+/* During the question flow the screen anchors to the top instead of
+   centring, so the header never jumps when content height changes. */
+.stage.q-mode { align-items: flex-start; }
 
 .q-screen {
   width: min(560px, 100%);
@@ -141,12 +144,12 @@ a { color: inherit; text-decoration: none; }
 }
 .intro-start:hover, .intro-start:focus-visible { border-color: var(--red); background: rgba(224, 58, 47, 0.12); }
 
-/* Persistent reminder above the question flow, in the dimmed style. */
+/* Persistent reminder closing the question flow, in the dimmed style. */
 .q-privacy {
   font-size: 0.66rem;
   letter-spacing: 0.05em;
   color: var(--ink-dim);
-  margin-bottom: -0.6rem;
+  margin-top: -0.4rem;
 }
 
 /* The round line is a small HUD chip sitting directly over the title
@@ -253,6 +256,8 @@ a { color: inherit; text-decoration: none; }
   color: var(--ink-body);
   font-size: 0.92rem;
   line-height: 1.6;
+  /* two lines reserved, so the options never shift when a prompt wraps */
+  min-height: 2.95em;
 }
 
 .q-options {
@@ -472,6 +477,8 @@ a { color: inherit; text-decoration: none; }
 
 @media (max-width: 640px) {
   .stage { padding: 5.5rem 1.25rem 2rem; }
+  /* tighter top on phones so title and first options land in view */
+  .stage.q-mode { padding-top: 4.5rem; }
   .matrix-block { width: min(280px, 82vw); }
 }
 

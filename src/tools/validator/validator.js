@@ -269,6 +269,7 @@ function renderIntro() {
   });
   screen.appendChild(start);
 
+  stage.classList.remove("q-mode");
   stage.innerHTML = "";
   stage.appendChild(screen);
 }
@@ -282,11 +283,6 @@ function renderQuestion(i) {
 
   const screen = document.createElement("div");
   screen.className = "q-screen";
-
-  const privacy = document.createElement("p");
-  privacy.className = "q-privacy";
-  privacy.textContent = "Nothing is stored. Nothing is sent anywhere.";
-  screen.appendChild(privacy);
 
   // Progress is a little rocket riding a segmented track — one cell
   // per question — with the original counter line kept beneath it.
@@ -389,8 +385,18 @@ function renderQuestion(i) {
   nav.appendChild(prev);
   screen.appendChild(nav);
 
+  // The privacy line closes the form rather than opening it.
+  const privacy = document.createElement("p");
+  privacy.className = "q-privacy";
+  privacy.textContent = "Nothing is stored. Nothing is sent anywhere.";
+  screen.appendChild(privacy);
+
+  stage.classList.add("q-mode");
   stage.innerHTML = "";
   stage.appendChild(screen);
+
+  // Every question starts at the top of the page, header in view.
+  window.scrollTo(0, 0);
 
   // Block hover events briefly so a stationary cursor can't make a freshly
   // created option appear pre-selected on the new question.
@@ -604,6 +610,7 @@ function renderResults() {
   });
   screen.appendChild(reset);
 
+  stage.classList.remove("q-mode");
   stage.innerHTML = "";
   stage.appendChild(screen);
 
