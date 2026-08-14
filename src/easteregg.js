@@ -92,7 +92,7 @@ const CSS = `
 
 .egg-press2plus .egg-arms-normal { opacity: 0; transition: opacity 0.25s ease; }
 .egg-press2plus .egg-arms-folded { opacity: 1; }
-.egg-antenna { transform-origin: 33px 19px; transition: transform 0.4s ease; }
+.egg-antenna { transform-origin: 60px 13px; transition: transform 0.4s ease; }
 .egg-press2plus .egg-antenna { transform: rotate(15deg); }
 .egg-idle.egg-press2plus .egg-alien-float { animation-duration: 6.5s; }
 
@@ -118,6 +118,8 @@ const CSS = `
 .egg-console { display: block; width: 86px; height: auto; overflow: visible; }
 .egg-console .line { fill: none; stroke: var(--color-ink); stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
 .egg-console .cable { stroke: rgba(255, 255, 255, 0.55); stroke-width: 1.1; }
+.egg-hazard { fill: none; stroke: var(--color-red); stroke-width: 1.6; opacity: 0.55; }
+.egg-ind { fill: var(--color-red); opacity: 0.7; filter: drop-shadow(0 0 2px rgba(224, 58, 47, 0.8)); }
 .egg-btn-cap {
   fill: var(--color-red);
   filter: drop-shadow(0 0 6px rgba(224, 58, 47, 0.7));
@@ -135,10 +137,10 @@ const CSS = `
 /* The real button sits invisibly over the drawn cap. */
 .egg-button {
   position: absolute;
-  top: 2px;
-  left: 50%;
+  top: 10px;
+  left: 47%;
   transform: translateX(-50%);
-  width: 30px;
+  width: 34px;
   height: 30px;
   border-radius: 50%;
   background: transparent;
@@ -317,71 +319,85 @@ const CSS = `
 `;
 
 const ALIEN_SVG = `
-<svg class="egg-alien" viewBox="0 0 100 130" aria-hidden="true">
+<svg class="egg-alien" viewBox="0 0 100 132" aria-hidden="true">
   <defs>
-    <clipPath id="eggDomeClip">
-      <path d="M 30 46 L 30 30 Q 30 10 50 10 Q 70 10 70 30 L 70 46 Z" />
+    <clipPath id="eggHeadClip">
+      <path d="M 50 12 C 70 12 82 26 81 42 C 80 58 66 72 50 78 C 34 72 20 58 19 42 C 18 26 30 12 50 12 Z" />
     </clipPath>
   </defs>
 
   <!-- reaching arm (viewer's left, toward the console) -->
   <g class="egg-arms-normal">
-    <path class="line thin" d="M 36 68 C 24 74, 14 82, 8 92" />
-    <path class="line thin" d="M 8 92 L 3.5 95.5 M 8 92 L 7.5 98 M 8 92 L 12 97" />
-    <path class="line thin" d="M 64 68 C 70 80, 68 94, 62 102" />
+    <path class="line thin" d="M 38 90 C 24 94, 12 98, 5 106" />
+    <path class="line thin" d="M 5 106 L 0.5 109 M 5 106 L 4.5 112 M 5 106 L 9 111" />
+    <path class="line thin" d="M 62 90 C 70 100, 68 112, 60 118" />
   </g>
   <!-- folded arms, hidden until press 2 -->
   <g class="egg-arms-folded">
-    <path class="line thin" d="M 34 72 C 42 82, 54 82, 63 74" />
-    <path class="line thin" d="M 66 72 C 58 84, 46 84, 37 76" />
+    <path class="line thin" d="M 36 94 C 44 104, 56 104, 65 96" />
+    <path class="line thin" d="M 64 96 C 56 106, 46 106, 38 98" />
   </g>
 
   <!-- backpack with exhaust nozzles -->
   <g class="egg-pack">
-    <path class="line" d="M 68 72 L 77 74 L 76 92 L 68 90" />
-    <path class="line thin" d="M 70.5 92 L 70.5 97 M 74.5 92.4 L 74.5 97" />
-    <circle class="egg-particle p1" cx="70.5" cy="100" r="1" />
-    <circle class="egg-particle p2" cx="74.5" cy="101" r="0.9" />
-    <circle class="egg-particle p3" cx="72.5" cy="99" r="0.8" />
+    <path class="line" d="M 66 94 L 75 96 L 74 112 L 66 110" />
+    <path class="line thin" d="M 68.5 112 L 68.5 117 M 72.5 112.4 L 72.5 117" />
+    <circle class="egg-particle p1" cx="68.5" cy="120" r="1" />
+    <circle class="egg-particle p2" cx="72.5" cy="121" r="0.9" />
+    <circle class="egg-particle p3" cx="70.5" cy="119" r="0.8" />
   </g>
 
-  <!-- torso: sloped shoulders, ribbed chest, tapering to a point -->
-  <path class="line" d="M 40 62 L 32 70 L 35 96 L 50 118 L 65 96 L 68 70 L 60 62" />
-  <path class="line thin" d="M 44 74 L 44.5 90 M 50 75 L 50 92 M 56 74 L 55.5 90" />
+  <!-- neck and slender torso tapering to a floating point -->
+  <path class="line thin" d="M 46 78 L 46 84 M 54 78 L 54 84" />
+  <path class="line" d="M 42 84 L 34 92 L 37 106 L 50 126 L 63 106 L 66 92 L 58 84" />
+  <path class="line thin" d="M 44 94 L 44.5 106 M 50 95 L 50 110 M 56 94 L 55.5 106" />
 
-  <!-- head: wide top, hard corners, narrow jaw -->
-  <path class="line" d="M 35 26 L 65 26 L 61 52 L 55 60 L 45 60 L 39 52 Z" />
+  <!-- the head: big teardrop cranium, pointed chin -->
+  <path class="line" d="M 50 12 C 70 12 82 26 81 42 C 80 58 66 72 50 78 C 34 72 20 58 19 42 C 18 26 30 12 50 12 Z" />
 
-  <!-- eyes: narrow, angled down toward centre -->
+  <!-- huge slanted almond eyes, unimpressed by default -->
   <g class="egg-eyes">
-    <polygon points="38.5,37 46,40.5 46,43.5 38.5,39.5" />
-    <polygon points="61.5,37 54,40.5 54,43.5 61.5,39.5" />
+    <path d="M 25 36 C 30 30 40 32 44 39 C 43 46 32 48 27 44 C 24 42 23 39 25 36 Z" />
+    <path d="M 75 36 C 70 30 60 32 56 39 C 57 46 68 48 73 44 C 76 42 77 39 75 36 Z" />
   </g>
 
-  <!-- helmet dome and inner highlight -->
-  <path class="line" d="M 30 46 L 30 30 Q 30 10 50 10 Q 70 10 70 30 L 70 46" />
-  <path class="line thin egg-glint" d="M 36 24 Q 37 15 45 12.5" />
-  <g clip-path="url(#eggDomeClip)">
-    <path class="line thin egg-sweep" d="M 34 40 Q 34 16 52 11" />
+  <!-- nostrils and a flat, unimpressed mouth -->
+  <circle class="line thin" cx="47" cy="60" r="0.8" />
+  <circle class="line thin" cx="53" cy="60" r="0.8" />
+  <path class="line thin" d="M 44 68 L 56 68" />
+
+  <!-- cranium highlight plus the travelling sweep -->
+  <path class="line thin egg-glint" d="M 30 22 Q 38 13 48 12" />
+  <g clip-path="url(#eggHeadClip)">
+    <path class="line thin egg-sweep" d="M 25 36 Q 28 15 46 12" />
   </g>
 
   <!-- antenna, bent once, beacon tip -->
   <g class="egg-antenna">
-    <path class="line thin" d="M 33 19 L 27 10 L 31 4" />
-    <circle class="egg-antenna-tip" cx="31" cy="3" r="2.2" />
+    <path class="line thin" d="M 60 13 L 66 5 L 62 1" />
+    <circle class="egg-antenna-tip" cx="61.5" cy="1" r="2.2" />
   </g>
 </svg>`;
 
 const CONSOLE_SVG = `
-<svg class="egg-console" viewBox="0 0 86 96" aria-hidden="true">
-  <!-- top face in perspective, then front face -->
-  <path class="line" d="M 20 24 Q 22 21 26 21 L 60 21 Q 64 21 66 24 L 76 36 Q 77 38 74 38 L 12 38 Q 9 38 10 36 Z" />
-  <path class="line" d="M 10 38 L 10 48 Q 10 51 13 51 L 73 51 Q 76 51 76 48 L 76 38" />
-  <!-- red button cap -->
-  <ellipse class="egg-btn-cap" cx="43" cy="24" rx="11" ry="8" />
-  <ellipse class="line thin" cx="43" cy="27" rx="11" ry="8" fill="none" />
+<svg class="egg-console" viewBox="0 0 96 100" aria-hidden="true">
+  <!-- pedestal: top face in perspective, then front face -->
+  <path class="line" d="M 22 30 Q 24 26 28 26 L 64 26 Q 68 26 70 30 L 82 44 Q 84 47 80 47 L 12 47 Q 8 47 10 44 Z" />
+  <path class="line" d="M 10 47 L 10 60 Q 10 63 13 63 L 79 63 Q 82 63 82 60 L 82 47" />
+  <!-- hazard chevrons across the front face -->
+  <path class="egg-hazard" d="M 17 62 L 23 48 M 27 62 L 33 48 M 37 62 L 43 48" />
+  <!-- indicator lights -->
+  <circle class="egg-ind" cx="62" cy="55" r="1.8" />
+  <circle class="line thin" cx="70" cy="55" r="1.8" />
+  <!-- flipped-open safety cover, hinged at the dome's right edge -->
+  <ellipse class="line thin" cx="66" cy="14" rx="8" ry="12" transform="rotate(32 66 14)" />
+  <path class="line thin" d="M 58 22 L 61 17" />
+  <!-- the big red dome itself -->
+  <ellipse class="line thin" cx="46" cy="30" rx="13" ry="9.5" fill="none" />
+  <ellipse class="egg-btn-cap" cx="46" cy="26" rx="13" ry="9.5" />
+  <path class="line thin" d="M 38 22 Q 42 18 48 18" />
   <!-- cable running down and off the layer -->
-  <path class="cable" fill="none" d="M 40 51 C 36 66, 50 76, 45 96" />
+  <path class="cable" fill="none" d="M 42 63 C 38 76, 52 84, 46 100" />
 </svg>`;
 
 function buildLayer() {
@@ -415,6 +431,7 @@ function initEasterEgg() {
 
   /* Visible only within 200px of the very bottom of the page. */
   let visible = false;
+  let presses = 0;
   function checkBottom() {
     const doc = document.documentElement;
     const fromBottom = doc.scrollHeight - window.innerHeight - window.scrollY;
@@ -424,10 +441,22 @@ function initEasterEgg() {
     layer.classList.toggle("egg-in", visible);
     button.tabIndex = visible ? 0 : -1;
     if (!visible) hideBubble(true);
+    if (visible && !introShown && presses === 0) {
+      introShown = true;
+      setTimeout(() => {
+        if (visible && presses === 0) {
+          typeBubble(INTRO);
+          hideTimer = setTimeout(() => hideBubble(false), 4500);
+        }
+      }, 500);
+    }
   }
   window.addEventListener("scroll", checkBottom, { passive: true });
   window.addEventListener("resize", checkBottom, { passive: true });
   checkBottom();
+
+  const INTRO = "Whatever you do, do not click the button.";
+  let introShown = false;
 
   /* Typewriter bubble, same technique as the space-bar bartender. */
   let typeTimer = null;
@@ -451,17 +480,16 @@ function initEasterEgg() {
   }
 
   scene.addEventListener("mouseenter", () => {
-    if (visible && presses === 0) typeBubble("Don't.");
+    if (visible && presses === 0) typeBubble(INTRO);
   });
   scene.addEventListener("mouseleave", () => {
     if (presses === 0) hideTimer = setTimeout(() => hideBubble(false), 600);
   });
   button.addEventListener("focus", () => {
-    if (visible && presses === 0) typeBubble("Don't.");
+    if (visible && presses === 0) typeBubble(INTRO);
   });
 
   /* ── Escalation: four presses, each registering immediately ── */
-  let presses = 0;
   let recoilTimer = null;
   let brightTimer = null;
 

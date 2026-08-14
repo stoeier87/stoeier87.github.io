@@ -655,14 +655,6 @@ export const DIAGRAMS = {
       svg.appendChild(curveLine);
       svg.appendChild(svgText(142, 116, "middle", "Action Line", "tool-label curve-label-action"));
 
-      // Zone labels sit well inside the chart, clear of the vertical axis.
-      const zoneA = svgText(100, 36, "middle", "Behaviour happens", "tool-label neutral curve-zone-a");
-      zoneA.style.fontSize = "7px";
-      svg.appendChild(zoneA);
-      const zoneB = svgText(33, 110, "start", "Behaviour does not happen", "tool-label neutral curve-zone-b");
-      zoneB.style.fontSize = "5.8px";
-      svg.appendChild(zoneB);
-
       // Prompt circles sit apart from the curve, upper right, clear of it.
       const promptOuter = svgEl("g", { transform: "translate(" + CURVE_PROMPT.cx + "," + CURVE_PROMPT.cy + ")" });
       const promptInner = svgEl("g", { class: "curve-prompt-circles" });
@@ -682,15 +674,13 @@ export const DIAGRAMS = {
       const hGroup = diagramEl.querySelector(".curve-hgroup");
       const curveLine = diagramEl.querySelector(".curve-line");
       const actionLabel = diagramEl.querySelector(".curve-label-action");
-      const zoneA = diagramEl.querySelector(".curve-zone-a");
-      const zoneB = diagramEl.querySelector(".curve-zone-b");
       const promptCircles = diagramEl.querySelector(".curve-prompt-circles");
       const promptLabel = diagramEl.querySelector(".curve-label-prompt");
 
       function applyFinal() {
         [vAxis, hAxis, curveLine].forEach((el) => { el.style.transition = "none"; el.style.strokeDashoffset = "0"; });
         [vGroup, hGroup].forEach((g) => { g.style.transition = "none"; g.style.opacity = "1"; });
-        [actionLabel, promptLabel, zoneA, zoneB].forEach((el) => el.classList.add("show"));
+        [actionLabel, promptLabel].forEach((el) => el.classList.add("show"));
         promptCircles.style.transition = "none"; promptCircles.style.animation = "none";
         promptCircles.style.transform = "scale(1)"; promptCircles.style.opacity = "1";
       }
@@ -721,13 +711,7 @@ export const DIAGRAMS = {
       }, curveStart));
       timers.push(setTimeout(() => actionLabel.classList.add("show"), curveEnd + 15));
 
-      const zoneStart = curveEnd + 15 + 45;
-      timers.push(setTimeout(() => {
-        zoneA.classList.add("show");
-        zoneB.classList.add("show");
-      }, zoneStart));
-
-      const pulseStart = zoneStart + 85, pulseDur = 160, pulseEnd = pulseStart + pulseDur;
+      const pulseStart = curveEnd + 145, pulseDur = 160, pulseEnd = pulseStart + pulseDur;
       timers.push(setTimeout(() => {
         promptCircles.style.animation = "pulseIn " + pulseDur + "ms cubic-bezier(0.2,0.8,0.3,1) forwards";
       }, pulseStart));
