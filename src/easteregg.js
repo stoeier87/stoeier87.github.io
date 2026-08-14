@@ -286,14 +286,7 @@ const CSS = `
 
 /* ── Small screens ─────────────────────────────────────── */
 @media (max-width: 500px) {
-  /* On phones the scene stays in the right corner but drops into the
-     footer band — viewport heights vary too much for it to fit between
-     the Spotify pill and the footer. The label moves above the console
-     so it never collides with the servicedesign.dk link. */
-  .egg-layer { right: 16px; bottom: 8px; }
-  .egg-console-wrap { flex-direction: column-reverse; }
-  .egg-label { margin-top: 0; margin-bottom: 2px; }
-  .egg-button { top: 24px; }
+  .egg-layer { right: 8px; }
   .egg-alien { height: 64px; }
   .egg-console { width: 62px; }
   .egg-label { font-size: 0.48rem; }
@@ -434,6 +427,20 @@ function initEasterEgg() {
   const button = layer.querySelector(".egg-button");
   button.tabIndex = -1;
 
+  /* The scene rides beside the name block rather than a fixed corner,
+     so it never covers the nav pills, the contact pills or the footer.
+     Vertically centred on the name, clamped to the viewport. */
+  function placeScene() {
+    const name = document.getElementById("stageName");
+    if (!name) return;
+    const nameRect = name.getBoundingClientRect();
+    const sceneH = scene.offsetHeight || 120;
+    let top = nameRect.top + nameRect.height / 2 - sceneH / 2;
+    top = Math.max(8, Math.min(top, window.innerHeight - sceneH - 8));
+    layer.style.top = top.toFixed(0) + "px";
+    layer.style.bottom = "auto";
+  }
+
   /* Visible only within 200px of the very bottom of the page. */
   let visible = false;
   let presses = 0;
@@ -441,7 +448,9 @@ function initEasterEgg() {
     const doc = document.documentElement;
     const fromBottom = doc.scrollHeight - window.innerHeight - window.scrollY;
     const nowVisible = fromBottom <= 200;
+    if (nowVisible && visible) placeScene();
     if (nowVisible === visible) return;
+    if (nowVisible) placeScene();
     visible = nowVisible;
     layer.classList.toggle("egg-in", visible);
     button.tabIndex = visible ? 0 : -1;
