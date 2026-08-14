@@ -227,6 +227,7 @@ function roundFor(i) {
 let answers = new Array(QUESTIONS.length).fill(null);
 let current = 0;
 let started = false;
+let lastRocketIndex = null; // where the progress rocket last parked, so it glides
 
 const stage = $("stage");
 
@@ -287,13 +288,8 @@ function renderQuestion(i) {
   privacy.textContent = "Nothing is stored. Nothing is sent anywhere.";
   screen.appendChild(privacy);
 
-  const roundEl = document.createElement("p");
-  roundEl.className = "q-round";
-  roundEl.textContent = round.intro;
-  screen.appendChild(roundEl);
-
-  // Progress is a segmented bar — one cell per question — with the
-  // original counter line kept beneath it.
+  // Progress is a little rocket riding a segmented track — one cell
+  // per question — with the original counter line kept beneath it.
   const progressWrap = document.createElement("div");
   progressWrap.className = "q-progress-wrap";
   const bar = document.createElement("div");
@@ -305,11 +301,37 @@ function renderQuestion(i) {
     bar.appendChild(seg);
   }
   progressWrap.appendChild(bar);
+
+  const rocket = document.createElement("span");
+  rocket.className = "q-rocket";
+  rocket.setAttribute("aria-hidden", "true");
+  rocket.innerHTML =
+    '<svg viewBox="-7 -2 36 18">' +
+    '<path class="rbody" d="M 4 7 C 4 4 8 3 14 3 L 20 3 L 26 7 L 20 11 L 14 11 C 8 11 4 10 4 7 Z" />' +
+    '<path class="rbody" d="M 6 3.4 L 3 0 M 6 10.6 L 3 14" />' +
+    '<circle class="rbody" cx="13" cy="7" r="2" />' +
+    '<g class="rflame"><path d="M 3.4 7 L -4 7 M 3.4 5.4 L -1.5 4.4 M 3.4 8.6 L -1.5 9.6" /></g>' +
+    "</svg>";
+  const rocketPct = (idx) => (((idx + 0.5) / QUESTIONS.length) * 100).toFixed(2) + "%";
+  const from = lastRocketIndex === null ? i : lastRocketIndex;
+  rocket.style.left = rocketPct(from);
+  progressWrap.appendChild(rocket);
+  if (from !== i) {
+    requestAnimationFrame(() => requestAnimationFrame(() => { rocket.style.left = rocketPct(i); }));
+  }
+  lastRocketIndex = i;
+
   const progress = document.createElement("p");
   progress.className = "q-progress";
   progress.textContent = "Question " + (i + 1) + " of " + QUESTIONS.length;
   progressWrap.appendChild(progress);
   screen.appendChild(progressWrap);
+
+  // The round line sits directly over the title it labels, as an eyebrow.
+  const roundEl = document.createElement("p");
+  roundEl.className = "q-round";
+  roundEl.textContent = round.intro;
+  screen.appendChild(roundEl);
 
   const titleRow = document.createElement("div");
   titleRow.className = "q-title-row";
