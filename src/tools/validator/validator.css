@@ -239,19 +239,6 @@ a { color: inherit; text-decoration: none; }
   line-height: 1.15;
   letter-spacing: -0.01em;
 }
-.q-title::after {
-  content: "";
-  display: block;
-  width: 52px;
-  height: 3px;
-  background: var(--red);
-  margin-top: 0.55rem;
-  transform-origin: left;
-  animation: ruleIn 0.45s cubic-bezier(0.2, 0.8, 0.3, 1) 0.1s both;
-}
-@keyframes ruleIn {
-  from { transform: scaleX(0); }
-}
 .q-prompt {
   color: var(--ink-body);
   font-size: 0.92rem;
@@ -486,7 +473,6 @@ a { color: inherit; text-decoration: none; }
   .q-screen, .r-screen { animation: none; opacity: 1; transform: none; }
   .q-option { animation: none; opacity: 1; transform: none; }
   .q-seg.now { animation: none; background: var(--red); }
-  .q-title::after { animation: none; }
   .q-rocket { transition: none; }
   .q-rocket .rflame { animation: none; }
   .matrix-axes, .matrix-corner-label, .matrix-point { transition-duration: 0.01ms !important; transition-delay: 0s !important; }

@@ -328,7 +328,7 @@ function renderQuestion(i) {
   metaRow.appendChild(roundEl);
   const progress = document.createElement("p");
   progress.className = "q-progress";
-  progress.textContent = "Question " + (i + 1) + " of " + QUESTIONS.length;
+  progress.textContent = i + 1 + " of " + QUESTIONS.length;
   metaRow.appendChild(progress);
   screen.appendChild(metaRow);
 
