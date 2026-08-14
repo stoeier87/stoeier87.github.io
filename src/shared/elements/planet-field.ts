@@ -502,7 +502,7 @@ export class PlanetFieldElement extends HTMLElement {
       this.#travelIndex = -1;
       return;
     }
-    const idx = this.#planets.findIndex(p => p.name === name);
+    const idx = this.#planets.findIndex((p) => p.name === name);
     if (idx < 0) return;
     if (this.#travelIndex !== idx) {
       if (this.#travelIndex >= 0) this.#bodies[this.#travelIndex]?.setHovered(false);
@@ -761,7 +761,7 @@ export class PlanetFieldElement extends HTMLElement {
       // depthBoost animates toward its target each frame, giving the fly-toward
       // zoom on hover. Orthographic projection keeps planets perfectly circular.
       const depth = (p.depth ?? 0) + body.depthBoost;
-      const apparentR = r * ZF / (ZF - depth);
+      const apparentR = (r * ZF) / (ZF - depth);
       // Apply the camera pan scaled by this planet's own pf: planets with a
       // higher pf (feel nearer) shift more than ones with a lower pf (feel
       // farther), so the pan reads as real depth-parallax instead of one
@@ -779,7 +779,8 @@ export class PlanetFieldElement extends HTMLElement {
 
     // Slow enough to feel like approaching, fast enough to respond to quick
     // card traversal without lagging behind the pointer.
-    this.#featuredAlpha += (this.#featuredAlphaTarget - this.#featuredAlpha) * Math.min(1, dt * 2.5);
+    this.#featuredAlpha +=
+      (this.#featuredAlphaTarget - this.#featuredAlpha) * Math.min(1, dt * 2.5);
 
     if (this.#featured) {
       const r = this.#featuredAlpha * Math.min(this.#w, this.#h) * 0.16;
@@ -871,7 +872,9 @@ export class PlanetBody {
   #depthBoost = 0;
   #depthBoostTarget = 0;
   /** Exposes the live depth boost so #updatePlanets can fold it into apparentR. */
-  get depthBoost(): number { return this.#depthBoost; }
+  get depthBoost(): number {
+    return this.#depthBoost;
+  }
 
   constructor(spec: PlanetSpec, index: number, glowMap: CanvasTexture) {
     this.spec = spec;
