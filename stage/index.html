@@ -30,13 +30,23 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="./css/all.min.css" rel="stylesheet" />
-    <script type="module" crossorigin src="./assets/index-BopZWjWy.js"></script>
-    <link rel="modulepreload" crossorigin href="./assets/tailwind-5ThHHRYp.js">
-    <link rel="stylesheet" crossorigin href="./assets/tailwind-D4EgMLsp.css">
-    <link rel="stylesheet" crossorigin href="./assets/index-Ou6PN2Bp.css">
+    <script type="module" crossorigin src="./assets/index-DSj5-DcK.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/tailwind-C5m0IdXT.js">
+    <link rel="modulepreload" crossorigin href="./assets/tokens-hvNbZHNi.js">
+    <link rel="stylesheet" crossorigin href="./assets/tailwind-CFbt9Xfq.css">
+    <link rel="stylesheet" crossorigin href="./assets/index-X3LhgtxO.css">
   </head>
   <body>
-    <canvas id="starfield" aria-hidden="true"></canvas>
+    <!-- Himlen. `driven` = script.js's rAF loop calls tick(); the element does
+         not start a second loop. `interactive` turns on planet hover/click. -->
+    <st-planet-field
+      id="sky"
+      driven
+      interactive
+      satellites="5"
+      shooting-stars
+      aria-hidden="true"
+    ></st-planet-field>
     <div class="dotgrid" aria-hidden="true"></div>
 
     <div class="ufo" id="ufo" aria-hidden="true">
