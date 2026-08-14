@@ -90,7 +90,7 @@ const CSS = `
 /* The pair drifts gently side to side across the name and back. The
    travel is capped on phones so the bubble can never leave the left
    edge while the scene is fully drifted. */
-.egg-layer { --egg-drift-x: min(42vw, 560px); }
+.egg-layer { --egg-drift-x: min(60vw, 820px); }
 .egg-drift { will-change: transform; }
 .egg-idle .egg-drift { animation: eggDrift 26s ease-in-out infinite; }
 @keyframes eggDrift {

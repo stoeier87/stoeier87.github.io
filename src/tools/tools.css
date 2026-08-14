@@ -49,6 +49,25 @@ a { color: inherit; text-decoration: none; }
   100% { transform: translate(112vw, 9vh); opacity: 0; }
 }
 
+/* ── Zodiac: faint model constellations drifting in the backdrop.
+   Same layer as the satellite (1) — above the starfield, below the
+   grid. Greyscaled so accent strokes fade into the sky too. ──── */
+.zodiac { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
+.zodiac-fig {
+  position: absolute;
+  opacity: 0.07;
+  color: var(--ink);
+  filter: grayscale(1);
+  animation: zodiacDrift var(--zd, 130s) ease-in-out infinite;
+  will-change: transform;
+}
+.zodiac-fig svg { width: 100%; height: 100%; overflow: visible; }
+@keyframes zodiacDrift {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  33% { transform: translate(28px, -20px) rotate(2.5deg); }
+  66% { transform: translate(-22px, 16px) rotate(-2deg); }
+}
+
 /* ── Pills: same box as the rest of the site ───────────────── */
 .pill {
   display: inline-flex; align-items: center; justify-content: center;
@@ -211,4 +230,5 @@ a.tool-node:focus-visible { outline: none; }
   .pill.back { animation: none; }
   .tool-diagram, .tool-name { transition-duration: 0.01ms; }
   .satellite { display: none; }
+  .zodiac-fig { animation: none; }
 }
