@@ -245,10 +245,11 @@ function renderIntro() {
   const body = document.createElement("div");
   body.className = "intro-body";
   const paragraphs = [
-    "Twelve questions that place one idea on three matrices and tell you how to treat it.",
-    "It works best on an idea you have already described properly: what it is, who it is for, what it would change, what it would take. Without that, the answers are guesses, and the output is only as good as they are.",
-    "One idea at a time, about two minutes.",
-    "Nothing is stored and nothing is sent anywhere, so write the results down if you want to compare several ideas.",
+    "You have twenty ideas. They all sound good. Everyone in the room has a favourite and nobody can say which one should be built first.",
+    "That is what this is for. Twelve questions place one idea on three matrices and tell you where it sits: worth doing now, worth doing later, or worth killing before anyone starts.",
+    "It works best on an idea you have already described properly: what it is, who it is for, what it would change, what it would take. Without that the answers are guesses, and the output is only as good as they are.",
+    "Run them one at a time and the order sorts itself out.",
+    "Nothing is stored and nothing is sent anywhere, so write the results down as you go.",
   ];
   for (const text of paragraphs) {
     const p = document.createElement("p");
