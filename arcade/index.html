@@ -8,14 +8,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="../css/all.min.css" rel="stylesheet" />
-    <script type="module" crossorigin src="../assets/arcade/index-AJg3Wtuf.js"></script>
-    <link rel="modulepreload" crossorigin href="../assets/tailwind-5ThHHRYp.js">
-    <link rel="modulepreload" crossorigin href="../assets/starfield-BR1LaLa8.js">
-    <link rel="stylesheet" crossorigin href="../assets/tailwind-D4EgMLsp.css">
-    <link rel="stylesheet" crossorigin href="../assets/index-C8Vuicmg.css">
+    <script type="module" crossorigin src="../assets/arcade/index-CUahKZ4W.js"></script>
+    <link rel="modulepreload" crossorigin href="../assets/tailwind-C5m0IdXT.js">
+    <link rel="modulepreload" crossorigin href="../assets/tokens-hvNbZHNi.js">
+    <link rel="stylesheet" crossorigin href="../assets/tailwind-CFbt9Xfq.css">
+    <link rel="stylesheet" crossorigin href="../assets/index-CozJWzQl.css">
   </head>
   <body>
-    <canvas id="bg"></canvas>
+    <!-- `driven`: arcade.js owns the single rAF loop and calls tick() on the
+         backdrop each frame. No drift: the travel pan is the motion. -->
+    <st-planet-field id="bg" driven aria-hidden="true"></st-planet-field>
     <nav class="hall-nav" aria-label="Arcade navigation">
       <a class="pill back" href="../" aria-label="Back to homepage" title="Back to homepage">
         <span class="arrow"><i class="fa-solid fa-arrow-left-long"></i></span>
