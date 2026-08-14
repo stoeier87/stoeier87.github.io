@@ -465,6 +465,7 @@ export const DIAGRAMS = {
       svg.appendChild(svgEl("path", {
         d: "M 27 28 C 30 62, 55 112, 136 122",
         ...LINE,
+        class: "curve-thumb-path",
       }));
       return svg;
     },
@@ -1327,9 +1328,12 @@ export const DIAGRAMS = {
         const a = -Math.PI / 2 + i * ((2 * Math.PI) / 7);
         const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
         svg.appendChild(svgEl("line", { x1: cx, y1: cy, x2: x, y2: y, ...LINE, "stroke-width": "1" }));
-        svg.appendChild(svgEl("circle", { cx: x, cy: y, r: 2.6, fill: "currentColor", stroke: "none" }));
+        svg.appendChild(svgEl("circle", { cx: x, cy: y, r: 2.6, fill: "currentColor", stroke: "none", class: "muda-thumb-node" }));
       }
-      svg.appendChild(svgEl("circle", { cx, cy, r: 3, fill: "currentColor", style: "color: var(--red);" }));
+      // Neutral like every other model at rest — the centre used to be a
+      // fixed accent colour regardless of hover, which broke the "accent
+      // only on hover" rule the other nine models follow.
+      svg.appendChild(svgEl("circle", { cx, cy, r: 3, fill: "currentColor" }));
       return svg;
     },
     /* Eight evenly spaced directions (45 degrees apart); seven carry a

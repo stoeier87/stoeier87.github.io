@@ -12,19 +12,41 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-html, body { height: 100%; }
+html, body { min-height: 100%; }
 body {
   font-family: var(--mono);
   background: var(--bg);
   color: var(--ink);
-  overflow: hidden;
   -webkit-tap-highlight-color: transparent;
+  min-height: 100vh;
 }
 a { color: inherit; text-decoration: none; }
 
 #backdrop {
   position: fixed; inset: 0; width: 100%; height: 100%;
   display: block; z-index: 0;
+}
+
+/* A satellite drifts across the field roughly once every forty
+   seconds, entering and leaving off-screen, always behind the grid.
+   Pure CSS keyframes — transform and opacity only, no JS driving it. */
+.satellite {
+  position: fixed;
+  top: 14%; left: 0;
+  width: 34px; height: 16px;
+  color: var(--ink-dim);
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  animation: satellitePass 40s linear infinite;
+}
+.satellite .body { fill: none; stroke: currentColor; stroke-width: 1; }
+@keyframes satellitePass {
+  0%   { transform: translate(-12vw, 0); opacity: 0; }
+  2%   { opacity: 0.2; }
+  17%  { opacity: 0.2; }
+  20%  { transform: translate(112vw, 9vh); opacity: 0; }
+  100% { transform: translate(112vw, 9vh); opacity: 0; }
 }
 
 /* ── Pills: same box as the rest of the site ───────────────── */
@@ -79,20 +101,34 @@ a { color: inherit; text-decoration: none; }
   padding: 1rem clamp(1.25rem, 6vw, 4rem);
 }
 
-/* ── Space — models drift freely here, no pan/scroll ─────────── */
+/* ── The grid — three columns, even gutters, natural height. The
+   page scrolls if the grid needs more room than the viewport; there
+   is never dead space held open below the last row. ───────────── */
 .space {
-  position: fixed; inset: 0; z-index: 2;
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  column-gap: clamp(1rem, 3vw, 2.5rem);
+  row-gap: clamp(2rem, 5vw, 3rem);
+  justify-items: center;
+  align-items: start;
+  padding: 6.5rem clamp(1.25rem, 6vw, 4rem) 3.5rem;
+  max-width: 900px;
+  margin: 0 auto;
 }
+/* Ten items in three columns leave one alone on the last row — centre
+   it under the middle column instead of stranding it on the left. */
+.tool-node:last-child { grid-column: 2; }
 
 .tool-node {
-  position: absolute; top: 0; left: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.6rem;
-  width: 150px;
+  width: 100%;
+  max-width: 150px;
   padding: 10px;
-  margin: -10px;
   color: inherit;
   font-family: inherit;
   will-change: transform;
@@ -112,8 +148,8 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* Every label sits the same fixed distance below its own model (the
-   flex gap above), so the field never reads as a ragged row even
-   though the models themselves are never in a fixed row. */
+   flex gap above) and every diagram is normalised to the same visual
+   size (see tools.js), so labels line up across a row. */
 .tool-name {
   font-size: 0.66rem;
   letter-spacing: 0.08em;
@@ -141,8 +177,34 @@ a.tool-node:focus-visible .tool-name {
 }
 a.tool-node:focus-visible { outline: none; }
 
-/* ── Small screens: smaller models, still generous tap targets ── */
+/* Muda: hovering ripples all seven nodes outward once, in sequence. */
+@keyframes mudaNodePulse {
+  0% { transform: scale(1); opacity: 1; }
+  45% { transform: scale(2.1); opacity: 0.35; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.muda-thumb-node.pulse { animation: mudaNodePulse 0.5s ease-out; transform-origin: center; }
+
+/* Behavior Model: a tiny dot appears and travels down the curve. */
+.curve-thumb-dot { transition: opacity 0.2s ease; }
+
+/* 11-Star Experience: a small star appears above the apex briefly. */
+.pyramid-thumb-star {
+  opacity: 0;
+  transform: scale(0.4);
+  transform-origin: 80px 11px;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.pyramid-thumb-star.show { opacity: 1; transform: scale(1); }
+
+/* ── Small screens: two columns, five rows, smaller models ──── */
 @media (max-width: 640px) {
+  .space {
+    grid-template-columns: repeat(2, 1fr);
+    padding: 6rem 1.25rem 3rem;
+    row-gap: 1.75rem;
+  }
+  .tool-node:last-child { grid-column: auto; }
   .tool-node { width: 100px; }
   .tool-diagram { width: 68px; height: 68px; }
   .tool-name { font-size: 0.6rem; max-width: 96px; }
@@ -151,4 +213,5 @@ a.tool-node:focus-visible { outline: none; }
 @media (prefers-reduced-motion: reduce) {
   .pill.back { animation: none; }
   .tool-diagram, .tool-name { transition-duration: 0.01ms; }
+  .satellite { display: none; }
 }

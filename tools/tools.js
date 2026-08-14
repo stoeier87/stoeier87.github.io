@@ -1,11 +1,13 @@
 import { DIAGRAMS, TOOLS, reduced, isMobile, mulberry32 } from "./shared/tools-data.js";
 
 const $ = (id) => document.getElementById(id);
-const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const SVG_NS = "http://www.w3.org/2000/svg";
 
 /* ============================================================
    Backdrop — still, quiet starfield. No motion beyond a slow
    twinkle; this room doesn't need a UFO passing through.
+   (The satellite easter egg is a separate, much rarer visitor —
+   see the .satellite element in index.html.)
    ============================================================ */
 (function backdrop() {
   const cv = $("backdrop");
@@ -46,14 +48,11 @@ const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 })();
 
 /* ============================================================
-   Field — every model drifts slowly and continuously on its own
-   path, like objects in zero gravity. No panning, no scrolling:
-   all ten always stay within the viewport, at every screen size.
+   Grid + gentle wander — every model sits on a real CSS grid cell;
+   the "drift" is a small transform-only wander around that fixed
+   position, never far enough to approach a neighbour.
    ============================================================ */
 const space = $("space");
-const TOP_CLEAR = 82;
-const BOTTOM_CLEAR = 24;
-const SIDE_CLEAR = 20;
 
 function fitLabelFontSize(text, maxWidthPx, maxPx, minPx) {
   const estWidth = text.length * 0.68 * maxPx;
@@ -61,53 +60,48 @@ function fitLabelFontSize(text, maxWidthPx, maxPx, minPx) {
   return Math.max(minPx, maxWidthPx / (text.length * 0.68));
 }
 
+// Every thumbnail shares one 160x160 viewBox, but how much of it each
+// diagram actually draws into varies a lot (a few thin axes vs. a
+// dense nine-block grid). Left alone, that makes some models read as
+// bigger than others even though their boxes are identical. Wrapping
+// each thumbnail's content in a group and normalising that group's
+// real, rendered bounding box to a fixed size fixes both that and the
+// label-height inconsistency it causes, without hand-tuning ten sets
+// of coordinates.
+const THUMB_TARGET_HALF = 46;
+function normalizeThumb(svg) {
+  const group = document.createElementNS(SVG_NS, "g");
+  while (svg.firstChild) group.appendChild(svg.firstChild);
+  svg.appendChild(group);
+  return group;
+}
+function applyThumbNormalization(group) {
+  let bbox;
+  try { bbox = group.getBBox(); } catch (e) { return; }
+  if (!bbox || !(bbox.width > 0) || !(bbox.height > 0)) return;
+  const cx = bbox.x + bbox.width / 2, cy = bbox.y + bbox.height / 2;
+  const scale = (THUMB_TARGET_HALF * 2) / Math.max(bbox.width, bbox.height);
+  group.setAttribute("transform", "translate(80,80) scale(" + scale.toFixed(4) + ") translate(" + (-cx).toFixed(2) + "," + (-cy).toFixed(2) + ")");
+}
+
 let drifters = [];
 let rafId = null;
 let lastT = 0;
+let idleNode = null, idleFromNode = null, idleStart = 0;
+let lastInteraction = 0;
 
-function bounds() {
-  return {
-    minX: SIDE_CLEAR,
-    maxX: window.innerWidth - SIDE_CLEAR,
-    minY: TOP_CLEAR,
-    maxY: window.innerHeight - BOTTOM_CLEAR,
-  };
-}
-
-function seedSpots(n, r) {
-  const rnd = mulberry32(20260813);
-  const m = isMobile();
-  const b = bounds();
-  const cols = m ? 3 : 4;
-  const rows = Math.ceil(n / cols);
-  const areaW = b.maxX - b.minX, areaH = b.maxY - b.minY;
-  const cellW = areaW / cols, cellH = areaH / rows;
-  const jitterX = Math.max(0, cellW / 2 - r);
-  const jitterY = Math.max(0, cellH / 2 - r);
-  const spots = [];
-  for (let i = 0; i < n; i++) {
-    const col = i % cols, row = Math.floor(i / cols);
-    const cx = b.minX + cellW * (col + 0.5);
-    const cy = b.minY + cellH * (row + 0.5);
-    spots.push({
-      x: clamp(cx + (rnd() * 2 - 1) * jitterX, b.minX + r, b.maxX - r),
-      y: clamp(cy + (rnd() * 2 - 1) * jitterY, b.minY + r, b.maxY - r),
-    });
-  }
-  return spots;
-}
+const IDLE_DELAY = 30000, IDLE_DUR = 2600, IDLE_DEG = 6;
 
 function buildNodes() {
   space.querySelectorAll(".tool-node").forEach((n) => n.remove());
   const m = isMobile();
-  const r = m ? 50 : 70;
-  const spots = seedSpots(TOOLS.length, r);
   const labelMaxWidth = m ? 96 : 140;
   const labelMaxPx = m ? 8.6 : 10.56;
   const labelMinPx = m ? 7 : 8.5;
-  const rnd = mulberry32(9042);
+  const wanderRadius = m ? 7 : 10;
+  const rnd = mulberry32(20260814);
 
-  drifters = TOOLS.map((tool, i) => {
+  drifters = TOOLS.map((tool) => {
     const el = document.createElement("a");
     el.href = "./" + tool.slug + "/";
     el.className = "tool-node";
@@ -116,6 +110,7 @@ function buildNodes() {
     diagram.setAttribute("class", "tool-diagram");
     diagram.setAttribute("aria-hidden", "true");
     diagram.setAttribute("draggable", "false");
+    const group = normalizeThumb(diagram);
     el.appendChild(diagram);
 
     const label = document.createElement("span");
@@ -126,75 +121,138 @@ function buildNodes() {
     el.setAttribute("aria-label", tool.name);
 
     space.appendChild(el);
+    applyThumbNormalization(group);
 
-    const angle = rnd() * Math.PI * 2;
-    const speed = m ? 4.5 + rnd() * 3.5 : 5 + rnd() * 5;
-    return {
-      el, r,
-      x: spots[i].x, y: spots[i].y,
-      angle,
-      angleVel: (rnd() - 0.5) * 0.35,
-      speed, curSpeed: speed,
-      hover: false,
+    const d = {
+      el, tool,
+      hover: false, activity: 1,
+      phaseX: rnd() * 6.283, phaseY: rnd() * 6.283,
+      freqX: 0.16 + rnd() * 0.09, freqY: 0.14 + rnd() * 0.09,
+      radius: wanderRadius,
     };
-  });
 
-  drifters.forEach((d) => {
-    const slow = () => { d.hover = true; };
-    const wake = () => { d.hover = false; };
-    d.el.addEventListener("pointerenter", slow);
-    d.el.addEventListener("pointerleave", wake);
-    d.el.addEventListener("touchstart", slow, { passive: true });
-    d.el.addEventListener("touchend", wake, { passive: true });
-    d.el.addEventListener("focus", slow);
-    d.el.addEventListener("blur", wake);
+    const enter = () => { d.hover = true; triggerEasterEgg(d); };
+    const leave = () => { d.hover = false; };
+    el.addEventListener("pointerenter", enter);
+    el.addEventListener("pointerleave", leave);
+    el.addEventListener("touchstart", enter, { passive: true });
+    el.addEventListener("touchend", leave, { passive: true });
+    el.addEventListener("focus", enter);
+    el.addEventListener("blur", leave);
+
+    return d;
   });
+}
+
+function step(now) {
+  const dt = lastT ? Math.min(0.05, (now - lastT) / 1000) : 0.016;
+  lastT = now;
+  const t = now / 1000;
+
+  for (const d of drifters) {
+    const target = d.hover ? 0 : 1;
+    d.activity += (target - d.activity) * Math.min(1, dt * 3);
+
+    const dx = Math.cos(t * d.freqX + d.phaseX) * d.radius * d.activity;
+    const dy = Math.sin(t * d.freqY + d.phaseY) * d.radius * 0.75 * d.activity;
+
+    let transform = "translate(" + dx.toFixed(2) + "px," + dy.toFixed(2) + "px)";
+    if (d === idleNode) {
+      const rot = idleAngle(now);
+      if (rot) transform += " rotate(" + rot.toFixed(2) + "deg)";
+    }
+    d.el.style.transform = transform;
+  }
+
+  rafId = requestAnimationFrame(step);
+}
+
+function idleAngle(now) {
+  const elapsed = now - idleStart;
+  if (elapsed > IDLE_DUR) { idleNode = null; return 0; }
+  const half = IDLE_DUR / 2;
+  const p = elapsed < half ? elapsed / half : 1 - (elapsed - half) / half;
+  const eased = p * p * (3 - 2 * p);
+  return eased * IDLE_DEG;
+}
+
+/* One random model, only after thirty quiet seconds, rotates a few
+   degrees and settles back — once, then a different model is picked
+   next time. Never announced, never blocking a tap. */
+function markInteraction() { lastInteraction = performance.now(); }
+["pointermove", "pointerdown", "touchstart", "keydown", "scroll", "wheel"].forEach((ev) =>
+  window.addEventListener(ev, markInteraction, { passive: true })
+);
+
+function checkIdle() {
+  if (reduced() || idleNode || !drifters.length) return;
+  const now = performance.now();
+  if (now - lastInteraction < IDLE_DELAY) return;
+  const candidates = drifters.filter((d) => d !== idleFromNode);
+  const pick = (candidates.length ? candidates : drifters)[Math.floor(Math.random() * (candidates.length || drifters.length))];
+  idleNode = pick; idleFromNode = pick; idleStart = now;
+  lastInteraction = now;
+}
+
+/* ============================================================
+   Quiet, optional hover details — never announced, never in the
+   way of a tap. Three models get one each; the rest get nothing.
+   ============================================================ */
+function triggerEasterEgg(d) {
+  if (reduced()) return;
+  if (d.tool.diagram === "radial7") mudaPulse(d.el);
+  else if (d.tool.diagram === "curve") curveDot(d.el);
+  else if (d.tool.diagram === "pyramid") pyramidStar(d.el);
+}
+
+function mudaPulse(nodeEl) {
+  const nodes = nodeEl.querySelectorAll(".muda-thumb-node");
+  nodes.forEach((c, i) => {
+    setTimeout(() => {
+      c.classList.remove("pulse");
+      void c.getBoundingClientRect();
+      c.classList.add("pulse");
+    }, i * 55);
+  });
+}
+
+function curveDot(nodeEl) {
+  const path = nodeEl.querySelector(".curve-thumb-path");
+  if (!path || path.dataset.busy) return;
+  path.dataset.busy = "1";
+  const len = path.getTotalLength();
+  const dot = document.createElementNS(SVG_NS, "circle");
+  dot.setAttribute("r", "2.2");
+  dot.setAttribute("fill", "var(--red)");
+  dot.setAttribute("class", "curve-thumb-dot");
+  path.parentNode.appendChild(dot);
+  const dur = 700, start = performance.now();
+  function frame(now) {
+    const p = Math.min(1, (now - start) / dur);
+    const pt = path.getPointAtLength(p * len);
+    dot.setAttribute("cx", pt.x); dot.setAttribute("cy", pt.y);
+    dot.style.opacity = p > 0.75 ? String(Math.max(0, (1 - p) / 0.25)) : "1";
+    if (p < 1) requestAnimationFrame(frame);
+    else { dot.remove(); delete path.dataset.busy; }
+  }
+  requestAnimationFrame(frame);
+}
+
+function pyramidStar(nodeEl) {
+  const group = nodeEl.querySelector(".tool-diagram > g");
+  if (!group || group.querySelector(".pyramid-thumb-star")) return;
+  const star = document.createElementNS(SVG_NS, "path");
+  star.setAttribute("d", "M 80 4 L 82 9 L 87 11 L 82 13 L 80 18 L 78 13 L 73 11 L 78 9 Z");
+  star.setAttribute("fill", "var(--red)");
+  star.setAttribute("class", "pyramid-thumb-star");
+  group.appendChild(star);
+  requestAnimationFrame(() => star.classList.add("show"));
+  setTimeout(() => star.classList.remove("show"), 500);
+  setTimeout(() => star.remove(), 780);
 }
 
 function placeStatic() {
-  for (const d of drifters) {
-    d.el.style.transform = "translate3d(" + (d.x - d.r).toFixed(1) + "px, " + (d.y - d.r).toFixed(1) + "px, 0)";
-  }
-}
-
-function step(t) {
-  const dt = Math.min(0.05, lastT ? (t - lastT) / 1000 : 0.016);
-  lastT = t;
-  const b = bounds();
-
-  for (const d of drifters) {
-    d.angle += d.angleVel * dt;
-    const target = d.hover ? d.speed * 0.04 : d.speed;
-    d.curSpeed += (target - d.curSpeed) * Math.min(1, dt * 2.2);
-    d.x += Math.cos(d.angle) * d.curSpeed * dt;
-    d.y += Math.sin(d.angle) * d.curSpeed * dt;
-
-    if (d.x < b.minX + d.r) { d.x = b.minX + d.r; d.angle = Math.PI - d.angle; }
-    if (d.x > b.maxX - d.r) { d.x = b.maxX - d.r; d.angle = Math.PI - d.angle; }
-    if (d.y < b.minY + d.r) { d.y = b.minY + d.r; d.angle = -d.angle; }
-    if (d.y > b.maxY - d.r) { d.y = b.maxY - d.r; d.angle = -d.angle; }
-  }
-
-  for (let i = 0; i < drifters.length; i++) {
-    for (let j = i + 1; j < drifters.length; j++) {
-      const a = drifters[i], c = drifters[j];
-      const dx = c.x - a.x, dy = c.y - a.y;
-      const dist = Math.hypot(dx, dy) || 0.001;
-      const minDist = a.r + c.r;
-      if (dist < minDist) {
-        const overlap = (minDist - dist) / 2;
-        const ux = dx / dist, uy = dy / dist;
-        a.x -= ux * overlap; a.y -= uy * overlap;
-        c.x += ux * overlap; c.y += uy * overlap;
-        const pushAngle = Math.atan2(dy, dx);
-        a.angle = pushAngle + Math.PI;
-        c.angle = pushAngle;
-      }
-    }
-  }
-
-  placeStatic();
-  rafId = requestAnimationFrame(step);
+  for (const d of drifters) d.el.style.transform = "";
 }
 
 function startDrift() {
@@ -208,8 +266,15 @@ function startDrift() {
    Boot
    ============================================================ */
 function boot() {
+  lastInteraction = performance.now();
   buildNodes();
   startDrift();
+  setInterval(checkIdle, 1000);
+
+  // Stagger where in its 40s loop the satellite starts, so it isn't
+  // always mid-pass in the first few seconds of every page load.
+  const satellite = document.querySelector(".satellite");
+  if (satellite) satellite.style.animationDelay = "-" + (Math.random() * 40).toFixed(1) + "s";
 }
 boot();
 
@@ -220,14 +285,9 @@ window.addEventListener("resize", () => {
   resizeTimer = setTimeout(() => {
     if (isMobile() !== wasMobile) {
       wasMobile = isMobile();
+      idleNode = null;
       buildNodes();
       startDrift();
-      return;
-    }
-    const b = bounds();
-    for (const d of drifters) {
-      d.x = clamp(d.x, b.minX + d.r, b.maxX - d.r);
-      d.y = clamp(d.y, b.minY + d.r, b.maxY - d.r);
     }
   }, 150);
 });
