@@ -51,6 +51,37 @@ export const color = {
   },
 
   /**
+   * The solar system, lit face and shadowed face per body.
+   *
+   * These were nine hardcoded hex pairs inside the PLANETS array in
+   * `script.js` — a standing `tokens-sole-sourced` violation that nothing had
+   * ever listed as an exception. They moved here when the background became
+   * <st-planet-field> (issue #61), which takes colours as props and so has
+   * somewhere to take them *from*. Danish names, matching the site's voice and
+   * the labels the pages already use.
+   */
+  planet: {
+    merkurHi: "#b8b0a8",
+    merkurLo: "#5c554e",
+    venusHi: "#e8cfa0",
+    venusLo: "#a67c48",
+    jordenHi: "#6fb6e8",
+    jordenLo: "#1c4e8a",
+    marsHi: "#e0704a",
+    marsLo: "#8a3520",
+    jupiterHi: "#d9b48a",
+    jupiterLo: "#8a6238",
+    saturnHi: "#e3c68f",
+    saturnLo: "#9c7a48",
+    uranusHi: "#a8e0e8",
+    uranusLo: "#4a98a8",
+    neptunHi: "#6a8ce8",
+    neptunLo: "#2a3f9c",
+    plutoHi: "#cbb8a4",
+    plutoLo: "#6b5a4c",
+  },
+
+  /**
    * Semantic aliases. Prefer these in new components — they are the layer that
    * survives a palette change.
    */
@@ -219,6 +250,25 @@ export const THEME_MIRROR: Record<string, string> = {
   "color-rank-gold": color.rank.gold,
   "color-rank-silver": color.rank.silver,
   "color-rank-bronze": color.rank.bronze,
+
+  "color-planet-merkur-hi": color.planet.merkurHi,
+  "color-planet-merkur-lo": color.planet.merkurLo,
+  "color-planet-venus-hi": color.planet.venusHi,
+  "color-planet-venus-lo": color.planet.venusLo,
+  "color-planet-jorden-hi": color.planet.jordenHi,
+  "color-planet-jorden-lo": color.planet.jordenLo,
+  "color-planet-mars-hi": color.planet.marsHi,
+  "color-planet-mars-lo": color.planet.marsLo,
+  "color-planet-jupiter-hi": color.planet.jupiterHi,
+  "color-planet-jupiter-lo": color.planet.jupiterLo,
+  "color-planet-saturn-hi": color.planet.saturnHi,
+  "color-planet-saturn-lo": color.planet.saturnLo,
+  "color-planet-uranus-hi": color.planet.uranusHi,
+  "color-planet-uranus-lo": color.planet.uranusLo,
+  "color-planet-neptun-hi": color.planet.neptunHi,
+  "color-planet-neptun-lo": color.planet.neptunLo,
+  "color-planet-pluto-hi": color.planet.plutoHi,
+  "color-planet-pluto-lo": color.planet.plutoLo,
 
   "color-scoreboard-bg": color.scoreboard.bg,
   "color-scoreboard-card": color.scoreboard.card,

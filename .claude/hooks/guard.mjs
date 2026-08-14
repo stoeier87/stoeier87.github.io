@@ -8,7 +8,9 @@
  *
  *   relative-paths   a root-absolute path escapes /preview/<topic>/ and /stage/
  *                    onto production, with no error anywhere
- *   no-runtime-deps  a runtime dependency ends the zero-dep stance unnoticed
+ *   no-runtime-deps  a runtime dependency ships to every visitor unnoticed. Since
+ *                    ADR-025 this is an allowlist rather than a flat ban -- the
+ *                    names in standards.json `allowed` pass, everything else blocks.
  *
  * Everything else teaches instead of blocking. Noisy hooks get disabled, and a
  * disabled hook protects nothing. See DECISIONS.md ADR-010.
@@ -28,24 +30,38 @@ const CODE_EXT = new Set([".html", ".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx",
 const SKIP_EXT = new Set([".md", ".json", ".yml", ".yaml", ".txt"]);
 
 /**
- * Top-level routes, read from standards.json so adding one is a config entry.
- * `"/arcade/..."` in JS is the real-world shape of this bug — known issue 1,
- * script.js:52-125.
+ * Both lists below come from standards.json, so changing either is a config
+ * entry rather than a code change.
  *
- * Falls back to a built-in list if standards.json is unreadable: a hook must
+ * Falls back to a built-in value if standards.json is unreadable: a hook must
  * never break a session over its own config.
  */
-const ROUTES = (() => {
-  const fallback = ["arcade", "about-me", "space-bar", "scoreboard", "preview", "stage", "proto"];
+function readRule(id) {
   try {
     const root = process.env.CLAUDE_PROJECT_DIR ?? path.resolve(import.meta.dirname, "../..");
     const standards = JSON.parse(readFileSync(path.join(root, "standards.json"), "utf8"));
-    const rule = standards.rules?.find((r) => r.id === "relative-paths");
-    return rule?.routePrefixes?.length ? rule.routePrefixes : fallback;
+    return standards.rules?.find((r) => r.id === id) ?? null;
   } catch {
-    return fallback;
+    return null;
   }
+}
+
+/**
+ * Top-level routes. `"/arcade/..."` in JS is the real-world shape of this bug —
+ * known issue 1, script.js:52-125.
+ */
+const ROUTES = (() => {
+  const fallback = ["arcade", "about-me", "space-bar", "scoreboard", "preview", "stage", "proto"];
+  const rule = readRule("relative-paths");
+  return rule?.routePrefixes?.length ? rule.routePrefixes : fallback;
 })();
+
+/**
+ * Runtime dependencies that are allowed to ship. ADR-025 turned this rule from
+ * a flat ban into an allowlist; the fallback stays empty so a missing config
+ * fails closed — the old behaviour — rather than waving everything through.
+ */
+const ALLOWED_DEPS = new Set(readRule("no-runtime-deps")?.allowed ?? []);
 
 const PATTERNS = [
   {
@@ -88,14 +104,37 @@ function findAbsolutePath(content) {
   return null;
 }
 
-/** True when a "dependencies" block is present and non-empty. */
-function addsRuntimeDeps(content) {
-  // The JSON key is exactly "dependencies"; "devDependencies" has a capital D,
-  // so a lowercase match cannot collide with it.
-  const m = content.match(/"dependencies"\s*:\s*\{([^}]*)\}/);
-  if (m) return m[1].trim().length > 0;
-  // Edit fragments may not include the closing brace.
-  return /"dependencies"\s*:\s*\{\s*"/.test(content);
+/**
+ * Package names declared under "dependencies", or null when the block is absent.
+ *
+ * The JSON key is exactly "dependencies"; "devDependencies" has a capital D and
+ * the opening quote is part of the pattern, so a lowercase match cannot collide
+ * with it. Edit fragments routinely arrive without the closing brace, so the
+ * block is read to the brace if there is one and to end-of-fragment if not —
+ * the old version only recognised a truncated block when it happened to contain
+ * `{ "`, and let anything else through.
+ */
+function declaredRuntimeDeps(content) {
+  const open = content.match(/"dependencies"\s*:\s*\{/);
+  if (!open) return null;
+
+  const start = open.index + open[0].length;
+  let depth = 1;
+  let end = content.length;
+  for (let i = start; i < content.length; i++) {
+    const ch = content[i];
+    if (ch === "{") depth++;
+    else if (ch === "}") {
+      depth--;
+      if (depth === 0) {
+        end = i;
+        break;
+      }
+    }
+  }
+
+  const body = content.slice(start, end);
+  return [...body.matchAll(/"([^"]+)"\s*:/g)].map((m) => m[1]);
 }
 
 function block(lines) {
@@ -132,23 +171,31 @@ async function main() {
   const isOwnConfig = filePath.includes("/.claude/");
 
   /* ── no-runtime-deps ─────────────────────────────────────────────── */
-  if (base === "package.json" && addsRuntimeDeps(content)) {
-    block([
-      "BLOCKED — standards.json rule `no-runtime-deps`",
-      "",
-      'This adds a non-empty "dependencies" block to package.json.',
-      "",
-      "Why it matters: this is a static site on GitHub Pages with zero runtime",
-      "dependencies. Even Firebase is loaded from a CDN URL rather than npm. A",
-      "runtime dep changes the bundle for every visitor and nobody notices.",
-      "",
-      "  devDependencies  — fine, go ahead",
-      "  dependencies     — needs a human decision first",
-      "",
-      "If this is the React migration starting (DECISIONS.md ADR-011), edit the",
-      "`no-runtime-deps` rule in standards.json in the SAME change. Do not",
-      "disable this hook quietly.",
-    ]);
+  if (base === "package.json") {
+    const declared = declaredRuntimeDeps(content);
+    const rejected = (declared ?? []).filter((name) => !ALLOWED_DEPS.has(name));
+    if (rejected.length) {
+      block([
+        "BLOCKED — standards.json rule `no-runtime-deps`",
+        "",
+        `This adds ${rejected.map((n) => `"${n}"`).join(", ")} to "dependencies".`,
+        "",
+        "Why it matters: this is a static site on GitHub Pages. A runtime dep ships",
+        "to every visitor, and the failure mode is silence — nobody notices the",
+        "bundle grew.",
+        "",
+        "  devDependencies  — fine, go ahead",
+        "  dependencies     — allowlisted only",
+        "",
+        ALLOWED_DEPS.size
+          ? `Currently allowed: ${[...ALLOWED_DEPS].join(", ")}.`
+          : "Nothing is currently allowed.",
+        "",
+        "To add one: write the ADR, then add the name to the `allowed` array on the",
+        "`no-runtime-deps` rule in standards.json — in the SAME change. Do not",
+        "disable this hook quietly.",
+      ]);
+    }
   }
 
   /* ── relative-paths ──────────────────────────────────────────────── */

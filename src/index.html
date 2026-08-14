@@ -34,7 +34,16 @@
     <link rel="stylesheet" href="./tailwind.css" />
   </head>
   <body>
-    <canvas id="starfield" aria-hidden="true"></canvas>
+    <!-- Himlen. `driven` = script.js's rAF loop calls tick(); the element does
+         not start a second loop. `interactive` turns on planet hover/click. -->
+    <st-planet-field
+      id="sky"
+      driven
+      interactive
+      satellites="5"
+      shooting-stars
+      aria-hidden="true"
+    ></st-planet-field>
     <div class="dotgrid" aria-hidden="true"></div>
 
     <div class="ufo" id="ufo" aria-hidden="true">
