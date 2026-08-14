@@ -367,7 +367,7 @@ more reliably than Lit or vanilla custom elements" — the deciding factor, not 
 But its own hybrid split exposed the architecture mismatch: the SPA half needs a client-side
 router that works under an arbitrary path prefix, because previews live at
 `/preview/<topic>/` and stage at `/stage/` (`stack-decision-issue.md` blocker 3, never solved,
-only deferred), and the 8 canvas games had to be routed *around* React entirely because
+only deferred), and the 8 canvas games had to be routed _around_ React entirely because
 imperative rAF loops fight its render model — which is exactly why they became "standalone
 entries" in the hybrid design rather than React components. Custom elements need neither
 concession: `connectedCallback`/`disconnectedCallback` fits an rAF loop directly, and nothing
@@ -376,7 +376,7 @@ about `root: "src"` filesystem routing (ADR-022) needs to change, because there 
 **Why light DOM specifically.** `tailwind.css` is a flat global class layer —
 `.pill`, `.topbar`, `.badge`, `.stat`, `.gameover` — that every one of the 8 in-game HUDs
 depends on (ADR-002). Shadow DOM's style encapsulation would sever exactly that layer. Light
-DOM also lets an element *wrap* markup that already exists in the 25 pages rather than move it
+DOM also lets an element _wrap_ markup that already exists in the 25 pages rather than move it
 into a JS template string — a wrapper first, not a rewrite first. This is a hard rule with no
 exceptions; `page-critic` rejects any new element that attaches a shadow root.
 
