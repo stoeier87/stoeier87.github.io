@@ -1,5 +1,5 @@
 {
-  "$comment": "DECISIONS.md ADR-011: gradual now, strict later. TypeScript is installed and configured so it is ready the moment the React migration starts, but nothing is type-checked into submission today. TIGHTENING TRIGGER: flip strict and noUncheckedIndexedAccess in the first PR that adds a .ts file to src/shared/ -- not 'later', because later does not arrive.",
+  "$comment": "DECISIONS.md ADR-023: gradual now, strict later. TypeScript is installed and configured so it is ready the moment the first custom element lands, but nothing is type-checked into submission today. TIGHTENING TRIGGER: flip strict and noUncheckedIndexedAccess in the first PR that adds a .ts file to src/shared/ -- not 'later', because later does not arrive.",
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
