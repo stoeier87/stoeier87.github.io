@@ -317,17 +317,20 @@ function renderQuestion(i) {
   }
   lastRocketIndex = i;
 
-  const progress = document.createElement("p");
-  progress.className = "q-progress";
-  progress.textContent = "Question " + (i + 1) + " of " + QUESTIONS.length;
-  progressWrap.appendChild(progress);
   screen.appendChild(progressWrap);
 
-  // The round line sits directly over the title it labels, as an eyebrow.
+  // One meta row: the round label left, the counter right.
+  const metaRow = document.createElement("div");
+  metaRow.className = "q-meta";
   const roundEl = document.createElement("p");
   roundEl.className = "q-round";
   roundEl.textContent = round.intro;
-  screen.appendChild(roundEl);
+  metaRow.appendChild(roundEl);
+  const progress = document.createElement("p");
+  progress.className = "q-progress";
+  progress.textContent = "Question " + (i + 1) + " of " + QUESTIONS.length;
+  metaRow.appendChild(progress);
+  screen.appendChild(metaRow);
 
   const titleRow = document.createElement("div");
   titleRow.className = "q-title-row";
