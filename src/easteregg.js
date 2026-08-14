@@ -22,9 +22,30 @@ const CSS = `
   display: flex;
   align-items: flex-end;
   gap: 10px;
+  isolation: isolate;
 }
-/* The scene is the hover region; it only takes pointer events while visible. */
-.egg-in .egg-scene { pointer-events: auto; }
+/* The scene is the hover region and one big click target; it only
+   takes pointer events while visible. */
+.egg-in .egg-scene { pointer-events: auto; cursor: pointer; }
+
+/* A soft dark cloud behind the whole scene, so the line work and the
+   red button never drown in whatever sits behind them — the name
+   included. Fades away when the destruction takes the alien. */
+.egg-scene::before {
+  content: "";
+  position: absolute;
+  inset: -40px -34px -28px -34px;
+  background: radial-gradient(
+    ellipse 62% 58% at 50% 55%,
+    rgba(5, 7, 15, 0.94) 30%,
+    rgba(5, 7, 15, 0.6) 58%,
+    rgba(5, 7, 15, 0) 78%
+  );
+  pointer-events: none;
+  z-index: -1;
+  transition: opacity 0.4s ease;
+}
+.egg-press4 .egg-scene::before { opacity: 0; }
 
 /* ── Alien ─────────────────────────────────────────────── */
 .egg-alien-float { will-change: transform; }
@@ -64,6 +85,17 @@ const CSS = `
   0%, 60% { opacity: 0; transform: translateY(0); }
   66% { opacity: 0.7; }
   100% { opacity: 0; transform: translateY(9px); }
+}
+
+/* The pair drifts gently side to side across the name and back. The
+   travel is capped on phones so the bubble can never leave the left
+   edge while the scene is fully drifted. */
+.egg-layer { --egg-drift-x: min(60vw, 820px); }
+.egg-drift { will-change: transform; }
+.egg-idle .egg-drift { animation: eggDrift 26s ease-in-out infinite; }
+@keyframes eggDrift {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(calc(-1 * var(--egg-drift-x))); }
 }
 
 .egg-idle .egg-alien-float { animation: eggFloat 4s ease-in-out infinite; }
@@ -127,10 +159,12 @@ const CSS = `
 }
 .egg-label {
   margin-top: 2px;
-  font-size: 0.55rem;
+  font-size: 0.6rem;
+  font-weight: 700;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--color-red);
+  color: #ff5040;
+  text-shadow: 0 0 6px rgba(224, 58, 47, 0.9);
   white-space: nowrap;
 }
 
@@ -157,13 +191,14 @@ const CSS = `
   position: absolute;
   right: 0;
   bottom: calc(100% + 14px);
-  max-width: min(210px, calc(100vw - 32px));
-  padding: 8px 12px;
+  max-width: min(300px, calc(100vw - 32px));
+  width: max-content;
+  padding: 6px 11px;
   border: 1.5px solid rgba(255, 255, 255, 0.5);
   border-radius: 10px;
   background: rgba(5, 7, 15, 0.85);
   color: var(--color-ink);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   line-height: 1.45;
   white-space: normal;
   opacity: 0;
@@ -233,6 +268,10 @@ const CSS = `
 
 .egg-burnout { transition: opacity 1.2s steps(6, end); opacity: 0 !important; }
 
+@keyframes eggConsoleOut {
+  to { transform: translate(-38vw, 6vh) rotate(220deg) scale(0.04); opacity: 0; }
+}
+
 .egg-flash { z-index: 380; background: #fff; opacity: 0; }
 .egg-blackout { z-index: 390; background: #000; opacity: 0; }
 
@@ -286,16 +325,15 @@ const CSS = `
 
 /* ── Small screens ─────────────────────────────────────── */
 @media (max-width: 500px) {
-  /* bottom is 44px rather than 24 so the DO NOT PUSH label clears the
-     footer link at full scroll */
-  .egg-layer { right: 24px; bottom: 44px; }
+  .egg-layer { right: 8px; --egg-drift-x: 100px; }
   .egg-alien { height: 64px; }
   .egg-console { width: 62px; }
   .egg-label { font-size: 0.48rem; }
-  .egg-bubble { font-size: 0.66rem; max-width: min(180px, calc(100vw - 24px)); }
+  .egg-bubble { font-size: 0.64rem; max-width: min(250px, calc(100vw - 24px)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .egg-idle .egg-drift,
   .egg-idle .egg-alien-float,
   .egg-idle .egg-alien-tilt,
   .egg-idle .egg-eyes,
@@ -404,6 +442,7 @@ function buildLayer() {
   const layer = document.createElement("div");
   layer.className = "egg-layer" + (reduced ? "" : " egg-idle");
   layer.innerHTML = `
+    <div class="egg-drift">
     <div class="egg-scene">
       <div class="egg-bubble" role="status" aria-live="polite"></div>
       <div class="egg-console-wrap">
@@ -412,6 +451,7 @@ function buildLayer() {
         <div class="egg-label">Do not push</div>
       </div>
       <div class="egg-alien-float"><div class="egg-alien-tilt"><div class="egg-alien-turn">${ALIEN_SVG}</div></div></div>
+    </div>
     </div>`;
   return layer;
 }
@@ -429,6 +469,20 @@ function initEasterEgg() {
   const button = layer.querySelector(".egg-button");
   button.tabIndex = -1;
 
+  /* The scene rides beside the name block rather than a fixed corner,
+     so it never covers the nav pills, the contact pills or the footer.
+     Vertically centred on the name, clamped to the viewport. */
+  function placeScene() {
+    const name = document.getElementById("stageName");
+    if (!name) return;
+    const nameRect = name.getBoundingClientRect();
+    const sceneH = scene.offsetHeight || 120;
+    let top = nameRect.top + nameRect.height / 2 - sceneH / 2;
+    top = Math.max(8, Math.min(top, window.innerHeight - sceneH - 8));
+    layer.style.top = top.toFixed(0) + "px";
+    layer.style.bottom = "auto";
+  }
+
   /* Visible only within 200px of the very bottom of the page. */
   let visible = false;
   let presses = 0;
@@ -436,7 +490,9 @@ function initEasterEgg() {
     const doc = document.documentElement;
     const fromBottom = doc.scrollHeight - window.innerHeight - window.scrollY;
     const nowVisible = fromBottom <= 200;
+    if (nowVisible && visible) placeScene();
     if (nowVisible === visible) return;
+    if (nowVisible) placeScene();
     visible = nowVisible;
     layer.classList.toggle("egg-in", visible);
     button.tabIndex = visible ? 0 : -1;
@@ -478,6 +534,14 @@ function initEasterEgg() {
     bubble.classList.remove("show");
     if (instant) bubble.textContent = "";
   }
+
+  /* The whole scene presses the button — anywhere on the cloud counts.
+     Clicks on the real button bubble up here too, so those are skipped
+     to avoid a double press. */
+  scene.addEventListener("click", (e) => {
+    if (e.target === button) return;
+    button.click();
+  });
 
   scene.addEventListener("mouseenter", () => {
     if (visible && presses === 0) typeBubble(INTRO);
@@ -602,6 +666,9 @@ function initEasterEgg() {
       return;
     }
 
+    const drift = layer.querySelector(".egg-drift");
+    if (drift) drift.style.animationPlayState = "paused";
+
     const root = document.documentElement;
     const shakeEls = [
       document.getElementById("starfield"),
@@ -708,13 +775,33 @@ function initEasterEgg() {
       ramping = true;
     });
 
-    // 3.6–4.2s THE ALIEN GOES LAST
-    at(3550, () => typeBubble("Told you."));
+    // 3.6–4.2s THE ALIEN GOES LAST — dragged to centre and zoomed in
+    // close, face filling the screen as it delivers the last word.
+    at(3550, () => {
+      bubble.style.position = "fixed";
+      bubble.style.left = "50%";
+      bubble.style.right = "auto";
+      bubble.style.bottom = "auto";
+      bubble.style.top = "16%";
+      bubble.style.transform = "translateX(-50%)";
+      bubble.style.zIndex = "395";
+      document.body.appendChild(bubble);
+      typeBubble("Told you.");
+    });
     at(3600, () => {
       const alien = layer.querySelector(".egg-alien-float");
       const consoleWrap = layer.querySelector(".egg-console-wrap");
-      flingToCentre(alien, "rotate(720deg)", 0.55, 0);
-      flingToCentre(consoleWrap, "rotate(200deg)", 0.5, 0.12);
+      const r = alien.getBoundingClientRect();
+      const dx = window.innerWidth / 2 - (r.left + r.width / 2);
+      const dy = window.innerHeight / 2 - (r.top + r.height / 2);
+      const zoom = Math.min(5.5, Math.max(3, window.innerHeight / 190));
+      alien.style.animation = "none";
+      alien.firstElementChild.style.animation = "none";
+      void alien.offsetWidth; // settle the base style so the glide actually glides
+      alien.style.transition = "transform 0.55s cubic-bezier(0.5, 0, 0.6, 1)";
+      alien.style.transform = `translate(${dx.toFixed(0)}px, ${dy.toFixed(0)}px) rotate(360deg) scale(${zoom.toFixed(2)})`;
+      consoleWrap.style.animation =
+        "eggConsoleOut 0.5s cubic-bezier(0.55, -0.15, 0.75, 0.5) 0.12s forwards";
     });
 
     // 4.2s FLASH TWO (permitted): white, hold, then to solid black

@@ -48,6 +48,36 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 })();
 
 /* ============================================================
+   Zodiac — a few of the models drift in the backdrop as faint
+   constellations, part of the sky rather than the interface.
+   ============================================================ */
+(function zodiac() {
+  const SPOTS = [
+    { key: "venn", left: "2%", top: "6%", size: "clamp(150px, 22vw, 280px)", dur: 120, delay: 0 },
+    { key: "octagon", left: "76%", top: "10%", size: "clamp(130px, 20vw, 250px)", dur: 145, delay: -40 },
+    { key: "curve", left: "1%", top: "58%", size: "clamp(140px, 21vw, 260px)", dur: 132, delay: -80 },
+    { key: "pyramid", left: "78%", top: "62%", size: "clamp(130px, 19vw, 240px)", dur: 155, delay: -20 },
+    { key: "radial7", left: "42%", top: "78%", size: "clamp(120px, 17vw, 210px)", dur: 140, delay: -60 },
+  ];
+  const wrap = document.createElement("div");
+  wrap.className = "zodiac";
+  wrap.setAttribute("aria-hidden", "true");
+  for (const s of SPOTS) {
+    const fig = document.createElement("div");
+    fig.className = "zodiac-fig";
+    fig.style.left = s.left;
+    fig.style.top = s.top;
+    fig.style.width = s.size;
+    fig.style.height = s.size;
+    fig.style.setProperty("--zd", s.dur + "s");
+    fig.style.animationDelay = s.delay + "s";
+    fig.appendChild(DIAGRAMS[s.key].thumb());
+    wrap.appendChild(fig);
+  }
+  document.body.appendChild(wrap);
+})();
+
+/* ============================================================
    Grid + gentle wander — every model sits on a real CSS grid cell;
    the "drift" is a small transform-only wander around that fixed
    position, never far enough to approach a neighbour.

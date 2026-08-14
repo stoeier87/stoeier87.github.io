@@ -328,22 +328,14 @@ function renderQuestion(i) {
   metaRow.appendChild(roundEl);
   const progress = document.createElement("p");
   progress.className = "q-progress";
-  progress.textContent = "Question " + (i + 1) + " of " + QUESTIONS.length;
+  progress.textContent = i + 1 + " of " + QUESTIONS.length;
   metaRow.appendChild(progress);
   screen.appendChild(metaRow);
 
-  const titleRow = document.createElement("div");
-  titleRow.className = "q-title-row";
-  const num = document.createElement("span");
-  num.className = "q-num";
-  num.setAttribute("aria-hidden", "true");
-  num.textContent = String(i + 1).padStart(2, "0");
-  titleRow.appendChild(num);
   const title = document.createElement("h2");
   title.className = "q-title";
   title.textContent = q.title;
-  titleRow.appendChild(title);
-  screen.appendChild(titleRow);
+  screen.appendChild(title);
 
   const prompt = document.createElement("p");
   prompt.className = "q-prompt";
