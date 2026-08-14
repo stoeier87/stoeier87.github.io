@@ -89,7 +89,9 @@ html.ufo-on .ufo.live {
   z-index: 1;
 }
 
-#starfield {
+/* Was #starfield. Same box, same z-index 2 — dotgrid (1) < sky (2) <
+   journey (5) < topbar (20) is unchanged; only the element it targets is. */
+st-planet-field {
   position: fixed;
   inset: 0;
   width: 100%;
@@ -97,6 +99,13 @@ html.ufo-on .ufo.live {
   z-index: 2;
   display: block;
   pointer-events: none;
+}
+
+/* The sky canvas cannot take a cursor, so hovering a planet sets a class on
+   <html> and the cursor lands on the page instead. */
+html.planet-hover,
+html.planet-hover body {
+  cursor: pointer;
 }
 
 /* ---- Topbar ---- */
