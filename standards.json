@@ -25,12 +25,15 @@
     },
     {
       "id": "no-runtime-deps",
-      "title": "No runtime dependencies",
-      "rule": "package.json \"dependencies\" stays empty. devDependencies are fine.",
-      "why": "This is a static site on GitHub Pages with zero runtime deps today. Firebase is loaded from a CDN URL, not npm. A runtime dep is the one change that ends that quietly.",
+      "title": "Runtime dependencies are an allowlist",
+      "rule": "package.json \"dependencies\" may contain ONLY the packages named in `allowed` below. devDependencies are fine. Adding a name to `allowed` needs an ADR in the same change.",
+      "why": "This is a static site on GitHub Pages. Every runtime dep ships to every visitor, and the failure mode is silence -- nobody notices the bundle grew. The list was empty until ADR-025 admitted three.js for the planet background; keeping it a list rather than a boolean means the next one is a decision someone had to write down, not a diff nobody read.",
       "enforcement": "hook-block",
       "severity": "fatal",
-      "appliesTo": ["package.json"]
+      "appliesTo": ["package.json"],
+      "allowed": ["three"],
+      "$allowed": "Read by .claude/hooks/guard.mjs. Adding a name here is what unblocks the hook -- do it in the same commit as the ADR that justifies it, never on its own.",
+      "adr": "DECISIONS.md ADR-025 -- three.js, bundled by Vite rather than loaded from a CDN."
     },
     {
       "id": "page-exists-when-built",
@@ -96,10 +99,10 @@
       "enforcement": "agent:redundancy-scout",
       "severity": "medium",
       "knownClusters": [
-        "drawPlanet x3 -- src/script.js:197, src/arcade/arcade.js:83, src/arcade/shared/starfield.js:55",
         "back-pill CSS x4 -- src/index.css, src/about-me/about-me.css, src/space-bar/space-bar.css, src/arcade/arcade.css",
         "starfield init x5 -- including one inlined in src/scoreboard/index.html:43-87"
-      ]
+      ],
+      "resolved": "drawPlanet was a x3 cluster (script.js, arcade/arcade.js, arcade/shared/starfield.js) -- resolved by #61's shared PlanetBody class (see the reuse-threejs-universe rule below), not by extraction. One isolated 2D-canvas copy remains in nebula-trail.js, which is a single usage, not a cluster."
     },
     {
       "id": "tokens-sole-sourced",
@@ -128,6 +131,29 @@
       "enforcement": "agent:page-critic",
       "severity": "medium",
       "appliesTo": ["src/shared/**", "src/proto/**"]
+    },
+    {
+      "id": "reuse-threejs-universe",
+      "title": "The three.js universe is shared primitives, not new scenes",
+      "rule": "A new planet, star layer, satellite, or other space-backdrop visual is built by composing the existing primitives through their props. Never hand-roll a new WebGLRenderer/Scene, or a second planet- or star-drawing function, to get a different look.",
+      "why": "CardPlanetRenderer (issue #61) reuses the same PlanetBody class as the <st-planet-field> backdrop instead of writing a second drawPlanet() -- the thing the pre-#61 code did three times (script.js, arcade/arcade.js, arcade/shared/starfield.js) before rule-of-three would have caught it. The prop surface already covers most requests a new visual wants; adding a class to get a look the existing one can already produce with different props recreates that cluster.",
+      "enforcement": "agent:page-critic",
+      "severity": "medium",
+      "appliesTo": [
+        "src/shared/elements/**",
+        "src/script.js",
+        "src/arcade/arcade.js",
+        "src/proto/**"
+      ],
+      "primitives": {
+        "PlanetBody / PlanetSpec -- planet-field.ts": "one planet: position (s0, px), parallax (pf), depth, spin, ring/earth/bands flags, per-planet colours",
+        "PlanetFieldElement / <st-planet-field> -- planet-field.ts": "a full backdrop: planets[], starLayers[], drift, focusY, driven/interactive/satellites attributes",
+        "CardPlanetRenderer -- card-planet-renderer.ts": "many small planet icons sharing one WebGL context, same PlanetBody",
+        "SkyTraffic -- sky-traffic.ts": "drifting satellites and shooting stars",
+        "planet-textures.ts": "surfaceTexture/cloudTexture/ringTexture/streakTexture/glowTexture generate every planet or star texture in the repo; rand() is the seeded PRNG that keeps every sky deterministic -- never Math.random() here"
+      },
+      "$primitives": "Play with position, parallax and depth, and star-layer density/alpha, before reaching for a new file -- that space is large and mostly unexplored. A visual the existing props genuinely cannot produce is a rule-of-three conversation, not a silent new class.",
+      "knownResolved": "drawPlanet was a x3 cluster (script.js, arcade/arcade.js, arcade/shared/starfield.js) before #61; the backdrop copies are gone. One remains -- nebula-trail.js still imports the 2D drawPlanet() from arcade/shared/starfield.js for its in-game visual -- which is a single isolated usage, not a cluster, and out of scope for this rule since it's Canvas 2D, not three.js."
     }
   ],
   "gates": {

@@ -13,19 +13,27 @@ body {
   overflow-y: auto;
 }
 
-#bg {
-  @apply fixed inset-0 z-0;
+/* Was #bg, a 2D starfield canvas. Same box, same layer — see arcade.js. */
+st-planet-field {
+  @apply pointer-events-none fixed inset-0 z-0 block;
 }
 .hall {
   @apply relative z-1 min-h-screen;
   @apply flex flex-col items-center;
-  @apply justify-evenly xl:justify-center;
+  @apply justify-evenly;
   @apply gap-y-20 px-4 py-4;
 }
 header {
-  @apply text-center;
+  @apply text-center pt-[clamp(4.5rem,12vw,5.5rem)] md:pt-0;
   /* Clears the fixed .hall-nav so the title never sits under/behind it */
-  padding-top: clamp(4.5rem, 12vw, 5.5rem);
+  /* padding-top: clamp(4.5rem, 12vw, 5.5rem); */
+  transition: padding-top 0.5s ease;
+}
+/* Moves up on card hover, opening room below it — arcade.js aims the
+   backdrop's travel-target pan (focusY) at the gap this leaves above the
+   card grid. */
+.hall.card-hovered header {
+  padding-top: 0;
 }
 h1 {
   font-family: var(--font-display);
@@ -46,6 +54,21 @@ header p {
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   @apply gap-6;
   @apply grid-cols-1 md:grid-cols-2 lg:grid-cols-3;
+  transition: transform 0.4s ease;
+}
+/* Shrinks in place (no reflow, no repositioning) to open room for the
+   backdrop pan on card hover. Anchored at its own centre rather than moving
+   toward an edge, so individual card hover states (.planet-card:hover)
+   underneath are untouched. */
+.hall.card-hovered .solar-system {
+  transform: scale(0.92);
+}
+
+.solar-system:hover {
+  @apply lg:scale-[0.92];
+}
+st-planet-field#bg {
+  @apply opacity-10 md:opacity-100 pointer-events-none fixed inset-0 z-0 block;
 }
 .planet-card {
   @apply border-2 border-white/[0.28] rounded-[18px];

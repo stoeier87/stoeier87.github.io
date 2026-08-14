@@ -68,7 +68,7 @@ Personal portfolio and browser arcade for Tobias Fullerton Støier, at `stoeier.
 - **Vite 8 as a pure MPA bundler.** `vite.config.js` sets `root: "src"` and globs `src/**/*.html` into `rollupOptions.input`, so **routing is the filesystem** — drop an HTML file anywhere under `src/` and it ships. `src/` _is_ the route table, and `root` is the only thing mapping it onto URLs: Vite emits each page at its path relative to `root`, so `src/arcade/comet-pong/index.html` ships as `/arcade/comet-pong/`. Renaming Rollup input keys does not do this. See `DECISIONS.md` ADR-022.
 - **Tailwind v4** via `@tailwindcss/vite`, CSS-first config, no `tailwind.config.js`. Used as a **design-token layer plus a shared component layer**, not as a utility framework — only `index.html` uses utilities in markup today.
 - **Firebase Realtime Database** for arcade leaderboards only, loaded from a CDN URL rather than npm.
-- **Zero runtime dependencies.** Four devDependencies before this setup; `prettier`, `eslint` and `typescript` were added with it.
+- **One runtime dependency, allowlisted.** `three`, bundled by Vite, for the `<st-planet-field>` background on the homepage and the arcade lobby (`DECISIONS.md` ADR-025). It is the only name in `standards.json` → `no-runtime-deps` → `allowed`; anything else is still hook-blocked.
 
 25 pages, 8 Canvas games — 14 original plus the 11 that arrived with `tools/` in #56 (`DECISIONS.md` ADR-019). `envs.json` carries the count as `expectedHtmlCount`, and the build emitting a different number is the signal that the glob is anchored wrong. `dist/` on disk is stale — rebuild rather than reading it as ground truth.
 
@@ -81,7 +81,7 @@ The machine-readable version is `standards.json`, which `page-critic` and the ho
 **Paths and builds**
 
 1. **Every path is relative** — `./` or `../`. `base: "./"` in `vite.config.js` is the only reason sub-directory deploys work; a root-absolute path resolves against the host root and silently escapes `/preview/…/` and `/stage/` onto production. **Hook-blocked.** Escape hatch if you truly need one: `guard:allow-absolute` on the same line.
-2. **No runtime dependencies.** `devDependencies` are fine. **Hook-blocked.**
+2. **Runtime dependencies are an allowlist**, currently `["three"]` in `standards.json`. `devDependencies` are fine and unrestricted. **Hook-blocked**, with no escape comment — adding a name needs an ADR in the same change (ADR-025).
 3. **A page exists when the build emits it.** After adding or moving HTML, confirm it's in `dist/`.
 
 **Page contract** — every page, no exceptions
@@ -95,10 +95,11 @@ Rules 6 and 7 are not preferences. They are the two halves of the regression PR 
 
 **Change discipline**
 
-8. **Rule of three.** Two copies are fine when the variants genuinely differ; a third means stop and propose an extraction. Never extract silently as a side effect of another change. Current clusters: `drawPlanet` ×3, back-pill CSS ×5 (ADR-008's ×4 was stale by one — a partial copy in `space-bar.css:45-46` was missed), starfield init ×5.
+8. **Rule of three.** Two copies are fine when the variants genuinely differ; a third means stop and propose an extraction. Never extract silently as a side effect of another change. Current clusters: back-pill CSS ×5 (ADR-008's ×4 was stale by one — a partial copy in `space-bar.css:45-46` was missed), starfield init ×5. `drawPlanet` was a ×3 cluster; #61 resolved it by reuse (one shared `PlanetBody` class), not extraction — see rule 12 below and `standards.json`'s `reuse-threejs-universe`.
 9. **Design tokens are sole-sourced** in `tailwind.css` `@theme`, mirrored typed in `tokens.ts`. Nothing hardcodes a colour. The `--color-scoreboard-*` sub-palette is a deliberate documented drift — leave it.
 10. **Styling lives in JS from here on.** New components carry Tailwind utility classes in their templates. **No new page-local `.css` files.** The 14 existing ones are frozen: they keep working, they stop growing.
 11. **Write components element-shaped** — props in, markup out, no module-scope side effects, no globals, setup returns its own cleanup. See §7.
+12. **The three.js universe is shared primitives, not new scenes.** A new planet, star layer, satellite or space-backdrop visual is built by composing `PlanetBody`/`PlanetSpec`, `PlanetFieldElement` (`<st-planet-field>`), `CardPlanetRenderer` and `SkyTraffic` (all in `src/shared/elements/`) through their existing props — position, parallax, depth, star-layer density/alpha — not by hand-rolling a new `WebGLRenderer`/`Scene` or a second planet-drawing function. `planet-textures.ts` is the only place that generates a texture; its `rand()` is what keeps every sky deterministic. See `standards.json`'s `reuse-threejs-universe` and `ANALYSIS.md` §2b for the full prop surface.
 
 ### Canvas contract
 
@@ -151,7 +152,7 @@ Trimmed once already (`DECISIONS.md` ADR-020) — four things that looked like s
 
 ### Hooks — two hard blocks, nothing else
 
-Root-absolute paths, and `dependencies` in `package.json`. Everything else teaches inline. Noisy hooks get disabled, and a disabled hook protects nothing.
+Root-absolute paths, and non-allowlisted `dependencies` in `package.json`. Everything else teaches inline. Noisy hooks get disabled, and a disabled hook protects nothing.
 
 ---
 

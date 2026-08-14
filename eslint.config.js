@@ -11,6 +11,7 @@
  */
 
 import { readFileSync } from "node:fs";
+import tseslint from "typescript-eslint";
 
 const browserGlobals = {
   window: "readonly",
@@ -164,6 +165,28 @@ export default [
       globals: browserGlobals,
     },
     rules: bugRules,
+  },
+
+  /**
+   * TypeScript. The strict block below already globbed `.ts`, but nothing ever
+   * gave ESLint a parser for it — so the first `.ts` file under src/shared/ came
+   * back as `Parsing error: Unexpected token :` rather than being linted. Found
+   * when planet-field.ts landed (ADR-025); typescript-eslint is a devDependency
+   * for the parser only, no plugin rules, because bugRules are core rules and
+   * they work unchanged on the TS AST.
+   *
+   * `no-undef` is off here on purpose: tsc already reports unknown identifiers,
+   * and ESLint without type information flags type-only names as undefined.
+   */
+  {
+    files: ["**/*.ts"],
+    languageOptions: {
+      parser: tseslint.parser,
+      ecmaVersion: 2024,
+      sourceType: "module",
+      globals: browserGlobals,
+    },
+    rules: { ...bugRules, "no-undef": "off" },
   },
 
   // Tooling that runs in Node.

@@ -1,45 +1,33 @@
+import { definePlanetField } from "./shared/elements/planet-field.ts";
+import { color } from "./tokens.ts";
+
 (function () {
   "use strict";
 
   document.documentElement.classList.add("js-anim");
+  definePlanetField();
 
-  /* ============ Starfield ============ */
-  let canvas = document.getElementById("starfield");
-  let ctx = canvas.getContext("2d");
-  let W = 0,
-    H = 0,
-    dpr = 1;
-  let layers = [];
-  let LAYER_DEFS = [
-    { density: 22000, sizeMin: 0.5, sizeMax: 1.0, parallax: 0.12, alpha: 0.5 },
-    { density: 14000, sizeMin: 1.0, sizeMax: 1.7, parallax: 0.3, alpha: 0.7 },
-    { density: 26000, sizeMin: 1.7, sizeMax: 2.5, parallax: 0.55, alpha: 0.9 },
-  ];
-
+  /**
+   * The hash PRNG the letter scatter is seeded from. It used to live at the top
+   * of the starfield section; the starfield moved into <st-planet-field>, this
+   * did not, because "Bogstav-rejsen" depends on it and the whole point of that
+   * seed is that the name assembles the same way every visit.
+   */
   function rand(seed) {
     let x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
     return x - Math.floor(x);
   }
 
-  function buildStars() {
-    layers = LAYER_DEFS.map(function (def, li) {
-      let count = Math.max(20, Math.round((W * H) / def.density));
-      let stars = [];
-      for (let i = 0; i < count; i++) {
-        let s = li * 10000 + i * 7;
-        stars.push({
-          x: rand(s + 1) * W,
-          y: rand(s + 2) * H,
-          r: def.sizeMin + rand(s + 3) * (def.sizeMax - def.sizeMin),
-          phase: rand(s + 4) * Math.PI * 2,
-          speed: 0.5 + rand(s + 5) * 1.2,
-        });
-      }
-      return { def: def, stars: stars };
-    });
-  }
+  /* ============ Planeter ============
+     Nu 9 planeter — Pluto kom med (issue #61). Data er props, ikke kode:
+     hele listen sendes til <st-planet-field>, som ejer selve tegningen.
 
-  /* ============ Planeter ============ */
+     Every link is relative. They were `/arcade/<game>` here for a long time
+     (known issue 1, BACKLOG B1) and that is exactly the bug base: "./" means
+     the same build serves stoeier.dk and /preview/<topic>/, and a root-absolute
+     link jumped a preview visitor onto production without telling them. The
+     element does not carry URLs at all now, so this is the only place they
+     exist and there is nothing left to get wrong. */
   let PLANETS = [
     {
       name: "MERKUR",
@@ -47,9 +35,11 @@
       s0: 0.06,
       px: 0.8,
       pf: 0.42,
-      hi: "#b8b0a8",
-      lo: "#5c554e",
-      link: "/arcade/orbit-runner",
+      hi: color.planet.merkurHi,
+      lo: color.planet.merkurLo,
+      spin: 0.05,
+      depth: -80,
+      link: "./arcade/orbit-runner/",
     },
     {
       name: "VENUS",
@@ -57,9 +47,11 @@
       s0: 0.16,
       px: 0.16,
       pf: 0.5,
-      hi: "#e8cfa0",
-      lo: "#a67c48",
-      link: "/arcade/meteor-dodge",
+      hi: color.planet.venusHi,
+      lo: color.planet.venusLo,
+      spin: 0.035,
+      depth: -40,
+      link: "./arcade/meteor-dodge/",
     },
     {
       name: "JORDEN",
@@ -67,10 +59,12 @@
       s0: 0.27,
       px: 0.83,
       pf: 0.58,
-      hi: "#6fb6e8",
-      lo: "#1c4e8a",
+      hi: color.planet.jordenHi,
+      lo: color.planet.jordenLo,
       earth: true,
-      link: "/arcade/iss-docking",
+      spin: 0.08,
+      depth: 0,
+      link: "./arcade/iss-docking/",
     },
     {
       name: "MARS",
@@ -78,9 +72,11 @@
       s0: 0.38,
       px: 0.14,
       pf: 0.46,
-      hi: "#e0704a",
-      lo: "#8a3520",
-      link: "/arcade/phobos-lander",
+      hi: color.planet.marsHi,
+      lo: color.planet.marsLo,
+      spin: 0.075,
+      depth: -60,
+      link: "./arcade/phobos-lander/",
     },
     {
       name: "JUPITER",
@@ -88,10 +84,12 @@
       s0: 0.52,
       px: 0.85,
       pf: 0.62,
-      hi: "#d9b48a",
-      lo: "#8a6238",
+      hi: color.planet.jupiterHi,
+      lo: color.planet.jupiterLo,
       bands: true,
-      link: "/arcade/comet-pong",
+      spin: 0.16,
+      depth: 150,
+      link: "./arcade/comet-pong/",
     },
     {
       name: "SATURN",
@@ -99,10 +97,12 @@
       s0: 0.67,
       px: 0.16,
       pf: 0.55,
-      hi: "#e3c68f",
-      lo: "#9c7a48",
+      hi: color.planet.saturnHi,
+      lo: color.planet.saturnLo,
       ring: true,
-      link: "/arcade/star-memory",
+      spin: 0.15,
+      depth: 80,
+      link: "./arcade/star-memory/",
     },
     {
       name: "URANUS",
@@ -110,454 +110,63 @@
       s0: 0.8,
       px: 0.82,
       pf: 0.48,
-      hi: "#a8e0e8",
-      lo: "#4a98a8",
-      link: "/arcade/nebula-trail",
+      hi: color.planet.uranusHi,
+      lo: color.planet.uranusLo,
+      ring: false,
+      spin: 0.09,
+      depth: -100,
+      link: "./arcade/nebula-trail/",
     },
     {
       name: "NEPTUN",
       r: 0.046,
-      s0: 0.92,
+      s0: 0.9,
       px: 0.15,
       pf: 0.6,
-      hi: "#6a8ce8",
-      lo: "#2a3f9c",
-      link: "/arcade/asteroid-breaker",
+      hi: color.planet.neptunHi,
+      lo: color.planet.neptunLo,
+      spin: 0.095,
+      depth: -130,
+      link: "./arcade/asteroid-breaker/",
+    },
+    {
+      // Den niende. Ingen spil endnu, så Pluto sender dig til hele arkaden.
+      // s0 er 0.97 og pf er lav med vilje: højere op og den ville lande oven i
+      // Neptun, lavere og ±3r-cullingen ville skjule den før rejsen er slut.
+      name: "PLUTO",
+      r: 0.014,
+      s0: 0.97,
+      px: 0.72,
+      pf: 0.44,
+      hi: color.planet.plutoHi,
+      lo: color.planet.plutoLo,
+      spin: 0.03,
+      depth: -180,
+      link: "./arcade/",
     },
   ];
 
-  // Runtime map of visible planets for hover/click hit-test
-  let visiblePlanets = [];
-  let hoveredPlanetIndex = -1;
-
-  // Earth system (moon + ISS orbit) - no live API fetch
-  let earthState = { visible: false, x: 0, y: 0, r: 0 };
-
-  // Mouse — listeners are registered below, after the toast helpers,
-  // on document rather than the canvas (canvas has pointer-events: none).
-  let mouse = { x: -9999, y: -9999, inside: false };
-
-  // Simple toast helpers (kept for future use, not initialized here)
-  let toastEl = null;
-  let toastHideAt = 0;
-  function ensureToast() {
-    if (toastEl) return;
-    toastEl = document.createElement("div");
-    toastEl.style.position = "fixed";
-    toastEl.style.left = "50%";
-    toastEl.style.bottom = "1.2rem";
-    toastEl.style.transform = "translateX(-50%) translateY(12px)";
-    toastEl.style.padding = "0.55rem 0.9rem";
-    toastEl.style.border = "1px solid rgba(255,255,255,0.35)";
-    toastEl.style.borderRadius = "999px";
-    toastEl.style.background = "rgba(13,20,36,0.88)";
-    toastEl.style.color = "#fff";
-    toastEl.style.fontFamily = "'Space Mono', ui-monospace, monospace";
-    toastEl.style.fontSize = "0.72rem";
-    toastEl.style.letterSpacing = "0.06em";
-    toastEl.style.zIndex = "120";
-    toastEl.style.opacity = "0";
-    toastEl.style.transition = "opacity .2s ease, transform .2s ease";
-    toastEl.style.pointerEvents = "none";
-    document.body.appendChild(toastEl);
-  }
-  function showToast(text) {
-    ensureToast();
-    toastEl.textContent = text;
-    toastEl.style.opacity = "1";
-    toastEl.style.transform = "translateX(-50%) translateY(0)";
-    toastHideAt = performance.now() + 1400;
-  }
-
-  // Mouse — listen on document so pointer-events: none on the canvas
-  // doesn't break planet hover/click interaction.
-  document.addEventListener(
-    "mousemove",
-    function (e) {
-      mouse.x = e.clientX;
-      mouse.y = e.clientY;
-      mouse.inside = true;
-    },
-    { passive: true },
-  );
-  document.addEventListener(
-    "mouseleave",
-    function () {
-      mouse.inside = false;
-      hoveredPlanetIndex = -1;
-    },
-    { passive: true },
-  );
-  document.addEventListener("click", function () {
-    if (hoveredPlanetIndex < 0) return;
-    let link = PLANETS[hoveredPlanetIndex].link;
-    if (link) window.location.href = link;
-  });
-
-  function drawPlanet(p, x, y, r) {
-    let glow = ctx.createRadialGradient(x, y, r * 0.5, x, y, r * 2);
-    glow.addColorStop(0, "rgba(255,255,255,0.06)");
-    glow.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = glow;
-    ctx.beginPath();
-    ctx.arc(x, y, r * 2, 0, 6.2832);
-    ctx.fill();
-
-    if (p.ring) {
-      ctx.strokeStyle = "rgba(214, 194, 150, 0.55)";
-      ctx.lineWidth = r * 0.3;
-      ctx.beginPath();
-      ctx.ellipse(x, y, r * 1.75, r * 0.55, -0.32, Math.PI, 6.2832);
-      ctx.stroke();
-    }
-
-    let body = ctx.createRadialGradient(
-      x - r * 0.35,
-      y - r * 0.35,
-      r * 0.1,
-      x,
-      y,
-      r * 1.05,
-    );
-    body.addColorStop(0, p.hi);
-    body.addColorStop(1, p.lo);
-    ctx.fillStyle = body;
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, 6.2832);
-    ctx.fill();
-
-    if (p.bands || p.earth) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, 6.2832);
-      ctx.clip();
-      if (p.bands) {
-        ctx.fillStyle = "rgba(110, 74, 44, 0.35)";
-        ctx.fillRect(x - r, y - r * 0.52, r * 2, r * 0.18);
-        ctx.fillRect(x - r, y - r * 0.1, r * 2, r * 0.22);
-        ctx.fillRect(x - r, y + r * 0.38, r * 2, r * 0.15);
-        ctx.fillStyle = "rgba(200, 90, 60, 0.75)";
-        ctx.beginPath();
-        ctx.ellipse(
-          x + r * 0.35,
-          y + r * 0.24,
-          r * 0.18,
-          r * 0.11,
-          0,
-          0,
-          6.2832,
-        );
-        ctx.fill();
-      }
-      if (p.earth) {
-        ctx.fillStyle = "rgba(76, 156, 94, 0.85)";
-        ctx.beginPath();
-        ctx.ellipse(
-          x - r * 0.3,
-          y - r * 0.15,
-          r * 0.42,
-          r * 0.3,
-          0.5,
-          0,
-          6.2832,
-        );
-        ctx.fill();
-        ctx.beginPath();
-        ctx.ellipse(
-          x + r * 0.42,
-          y + r * 0.35,
-          r * 0.28,
-          r * 0.2,
-          -0.4,
-          0,
-          6.2832,
-        );
-        ctx.fill();
-        ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
-        ctx.beginPath();
-        ctx.ellipse(x + r * 0.1, y - r * 0.8, r * 0.35, r * 0.18, 0, 0, 6.2832);
-        ctx.fill();
-      }
-      ctx.restore();
-    }
-
-    if (p.ring) {
-      ctx.strokeStyle = "rgba(224, 204, 160, 0.7)";
-      ctx.lineWidth = r * 0.3;
-      ctx.beginPath();
-      ctx.ellipse(x, y, r * 1.75, r * 0.55, -0.32, 0, Math.PI);
-      ctx.stroke();
-    }
-  }
-
-  function drawEarthSystem(scroll, now) {
-    if (!earthState.visible) return;
-
-    let ex = earthState.x;
-    let ey = earthState.y;
-    let er = earthState.r;
-
-    // ISS on inner orbit
-    let issOrbit = er * 1.9;
-    let issA = now * 0.0012;
-    let ix = ex + Math.cos(issA) * issOrbit;
-    let iy = ey + Math.sin(issA) * issOrbit * 0.75;
-
-    ctx.strokeStyle = "rgba(200,230,255,0.20)";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.ellipse(ex, ey, issOrbit, issOrbit * 0.75, 0, 0, Math.PI * 2);
-    ctx.stroke();
-
-    let blink = 0.6 + 0.4 * Math.sin(now * 0.006);
-    let ig = ctx.createRadialGradient(ix, iy, 0, ix, iy, 10);
-    ig.addColorStop(0, "rgba(235,245,255," + (0.5 * blink).toFixed(3) + ")");
-    ig.addColorStop(1, "rgba(235,245,255,0)");
-    ctx.fillStyle = ig;
-    ctx.beginPath();
-    ctx.arc(ix, iy, 10, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = "rgba(255,255,255," + (0.88 * blink).toFixed(3) + ")";
-    ctx.fillRect(ix - 1.1, iy - 0.75, 2.2, 1.5);
-    ctx.fillRect(ix - 4.0, iy - 0.42, 2.2, 0.84);
-    ctx.fillRect(ix + 1.8, iy - 0.42, 2.2, 0.84);
-
-    // Moon on outer orbit
-    let moonOrbit = er * 2.7;
-    let moonR = Math.max(1.8, er * 0.18);
-    let moonA = now * 0.00045;
-    let mx = ex + Math.cos(moonA) * moonOrbit;
-    let my = ey + Math.sin(moonA) * moonOrbit * 0.75;
-
-    ctx.strokeStyle = "rgba(210,220,245,0.17)";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.ellipse(ex, ey, moonOrbit, moonOrbit * 0.75, 0, 0, Math.PI * 2);
-    ctx.stroke();
-
-    let moonGlow = ctx.createRadialGradient(mx, my, 0, mx, my, moonR * 4);
-    moonGlow.addColorStop(0, "rgba(240,245,255,0.25)");
-    moonGlow.addColorStop(1, "rgba(240,245,255,0)");
-    ctx.fillStyle = moonGlow;
-    ctx.beginPath();
-    ctx.arc(mx, my, moonR * 4, 0, Math.PI * 2);
-    ctx.fill();
-
-    let moonBody = ctx.createRadialGradient(
-      mx - moonR * 0.35,
-      my - moonR * 0.35,
-      0,
-      mx,
-      my,
-      moonR * 1.2,
-    );
-    moonBody.addColorStop(0, "#f4f4f6");
-    moonBody.addColorStop(1, "#9ca3ad");
-    ctx.fillStyle = moonBody;
-    ctx.beginPath();
-    ctx.arc(mx, my, moonR, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  function drawPlanets(scroll, now) {
-    let vmin = Math.min(W, H);
-    let S = journeyEnd;
-    visiblePlanets.length = 0;
-    earthState.visible = false;
-
-    for (let i = 0; i < PLANETS.length; i++) {
-      let p = PLANETS[i];
-      let r = p.r * vmin;
-      let worldY = H * 0.55 + p.s0 * S * p.pf;
-      let y = worldY - scroll * p.pf;
-      let x = p.px * W;
-      if (y < -r * 3 || y > H + r * 3) continue;
-
-      drawPlanet(p, x, y, r);
-      visiblePlanets.push({ idx: i, x: x, y: y, r: r });
-
-      if (p.earth) {
-        earthState.visible = true;
-        earthState.x = x;
-        earthState.y = y;
-        earthState.r = r;
-      }
-    }
-
-    drawEarthSystem(scroll, now);
-  }
-
-  /* ============ Shooting stars + satellites (no live ISS) ============ */
-  let shootingStars = [];
-  let satellites = [];
-  let nextShootAt = 0;
-
-  function scheduleNextShoot(now) {
-    let delay = 1800 + Math.random() * 4700;
-    nextShootAt = now + delay;
-  }
-
-  function spawnShootingStar() {
-    let startX = Math.random() * W * 0.6 - W * 0.2;
-    let startY = Math.random() * H * 0.35;
-    let speed = 650 + Math.random() * 550;
-    let len = 90 + Math.random() * 120;
-    let angle = (25 + Math.random() * 20) * (Math.PI / 180);
-    shootingStars.push({
-      x: startX,
-      y: startY,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
-      life: 0,
-      ttl: 700 + Math.random() * 450,
-      len: len,
-      width: 1 + Math.random() * 1.2,
+  /* ============ Himlen ============
+     <st-planet-field> owns stars, planets, shooting stars and satellites. It
+     carries the `driven` attribute, so it does NOT start a loop of its own —
+     the single rAF loop at the bottom of this file calls tick() on it. That is
+     standards.json `one-raf-loop`, which is fatal, and it is why the element
+     has a driven mode at all. */
+  let sky = document.getElementById("sky");
+  if (sky) {
+    sky.planets = PLANETS;
+    sky.addEventListener("planet-activate", function (e) {
+      let link = e.detail && e.detail.planet && e.detail.planet.link;
+      if (link) window.location.href = link;
     });
-  }
-
-  function updateShootingStars(dt, now) {
-    if (now >= nextShootAt && shootingStars.length < 3) {
-      spawnShootingStar();
-      scheduleNextShoot(now);
-    }
-    for (let i = shootingStars.length - 1; i >= 0; i--) {
-      let s = shootingStars[i];
-      s.life += dt;
-      s.x += s.vx * (dt / 1000);
-      s.y += s.vy * (dt / 1000);
-      if (s.life > s.ttl || s.x > W + s.len || s.y > H + s.len)
-        shootingStars.splice(i, 1);
-    }
-  }
-
-  function drawShootingStars() {
-    for (let i = 0; i < shootingStars.length; i++) {
-      let s = shootingStars[i];
-      let p = 1 - s.life / s.ttl;
-      let n = Math.hypot(s.vx, s.vy) || 1;
-      let tailX = s.x - (s.vx / n) * s.len;
-      let tailY = s.y - (s.vy / n) * s.len;
-      let grad = ctx.createLinearGradient(s.x, s.y, tailX, tailY);
-      grad.addColorStop(0, "rgba(255,255,255," + (0.95 * p).toFixed(3) + ")");
-      grad.addColorStop(
-        0.35,
-        "rgba(180,220,255," + (0.45 * p).toFixed(3) + ")",
-      );
-      grad.addColorStop(1, "rgba(180,220,255,0)");
-      ctx.strokeStyle = grad;
-      ctx.lineWidth = s.width;
-      ctx.beginPath();
-      ctx.moveTo(s.x, s.y);
-      ctx.lineTo(tailX, tailY);
-      ctx.stroke();
-    }
-  }
-
-  function createSatellite() {
-    let fromLeft = Math.random() > 0.5;
-    let yBand = H * (0.1 + Math.random() * 0.45);
-    let baseSpeed = 18 + Math.random() * 26;
-    return {
-      x: fromLeft ? -40 : W + 40,
-      y: yBand,
-      vx: fromLeft ? baseSpeed : -baseSpeed,
-      vy: (Math.random() - 0.5) * 2.2,
-      size: 1.3 + Math.random() * 1.1,
-      blinkPhase: Math.random() * Math.PI * 2,
-      blinkSpeed: 0.006 + Math.random() * 0.005,
-      glow: 0.55 + Math.random() * 0.25,
-    };
-  }
-
-  function initSatellites() {
-    satellites.length = 0;
-    let count = 5;
-    for (let i = 0; i < count; i++) satellites.push(createSatellite());
-  }
-
-  function updateSatellites(dt, now) {
-    for (let i = satellites.length - 1; i >= 0; i--) {
-      let s = satellites[i];
-      s.x += s.vx * (dt / 1000);
-      s.y += s.vy * (dt / 1000);
-      s.y += Math.sin((now + s.blinkPhase * 2000) * 0.00035) * 0.02;
-      let out = s.x < -80 || s.x > W + 80 || s.y < -40 || s.y > H + 40;
-      if (out) satellites[i] = createSatellite();
-    }
-  }
-
-  function drawSatellites(now) {
-    for (let i = 0; i < satellites.length; i++) {
-      let s = satellites[i];
-      let blink = 0.55 + 0.45 * Math.sin(now * s.blinkSpeed + s.blinkPhase);
-      let alpha = s.glow * blink;
-      let g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.size * 6);
-      g.addColorStop(0, "rgba(220,240,255," + (0.45 * alpha).toFixed(3) + ")");
-      g.addColorStop(1, "rgba(220,240,255,0)");
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.size * 6, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "rgba(210,230,255," + alpha.toFixed(3) + ")";
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-
-  function updateCanvasInteractions() {
-    if (!mouse.inside) {
-      hoveredPlanetIndex = -1;
-      return;
-    }
-
-    let best = -1;
-    for (let i = visiblePlanets.length - 1; i >= 0; i--) {
-      let p = visiblePlanets[i];
-      let dx = mouse.x - p.x;
-      let dy = mouse.y - p.y;
-      if (dx * dx + dy * dy <= p.r * p.r) {
-        best = p.idx;
-        break;
-      }
-    }
-    hoveredPlanetIndex = best;
-  }
-
-  function drawStars(scroll, time) {
-    ctx.clearRect(0, 0, W, H);
-
-    for (let li = 0; li < layers.length; li++) {
-      let layer = layers[li],
-        def = layer.def,
-        offset = scroll * def.parallax;
-      for (let i = 0; i < layer.stars.length; i++) {
-        let st = layer.stars[i];
-        let y = (st.y - offset) % H;
-        if (y < 0) y += H;
-        let tw = 0.65 + 0.35 * Math.sin(time * 0.001 * st.speed + st.phase);
-        ctx.globalAlpha = def.alpha * tw;
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.arc(st.x, y, st.r, 0, 6.2832);
-        ctx.fill();
-      }
-    }
-    ctx.globalAlpha = 1;
-
-    let dt = Math.min(64, time - (drawStars._lastTime || time));
-
-    updateShootingStars(dt, time);
-    drawShootingStars();
-    updateSatellites(dt, time);
-    drawSatellites(time);
-
-    drawPlanets(scroll, time);
-
-    updateCanvasInteractions();
-
-    drawStars._lastTime = time;
+    // A pointer-events: none canvas cannot show a cursor, so the affordance is
+    // on <html> instead. The element brightens the planet's glow to match.
+    sky.addEventListener("planet-enter", function () {
+      document.documentElement.classList.add("planet-hover");
+    });
+    sky.addEventListener("planet-leave", function () {
+      document.documentElement.classList.remove("planet-hover");
+    });
   }
 
   /* ============ Bogstav-rejsen ============
@@ -676,17 +285,12 @@
   let scrollPos = window.scrollY || 0;
   let dirty = true;
 
+  /* Canvas sizing, DPR and star rebuilding all moved into the element, which
+     does its own resize handling. What is left here is the one number the
+     element cannot know: how tall the scroll journey is. */
   function measure() {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
-    W = window.innerWidth;
-    H = window.innerHeight;
-    canvas.width = Math.round(W * dpr);
-    canvas.height = Math.round(H * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    buildStars();
-    initSatellites();
-    scheduleNextShoot(performance.now());
-    if (journey) journeyEnd = Math.max(1, journey.offsetHeight - H);
+    if (journey) journeyEnd = Math.max(1, journey.offsetHeight - window.innerHeight);
+    if (sky) sky.journeyEnd = journeyEnd;
     const topbarEl = document.querySelector(".topbar");
     if (topbarEl) document.documentElement.style.setProperty("--topbar-h", topbarEl.offsetHeight + "px");
     dirty = true;
@@ -839,7 +443,10 @@
   if (!staticHome) updateHeadline(0);
   let ufoActive = finePointer && ufo;
   (function frame(time) {
-    drawStars(scrollPos, time);
+    if (sky) {
+      sky.scrollOffset = scrollPos;
+      sky.tick(time);
+    }
     if (dirty && !staticHome) {
       dirty = false;
       let p = scrollPos / journeyEnd;
