@@ -345,6 +345,14 @@ function renderQuestion(i) {
 
   stage.innerHTML = "";
   stage.appendChild(screen);
+
+  // Block hover events briefly so a stationary cursor can't make a freshly
+  // created option appear pre-selected on the new question.
+  const opts = screen.querySelector(".q-options");
+  if (opts) {
+    opts.style.pointerEvents = "none";
+    setTimeout(() => { opts.style.pointerEvents = ""; }, 200);
+  }
 }
 
 /* ============================================================
