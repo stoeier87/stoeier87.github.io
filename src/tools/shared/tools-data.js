@@ -395,7 +395,7 @@ const SQUIGGLE_STAGE_VB = "0 -18 224 210";
 const SQUIGGLE_MARKERS = [
   { key: "research", label: "RESEARCH", x: 40, accent: false },
   { key: "concept", label: "CONCEPT PROTOTYPE", x: 115, accent: false },
-  { key: "design", label: "DESIGN", x: 190, accent: true },
+  { key: "design", label: "DESIGN", x: 190, accent: false },
 ];
 
 /* ── Tool 15: The 6x6 Rule ───────────────────────────────────────

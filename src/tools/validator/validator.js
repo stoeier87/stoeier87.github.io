@@ -292,15 +292,37 @@ function renderQuestion(i) {
   roundEl.textContent = round.intro;
   screen.appendChild(roundEl);
 
+  // Progress is a segmented bar — one cell per question — with the
+  // original counter line kept beneath it.
+  const progressWrap = document.createElement("div");
+  progressWrap.className = "q-progress-wrap";
+  const bar = document.createElement("div");
+  bar.className = "q-progress-bar";
+  bar.setAttribute("aria-hidden", "true");
+  for (let s = 0; s < QUESTIONS.length; s++) {
+    const seg = document.createElement("span");
+    seg.className = "q-seg" + (s < i ? " done" : s === i ? " now" : "");
+    bar.appendChild(seg);
+  }
+  progressWrap.appendChild(bar);
   const progress = document.createElement("p");
   progress.className = "q-progress";
   progress.textContent = "Question " + (i + 1) + " of " + QUESTIONS.length;
-  screen.appendChild(progress);
+  progressWrap.appendChild(progress);
+  screen.appendChild(progressWrap);
 
+  const titleRow = document.createElement("div");
+  titleRow.className = "q-title-row";
+  const num = document.createElement("span");
+  num.className = "q-num";
+  num.setAttribute("aria-hidden", "true");
+  num.textContent = String(i + 1).padStart(2, "0");
+  titleRow.appendChild(num);
   const title = document.createElement("h2");
   title.className = "q-title";
   title.textContent = q.title;
-  screen.appendChild(title);
+  titleRow.appendChild(title);
+  screen.appendChild(titleRow);
 
   const prompt = document.createElement("p");
   prompt.className = "q-prompt";
@@ -313,10 +335,12 @@ function renderQuestion(i) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "q-option" + (answers[i] === oi + 1 ? " selected" : "");
+    btn.style.setProperty("--qi", oi);
     const mark = document.createElement("span");
     mark.className = "q-option-mark";
     mark.setAttribute("aria-hidden", "true");
     if (answers[i] === oi + 1) mark.innerHTML = '<i class="fa-solid fa-check"></i>';
+    else mark.textContent = String(oi + 1);
     const label = document.createElement("span");
     label.textContent = text;
     btn.appendChild(mark);
