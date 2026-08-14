@@ -179,6 +179,61 @@ const CSS = `
 }
 .egg-bubble.show { opacity: 1; transform: translateY(0); }
 
+/* ── Destruction ───────────────────────────────────────────
+   Shake, rotation and scale ride on CSS vars driven by one JS
+   interval; everything else is transform/opacity/filter. */
+.egg-shaken {
+  transform: translate(var(--egg-sx, 0px), var(--egg-sy, 0px))
+    rotate(var(--egg-rot, 0deg)) scale(var(--egg-scl, 1));
+}
+
+.egg-fx { position: fixed; inset: 0; pointer-events: none; }
+
+.egg-border-flicker { z-index: 330; border: 2px solid var(--color-red); opacity: 0; }
+/* exactly three appearances in 0.5s, then gone */
+@keyframes eggBorderFlick {
+  0%, 20%, 36%, 56%, 72%, 100% { opacity: 0; }
+  10%, 46%, 84% { opacity: 1; }
+}
+.egg-border-flicker.run { animation: eggBorderFlick 0.5s linear 1; }
+
+.egg-band {
+  position: fixed;
+  left: -80px;
+  right: -80px;
+  z-index: 310;
+  pointer-events: none;
+  backdrop-filter: contrast(1.7) invert(0.12) hue-rotate(45deg);
+}
+
+@keyframes eggRgb {
+  0%, 100% { filter: drop-shadow(-2px 0 rgba(255, 40, 60, 0.85)) drop-shadow(2px 0 rgba(0, 230, 255, 0.85)); }
+  50% { filter: drop-shadow(-8px 0 rgba(255, 40, 60, 0.85)) drop-shadow(8px 0 rgba(0, 230, 255, 0.85)); }
+}
+.egg-rgb { animation: eggRgb 0.16s linear infinite; }
+
+.egg-cracks { z-index: 320; width: 100%; height: 100%; }
+.egg-crack { fill: none; stroke: rgba(255, 255, 255, 0.8); stroke-width: 1; }
+
+.egg-scanlines { z-index: 315; opacity: 0; transition: opacity 0.6s ease; overflow: hidden; }
+.egg-scanlines.show { opacity: 0.18; }
+.egg-scanlines::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: -100%; height: 300%;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(255, 255, 255, 0.35) 3px 4px);
+  animation: eggScanRoll 1.4s linear infinite;
+}
+@keyframes eggScanRoll {
+  from { transform: translateY(0); }
+  to { transform: translateY(33.33%); }
+}
+
+.egg-burnout { transition: opacity 1.2s steps(6, end); opacity: 0 !important; }
+
+.egg-flash { z-index: 380; background: #fff; opacity: 0; }
+.egg-blackout { z-index: 390; background: #000; opacity: 0; }
+
 /* ── Small screens ─────────────────────────────────────── */
 @media (max-width: 500px) {
   /* bottom is 44px rather than 24 so the DO NOT PUSH label clears the
@@ -396,9 +451,207 @@ function initEasterEgg() {
     }
   });
 
+  /* ── Destruction: a 5-second timeline. Flash safety: only two
+     full-viewport flashes (2.6s and 4.2s), the edge border flickers
+     exactly three times, nothing else strobes. ── */
+  function fxDiv(cls) {
+    const d = document.createElement("div");
+    d.className = "egg-fx " + cls;
+    document.body.appendChild(d);
+    return d;
+  }
+
+  function buildCracks() {
+    const NS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("class", "egg-fx egg-cracks");
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 2;
+    for (let i = 0; i < 9; i++) {
+      let a = (i / 9) * Math.PI * 2 + Math.random() * 0.5;
+      let x = cx, y = cy;
+      let d = `M ${x.toFixed(0)} ${y.toFixed(0)}`;
+      const segs = 5 + Math.floor(Math.random() * 3);
+      for (let s = 0; s < segs; s++) {
+        a += (Math.random() - 0.5) * 0.9;
+        const len = 40 + Math.random() * 120;
+        x += Math.cos(a) * len;
+        y += Math.sin(a) * len;
+        d += ` L ${x.toFixed(0)} ${y.toFixed(0)}`;
+        if (s === 2 && Math.random() < 0.7) {
+          const ba = a + (Math.random() < 0.5 ? 1 : -1) * (0.6 + Math.random() * 0.5);
+          const bx = x + Math.cos(ba) * (30 + Math.random() * 60);
+          const by = y + Math.sin(ba) * (30 + Math.random() * 60);
+          d += ` M ${x.toFixed(0)} ${y.toFixed(0)} L ${bx.toFixed(0)} ${by.toFixed(0)} M ${x.toFixed(0)} ${y.toFixed(0)}`;
+        }
+      }
+      const p = document.createElementNS(NS, "path");
+      p.setAttribute("d", d);
+      p.setAttribute("class", "egg-crack");
+      p.setAttribute("pathLength", "1");
+      p.style.strokeDasharray = "1";
+      p.style.strokeDashoffset = "1";
+      p.style.transition = `stroke-dashoffset 0.7s ease-out ${(i * 0.08).toFixed(2)}s`;
+      svg.appendChild(p);
+    }
+    document.body.appendChild(svg);
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        svg.querySelectorAll("path").forEach((p) => (p.style.strokeDashoffset = "0"));
+      })
+    );
+    return svg;
+  }
+
+  function flingToCentre(el, extra, dur, delay) {
+    const r = el.getBoundingClientRect();
+    const dx = window.innerWidth / 2 - (r.left + r.width / 2);
+    const dy = window.innerHeight / 2 - (r.top + r.height / 2);
+    el.style.transition = `transform ${dur}s cubic-bezier(0.55, -0.15, 0.75, 0.5) ${delay}s, opacity 0.25s ease ${(delay + dur * 0.8).toFixed(2)}s`;
+    el.style.transform = `translate(${dx.toFixed(0)}px, ${dy.toFixed(0)}px) ${extra} scale(0.04)`;
+    el.style.opacity = "0";
+  }
+
   function startDestruction() {
-    // Part 3 begins here.
     hideBubble(true);
+    document.body.style.overflow = "hidden";
+
+    if (reduced) {
+      const black = fxDiv("egg-blackout");
+      black.style.transition = "opacity 0.8s ease";
+      requestAnimationFrame(() => (black.style.opacity = "1"));
+      setTimeout(() => showDeadScreen(black), 900);
+      return;
+    }
+
+    const root = document.documentElement;
+    const shakeEls = [
+      document.getElementById("starfield"),
+      document.querySelector(".dotgrid"),
+      document.querySelector(".topbar"),
+      document.querySelector("main"),
+      document.querySelector("footer"),
+      scene,
+    ].filter(Boolean);
+    shakeEls.forEach((el) => el.classList.add("egg-shaken"));
+
+    let amp = 9, hSpike = 0, rot = 0, scl = 1, ramping = false;
+    const shaker = setInterval(() => {
+      if (ramping) {
+        amp = Math.min(15, amp + 0.4);
+        rot = Math.min(4, rot + 0.27);
+        scl = Math.min(1.08, scl + 0.0054);
+      }
+      root.style.setProperty("--egg-sx", ((Math.random() * 2 - 1) * (amp + hSpike)).toFixed(1) + "px");
+      root.style.setProperty("--egg-sy", ((Math.random() * 2 - 1) * amp).toFixed(1) + "px");
+      root.style.setProperty("--egg-rot", rot.toFixed(2) + "deg");
+      root.style.setProperty("--egg-scl", scl.toFixed(4));
+    }, 80);
+
+    const at = (ms, fn) => setTimeout(fn, ms);
+
+    // 0.0–0.5s WARNING: hard shake + edge border, three flickers only
+    const border = fxDiv("egg-border-flicker");
+    border.classList.add("run");
+    at(600, () => border.remove());
+
+    // 0.4–1.4s SIGNAL BREAK: glitch bands + RGB split on the name
+    const stageName = document.getElementById("stageName");
+    at(400, () => stageName && stageName.classList.add("egg-rgb"));
+    for (let i = 0; i < 5; i++) {
+      at(400 + Math.random() * 900, () => {
+        const band = document.createElement("div");
+        band.className = "egg-band";
+        band.style.top = Math.random() * 90 + "vh";
+        band.style.height = 18 + Math.random() * 26 + "px";
+        const shift = (20 + Math.random() * 40) * (Math.random() < 0.5 ? -1 : 1);
+        band.style.transform = `translateX(${shift}px)`;
+        document.body.appendChild(band);
+        hSpike = 30;
+        setTimeout(() => {
+          hSpike = 0;
+          band.remove();
+        }, 100);
+      });
+    }
+    at(1400, () => stageName && stageName.classList.remove("egg-rgb"));
+
+    // 0.8–2.0s FRACTURE: cracks stay, scanlines roll in
+    let cracksSvg = null;
+    let scan = null;
+    at(800, () => {
+      cracksSvg = buildCracks();
+      scan = fxDiv("egg-scanlines");
+      requestAnimationFrame(() => scan.classList.add("show"));
+    });
+
+    // 1.2–2.6s COLLAPSE: letters scatter into the centre, pills stretch after
+    at(1200, () => {
+      document.querySelectorAll("#stageName .ltr").forEach((el) => {
+        const spin = (20 + Math.random() * 100) * (Math.random() < 0.5 ? -1 : 1);
+        flingToCentre(el, `rotate(${spin.toFixed(0)}deg)`, 0.9, Math.random() * 0.4);
+      });
+      document.querySelectorAll(".topbar .pill, #contact .pill").forEach((el) => {
+        const r = el.getBoundingClientRect();
+        const ang = (Math.atan2(window.innerHeight / 2 - (r.top + r.height / 2), window.innerWidth / 2 - (r.left + r.width / 2)) * 180) / Math.PI;
+        flingToCentre(el, `rotate(${ang.toFixed(0)}deg) scaleX(1.7)`, 1.0, 0.15 + Math.random() * 0.35);
+      });
+    });
+
+    // 2.6s FLASH ONE (permitted), then BURNOUT
+    const flash = fxDiv("egg-flash");
+    at(2600, () => {
+      flash.style.transition = "opacity 0.12s ease-in";
+      flash.style.opacity = "1";
+      setTimeout(() => {
+        flash.style.transition = "opacity 0.25s ease-out";
+        flash.style.opacity = "0";
+      }, 130);
+      document.getElementById("starfield").classList.add("egg-burnout");
+      document.querySelector(".dotgrid")?.classList.add("egg-burnout");
+      ramping = true;
+    });
+
+    // 3.6–4.2s THE ALIEN GOES LAST
+    at(3550, () => typeBubble("Told you."));
+    at(3600, () => {
+      const alien = layer.querySelector(".egg-alien-float");
+      const consoleWrap = layer.querySelector(".egg-console-wrap");
+      flingToCentre(alien, "rotate(720deg)", 0.55, 0);
+      flingToCentre(consoleWrap, "rotate(200deg)", 0.5, 0.12);
+    });
+
+    // 4.2s FLASH TWO (permitted): white, hold, then to solid black
+    const black = fxDiv("egg-blackout");
+    at(4200, () => {
+      hideBubble(true);
+      flash.style.transition = "opacity 0.1s ease-in";
+      flash.style.opacity = "1";
+      setTimeout(() => {
+        black.style.transition = "opacity 0.4s ease";
+        black.style.opacity = "1";
+        flash.style.transition = "opacity 0.4s ease";
+        flash.style.opacity = "0";
+      }, 250);
+    });
+
+    // 4.7–5.0s silence on black; every effect is dismantled behind it
+    at(4700, () => {
+      clearInterval(shaker);
+      shakeEls.forEach((el) => el.classList.remove("egg-shaken"));
+      ["--egg-sx", "--egg-sy", "--egg-rot", "--egg-scl"].forEach((v) => root.style.removeProperty(v));
+      cracksSvg?.remove();
+      scan?.remove();
+      border.remove();
+      flash.remove();
+    });
+
+    at(5000, () => showDeadScreen(black));
+  }
+
+  function showDeadScreen(black) {
+    // Part 4 begins here.
+    void black;
   }
 }
 
