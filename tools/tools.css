@@ -1,0 +1,217 @@
+:root {
+  --bg: #05070f;
+  --ink: #ffffff;
+  --ink-body: rgba(255, 255, 255, 0.88);
+  --ink-muted: rgba(255, 255, 255, 0.55);
+  --ink-dim: rgba(255, 255, 255, 0.3);
+  --red: #e03a2f;
+  --mono: "Space Mono", ui-monospace, monospace;
+  --display: "Archivo Black", sans-serif;
+  --edge: rgba(255, 255, 255, 0.14);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body { min-height: 100%; }
+body {
+  font-family: var(--mono);
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+  min-height: 100vh;
+}
+a { color: inherit; text-decoration: none; }
+
+#backdrop {
+  position: fixed; inset: 0; width: 100%; height: 100%;
+  display: block; z-index: 0;
+}
+
+/* A satellite drifts across the field roughly once every forty
+   seconds, entering and leaving off-screen, always behind the grid.
+   Pure CSS keyframes — transform and opacity only, no JS driving it. */
+.satellite {
+  position: fixed;
+  top: 14%; left: 0;
+  width: 34px; height: 16px;
+  color: var(--ink-dim);
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  animation: satellitePass 40s linear infinite;
+}
+.satellite .body { fill: none; stroke: currentColor; stroke-width: 1; }
+@keyframes satellitePass {
+  0%   { transform: translate(-12vw, 0); opacity: 0; }
+  2%   { opacity: 0.2; }
+  17%  { opacity: 0.2; }
+  20%  { transform: translate(112vw, 9vh); opacity: 0; }
+  100% { transform: translate(112vw, 9vh); opacity: 0; }
+}
+
+/* ── Pills: same box as the rest of the site ───────────────── */
+.pill {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: clamp(0.7rem, 1.8vw, 0.85rem);
+  letter-spacing: 0.08em; color: var(--ink);
+  padding: 0.85rem 1.4rem;
+  border: 1.5px solid rgba(255, 255, 255, 0.4); border-radius: 100px;
+  background: rgba(13, 20, 36, 0.72);
+  cursor: pointer;
+  transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease, color 0.25s ease;
+}
+.pill:hover { border-color: var(--red); background: rgba(224, 58, 47, 0.12); }
+.pill:focus-visible { outline: 2px solid var(--red); outline-offset: 4px; border-color: var(--red); }
+.pill .arrow { margin-right: 0.5em; }
+.pill.back { padding: 0.8rem 1rem; }
+.pill.back .arrow { margin-right: 0; }
+
+/* An alien hitches a ride: ducked out of sight until the pill is hovered */
+.pill.back .alien {
+  display: flex;
+  width: 0;
+  margin-left: 0;
+  opacity: 0;
+  transform: translateY(115%);
+  transition: transform 0.34s cubic-bezier(0.2, 0.8, 0.3, 1),
+              opacity 0.22s ease, width 0.34s ease, margin-left 0.34s ease;
+}
+.pill.back:hover .alien,
+.pill.back:focus-visible .alien {
+  width: 17px;
+  margin-left: 0.5em;
+  opacity: 1;
+  transform: translateY(0);
+}
+.pill.back .alien-arm { transform-origin: 20.5px 16.5px; }
+.pill.back:hover .alien-arm,
+.pill.back:focus-visible .alien-arm {
+  animation: alienWave 0.55s ease-in-out 0.24s 3;
+}
+@keyframes alienWave {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-42deg); }
+}
+
+/* ── Top nav ───────────────────────────────────────────────── */
+.tools-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem clamp(1.25rem, 6vw, 4rem);
+}
+
+/* ── The grid — three columns, even gutters, natural height. The
+   page scrolls if the grid needs more room than the viewport; there
+   is never dead space held open below the last row. ───────────── */
+.space {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  column-gap: clamp(1rem, 3vw, 2.5rem);
+  row-gap: clamp(2rem, 5vw, 3rem);
+  justify-items: center;
+  align-items: start;
+  padding: 6.5rem clamp(1.25rem, 6vw, 4rem) 3.5rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+/* Ten items in three columns leave one alone on the last row — centre
+   it under the middle column instead of stranding it on the left. */
+.tool-node:last-child { grid-column: 2; }
+
+.tool-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  max-width: 150px;
+  padding: 10px;
+  color: inherit;
+  font-family: inherit;
+  will-change: transform;
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  min-height: 44px;
+}
+
+.tool-diagram {
+  width: 96px; height: 96px;
+  overflow: visible;
+  color: var(--ink-muted);
+  opacity: 0.85;
+  -webkit-user-drag: none;
+  transition: color 0.25s ease, opacity 0.25s ease, transform 0.25s ease;
+}
+
+/* Every label sits the same fixed distance below its own model (the
+   flex gap above) and every diagram is normalised to the same visual
+   size (see tools.js), so labels line up across a row. */
+.tool-name {
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-align: center;
+  color: var(--ink-dim);
+  opacity: 0.75;
+  transition: opacity 0.25s ease, color 0.25s ease;
+  line-height: 1.35;
+  max-width: 140px;
+  white-space: nowrap;
+}
+
+/* Hover/focus is a colour shift and a very slight scale only — no
+   rectangular outline, so it never reads as a browser focus ring. */
+a.tool-node:hover .tool-diagram,
+a.tool-node:focus-visible .tool-diagram {
+  color: var(--red);
+  opacity: 1;
+  transform: scale(1.06);
+}
+a.tool-node:hover .tool-name,
+a.tool-node:focus-visible .tool-name {
+  color: var(--ink);
+  opacity: 1;
+}
+a.tool-node:focus-visible { outline: none; }
+
+/* Muda: hovering ripples all seven nodes outward once, in sequence. */
+@keyframes mudaNodePulse {
+  0% { transform: scale(1); opacity: 1; }
+  45% { transform: scale(2.1); opacity: 0.35; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.muda-thumb-node.pulse { animation: mudaNodePulse 0.5s ease-out; transform-origin: center; }
+
+/* Behavior Model: a tiny dot appears and travels down the curve. */
+.curve-thumb-dot { transition: opacity 0.2s ease; }
+
+/* 11-Star Experience: a small star appears above the apex briefly. */
+.pyramid-thumb-star {
+  opacity: 0;
+  transform: scale(0.4);
+  transform-origin: 80px 11px;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.pyramid-thumb-star.show { opacity: 1; transform: scale(1); }
+
+/* ── Small screens: two columns, five rows, smaller models ──── */
+@media (max-width: 640px) {
+  .space {
+    grid-template-columns: repeat(2, 1fr);
+    padding: 6rem 1.25rem 3rem;
+    row-gap: 1.75rem;
+  }
+  .tool-node:last-child { grid-column: auto; }
+  .tool-node { width: 100px; }
+  .tool-diagram { width: 68px; height: 68px; }
+  .tool-name { font-size: 0.6rem; max-width: 96px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill.back { animation: none; }
+  .tool-diagram, .tool-name { transition-duration: 0.01ms; }
+  .satellite { display: none; }
+}

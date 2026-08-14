@@ -1,0 +1,247 @@
+:root {
+  --bg: #05070f;
+  --ink: #ffffff;
+  --ink-body: rgba(255, 255, 255, 0.88);
+  --ink-muted: rgba(255, 255, 255, 0.55);
+  --ink-dim: rgba(255, 255, 255, 0.3);
+  --red: #e03a2f;
+  --mono: "Space Mono", ui-monospace, monospace;
+  --display: "Archivo Black", sans-serif;
+  --edge: rgba(255, 255, 255, 0.14);
+  --panel-1: #0d1424;
+  --panel-2: #182449;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body { height: 100%; }
+body {
+  font-family: var(--mono);
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+  min-height: 100vh;
+}
+a { color: inherit; text-decoration: none; }
+
+#backdrop {
+  position: fixed; inset: 0; width: 100%; height: 100%;
+  display: block; z-index: 0;
+}
+
+/* ── Pill / back nav, matching the rest of the site ──────────── */
+.pill {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: clamp(0.7rem, 1.8vw, 0.85rem);
+  letter-spacing: 0.08em; color: var(--ink);
+  padding: 0.85rem 1.4rem;
+  border: 1.5px solid rgba(255, 255, 255, 0.4); border-radius: 100px;
+  background: rgba(13, 20, 36, 0.72);
+  cursor: pointer;
+  transition: border-color 0.25s ease, background 0.25s ease, color 0.25s ease;
+}
+.pill:hover { border-color: var(--red); background: rgba(224, 58, 47, 0.12); }
+.pill:focus-visible { outline: 2px solid var(--red); outline-offset: 4px; border-color: var(--red); }
+.pill .arrow { margin-right: 0.5em; }
+.pill.back { padding: 0.8rem 1rem; }
+.pill.back .arrow { margin-right: 0; }
+
+.pill.back .alien {
+  display: flex;
+  width: 0;
+  margin-left: 0;
+  opacity: 0;
+  transform: translateY(115%);
+  transition: transform 0.34s cubic-bezier(0.2, 0.8, 0.3, 1),
+              opacity 0.22s ease, width 0.34s ease, margin-left 0.34s ease;
+}
+.pill.back:hover .alien,
+.pill.back:focus-visible .alien {
+  width: 17px;
+  margin-left: 0.5em;
+  opacity: 1;
+  transform: translateY(0);
+}
+.pill.back .alien-arm { transform-origin: 20.5px 16.5px; }
+.pill.back:hover .alien-arm,
+.pill.back:focus-visible .alien-arm {
+  animation: alienWave 0.55s ease-in-out 0.24s 3;
+}
+@keyframes alienWave {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-42deg); }
+}
+
+.tool-page-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+  display: flex; align-items: center;
+  padding: 1rem clamp(1.25rem, 6vw, 4rem);
+}
+
+/* ── Page layout ──────────────────────────────────────────────
+   Model and text top-align in a shared row on desktop; the title
+   left-aligns with the text column rather than centring over it
+   alone, so it reads on-axis with the rest of the layout instead
+   of floating off-centre against the model beside it. */
+.tool-page {
+  position: relative; z-index: 1;
+  min-height: 100vh;
+  padding: 6.5rem clamp(1.25rem, 6vw, 4rem) 4rem;
+  display: flex;
+  justify-content: center;
+}
+
+.tool-page-body {
+  width: min(1080px, 100%);
+  display: flex;
+  align-items: flex-start;
+  gap: 3.5rem;
+}
+
+.tool-page-diagram-wrap {
+  flex: none;
+  width: min(380px, 40vw);
+  position: sticky;
+  top: 6.5rem;
+}
+.stage-diagram {
+  width: 100%; height: auto;
+  overflow: visible;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+#toolContent {
+  flex: 1;
+  min-width: 0;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.28s ease, transform 0.28s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+#toolContent.show { opacity: 1; transform: translateY(0); }
+
+.tool-title {
+  font-family: var(--display);
+  text-transform: uppercase;
+  font-size: clamp(1.4rem, 3.4vw, 2.1rem);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-align: left;
+}
+.tool-attribution {
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+  text-align: left;
+  margin-top: -0.7rem;
+}
+
+.tool-section h3 {
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 0.4rem;
+}
+.tool-section p {
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: var(--ink-body);
+}
+
+.tool-source {
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+  border-top: 1px solid var(--edge);
+  padding-top: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.tool-source a {
+  color: var(--ink-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.2s ease;
+}
+.tool-source a:hover,
+.tool-source a:focus-visible { color: var(--red); }
+
+@media (max-width: 760px) {
+  .tool-page { padding: 5.5rem 1.25rem 3rem; }
+  .tool-page-body { flex-direction: column; gap: 1.6rem; }
+  .tool-page-diagram-wrap { width: min(320px, 88vw); margin: 0 auto; position: static; }
+}
+
+/* ── Model labels — shared by every diagram's assemble() step ── */
+.venn-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  fill: var(--red);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.venn-label.show { opacity: 1; }
+
+.tool-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  fill: var(--red);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.tool-label.show { opacity: 1; }
+.tool-label.neutral { fill: var(--ink-body); }
+.tool-label.dim.show { opacity: 0.55; }
+.tool-label-num {
+  font-family: var(--mono);
+  font-size: 7px;
+  letter-spacing: 0.08em;
+  fill: var(--red);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.tool-label-num.show { opacity: 1; }
+
+.oct-label { font-size: 6.6px; }
+.bmc-label { font-size: 3.6px; letter-spacing: 0.04em; }
+.muda-label, .vcm-label { font-size: 7.2px; }
+
+/* Filled-panel templates (Service Blueprint, Empathy Map) — solid
+   panels rather than outline line work, each panel one or two steps
+   lighter than the page background. */
+.sbp2-row-label { font-size: 4.6px; letter-spacing: 0.02em; fill: var(--ink-body); }
+.sbp2-band-label { font-size: 5px; letter-spacing: 0.08em; text-transform: uppercase; fill: var(--red); }
+.sbp2-header-label { font-size: 6px; letter-spacing: 0.12em; }
+.sbp2-marker-num { font-size: 5px; font-weight: 700; fill: var(--red); }
+.emp2-panel-label { font-size: 5px; letter-spacing: 0.02em; text-transform: uppercase; fill: var(--red); }
+
+@media (max-width: 760px) {
+  .muda-dashed-label { font-size: 5px; }
+}
+
+.tri-centre-line {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.03em;
+  fill: var(--ink-body);
+}
+
+.curve-prompt-circles { transform-origin: center; }
+@keyframes pulseIn {
+  0% { transform: scale(0); opacity: 0; }
+  65% { transform: scale(1.18); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill.back { animation: none; }
+  #toolContent, .venn-label, .tool-label, .tool-label-num { transition-duration: 0.01ms; }
+  .curve-prompt-circles { animation: none !important; }
+}
