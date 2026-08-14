@@ -22,9 +22,30 @@ const CSS = `
   display: flex;
   align-items: flex-end;
   gap: 10px;
+  isolation: isolate;
 }
-/* The scene is the hover region; it only takes pointer events while visible. */
-.egg-in .egg-scene { pointer-events: auto; }
+/* The scene is the hover region and one big click target; it only
+   takes pointer events while visible. */
+.egg-in .egg-scene { pointer-events: auto; cursor: pointer; }
+
+/* A soft dark cloud behind the whole scene, so the line work and the
+   red button never drown in whatever sits behind them — the name
+   included. Fades away when the destruction takes the alien. */
+.egg-scene::before {
+  content: "";
+  position: absolute;
+  inset: -40px -34px -28px -34px;
+  background: radial-gradient(
+    ellipse 62% 58% at 50% 55%,
+    rgba(5, 7, 15, 0.94) 30%,
+    rgba(5, 7, 15, 0.6) 58%,
+    rgba(5, 7, 15, 0) 78%
+  );
+  pointer-events: none;
+  z-index: -1;
+  transition: opacity 0.4s ease;
+}
+.egg-press4 .egg-scene::before { opacity: 0; }
 
 /* ── Alien ─────────────────────────────────────────────── */
 .egg-alien-float { will-change: transform; }
@@ -492,6 +513,14 @@ function initEasterEgg() {
     bubble.classList.remove("show");
     if (instant) bubble.textContent = "";
   }
+
+  /* The whole scene presses the button — anywhere on the cloud counts.
+     Clicks on the real button bubble up here too, so those are skipped
+     to avoid a double press. */
+  scene.addEventListener("click", (e) => {
+    if (e.target === button) return;
+    button.click();
+  });
 
   scene.addEventListener("mouseenter", () => {
     if (visible && presses === 0) typeBubble(INTRO);
