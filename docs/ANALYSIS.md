@@ -110,6 +110,21 @@ The best single example of the method is `6cad956`, which names a previous fix a
 
 ---
 
+## 2b. The three.js universe
+
+Added by issue #61, after the rest of this document was written — the homepage and arcade background moved from two separate hand-rolled Canvas 2D starfields (each with its own `drawPlanet()`) to one shared three.js system in `src/shared/elements/`. Four files, one job each:
+
+| File                      | Exports                                                                                                    | Job                                                                                                                                                                                                                                                                                             |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `planet-field.ts`         | `PlanetSpec`, `PlanetBody`, `PlanetFieldElement` (`<st-planet-field>`), `StarLayer`, `definePlanetField()` | The whole scene. `PlanetBody` is one planet — surface, glow, optional ring/clouds/moon/ISS, built once at unit radius and placed/scaled per frame so a resize never regenerates geometry. `PlanetFieldElement` is the custom element wrapping a `Scene` of many `PlanetBody`s plus star layers. |
+| `card-planet-renderer.ts` | `CardPlanetRenderer`                                                                                       | Many small planet icons (the arcade lobby's 8 cards) sharing **one** WebGL context, reusing the exact same `PlanetBody` class the backdrop uses — this is the reuse that replaced the old per-card `drawPlanet()`.                                                                              |
+| `planet-textures.ts`      | `surfaceTexture`, `cloudTexture`, `ringTexture`, `streakTexture`, `glowTexture`, `rand`                    | The only place a planet or star texture is generated. `rand(seed)` is a hash PRNG — same trick as the old starfield's deterministic sky, carried forward so every `<st-planet-field>` sky is identical on every visit.                                                                          |
+| `sky-traffic.ts`          | `SkyTraffic`                                                                                               | Drifting satellites and shooting stars, independent of the planets.                                                                                                                                                                                                                             |
+
+**The prop surface is the whole point.** A `PlanetSpec` varies position (`s0` along the journey, `px` horizontal fraction), `pf` (parallax factor — how strongly it responds to scroll/pan), `depth` (z-axis pixels, for perspective-correct size scaling on the hover zoom), `spin`, and feature flags (`ring`, `earth`, `bands`). A `StarLayer` varies `density`, `sizeMin`/`sizeMax`, `parallax`, `alpha`. `<st-planet-field>` itself varies `planets[]`, `starLayers[]`, `drift`, `focusY`, and the `driven`/`interactive`/`satellites` attributes. Two very different-looking results — the homepage's vertical scroll journey through 9 planets, and the arcade lobby's horizontal hover-pan through 8 — are the same three classes with different prop values, not two implementations. `standards.json`'s `reuse-threejs-universe` rule is what's meant to keep it that way: play with the props before adding a file.
+
+---
+
 ## 3. Deploy, precisely
 
 GitHub Pages publishing to the **`gh-pages` branch via `peaceiris/actions-gh-pages@v4`** — not the `actions/deploy-pages` artifact flow. Custom domain `stoeier.dk` via a root `CNAME`.
@@ -159,10 +174,11 @@ One stance from the original has been **superseded**: it framed the triplicated 
 
 | Cluster        | Copies | Where                                                                                |
 | -------------- | ------ | ------------------------------------------------------------------------------------ |
-| `drawPlanet`   | 3      | `script.js:197`, `arcade/arcade.js:83`, `arcade/shared/starfield.js:55`              |
 | back-pill CSS  | 4      | `index.css`, `about-me/about-me.css`, `space-bar/space-bar.css`, `arcade/arcade.css` |
 | starfield init | 5      | incl. one inlined in `scoreboard/index.html:43-87`                                   |
 | head block     | 14     | every page, hand-copied                                                              |
+
+`drawPlanet` was a ×3 cluster (`script.js:197`, `arcade/arcade.js:83`, `arcade/shared/starfield.js:55`) — resolved by #61 via reuse, not extraction: `script.js` and `arcade/arcade.js` now both drive the shared `PlanetBody` class (see §2b). One 2D-canvas copy remains, `nebula-trail.js`'s import of `arcade/shared/starfield.js`'s `drawPlanet` — a single usage, not a cluster.
 
 The back-pill duplication is **intentional** and should stay (ADR-002). The others are extraction candidates, gated behind `/dedupe`'s report-and-stop phase.
 
