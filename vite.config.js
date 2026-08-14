@@ -48,22 +48,49 @@ function directoryIndexRedirect() {
 // in as input (12 extra entries), and a stale dist/ built with a different `base`
 // fails the build outright with "Failed to resolve /assets/…". CI never hit this
 // because CI always checks out fresh.
+// Computed once and shared with sitemapPlugin() below, so the sitemap can never
+// drift from the actual route table the way a hand-maintained list would.
+const HTML_FILES = globSync("**/*.html", { cwd: SRC, ignore: ["node_modules/**", "dist/**"] });
+
 function getInputs() {
-  const files = globSync("**/*.html", { cwd: SRC, ignore: ["node_modules/**", "dist/**"] });
   const inputs = {};
-  files.forEach((file) => {
+  HTML_FILES.forEach((file) => {
     const name = file.replace(/\.html$/, "");
     inputs[name] = path.resolve(SRC, file);
   });
   return inputs;
 }
 
+const SITE_URL = "https://stoeier.dk";
+
+// sitemap.xml, generated from the same HTML_FILES the build already globbed —
+// add a page under src/ and it appears here on the next build, no second list
+// to remember. /scoreboard/ is excluded: it's a live Firebase leaderboard with
+// no unique static content, not a page worth indexing. The route strings below
+// are sitemap <loc> entries, which the spec requires to be absolute against the
+// production host — not page-relative links, so root-absolute is correct here.
+function sitemapPlugin() {
+  return {
+    name: "sitemap",
+    generateBundle() {
+      const routes = HTML_FILES.map((file) => {
+        const dir = path.dirname(file);
+        return dir === "." ? "/" : "/" + dir + "/"; // guard:allow-absolute
+      })
+        .filter((route) => route !== "/scoreboard/") // guard:allow-absolute
+        .sort();
+      const urls = routes.map((route) => `  <url><loc>${SITE_URL}${route}</loc></url>`).join("\n");
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
+      this.emitFile({ type: "asset", fileName: "sitemap.xml", source: xml });
+    },
+  };
+}
 
 const GTAG_ID = "G-9M0GB4HHY0";
 
 function gtagPlugin() {
   return {
-    
+
   };
 }
 
@@ -73,7 +100,7 @@ export default defineConfig({
   // every Font Awesome icon while the rest of the site looked fine.
   root: "src",
   base: "./",
-  plugins: [tailwindcss(), directoryIndexRedirect()
+  plugins: [tailwindcss(), directoryIndexRedirect(), sitemapPlugin()
     // , gtagPlugin()
   ],
   server: {
