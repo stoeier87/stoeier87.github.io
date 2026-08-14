@@ -1,5 +1,5 @@
 {
-  "$comment": "DECISIONS.md ADR-023: gradual now, strict later. TypeScript is installed and configured so it is ready the moment the first custom element lands, but nothing is type-checked into submission today. TIGHTENING TRIGGER: flip strict and noUncheckedIndexedAccess in the first PR that adds a .ts file to src/shared/ -- not 'later', because later does not arrive.",
+  "$comment": "DECISIONS.md ADR-023: gradual now, strict later. TRIGGER FIRED -- src/shared/elements/planet-field.ts is the first .ts file under src/shared/, so strict and noUncheckedIndexedAccess are on as of the three.js background (ADR-025). allowJs stays true with checkJs false, so the 25 existing JS pages are unaffected; `include` is what actually scopes this to tokens.ts, shared/ and proto/.",
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
@@ -10,7 +10,8 @@
     "allowJs": true,
     "checkJs": false,
 
-    "strict": false,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
     "noEmit": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
