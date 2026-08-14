@@ -687,6 +687,8 @@
     initSatellites();
     scheduleNextShoot(performance.now());
     if (journey) journeyEnd = Math.max(1, journey.offsetHeight - H);
+    const topbarEl = document.querySelector(".topbar");
+    if (topbarEl) document.documentElement.style.setProperty("--topbar-h", topbarEl.offsetHeight + "px");
     dirty = true;
   }
 

@@ -227,6 +227,7 @@ function roundFor(i) {
 let answers = new Array(QUESTIONS.length).fill(null);
 let current = 0;
 let started = false;
+let lastRocketIndex = null; // where the progress rocket last parked, so it glides
 
 const stage = $("stage");
 
@@ -268,6 +269,7 @@ function renderIntro() {
   });
   screen.appendChild(start);
 
+  stage.classList.remove("q-mode");
   stage.innerHTML = "";
   stage.appendChild(screen);
 }
@@ -282,25 +284,66 @@ function renderQuestion(i) {
   const screen = document.createElement("div");
   screen.className = "q-screen";
 
-  const privacy = document.createElement("p");
-  privacy.className = "q-privacy";
-  privacy.textContent = "Nothing is stored. Nothing is sent anywhere.";
-  screen.appendChild(privacy);
+  // Progress is a little rocket riding a segmented track — one cell
+  // per question — with the original counter line kept beneath it.
+  const progressWrap = document.createElement("div");
+  progressWrap.className = "q-progress-wrap";
+  const bar = document.createElement("div");
+  bar.className = "q-progress-bar";
+  bar.setAttribute("aria-hidden", "true");
+  for (let s = 0; s < QUESTIONS.length; s++) {
+    const seg = document.createElement("span");
+    seg.className = "q-seg" + (s < i ? " done" : s === i ? " now" : "");
+    bar.appendChild(seg);
+  }
+  progressWrap.appendChild(bar);
 
+  const rocket = document.createElement("span");
+  rocket.className = "q-rocket";
+  rocket.setAttribute("aria-hidden", "true");
+  rocket.innerHTML =
+    '<svg viewBox="-7 -2 36 18">' +
+    '<path class="rbody" d="M 4 7 C 4 4 8 3 14 3 L 20 3 L 26 7 L 20 11 L 14 11 C 8 11 4 10 4 7 Z" />' +
+    '<path class="rbody" d="M 6 3.4 L 3 0 M 6 10.6 L 3 14" />' +
+    '<circle class="rbody" cx="13" cy="7" r="2" />' +
+    '<g class="rflame"><path d="M 3.4 7 L -4 7 M 3.4 5.4 L -1.5 4.4 M 3.4 8.6 L -1.5 9.6" /></g>' +
+    "</svg>";
+  const rocketPct = (idx) => (((idx + 0.5) / QUESTIONS.length) * 100).toFixed(2) + "%";
+  const from = lastRocketIndex === null ? i : lastRocketIndex;
+  rocket.style.left = rocketPct(from);
+  progressWrap.appendChild(rocket);
+  if (from !== i) {
+    requestAnimationFrame(() => requestAnimationFrame(() => { rocket.style.left = rocketPct(i); }));
+  }
+  lastRocketIndex = i;
+
+  screen.appendChild(progressWrap);
+
+  // One meta row: the round label left, the counter right.
+  const metaRow = document.createElement("div");
+  metaRow.className = "q-meta";
   const roundEl = document.createElement("p");
   roundEl.className = "q-round";
   roundEl.textContent = round.intro;
-  screen.appendChild(roundEl);
-
+  metaRow.appendChild(roundEl);
   const progress = document.createElement("p");
   progress.className = "q-progress";
   progress.textContent = "Question " + (i + 1) + " of " + QUESTIONS.length;
-  screen.appendChild(progress);
+  metaRow.appendChild(progress);
+  screen.appendChild(metaRow);
 
+  const titleRow = document.createElement("div");
+  titleRow.className = "q-title-row";
+  const num = document.createElement("span");
+  num.className = "q-num";
+  num.setAttribute("aria-hidden", "true");
+  num.textContent = String(i + 1).padStart(2, "0");
+  titleRow.appendChild(num);
   const title = document.createElement("h2");
   title.className = "q-title";
   title.textContent = q.title;
-  screen.appendChild(title);
+  titleRow.appendChild(title);
+  screen.appendChild(titleRow);
 
   const prompt = document.createElement("p");
   prompt.className = "q-prompt";
@@ -313,10 +356,12 @@ function renderQuestion(i) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "q-option" + (answers[i] === oi + 1 ? " selected" : "");
+    btn.style.setProperty("--qi", oi);
     const mark = document.createElement("span");
     mark.className = "q-option-mark";
     mark.setAttribute("aria-hidden", "true");
     if (answers[i] === oi + 1) mark.innerHTML = '<i class="fa-solid fa-check"></i>';
+    else mark.textContent = String(oi + 1);
     const label = document.createElement("span");
     label.textContent = text;
     btn.appendChild(mark);
@@ -343,8 +388,26 @@ function renderQuestion(i) {
   nav.appendChild(prev);
   screen.appendChild(nav);
 
+  // The privacy line closes the form rather than opening it.
+  const privacy = document.createElement("p");
+  privacy.className = "q-privacy";
+  privacy.textContent = "Nothing is stored. Nothing is sent anywhere.";
+  screen.appendChild(privacy);
+
+  stage.classList.add("q-mode");
   stage.innerHTML = "";
   stage.appendChild(screen);
+
+  // Every question starts at the top of the page, header in view.
+  window.scrollTo(0, 0);
+
+  // Block hover events briefly so a stationary cursor can't make a freshly
+  // created option appear pre-selected on the new question.
+  const opts = screen.querySelector(".q-options");
+  if (opts) {
+    opts.style.pointerEvents = "none";
+    setTimeout(() => { opts.style.pointerEvents = ""; }, 200);
+  }
 }
 
 /* ============================================================
@@ -444,8 +507,8 @@ function buildMatrixSvg(yScore, xScore) {
   const svg = svgEl("svg", { class: "matrix-svg", viewBox: "0 0 160 160" });
   const LINE = { fill: "none", stroke: "currentColor", "stroke-width": "1.5", "stroke-linejoin": "round", "stroke-linecap": "round" };
   const rect = svgEl("rect", { x: 28, y: 28, width: 104, height: 104, ...LINE, class: "matrix-axes", pathLength: "1" });
-  const vLine = svgEl("line", { x1: 80, y1: 16, x2: 80, y2: 144, ...LINE, "stroke-width": "1", class: "matrix-axes", pathLength: "1" });
-  const hLine = svgEl("line", { x1: 16, y1: 80, x2: 144, y2: 80, ...LINE, "stroke-width": "1", class: "matrix-axes", pathLength: "1" });
+  const vLine = svgEl("line", { x1: 80, y1: 28, x2: 80, y2: 132, ...LINE, "stroke-width": "1", class: "matrix-axes", pathLength: "1" });
+  const hLine = svgEl("line", { x1: 28, y1: 80, x2: 132, y2: 80, ...LINE, "stroke-width": "1", class: "matrix-axes", pathLength: "1" });
   svg.appendChild(rect);
   svg.appendChild(vLine);
   svg.appendChild(hLine);
@@ -550,6 +613,7 @@ function renderResults() {
   });
   screen.appendChild(reset);
 
+  stage.classList.remove("q-mode");
   stage.innerHTML = "";
   stage.appendChild(screen);
 
