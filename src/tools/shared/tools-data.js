@@ -117,13 +117,12 @@ const TRI_LABELS = [
   { key: "build", number: "02", word: "Build", numX: 130.2, numY: 123, wordX: 130.2, wordY: 136, anchor: "middle" },
   { key: "improve", number: "03", word: "Improve", numX: 29.8, numY: 123, wordX: 29.8, wordY: 136, anchor: "middle" },
 ];
-// Arrow midpoints pulled a little further out along each side (away from
-// the centroid) than the true geometric midpoint, so they read as sitting
-// on the side itself without crowding the centre text.
+// Arrowheads sit at the true midpoint of each side so they read as
+// arrowheads on the stroke itself, not detached marks floating beside it.
 const TRI_ARROWS = [
-  { x: 111.8, y: 51.9, angle: 60 },   // right side, apex -> bottom-right
+  { x: 105.1, y: 65.5, angle: 60 },   // right side, apex -> bottom-right
   { x: 80, y: 109, angle: 180 },      // bottom side, right -> left
-  { x: 48.2, y: 51.9, angle: -60 },   // left side, bottom-left -> apex
+  { x: 54.9, y: 65.5, angle: -60 },   // left side, bottom-left -> apex
 ];
 
 /* ── Tool 3: Behavior Model (B=MAP curve) ────────────────────── */
@@ -300,6 +299,159 @@ const MUDA_NODES = [
 ];
 const MUDA_DASHED = { key: "unused", label: "Unused Talent", angle: 225 };
 const MUDA_STAGE_VB = "-30 0 260 185";
+
+/* ── Tool 11: Stakeholder Map ───────────────────────────────────
+   Three concentric rings; primary stakeholders inner, secondary
+   middle, indirect outer. Inner-ring node angles avoid the top
+   (-90deg) on purpose -- that is where the ring label sits. */
+const STAKE = { cx: 92, cy: 96, rOuter: 74, rMid: 50, rInner: 26 };
+const STAKE_STAGE_VB = "-6 -6 196 204";
+// Nodes sit directly on their own ring's radius -- the same convention
+// the radial (Muda) diagram uses for node placement -- so spacing scales
+// with the ring itself instead of being guessed at a smaller radius.
+const STAKE_NODE_R = { inner: STAKE.rInner, mid: STAKE.rMid, outer: STAKE.rOuter };
+const STAKE_NODES = [
+  { key: "inner-0", ring: "inner", label: "Decision maker", angle: -30 },
+  { key: "inner-1", ring: "inner", label: "Daily user", angle: 90 },
+  { key: "inner-2", ring: "inner", label: "Owner", angle: 210 },
+  { key: "mid-0", ring: "mid", label: "Manager", angle: -30 },
+  { key: "mid-1", ring: "mid", label: "Support", angle: 90 },
+  { key: "mid-2", ring: "mid", label: "Supplier", angle: 210 },
+  { key: "outer-0", ring: "outer", label: "Regulator", angle: 0 },
+  { key: "outer-1", ring: "outer", label: "Competitor", angle: 180 },
+];
+const STAKE_NODES_MOBILE = [
+  { key: "inner-0", ring: "inner", label: "Decision maker", angle: 45 },
+  { key: "inner-1", ring: "inner", label: "Owner", angle: 225 },
+  { key: "mid-0", ring: "mid", label: "Manager", angle: -45 },
+  { key: "mid-1", ring: "mid", label: "Support", angle: 135 },
+  { key: "outer-0", ring: "outer", label: "Regulator", angle: 0 },
+  { key: "outer-1", ring: "outer", label: "Competitor", angle: 180 },
+];
+
+/* ── Tool 12: The Reflective Sketching Loop ─────────────────────
+   Two tall ellipses (mind / sketch) with a create arc over the
+   top and a read arc under the bottom, each ending in an
+   arrowhead pointing along its direction of travel. */
+const REFLECT = { leftCx: 60, rightCx: 150, cy: 90, rx: 30, ry: 52 };
+const REFLECT_STAGE_VB = "-10 -5 240 190";
+const REFLECT_UPPER_ARC_D = "M 60 38 Q 105 10 140 38";
+const REFLECT_LOWER_ARC_D = "M 140 142 Q 105 170 60 142";
+
+/* ── Tool 13: Lotus Blossom ──────────────────────────────────────
+   A 3x3 macro-grid of 9 blocks, each itself a 3x3 grid of cells.
+   The centre block's eight surrounding cells are lettered A-H
+   clockwise from the top; each outer block's own centre cell
+   repeats the letter matching its direction from the centre. */
+const LOTUS = { blockSize: 26, cellSize: 8, cellGutter: 1, blockGutter: 4 };
+const LOTUS_BLOCK_PITCH = LOTUS.blockSize + LOTUS.blockGutter;
+const LOTUS_CELL_PITCH = LOTUS.cellSize + LOTUS.cellGutter;
+const LOTUS_STAGE_VB = "-6 -6 98 98";
+const LOTUS_DIRS = [
+  { key: "A", dc: 1, dr: 0 },
+  { key: "B", dc: 2, dr: 0 },
+  { key: "C", dc: 2, dr: 1 },
+  { key: "D", dc: 2, dr: 2 },
+  { key: "E", dc: 1, dr: 2 },
+  { key: "F", dc: 0, dr: 2 },
+  { key: "G", dc: 0, dr: 1 },
+  { key: "H", dc: 0, dr: 0 },
+];
+function lotusBlockXY(bc, br) {
+  return { x: bc * LOTUS_BLOCK_PITCH, y: br * LOTUS_BLOCK_PITCH };
+}
+function lotusCellXY(blockX, blockY, cc, cr) {
+  return { x: blockX + cc * LOTUS_CELL_PITCH, y: blockY + cr * LOTUS_CELL_PITCH };
+}
+
+/* ── Tool 14: The Design Squiggle ───────────────────────────────
+   An original, procedurally generated line -- not a trace of
+   Damien Newman's artwork -- resolving from a dense tangle on the
+   left into one straight line on the right. Amplitude is capped
+   well inside the rule band so the tangle never touches either
+   rule at any width. */
+function squigglePoints(mobile) {
+  const startX = 10, endX = 214, midY = 90;
+  const N = mobile ? 100 : 160;
+  const chaosEnd = 0.65;
+  const pts = [];
+  for (let i = 0; i <= N; i++) {
+    const t = i / N;
+    const x = startX + t * (endX - startX);
+    const chaos = Math.max(0, 1 - t / chaosEnd);
+    const freq = (mobile ? 8 : 14) - 8 * Math.min(1, t / chaosEnd);
+    const amp = 40 * chaos * chaos;
+    const y = midY
+      + Math.sin(t * freq * 2 * Math.PI) * amp
+      + Math.sin(t * freq * 2.7 * 2 * Math.PI) * amp * 0.3;
+    pts.push([x, y]);
+  }
+  return pts;
+}
+function squigglePathD(pts) {
+  return pts.map((p, i) => (i === 0 ? "M " : "L ") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+}
+const SQUIGGLE_STAGE_VB = "0 -18 224 210";
+const SQUIGGLE_MARKERS = [
+  { key: "research", label: "RESEARCH", x: 40, accent: false },
+  { key: "concept", label: "CONCEPT PROTOTYPE", x: 115, accent: false },
+  { key: "design", label: "DESIGN", x: 190, accent: true },
+];
+
+/* ── Tool 15: The 6x6 Rule ───────────────────────────────────────
+   Six questions, each paired with the picture type that answers
+   it best -- one row per question, a connector, then a small
+   line-drawn icon. */
+const SIXBYSIX = { rowH: 26, labelX: 4, connectorX0: 54, connectorX1: 96, iconX: 100, iconSize: 22 };
+const SIXBYSIX_STAGE_VB = "-6 -6 190 176";
+const SIXBYSIX_ROWS = [
+  { key: "who", question: "WHO / WHAT", icon: "portrait" },
+  { key: "howmuch", question: "HOW MUCH", icon: "bars" },
+  { key: "where", question: "WHERE", icon: "map" },
+  { key: "when", question: "WHEN", icon: "timeline" },
+  { key: "how", question: "HOW", icon: "flow" },
+  { key: "why", question: "WHY", icon: "plot" },
+];
+function sixbysixRowCY(i) {
+  return 13 + i * SIXBYSIX.rowH;
+}
+function sixbysixIcon(kind) {
+  const g = svgEl("g", { class: "sixbysix-icon-shape" });
+  const s = { ...LINE, "stroke-width": "1" };
+  if (kind === "portrait") {
+    g.appendChild(svgEl("rect", { x: 1, y: 1, width: 20, height: 20, rx: 2, ...s, fill: "none" }));
+    g.appendChild(svgEl("circle", { cx: 11, cy: 9, r: 3.6, ...s, fill: "none" }));
+    g.appendChild(svgEl("path", { d: "M 4 19 Q 11 12 18 19", ...s, fill: "none" }));
+  } else if (kind === "bars") {
+    g.appendChild(svgEl("rect", { x: 2, y: 12, width: 4.5, height: 9, ...s, fill: "none" }));
+    g.appendChild(svgEl("rect", { x: 8.5, y: 6, width: 4.5, height: 15, ...s, fill: "none" }));
+    g.appendChild(svgEl("rect", { x: 15, y: 1, width: 4.5, height: 20, ...s, fill: "none" }));
+  } else if (kind === "map") {
+    g.appendChild(svgEl("polygon", { points: "2,5 10,1 19,6 20,13 14,20 6,18 1,12", ...s, fill: "none" }));
+    g.appendChild(svgEl("circle", { cx: 9, cy: 9, r: 1.3, fill: "currentColor" }));
+    g.appendChild(svgEl("circle", { cx: 14, cy: 13, r: 1.3, fill: "currentColor" }));
+  } else if (kind === "timeline") {
+    g.appendChild(svgEl("line", { x1: 1, y1: 11, x2: 21, y2: 11, ...s }));
+    [5, 11, 17].forEach((x) => g.appendChild(svgEl("line", { x1: x, y1: 7, x2: x, y2: 15, ...s })));
+  } else if (kind === "flow") {
+    // arrowHead()'s chevron is 9 units wide -- too big for this icon's
+    // tight gaps, so this draws a small filled triangle sized to fit.
+    g.appendChild(svgEl("rect", { x: 0, y: 8, width: 4.5, height: 5, ...s, fill: "none" }));
+    g.appendChild(svgEl("rect", { x: 8.75, y: 8, width: 4.5, height: 5, ...s, fill: "none" }));
+    g.appendChild(svgEl("rect", { x: 17.5, y: 8, width: 4.5, height: 5, ...s, fill: "none" }));
+    g.appendChild(svgEl("line", { x1: 4.5, y1: 10.5, x2: 6.75, y2: 10.5, ...s }));
+    g.appendChild(svgEl("polygon", { points: "6.75,9.3 6.75,11.7 8.75,10.5", fill: "currentColor", stroke: "none" }));
+    g.appendChild(svgEl("line", { x1: 13.25, y1: 10.5, x2: 15.5, y2: 10.5, ...s }));
+    g.appendChild(svgEl("polygon", { points: "15.5,9.3 15.5,11.7 17.5,10.5", fill: "currentColor", stroke: "none" }));
+  } else if (kind === "plot") {
+    g.appendChild(svgEl("line", { x1: 2, y1: 1, x2: 2, y2: 19, ...s }));
+    g.appendChild(svgEl("line", { x1: 2, y1: 19, x2: 21, y2: 19, ...s }));
+    const dots = [[6, 14], [11, 8], [15, 12], [19, 4]];
+    dots.forEach(([x, y]) => g.appendChild(svgEl("circle", { cx: x, cy: y, r: 1.2, fill: "currentColor" })));
+    g.appendChild(svgEl("path", { d: "M 6 14 L 11 8 L 15 12 L 19 4", fill: "none", stroke: "currentColor", "stroke-width": "0.8", "stroke-dasharray": "1.5 1.2", opacity: "0.6" }));
+  }
+  return g;
+}
 
 export const DIAGRAMS = {
   venn: {
@@ -501,13 +653,13 @@ export const DIAGRAMS = {
       curveLine.style.strokeDasharray = "1";
       curveLine.style.strokeDashoffset = "1";
       svg.appendChild(curveLine);
-      svg.appendChild(svgText(150, 122, "start", "Action Line", "tool-label curve-label-action"));
+      svg.appendChild(svgText(142, 116, "middle", "Action Line", "tool-label curve-label-action"));
 
       // Zone labels sit well inside the chart, clear of the vertical axis.
       const zoneA = svgText(100, 36, "middle", "Behaviour happens", "tool-label neutral curve-zone-a");
       zoneA.style.fontSize = "7px";
       svg.appendChild(zoneA);
-      const zoneB = svgText(95, 125, "middle", "Behaviour does not happen", "tool-label neutral curve-zone-b");
+      const zoneB = svgText(70, 126, "middle", "Behaviour does not happen", "tool-label neutral curve-zone-b");
       zoneB.style.fontSize = "5.8px";
       svg.appendChild(zoneB);
 
@@ -1072,10 +1224,6 @@ export const DIAGRAMS = {
         headerGroup.appendChild(svgEl("polygon", { points: chevronPoints(segX), fill: SBP2_HEADER_FILL }));
         headerGroup.appendChild(svgText(segX + segW / 2, headerH / 2 + 2, "middle", label, "sbp2-band-label sbp2-header-label"));
       });
-      for (let i = 1; i < 3; i++) {
-        const gx = contentX0 + i * segW;
-        headerGroup.appendChild(svgEl("line", { x1: gx, y1: gridTop, x2: gx, y2: gridTop + gridH, stroke: "var(--ink-dim)", "stroke-width": "0.6" }));
-      }
       svg.appendChild(headerGroup);
 
       let contentRowIdx = 0;
@@ -1445,6 +1593,545 @@ export const DIAGRAMS = {
     },
     stageWidth(mobile) { return mobile ? "min(340px, calc(100vw - 3rem))" : "min(460px, 88vw)"; },
   },
+
+  stakemap: {
+    thumb() {
+      const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
+      const cx = 80, cy = 82;
+      svg.appendChild(svgEl("circle", { cx, cy, r: 60, ...LINE, "stroke-width": "1.2" }));
+      svg.appendChild(svgEl("circle", { cx, cy, r: 40, ...LINE, "stroke-width": "1.2" }));
+      svg.appendChild(svgEl("circle", { cx, cy, r: 20, fill: "currentColor", opacity: "0.25" }));
+      svg.appendChild(svgEl("circle", { cx, cy, r: 20, ...LINE, "stroke-width": "1.2" }));
+      return svg;
+    },
+    buildStage() {
+      const nodeList = isMobile() ? STAKE_NODES_MOBILE : STAKE_NODES;
+      const svg = svgEl("svg", { viewBox: STAKE_STAGE_VB, draggable: "false" });
+      svg.style.opacity = "0";
+      svg.style.transform = "scale(0.92)";
+      svg.style.transformOrigin = "center center";
+
+      const rings = [
+        { key: "outer", r: STAKE.rOuter, label: "INDIRECT" },
+        { key: "mid", r: STAKE.rMid, label: "SECONDARY" },
+        { key: "inner", r: STAKE.rInner, label: "PRIMARY" },
+      ];
+      rings.forEach((ring) => {
+        const circle = svgEl("circle", {
+          cx: STAKE.cx, cy: STAKE.cy, r: ring.r, ...LINE, "stroke-width": "1.2",
+          class: "stakemap-ring stakemap-ring-" + ring.key, pathLength: "1",
+        });
+        circle.style.strokeDasharray = "1";
+        circle.style.strokeDashoffset = "1";
+        svg.appendChild(circle);
+      });
+
+      const fill = svgEl("circle", {
+        cx: STAKE.cx, cy: STAKE.cy, r: STAKE.rInner, fill: "currentColor",
+        class: "stakemap-fill", style: "color: var(--red); opacity: 0;",
+      });
+      svg.appendChild(fill);
+
+      rings.forEach((ring) => {
+        const ly = STAKE.cy - ring.r - 5;
+        svg.appendChild(svgText(STAKE.cx, ly, "middle", ring.label, "tool-label stakemap-ring-label stakemap-ring-label-" + ring.key));
+      });
+
+      const rad = Math.PI / 180;
+      nodeList.forEach((n) => {
+        const r = STAKE_NODE_R[n.ring];
+        const a = n.angle * rad;
+        const x = STAKE.cx + Math.cos(a) * r, y = STAKE.cy + Math.sin(a) * r;
+        const g = svgEl("g", { class: "stakemap-node stakemap-node-" + n.key, transform: "translate(" + x.toFixed(1) + "," + y.toFixed(1) + ")" });
+        g.style.opacity = "0";
+        const w = 32, h = 11;
+        g.appendChild(svgEl("rect", { x: -w / 2, y: -h / 2, width: w, height: h, rx: 3, ...LINE, fill: "var(--bg)", "stroke-width": "1" }));
+        const nodeLabel = svgText(0, 1.5, "middle", n.label, "tool-label neutral stakemap-node-label");
+        nodeLabel.classList.add("show");
+        g.appendChild(nodeLabel);
+        svg.appendChild(g);
+      });
+
+      return svg;
+    },
+    assemble(diagramEl) {
+      const svgRoot = diagramEl;
+      const nodeList = isMobile() ? STAKE_NODES_MOBILE : STAKE_NODES;
+      const ringKeys = ["outer", "mid", "inner"];
+      const ringEls = {};
+      const ringLabelEls = {};
+      ringKeys.forEach((k) => {
+        ringEls[k] = diagramEl.querySelector(".stakemap-ring-" + k);
+        ringLabelEls[k] = diagramEl.querySelector(".stakemap-ring-label-" + k);
+      });
+      const fillEl = diagramEl.querySelector(".stakemap-fill");
+      const nodeEls = nodeList.map((n) => diagramEl.querySelector(".stakemap-node-" + n.key));
+
+      function applyFinal() {
+        svgRoot.style.transition = "none"; svgRoot.style.opacity = "1"; svgRoot.style.transform = "scale(1)";
+        ringKeys.forEach((k) => {
+          ringEls[k].style.transition = "none"; ringEls[k].style.strokeDashoffset = "0";
+          ringLabelEls[k].classList.add("show");
+        });
+        fillEl.style.transition = "none"; fillEl.style.opacity = "0.25";
+        nodeEls.forEach((n) => { n.style.transition = "none"; n.style.opacity = "1"; });
+      }
+
+      if (reduced()) { applyFinal(); return { doneAt: 0, timers: [], applyFinal }; }
+
+      const timers = [];
+      const introDur = 130;
+      timers.push(setTimeout(() => {
+        svgRoot.style.transition = "opacity " + introDur + "ms ease, transform " + introDur + "ms cubic-bezier(0.2,0.8,0.3,1.3)";
+        svgRoot.style.opacity = "1"; svgRoot.style.transform = "scale(1)";
+      }, 0));
+
+      let t = introDur;
+      const ringDurs = { outer: 160, mid: 140, inner: 120 };
+      const labelDur = 90;
+      ringKeys.forEach((k) => {
+        const start = t;
+        timers.push(setTimeout(() => {
+          ringEls[k].style.transition = "stroke-dashoffset " + ringDurs[k] + "ms ease";
+          ringEls[k].style.strokeDashoffset = "0";
+        }, start));
+        timers.push(setTimeout(() => { ringLabelEls[k].classList.add("show"); }, start + ringDurs[k]));
+        if (k === "inner") {
+          timers.push(setTimeout(() => {
+            fillEl.style.transition = "opacity 90ms ease";
+            fillEl.style.opacity = "0.25";
+          }, start + ringDurs[k]));
+        }
+        t = start + ringDurs[k] + labelDur;
+      });
+
+      const nodeStagger = 35, nodeFade = 110;
+      nodeEls.forEach((n, i) => {
+        timers.push(setTimeout(() => {
+          n.style.transition = "opacity " + nodeFade + "ms ease";
+          n.style.opacity = "1";
+        }, t + i * nodeStagger));
+      });
+      const doneAt = t + (nodeEls.length - 1) * nodeStagger + nodeFade;
+
+      return { doneAt, timers, applyFinal };
+    },
+    stageWidth(mobile) { return mobile ? "min(320px, calc(100vw - 3rem))" : "min(460px, 88vw)"; },
+  },
+
+  reflect: {
+    thumb() {
+      const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
+      svg.appendChild(svgEl("ellipse", { cx: 55, cy: 80, rx: 22, ry: 38, ...LINE }));
+      svg.appendChild(svgEl("ellipse", { cx: 105, cy: 80, rx: 22, ry: 38, ...LINE }));
+      return svg;
+    },
+    buildStage() {
+      const svg = svgEl("svg", { viewBox: REFLECT_STAGE_VB, draggable: "false" });
+      svg.style.opacity = "0";
+      svg.style.transform = "scale(0.92)";
+      svg.style.transformOrigin = "center center";
+
+      const left = svgEl("ellipse", { cx: REFLECT.leftCx, cy: REFLECT.cy, rx: REFLECT.rx, ry: REFLECT.ry, ...LINE, "stroke-width": "1.3", class: "reflect-ellipse reflect-ellipse-left", pathLength: "1" });
+      const right = svgEl("ellipse", { cx: REFLECT.rightCx, cy: REFLECT.cy, rx: REFLECT.rx, ry: REFLECT.ry, ...LINE, "stroke-width": "1.3", class: "reflect-ellipse reflect-ellipse-right", pathLength: "1" });
+      [left, right].forEach((e) => { e.style.strokeDasharray = "1"; e.style.strokeDashoffset = "1"; });
+      svg.appendChild(left); svg.appendChild(right);
+
+      svg.appendChild(svgText(REFLECT.leftCx, REFLECT.cy - 4, "middle", "MIND", "tool-label neutral reflect-label reflect-label-left"));
+      svg.appendChild(svgText(REFLECT.leftCx, REFLECT.cy + 10, "middle", "(new) knowledge", "tool-label neutral reflect-sublabel reflect-sublabel-left"));
+      svg.appendChild(svgText(REFLECT.rightCx, REFLECT.cy - 4, "middle", "SKETCH", "tool-label neutral reflect-label reflect-label-right"));
+      svg.appendChild(svgText(REFLECT.rightCx, REFLECT.cy + 10, "middle", "representation", "tool-label neutral reflect-sublabel reflect-sublabel-right"));
+
+      const upperArc = svgEl("path", { d: REFLECT_UPPER_ARC_D, fill: "none", stroke: "currentColor", "stroke-width": "1.3", "stroke-linecap": "round", class: "reflect-arc reflect-arc-upper", pathLength: "1" });
+      const lowerArc = svgEl("path", { d: REFLECT_LOWER_ARC_D, fill: "none", stroke: "currentColor", "stroke-width": "1.3", "stroke-linecap": "round", class: "reflect-arc reflect-arc-lower", pathLength: "1" });
+      [upperArc, lowerArc].forEach((a) => { a.style.strokeDasharray = "1"; a.style.strokeDashoffset = "1"; });
+      svg.appendChild(upperArc); svg.appendChild(lowerArc);
+
+      const upperArrow = arrowHead(140, 38, 39, "reflect-arrow reflect-arrow-upper");
+      const lowerArrow = arrowHead(60, 142, -148, "reflect-arrow reflect-arrow-lower");
+      [upperArrow, lowerArrow].forEach((a) => { a.style.opacity = "0"; });
+      svg.appendChild(upperArrow); svg.appendChild(lowerArrow);
+
+      svg.appendChild(svgText(100, 4, "middle", "CREATE", "tool-label reflect-arc-label reflect-arc-label-upper"));
+      svg.appendChild(svgText(100, 10, "middle", "(seeing that)", "tool-label reflect-arc-sublabel reflect-arc-sublabel-upper"));
+      svg.appendChild(svgText(100, 178, "middle", "READ", "tool-label reflect-arc-label reflect-arc-label-lower"));
+      svg.appendChild(svgText(100, 184, "middle", "(seeing as)", "tool-label reflect-arc-sublabel reflect-arc-sublabel-lower"));
+
+      return svg;
+    },
+    assemble(diagramEl) {
+      const svgRoot = diagramEl;
+      const ellipses = ["left", "right"].map((k) => diagramEl.querySelector(".reflect-ellipse-" + k));
+      const innerLabels = ["left", "right"].flatMap((k) => [diagramEl.querySelector(".reflect-label-" + k), diagramEl.querySelector(".reflect-sublabel-" + k)]);
+      const upperArc = diagramEl.querySelector(".reflect-arc-upper");
+      const lowerArc = diagramEl.querySelector(".reflect-arc-lower");
+      const upperArrow = diagramEl.querySelector(".reflect-arrow-upper");
+      const lowerArrow = diagramEl.querySelector(".reflect-arrow-lower");
+      const upperLabels = [diagramEl.querySelector(".reflect-arc-label-upper"), diagramEl.querySelector(".reflect-arc-sublabel-upper")];
+      const lowerLabels = [diagramEl.querySelector(".reflect-arc-label-lower"), diagramEl.querySelector(".reflect-arc-sublabel-lower")];
+
+      function applyFinal() {
+        svgRoot.style.transition = "none"; svgRoot.style.opacity = "1"; svgRoot.style.transform = "scale(1)";
+        ellipses.forEach((e) => { e.style.transition = "none"; e.style.strokeDashoffset = "0"; });
+        innerLabels.forEach((l) => l.classList.add("show"));
+        [upperArc, lowerArc].forEach((a) => { a.style.transition = "none"; a.style.strokeDashoffset = "0"; });
+        [upperArrow, lowerArrow].forEach((a) => { a.style.transition = "none"; a.style.opacity = "1"; });
+        upperLabels.forEach((l) => l.classList.add("show"));
+        lowerLabels.forEach((l) => l.classList.add("show"));
+      }
+
+      if (reduced()) { applyFinal(); return { doneAt: 0, timers: [], applyFinal }; }
+
+      const timers = [];
+      const introDur = 130;
+      timers.push(setTimeout(() => {
+        svgRoot.style.transition = "opacity " + introDur + "ms ease, transform " + introDur + "ms cubic-bezier(0.2,0.8,0.3,1.3)";
+        svgRoot.style.opacity = "1"; svgRoot.style.transform = "scale(1)";
+      }, 0));
+
+      const ellipseDur = 180;
+      timers.push(setTimeout(() => {
+        ellipses.forEach((e) => { e.style.transition = "stroke-dashoffset " + ellipseDur + "ms ease"; e.style.strokeDashoffset = "0"; });
+      }, introDur));
+      const afterEllipses = introDur + ellipseDur;
+      timers.push(setTimeout(() => { innerLabels.forEach((l) => l.classList.add("show")); }, afterEllipses));
+      let t = afterEllipses + 100;
+
+      const arcDur = 150, arrowDur = 80, labelDur = 80;
+      timers.push(setTimeout(() => { upperArc.style.transition = "stroke-dashoffset " + arcDur + "ms ease"; upperArc.style.strokeDashoffset = "0"; }, t));
+      timers.push(setTimeout(() => { upperArrow.style.transition = "opacity " + arrowDur + "ms ease"; upperArrow.style.opacity = "1"; }, t + arcDur));
+      timers.push(setTimeout(() => { upperLabels.forEach((l) => l.classList.add("show")); }, t + arcDur + arrowDur));
+      t = t + arcDur + arrowDur + labelDur;
+
+      timers.push(setTimeout(() => { lowerArc.style.transition = "stroke-dashoffset " + arcDur + "ms ease"; lowerArc.style.strokeDashoffset = "0"; }, t));
+      timers.push(setTimeout(() => { lowerArrow.style.transition = "opacity " + arrowDur + "ms ease"; lowerArrow.style.opacity = "1"; }, t + arcDur));
+      timers.push(setTimeout(() => { lowerLabels.forEach((l) => l.classList.add("show")); }, t + arcDur + arrowDur));
+      const doneAt = t + arcDur + arrowDur + labelDur;
+
+      return { doneAt, timers, applyFinal };
+    },
+    stageWidth(mobile) { return mobile ? "min(380px, calc(100vw - 3rem))" : "min(520px, 90vw)"; },
+  },
+
+  lotus: {
+    thumb() {
+      const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
+      const size = 26, gap = 10, pitch = size + gap;
+      const x0 = 80 - (pitch * 3 - gap) / 2, y0 = 80 - (pitch * 3 - gap) / 2;
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          const x = x0 + c * pitch, y = y0 + r * pitch;
+          const isCentre = r === 1 && c === 1;
+          svg.appendChild(svgEl("rect", { x, y, width: size, height: size, ...LINE, fill: isCentre ? "currentColor" : "none", opacity: isCentre ? "0.25" : "1" }));
+        }
+      }
+      return svg;
+    },
+    buildStage() {
+      const narrow = window.innerWidth < 500;
+      const svg = svgEl("svg", { viewBox: LOTUS_STAGE_VB, draggable: "false" });
+      svg.style.opacity = "0";
+      svg.style.transform = "scale(0.92)";
+      svg.style.transformOrigin = "center center";
+
+      function blockGrid(bx, by, withInternalLines) {
+        const g = svgEl("g", {});
+        const s = LOTUS.blockSize;
+        g.appendChild(svgEl("rect", { x: bx, y: by, width: s, height: s, ...LINE, "stroke-width": "1", fill: "none" }));
+        if (withInternalLines) {
+          [8.5, 17.5].forEach((off) => {
+            g.appendChild(svgEl("line", { x1: bx + off, y1: by, x2: bx + off, y2: by + s, stroke: "currentColor", "stroke-width": "0.4", opacity: "0.5" }));
+            g.appendChild(svgEl("line", { x1: bx, y1: by + off, x2: bx + s, y2: by + off, stroke: "currentColor", "stroke-width": "0.4", opacity: "0.5" }));
+          });
+        }
+        return g;
+      }
+
+      const centre = lotusBlockXY(1, 1);
+      const centreGroup = svgEl("g", { class: "lotus-centre-block" });
+      centreGroup.style.opacity = "0";
+      centreGroup.appendChild(blockGrid(centre.x, centre.y, true));
+      svg.appendChild(centreGroup);
+
+      const centreFill = svgEl("rect", {
+        x: centre.x + LOTUS_CELL_PITCH, y: centre.y + LOTUS_CELL_PITCH,
+        width: LOTUS.cellSize, height: LOTUS.cellSize,
+        fill: "currentColor", class: "lotus-centre-fill", style: "color: var(--red); opacity: 0;",
+      });
+      svg.appendChild(centreFill);
+
+      LOTUS_DIRS.forEach((d) => {
+        const cell = lotusCellXY(centre.x, centre.y, d.dc, d.dr);
+        const lx = cell.x + LOTUS.cellSize / 2, ly = cell.y + LOTUS.cellSize / 2 + 1.4;
+        svg.appendChild(svgText(lx, ly, "middle", d.key, "tool-label lotus-letter lotus-letter-centre-" + d.key));
+      });
+
+      const outerGroups = [];
+      LOTUS_DIRS.forEach((d) => {
+        const macro = lotusBlockXY(d.dc, d.dr);
+        const g = svgEl("g", { class: "lotus-outer-block lotus-outer-block-" + d.key });
+        g.style.opacity = "0";
+        g.appendChild(blockGrid(macro.x, macro.y, !narrow));
+        const cell = lotusCellXY(macro.x, macro.y, 1, 1);
+        const letter = svgText(cell.x + LOTUS.cellSize / 2, cell.y + LOTUS.cellSize / 2 + 1.4, "middle", d.key, "lotus-letter");
+        letter.style.fill = "var(--red)";
+        g.appendChild(letter);
+        svg.appendChild(g);
+        outerGroups.push(g);
+      });
+
+      return svg;
+    },
+    assemble(diagramEl) {
+      const svgRoot = diagramEl;
+      const centreGroup = diagramEl.querySelector(".lotus-centre-block");
+      const centreFill = diagramEl.querySelector(".lotus-centre-fill");
+      const centreLetters = LOTUS_DIRS.map((d) => diagramEl.querySelector(".lotus-letter-centre-" + d.key));
+      const outerGroups = LOTUS_DIRS.map((d) => diagramEl.querySelector(".lotus-outer-block-" + d.key));
+
+      function applyFinal() {
+        svgRoot.style.transition = "none"; svgRoot.style.opacity = "1"; svgRoot.style.transform = "scale(1)";
+        centreGroup.style.transition = "none"; centreGroup.style.opacity = "1";
+        centreFill.style.transition = "none"; centreFill.style.opacity = "0.25";
+        centreLetters.forEach((l) => l.classList.add("show"));
+        outerGroups.forEach((g) => { g.style.transition = "none"; g.style.opacity = "1"; });
+      }
+
+      if (reduced()) { applyFinal(); return { doneAt: 0, timers: [], applyFinal }; }
+
+      const timers = [];
+      const introDur = 110;
+      timers.push(setTimeout(() => {
+        svgRoot.style.transition = "opacity " + introDur + "ms ease, transform " + introDur + "ms cubic-bezier(0.2,0.8,0.3,1.3)";
+        svgRoot.style.opacity = "1"; svgRoot.style.transform = "scale(1)";
+      }, 0));
+
+      const blockFadeDur = 130;
+      timers.push(setTimeout(() => {
+        centreGroup.style.transition = "opacity " + blockFadeDur + "ms ease";
+        centreGroup.style.opacity = "1";
+      }, introDur));
+      const fillDur = 90;
+      timers.push(setTimeout(() => {
+        centreFill.style.transition = "opacity " + fillDur + "ms ease";
+        centreFill.style.opacity = "0.25";
+      }, introDur + blockFadeDur));
+      let t = introDur + blockFadeDur + fillDur;
+
+      const letterStagger = 35;
+      centreLetters.forEach((l, i) => {
+        timers.push(setTimeout(() => l.classList.add("show"), t + i * letterStagger));
+      });
+      t = t + (centreLetters.length - 1) * letterStagger + 80;
+
+      const outerStagger = 55, outerFadeDur = 90;
+      outerGroups.forEach((g, i) => {
+        timers.push(setTimeout(() => {
+          g.style.transition = "opacity " + outerFadeDur + "ms ease";
+          g.style.opacity = "1";
+        }, t + i * outerStagger));
+      });
+      const doneAt = t + (outerGroups.length - 1) * outerStagger + outerFadeDur;
+
+      return { doneAt, timers, applyFinal };
+    },
+    stageWidth(mobile) { return mobile ? "min(300px, calc(100vw - 3rem))" : "min(420px, 86vw)"; },
+  },
+
+  squiggle: {
+    thumb() {
+      const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
+      const raw = squigglePoints(true);
+      const xs = raw.map((p) => p[0]), ys = raw.map((p) => p[1]);
+      const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+      const pad = 20;
+      const sx = (160 - pad * 2) / (maxX - minX), sy = (160 - pad * 2) / (maxY - minY);
+      const pts = raw.map(([x, y]) => [pad + (x - minX) * sx, pad + (y - minY) * sy]);
+      svg.appendChild(svgEl("path", { d: squigglePathD(pts), fill: "none", stroke: "currentColor", "stroke-width": "1.3", "stroke-linecap": "round" }));
+      return svg;
+    },
+    buildStage() {
+      const mobile = isMobile();
+      const svg = svgEl("svg", { viewBox: SQUIGGLE_STAGE_VB, draggable: "false" });
+      svg.style.opacity = "0";
+      svg.style.transform = "scale(0.92)";
+      svg.style.transformOrigin = "center center";
+
+      const upperRule = svgEl("line", { x1: 0, y1: 30, x2: 224, y2: 30, stroke: "currentColor", "stroke-width": "0.8", class: "squiggle-rule squiggle-rule-upper", pathLength: "1" });
+      const lowerRule = svgEl("line", { x1: 0, y1: 150, x2: 224, y2: 150, stroke: "currentColor", "stroke-width": "0.8", class: "squiggle-rule squiggle-rule-lower", pathLength: "1" });
+      [upperRule, lowerRule].forEach((l) => { l.style.strokeDasharray = "1"; l.style.strokeDashoffset = "1"; });
+      svg.appendChild(upperRule); svg.appendChild(lowerRule);
+
+      const pts = squigglePoints(mobile);
+      const squigglePath = svgEl("path", { d: squigglePathD(pts), fill: "none", stroke: "currentColor", "stroke-width": "1.4", "stroke-linecap": "round", class: "squiggle-line", pathLength: "1" });
+      squigglePath.style.strokeDasharray = "1";
+      squigglePath.style.strokeDashoffset = "1";
+      svg.appendChild(squigglePath);
+
+      const bandGroup = svgEl("g", { class: "squiggle-band" });
+      bandGroup.style.opacity = "0";
+      const uncertaintyLabel = svgText(4, 16, "start", "UNCERTAINTY / PATTERNS / INSIGHTS", "tool-label neutral squiggle-band-label");
+      uncertaintyLabel.classList.add("show");
+      bandGroup.appendChild(uncertaintyLabel);
+      const clarityLabel = svgText(220, 16, "end", "CLARITY / FOCUS", "tool-label neutral squiggle-band-label");
+      clarityLabel.classList.add("show");
+      bandGroup.appendChild(clarityLabel);
+      bandGroup.appendChild(svgEl("line", { x1: 112, y1: 4, x2: 112, y2: 24, stroke: "currentColor", "stroke-width": "0.6", "stroke-dasharray": "1.5 1.5", opacity: "0.4" }));
+      svg.appendChild(bandGroup);
+
+      SQUIGGLE_MARKERS.forEach((m) => {
+        const g = svgEl("g", { class: "squiggle-marker squiggle-marker-" + m.key, transform: "translate(" + m.x + ",162)" });
+        g.style.opacity = "0";
+        g.appendChild(svgEl("polygon", { points: "0,-5 5,4 -5,4", ...LINE, "stroke-width": "1", fill: "none" }));
+        const label = svgText(0, 16, "middle", m.label, m.accent ? "tool-label squiggle-marker-label" : "tool-label neutral squiggle-marker-label");
+        label.classList.add("show");
+        g.appendChild(label);
+        svg.appendChild(g);
+      });
+
+      return svg;
+    },
+    assemble(diagramEl) {
+      const svgRoot = diagramEl;
+      const upperRule = diagramEl.querySelector(".squiggle-rule-upper");
+      const lowerRule = diagramEl.querySelector(".squiggle-rule-lower");
+      const squigglePath = diagramEl.querySelector(".squiggle-line");
+      const bandGroup = diagramEl.querySelector(".squiggle-band");
+      const markers = SQUIGGLE_MARKERS.map((m) => diagramEl.querySelector(".squiggle-marker-" + m.key));
+
+      function applyFinal() {
+        svgRoot.style.transition = "none"; svgRoot.style.opacity = "1"; svgRoot.style.transform = "scale(1)";
+        [upperRule, lowerRule, squigglePath].forEach((el) => { el.style.transition = "none"; el.style.strokeDashoffset = "0"; });
+        bandGroup.style.transition = "none"; bandGroup.style.opacity = "1";
+        markers.forEach((m) => { m.style.transition = "none"; m.style.opacity = "1"; });
+      }
+
+      if (reduced()) { applyFinal(); return { doneAt: 0, timers: [], applyFinal }; }
+
+      const timers = [];
+      const introDur = 110;
+      timers.push(setTimeout(() => {
+        svgRoot.style.transition = "opacity " + introDur + "ms ease, transform " + introDur + "ms cubic-bezier(0.2,0.8,0.3,1.3)";
+        svgRoot.style.opacity = "1"; svgRoot.style.transform = "scale(1)";
+      }, 0));
+
+      const ruleDur = 130;
+      timers.push(setTimeout(() => {
+        [upperRule, lowerRule].forEach((r) => { r.style.transition = "stroke-dashoffset " + ruleDur + "ms ease"; r.style.strokeDashoffset = "0"; });
+      }, introDur));
+
+      const squiggleStart = introDur + ruleDur + 20, squiggleDur = 550;
+      timers.push(setTimeout(() => {
+        squigglePath.style.transition = "stroke-dashoffset " + squiggleDur + "ms linear";
+        squigglePath.style.strokeDashoffset = "0";
+      }, squiggleStart));
+      const afterSquiggle = squiggleStart + squiggleDur;
+
+      const bandDur = 110;
+      timers.push(setTimeout(() => {
+        bandGroup.style.transition = "opacity " + bandDur + "ms ease";
+        bandGroup.style.opacity = "1";
+      }, afterSquiggle));
+
+      const markerStagger = 60, markerDur = 90;
+      markers.forEach((m, i) => {
+        timers.push(setTimeout(() => {
+          m.style.transition = "opacity " + markerDur + "ms ease";
+          m.style.opacity = "1";
+        }, afterSquiggle + bandDur + i * markerStagger));
+      });
+      const doneAt = afterSquiggle + bandDur + (markers.length - 1) * markerStagger + markerDur;
+
+      return { doneAt, timers, applyFinal };
+    },
+    stageWidth(mobile) { return mobile ? "min(380px, calc(100vw - 3rem))" : "min(560px, 92vw)"; },
+  },
+
+  sixbysix: {
+    thumb() {
+      const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
+      for (let i = 0; i < 6; i++) {
+        const y = 20 + i * 20;
+        svg.appendChild(svgEl("line", { x1: 20, y1: y, x2: 60, y2: y, stroke: "currentColor", "stroke-width": "1" }));
+        svg.appendChild(svgEl("circle", { cx: 75, cy: y, r: 5, ...LINE }));
+      }
+      return svg;
+    },
+    buildStage() {
+      const svg = svgEl("svg", { viewBox: SIXBYSIX_STAGE_VB, draggable: "false" });
+      svg.style.opacity = "0";
+      svg.style.transform = "scale(0.92)";
+      svg.style.transformOrigin = "center center";
+
+      SIXBYSIX_ROWS.forEach((row, i) => {
+        const cy = sixbysixRowCY(i);
+        svg.appendChild(svgText(SIXBYSIX.labelX, cy + 2, "start", row.question, "tool-label sixbysix-question sixbysix-question-" + row.key));
+
+        const connector = svgEl("line", {
+          x1: SIXBYSIX.connectorX0, y1: cy, x2: SIXBYSIX.connectorX1, y2: cy,
+          stroke: "currentColor", "stroke-width": "1", class: "sixbysix-connector sixbysix-connector-" + row.key, pathLength: "1",
+        });
+        connector.style.strokeDasharray = "1";
+        connector.style.strokeDashoffset = "1";
+        svg.appendChild(connector);
+
+        const iconGroup = svgEl("g", {
+          class: "sixbysix-icon sixbysix-icon-" + row.key,
+          transform: "translate(" + SIXBYSIX.iconX + "," + (cy - SIXBYSIX.iconSize / 2) + ")",
+        });
+        iconGroup.style.opacity = "0";
+        iconGroup.appendChild(sixbysixIcon(row.icon));
+        svg.appendChild(iconGroup);
+      });
+
+      return svg;
+    },
+    assemble(diagramEl) {
+      const svgRoot = diagramEl;
+      const rows = SIXBYSIX_ROWS.map((row) => ({
+        label: diagramEl.querySelector(".sixbysix-question-" + row.key),
+        connector: diagramEl.querySelector(".sixbysix-connector-" + row.key),
+        icon: diagramEl.querySelector(".sixbysix-icon-" + row.key),
+      }));
+
+      function applyFinal() {
+        svgRoot.style.transition = "none"; svgRoot.style.opacity = "1"; svgRoot.style.transform = "scale(1)";
+        rows.forEach((r) => {
+          r.label.classList.add("show");
+          r.connector.style.transition = "none"; r.connector.style.strokeDashoffset = "0";
+          r.icon.style.transition = "none"; r.icon.style.opacity = "1";
+        });
+      }
+
+      if (reduced()) { applyFinal(); return { doneAt: 0, timers: [], applyFinal }; }
+
+      const timers = [];
+      const introDur = 110;
+      timers.push(setTimeout(() => {
+        svgRoot.style.transition = "opacity " + introDur + "ms ease, transform " + introDur + "ms cubic-bezier(0.2,0.8,0.3,1.3)";
+        svgRoot.style.opacity = "1"; svgRoot.style.transform = "scale(1)";
+      }, 0));
+
+      const rowStagger = 120, labelDur = 45, connectorDur = 50, iconDur = 70;
+      rows.forEach((r, i) => {
+        const start = introDur + i * rowStagger;
+        timers.push(setTimeout(() => { r.label.classList.add("show"); }, start));
+        timers.push(setTimeout(() => {
+          r.connector.style.transition = "stroke-dashoffset " + connectorDur + "ms ease";
+          r.connector.style.strokeDashoffset = "0";
+        }, start + labelDur * 0.5));
+        timers.push(setTimeout(() => {
+          r.icon.style.transition = "opacity " + iconDur + "ms ease";
+          r.icon.style.opacity = "1";
+        }, start + labelDur * 0.5 + connectorDur));
+      });
+      const lastStart = introDur + (rows.length - 1) * rowStagger;
+      const doneAt = lastStart + labelDur * 0.5 + connectorDur + iconDur;
+
+      return { doneAt, timers, applyFinal };
+    },
+    stageWidth(mobile) { return mobile ? "min(360px, calc(100vw - 3rem))" : "min(520px, 90vw)"; },
+  },
 };
 
 /* ============================================================
@@ -1506,8 +2193,8 @@ export const TOOLS = [
     name: "Octalysis",
     attribution: "Yu-kai Chou",
     whatItIs: "Eight core drives behind why people engage with anything. The top four pull people in. The bottom four push them. Both work, and they do not feel the same to be on the receiving end of.",
-    strongFor: "Loyalty programmes. It makes the difference between pull and pressure impossible to ignore once you have seen where your own design sits.",
-    howIUse: "Before anything with points, tiers or rewards gets designed. Pressure works, right up until people notice they are being pushed.",
+    strongFor: "Making the difference between pull and pressure impossible to ignore once you have seen where your own design sits.",
+    howIUse: "Mostly when reviewing loyalty programmes. Mapping the mechanics against the eight drives shows within an hour whether members are being invited or cornered.",
     watchOut: "Most loyalty programmes cluster in the bottom right, around scarcity and reward, because those are the cheapest to build. That is exactly why so many of them feel identical.",
     sources: [
       { label: "The framework", url: "https://yukaichou.com/gamification-examples/octalysis-gamification-framework/" },
@@ -1566,7 +2253,7 @@ export const TOOLS = [
     attribution: "After G. Lynn Shostack, Harvard Business Review, 1984",
     whatItIs: "The visible journey above the line, and everything that has to happen behind it: staff, systems and support processes.",
     strongFor: "The parts of a service the customer never sees but always feels.",
-    howIUse: "Split into before, during and after, mapped per archetype, so backstage interactions and the systems underneath surface alongside the visible steps. Most failures I have found were not in the interface. They were two lines below it.",
+    howIUse: "One per archetype, split into before, during and after. Most failures I have found were not in the interface. They were two lines below it.",
     watchOut: "It gets long fast. One archetype, one journey. A blueprint that tries to cover everyone covers nobody.",
     source: "https://hbr.org/1984/01/designing-services-that-deliver",
   },
@@ -1589,14 +2276,83 @@ export const TOOLS = [
     slug: "muda",
     diagram: "radial7",
     ready: true,
-    shortName: "Muda",
+    shortName: "Seven Wastes",
     name: "Muda: The Seven Wastes",
     attribution: "Taiichi Ohno, Toyota Production System",
     whatItIs: "Seven categories of waste from the Toyota Production System. An eighth, unused talent, was added decades later, which is why it sits apart.",
-    strongFor: "Looking at a service from the inside, which none of the other nine tools on this page do.",
-    howIUse: "When a service feels slow and nobody can point to why. Waiting and over-processing show up most in service work, and both are invisible from the customer side.",
+    strongFor: "Looking at a service from the inside, which none of the other tools on this page do.",
+    howIUse: "As a checklist when building a business case. The savings side is usually thin because nobody counted the waste, and waiting and over-processing are the two that hide best in service work.",
     watchOut: "Built for factories. Applied literally to a service it produces nonsense, so treat the seven as prompts rather than categories.",
     source: "https://en.wikipedia.org/wiki/Muda_(Japanese_term)",
+  },
+  {
+    id: "stakeholder-map",
+    slug: "stakeholder-map",
+    diagram: "stakemap",
+    ready: true,
+    shortName: "Stakeholder Map",
+    name: "Stakeholder Map",
+    attribution: "No single origin. Stakeholder theory: R. Edward Freeman, 1984",
+    whatItIs: "Everyone affected by a service, arranged by how close they sit to the decision. Primary in the centre, secondary around them, indirect on the outside.",
+    strongFor: "Finding the person nobody invited to the meeting who can still stop the project.",
+    howIUse: "Before a project starts, and again when it stalls. A stalled project usually has a stakeholder sitting in the wrong ring.",
+    watchOut: "Closeness is not influence. Someone in the outer ring with a veto belongs in the middle, whatever the org chart says.",
+  },
+  {
+    id: "reflective-sketching",
+    slug: "reflective-sketching",
+    diagram: "reflect",
+    ready: true,
+    shortName: "Reflective Sketching",
+    name: "The Reflective Sketching Loop",
+    attribution: "Bill Buxton, Sketching User Experiences, 2007",
+    whatItIs: "You sketch what you are thinking, then read the sketch and learn something you did not know before you drew it. Create, then read, then create again.",
+    strongFor: "Explaining why sketching is thinking rather than documenting. The sketch talks back.",
+    howIUse: "When a room is stuck arguing in the abstract. Ten minutes of drawing settles more than an hour of discussion, because everyone is finally looking at the same thing.",
+    watchOut: "It only works if the sketch is rough enough to argue with. A polished mockup stops the loop, because nobody wants to redraw something that looks finished.",
+    source: "https://www.sciencedirect.com/book/9780123740373/sketching-user-experiences",
+  },
+  {
+    id: "lotus-blossom",
+    slug: "lotus-blossom",
+    diagram: "lotus",
+    ready: true,
+    shortName: "Lotus Blossom",
+    name: "Lotus Blossom",
+    attribution: "Yasuo Matsumura, Clover Management Research, Japan, 1980s",
+    whatItIs: "A central theme surrounded by eight related themes. Each of those eight then becomes a centre of its own with eight more, so nine cells become eighty one.",
+    strongFor: "Getting past the three ideas everyone in the room already had. The structure forces you to keep going after the obvious ones run out.",
+    howIUse: "When a brainstorm keeps circling the same answers. The good ideas usually arrive after the easy ones are used up.",
+    watchOut: "Eighty one cells is a lot of paper and most of it is filler. Expand only the branches that are actually going somewhere.",
+    source: "https://innovationmanagement.se/2004/10/21/creative-thinking-technique-lotus-blossom/",
+  },
+  {
+    id: "design-squiggle",
+    slug: "design-squiggle",
+    diagram: "squiggle",
+    ready: true,
+    shortName: "Design Squiggle",
+    name: "The Design Squiggle",
+    attribution: "Damien Newman, Central, 2003",
+    whatItIs: "One line from mess to clarity. Chaos on the left, a single straight line on the right, and no shortcut between them.",
+    strongFor: "Managing expectations upward. It answers why there is no solution yet after three weeks.",
+    howIUse: "At the start of a project, once, with whoever is paying for it. Showing people the shape of the process in advance is the difference between patience and panic.",
+    watchOut: "It describes how the work feels, not how to do it. Nobody ever built anything from the squiggle, and treating it as a method is how you end up with mess and no clarity.",
+    source: "https://thedesignsquiggle.com/about",
+  },
+  {
+    id: "six-by-six",
+    slug: "six-by-six",
+    diagram: "sixbysix",
+    ready: true,
+    shortName: "6x6 Rule",
+    name: "The 6x6 Rule",
+    attribution: "Dan Roam, The Back of the Napkin, 2008",
+    whatItIs: "Six questions, and for each one the picture type that answers it best. Who or what needs a portrait. How much needs a chart. Where needs a map. When needs a timeline. How needs a flowchart. Why needs a plot with more than one variable.",
+    strongFor: "Deciding what to draw before you start drawing. Most bad slides are the right data in the wrong picture.",
+    howIUse: "When preparing anything for a leadership audience. Working out which of the six questions I am actually answering usually reveals that I was about to answer a different one.",
+    watchOut: "The pairings are a starting point, not a law. But if you are reaching for a bar chart to answer a why question, that is worth noticing.",
+    source: "https://www.danroam.com",
   },
 ];
 
@@ -1638,7 +2394,8 @@ export function renderToolContent(tool, container) {
   // validator) uses its label as the link text itself, in the same
   // spot and style as an external source, rather than showing a raw
   // URL beside a "Source:" prefix.
-  const sourceList = tool.sources || [{ label: "Source", url: tool.source }];
+  const sourceList = tool.sources || (tool.source ? [{ label: "Source", url: tool.source }] : []);
+  if (sourceList.length === 0) return;
   const sourceWrap = document.createElement("div");
   sourceWrap.className = "tool-source";
   for (const { label, url, internal } of sourceList) {

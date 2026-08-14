@@ -444,8 +444,8 @@ function buildMatrixSvg(yScore, xScore) {
   const svg = svgEl("svg", { class: "matrix-svg", viewBox: "0 0 160 160" });
   const LINE = { fill: "none", stroke: "currentColor", "stroke-width": "1.5", "stroke-linejoin": "round", "stroke-linecap": "round" };
   const rect = svgEl("rect", { x: 28, y: 28, width: 104, height: 104, ...LINE, class: "matrix-axes", pathLength: "1" });
-  const vLine = svgEl("line", { x1: 80, y1: 16, x2: 80, y2: 144, ...LINE, "stroke-width": "1", class: "matrix-axes", pathLength: "1" });
-  const hLine = svgEl("line", { x1: 16, y1: 80, x2: 144, y2: 80, ...LINE, "stroke-width": "1", class: "matrix-axes", pathLength: "1" });
+  const vLine = svgEl("line", { x1: 80, y1: 28, x2: 80, y2: 132, ...LINE, "stroke-width": "1", class: "matrix-axes", pathLength: "1" });
+  const hLine = svgEl("line", { x1: 28, y1: 80, x2: 132, y2: 80, ...LINE, "stroke-width": "1", class: "matrix-axes", pathLength: "1" });
   svg.appendChild(rect);
   svg.appendChild(vLine);
   svg.appendChild(hLine);

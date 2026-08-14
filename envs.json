@@ -85,7 +85,7 @@
   ],
   "pages": {
     "$comment": "Routing is the filesystem: vite.config.js globs **/*.html into rollupOptions.input. This list is for skills that need to enumerate routes; verify against dist/ after a build rather than trusting it.",
-    "expectedHtmlCount": 25,
+    "expectedHtmlCount": 30,
     "routes": [
       "/about-me/",
       "/arcade/asteroid-breaker/",
@@ -103,13 +103,18 @@
       "/tools/11-star-experience/",
       "/tools/behavior-model/",
       "/tools/business-model-canvas/",
+      "/tools/design-squiggle/",
       "/tools/design-thinking/",
       "/tools/empathy-map/",
       "/tools/",
       "/tools/lean-ux/",
+      "/tools/lotus-blossom/",
       "/tools/muda/",
       "/tools/octalysis/",
+      "/tools/reflective-sketching/",
       "/tools/service-blueprint/",
+      "/tools/six-by-six/",
+      "/tools/stakeholder-map/",
       "/tools/validator/",
       "/tools/value-complexity/"
     ]

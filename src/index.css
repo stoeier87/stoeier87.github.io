@@ -162,9 +162,9 @@ header.topbar {
 
 .stage {
   position: sticky;
-  top: 0;
-  height: 100vh;
-  height: 100svh;
+  top: var(--topbar-h, 4.5rem);
+  height: calc(100vh - var(--topbar-h, 4.5rem));
+  height: calc(100svh - var(--topbar-h, 4.5rem));
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -401,13 +401,6 @@ footer a:focus-visible {
   .pill {
     width: min(300px, 78vw);
     text-align: center;
-  }
-
-  /* Near the end of the journey the contact pills fill out the flex
-     column, re-centering it and pushing the headline up toward the fixed
-     topbar. Reserve clearance so "Space Bar" never lands on "TOBIAS". */
-  .stage {
-    padding-top: 6rem;
   }
 }
 

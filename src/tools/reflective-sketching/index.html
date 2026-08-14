@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>The Reflective Sketching Loop — Tobias Fullerton Støier</title>
+    <meta name="description" content="You sketch what you are thinking, then read the sketch and learn something you did not know before you drew it." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="../shared/tool-page.css" />
+    <link href="../../css/all.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="../../tailwind.css" />
+  </head>
+  <body>
+    <canvas id="backdrop" aria-hidden="true"></canvas>
+
+    <nav class="tool-page-nav" aria-label="Tool navigation">
+      <a class="pill back" href="../" aria-label="Back to tools" title="Back to tools">
+        <span class="arrow"><i class="fa-solid fa-arrow-left-long"></i></span>
+        <span class="alien" aria-hidden="true">
+          <svg viewBox="0 0 26 26" width="17" height="17">
+            <ellipse cx="13" cy="15" rx="8.5" ry="10" fill="#7eb08a" />
+            <ellipse cx="9.6" cy="13.4" rx="2.1" ry="3" fill="#0a1018"
+                     transform="rotate(-18 9.6 13.4)" />
+            <ellipse cx="16.4" cy="13.4" rx="2.1" ry="3" fill="#0a1018"
+                     transform="rotate(18 16.4 13.4)" />
+            <path class="alien-arm" d="M20.5 16.5 L25 11"
+                  stroke="#7eb08a" stroke-width="2.3" stroke-linecap="round" fill="none" />
+          </svg>
+        </span>
+      </a>
+    </nav>
+
+    <main class="tool-page">
+      <div class="tool-page-body">
+        <div class="tool-page-diagram-wrap">
+          <div id="diagramHost"></div>
+        </div>
+        <div id="toolContent"></div>
+      </div>
+    </main>
+
+    <script type="module">
+      import { boot } from "../shared/tool-page.js";
+      boot("reflective-sketching");
+    </script>
+  </body>
+</html>
