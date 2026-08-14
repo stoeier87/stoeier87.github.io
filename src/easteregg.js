@@ -234,6 +234,54 @@ const CSS = `
 .egg-flash { z-index: 380; background: #fff; opacity: 0; }
 .egg-blackout { z-index: 390; background: #000; opacity: 0; }
 
+/* ── Dead screen ───────────────────────────────────────── */
+.egg-dead {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  pointer-events: auto;
+  font-family: var(--font-mono);
+}
+.egg-dead-line {
+  color: var(--color-red);
+  font-size: clamp(0.85rem, 3.5vw, 1.15rem);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  min-height: 1.4em;
+}
+.egg-restart {
+  margin-top: 1.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: clamp(0.7rem, 1.8vw, 0.85rem);
+  letter-spacing: 0.08em;
+  color: var(--color-red);
+  padding: 0.85rem 1.4rem;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  border-radius: 100px;
+  background: rgba(13, 20, 36, 0.72);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.4s ease, border-color 0.25s ease;
+}
+.egg-restart.show { opacity: 1; animation: eggRestartPulse 1.6s ease-in-out infinite; }
+.egg-restart:hover { border-color: var(--color-red); }
+.egg-restart:focus-visible { outline: 2px solid var(--color-red); outline-offset: 4px; }
+@keyframes eggRestartPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.045); }
+}
+
 /* ── Small screens ─────────────────────────────────────── */
 @media (max-width: 500px) {
   /* bottom is 44px rather than 24 so the DO NOT PUSH label clears the
@@ -264,6 +312,7 @@ const CSS = `
   .egg-press3 .egg-alien-turn, .egg-press4 .egg-alien-turn { transform: none; }
   .egg-press3 .egg-eyes { opacity: 0.6; }
   .egg-press3 .egg-glint { opacity: 1; }
+  .egg-restart.show { animation: none; }
 }
 `;
 
@@ -649,9 +698,56 @@ function initEasterEgg() {
     at(5000, () => showDeadScreen(black));
   }
 
-  function showDeadScreen(black) {
-    // Part 4 begins here.
-    void black;
+  function showDeadScreen() {
+    const dead = document.createElement("div");
+    dead.className = "egg-dead";
+    dead.innerHTML = `
+      <div class="egg-dead-line"></div>
+      <div class="egg-dead-line"></div>
+      <button class="egg-restart" type="button">RESTART UNIVERSE</button>`;
+    document.body.appendChild(dead);
+    const [line1, line2] = dead.querySelectorAll(".egg-dead-line");
+    const restartBtn = dead.querySelector(".egg-restart");
+
+    function typeInto(el, text, done) {
+      let i = 0;
+      const t = setInterval(() => {
+        el.textContent = text.slice(0, ++i);
+        if (i >= text.length) {
+          clearInterval(t);
+          done();
+        }
+      }, 45);
+    }
+
+    typeInto(line1, "SIGNAL LOST", () => {
+      setTimeout(() => {
+        typeInto(line2, "UNIVERSE UNAVAILABLE", () => {
+          setTimeout(() => {
+            restartBtn.classList.add("show");
+            restartBtn.focus();
+          }, 1000);
+        });
+      }, 600);
+    });
+
+    let restarting = false;
+    function restart() {
+      if (restarting) return;
+      restarting = true;
+      dead.style.transition = "opacity 0.3s ease";
+      dead.style.opacity = "0";
+      history.scrollRestoration = "manual";
+      window.scrollTo(0, 0);
+      setTimeout(() => window.location.reload(), 300);
+    }
+    restartBtn.addEventListener("click", restart);
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+        e.preventDefault();
+        restart();
+      }
+    });
   }
 }
 
