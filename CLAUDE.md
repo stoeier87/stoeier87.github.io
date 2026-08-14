@@ -2,7 +2,7 @@
 
 Canonical contract for this repo. `AGENTS.md` is a stub that points here.
 
-Companion files: **`envs.json`** (the ladder) · **`standards.json`** (the rules, machine-readable) · **`tokens.ts`** (design tokens) · **`DECISIONS.md`** (why things are the way they are) · **`ANALYSIS.md`** (how the repo and the method actually work).
+Companion files: **`envs.json`** (the ladder) · **`standards.json`** (the rules, machine-readable) · **`tokens.ts`** (design tokens) · **`DECISIONS.md`** (why things are the way they are) · **`ANALYSIS.md`** (how the repo and the method actually work) · **`BACKLOG.md`** (known debt, one PR each, none in progress).
 
 ---
 
