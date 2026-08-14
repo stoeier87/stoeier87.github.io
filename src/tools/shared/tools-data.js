@@ -659,7 +659,7 @@ export const DIAGRAMS = {
       const zoneA = svgText(100, 36, "middle", "Behaviour happens", "tool-label neutral curve-zone-a");
       zoneA.style.fontSize = "7px";
       svg.appendChild(zoneA);
-      const zoneB = svgText(33, 126, "start", "Behaviour does not happen", "tool-label neutral curve-zone-b");
+      const zoneB = svgText(33, 110, "start", "Behaviour does not happen", "tool-label neutral curve-zone-b");
       zoneB.style.fontSize = "5.8px";
       svg.appendChild(zoneB);
 
