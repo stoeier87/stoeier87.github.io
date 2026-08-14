@@ -22,7 +22,7 @@ The teaching channel. Answer from **the contract plus live repo state**, never f
 
 Lead with the direct answer in one or two sentences. Then the mechanism. Then the consequence for the person asking.
 
-Cite files as clickable references — `script.js:197`, `.github/workflows/preview.yml` — so the answer is checkable rather than trusted.
+Cite files as clickable references — `src/script.js:197`, `.github/workflows/preview.yml` — so the answer is checkable rather than trusted.
 
 **Explain the mechanism, not just the rule.** "Because `tailwind.css` loads last, so its `.topbar { pointer-events: none }` beats your page CSS on equal specificity — that's what made the About-me back arrow unclickable" teaches something. "Because that's the convention" doesn't.
 

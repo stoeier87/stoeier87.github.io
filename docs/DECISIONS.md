@@ -330,3 +330,34 @@ Claude sessions run from the browser and from the cloud check out into `.claude/
 - **A dead session's lock outlives it.** `.git/worktrees/<topic>/locked` names the owning pid; nothing clears it when that process dies. Verify the pid before unlocking — the lock exists to stop a live session losing its tree.
 - **`git worktree remove` leaves the branch.** Cleanup is four commands, written out in `CLAUDE.md` §5. `git branch -d` (not `-D`) is deliberate: it refuses on unmerged commits, which is the only automatic protection a local-only branch has.
 - **The dot in `.claude/` is load-bearing twice.** It keeps the directory out of git via `.gitignore`, and it keeps a full second copy of every page out of `getInputs()` in `vite.config.js` — which ignores only `node_modules/**` and `dist/**` and would otherwise glob 25 duplicate entries. Verified by running the glob, not assumed. A worktree placed at a non-dot path inside the repo reproduces ADR-014.
+
+---
+
+## ADR-022 — `src/` is the route table, and `root: "src"` is the only thing that keeps the URLs
+
+**Decided:** 2026-08-14
+**Status:** active · **supersedes the "there is no `src/`" claim in ADR-003 and `CLAUDE.md` §2**
+
+The repo root held 25 pages' worth of source directories, five markdown contract files, seven config files and the homepage's own three source files as siblings. Source moves to `src/`; the contract documents move to `docs/`. Root keeps configuration, `README.md`, and the two discovery stubs.
+
+**The mechanism, because getting it wrong is silent.** Vite emits each HTML entry at its path _relative to `root`_. Set `root: "src"` and `src/arcade/comet-pong/index.html` still ships as `/arcade/comet-pong/` — every URL on `stoeier.dk` survives untouched. The tempting alternative, leaving `root` alone and rewriting the keys of `rollupOptions.input`, **does not work**: Rollup input keys name chunks, they do not relocate HTML output. A refactor done that way builds cleanly and moves the entire site to `/src/…`.
+
+Three consequences follow from `root`, and each of them is a trap on its own:
+
+- **`publicDir` defaults to `<root>/public`**, so `public/` had to move into `src/` too. Left at the repo root it resolves nowhere, and the failure is invisible in a smoke test: every Font Awesome icon disappears while the layout, the canvases and the copy all look correct.
+- **`build.outDir` resolves against `root`.** A bare `"dist"` writes `src/dist/`. It is now `"../dist"` with `emptyOutDir: true`, which Vite requires for a target outside the root.
+- **`globSync` resolves against `process.cwd()`, not against `root`.** `getInputs()` needed an explicit `cwd: SRC`. Without it the glob finds zero pages and reports no error at all — the build succeeds and emits nothing.
+
+**Nothing inside the source changed.** Every page reaches shared files by depth-relative path (`../tailwind.css`, `../../css/all.min.css`), so a tree that translates wholesale keeps every one of those strings valid. Not one line of page HTML, CSS or JS was edited.
+
+**Verified rather than asserted.** `dist/` was built before the move and diffed against `dist/` after. With content hashes normalised, all 25 pages and all 96 files are byte-identical, and the whole build output differs by exactly one line.
+
+**That one line is the honest surprise, and it is an improvement.** The Tailwind stylesheet shrank 159 bytes because six utilities stopped being generated: `.absolute`, `.sticky`, `.contents`, `.inline`, `.table`, `.lowercase`. Tailwind v4 auto-detects sources from the stylesheet's own location, so while `tailwind.css` sat at the repo root it was harvesting English words out of prose and tooling as candidate class names — `sticky` from `ANALYSIS.md`, `lowercase` from `.claude/hooks/guard.mjs`. None of the six appears in any markup in the repo. Scoping the scan to `src/` deleted dead CSS; it did not remove anything a page uses.
+
+**A third instance of the ADR-014 failure class, found on the way.** `npm run lint` was reporting ten errors — against files inside `.claude/worktrees/main-pr-guard/`, a git worktree holding a full second copy of the repo. `glob` skips dot-directories by default, which is what has been quietly protecting the Vite build; **ESLint does not**. `.claude/worktrees/**` is now in `eslint.config.js`'s ignores. CI never saw it because CI checks out fresh — the same reason ADR-014 went unnoticed. The rule worth carrying forward: any tool that walks the repo tree needs the worktree exclusion stated explicitly, because exactly one of them gets it right by accident.
+
+**What deliberately did not move.** `routePrefixes` in `standards.json` and every route in `envs.json` are URL-space, not filesystem paths — the write-hook and eslint use them to detect root-absolute escapes, and prefixing them with `src/` would break the guard while looking like a consistent edit. Relative-path templates inside the skills (`../../tailwind.css` in `/idea`, `../tailwind.css` in `/new-page`) are unchanged for the same reason the pages are: the depths still resolve. `vite.config.js` keeps its unprefixed line in `.prettierignore` because it stays at the repo root.
+
+**The `.prettierignore` prefixes are load-bearing.** ADR-019's amnesty is expressed as a list of literal root paths. An entry that stops matching does not fail — it silently un-freezes the file, and the next `npm run format` rewrites thousands of lines of the most fragile code here. Every frozen entry gained `src/`, and `format:check` passing with no diff is the proof the amnesty survived.
+
+**Why `docs/` and not `agents/`, which was the first instinct.** Claude Code discovers context by filename at repo root — `CLAUDE.md`, `CLAUDE.local.md`, `.claude/rules/**/*.md` — and by no directory name at all, identically on the CLI, web, iOS and the IDE extensions. So no folder name buys discovery, and the root `CLAUDE.md` becomes a stub that `@`-imports `docs/CLAUDE.md`. It imports only the contract: `DECISIONS.md`, `ANALYSIS.md` and `BACKLOG.md` total ~50KB, they are read on demand today, and importing them would load all of it into every session for documents most turns never open. `AGENTS.md` stays at root for the inverse reason — Claude Code never reads it, but the tools that do look for it there. `agents/` was rejected additionally because `.claude/agents/` already exists and means something else.

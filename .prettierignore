@@ -1,7 +1,7 @@
 # Build output and vendored assets
 dist/
 node_modules/
-public/
+src/public/
 .vite/
 
 # Machine-local, not committed
@@ -27,20 +27,25 @@ public/
 # the diff on its own — one file, one PR. Do it when you're already touching
 # the file for another reason, not as a separate cleanup.
 #
-# New code is NOT listed here and is formatted from day one: shared/, proto/,
-# scripts/, tokens.ts, config files, and all docs.
+# New code is NOT listed here and is formatted from day one: src/shared/,
+# src/proto/, scripts/, src/tokens.ts, config files, and all docs.
+#
+# These paths gained their src/ prefix when the source tree moved. The prefix is
+# load-bearing: an entry that no longer matches silently un-freezes the file, and
+# the next `npm run format` reformats thousands of lines of the most fragile code
+# in the repo. `vite.config.js` keeps no prefix — it stays at the repo root.
 # ─────────────────────────────────────────────────────────────────────────────
 
-index.html
-index.css
-script.js
-tailwind.css
+src/index.html
+src/index.css
+src/script.js
+src/tailwind.css
 vite.config.js
 
-about-me/
-space-bar/
-scoreboard/
-arcade/
+src/about-me/
+src/space-bar/
+src/scoreboard/
+src/arcade/
 
 # tools/ — a ONE-TIME AMNESTY, not a precedent. See DECISIONS.md ADR-019.
 #
@@ -53,4 +58,4 @@ arcade/
 #
 # Anything created AFTER the toolbox lands on main is formatted from birth and
 # does not get added here.
-tools/
+src/tools/

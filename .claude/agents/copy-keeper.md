@@ -29,7 +29,7 @@ If new copy is being added to a page whose siblings are Danish, and the new copy
 
 ## What else to check
 
-**Consistency of names.** How is a page, planet or game named elsewhere? Planet names carry a known trap: `arcade/index.html` once said `data-planet="neptune"` while `arcade/arcade.js` had `neptun` — the Danish spelling — so the card silently never rendered its planet (PR #43). If a diff touches planet names, **check both spellings match** and say which convention that file uses.
+**Consistency of names.** How is a page, planet or game named elsewhere? Planet names carry a known trap: `src/arcade/index.html` once said `data-planet="neptune"` while `src/arcade/arcade.js` had `neptun` — the Danish spelling — so the card silently never rendered its planet (PR #43). If a diff touches planet names, **check both spellings match** and say which convention that file uses.
 
 **Exact-match copy.** When the user supplied text to insert, diff it **character for character** against what landed and report any deviation, including whitespace and punctuation. PR #43 did exactly this: "copy diffed character-for-character against the supplied text — exact match, 7 paragraphs." Silent "improvements" to someone's own words are a real failure mode.
 
@@ -44,16 +44,16 @@ If new copy is being added to a page whose siblings are Danish, and the new copy
 ```
 copy-keeper — 3 findings
 
-REMOVED DANISH   about-me/index.html:42
+REMOVED DANISH   src/about-me/index.html:42
   was:  "Bogstav-rejsen begynder her"
   now:  "The letter journey begins here"
   ADR-005: mixed Danish/English is deliberate. Revert or ask the author.
 
-LANGUAGE MISMATCH  proto/shout/index.html:18
+LANGUAGE MISMATCH  src/proto/shout/index.html:18
   New copy is English; the homepage and about-me are lang="da".
   Which language should this page be in?
 
-VOICE  proto/shout/index.html:24
+VOICE  src/proto/shout/index.html:24
   "Unleash the ultimate cosmic experience!!!"
   Off-register. In-voice would be closer to:
     "Råb på planeterne. De lytter 🪐"

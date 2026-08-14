@@ -10,7 +10,7 @@
       "enforcement": "hook-block",
       "severity": "fatal",
       "appliesTo": ["*.html", "*.js", "*.ts", "*.jsx", "*.tsx"],
-      "knownViolation": "script.js:52-125 -- homepage canvas planet links are /arcade/<game>. Deliberately left; the hook stops the next one.",
+      "knownViolation": "src/script.js:52-125 -- homepage canvas planet links are /arcade/<game>. Deliberately left; the hook stops the next one.",
       "escape": "Add the comment guard:allow-absolute on the same line if you genuinely need it.",
       "routePrefixes": [
         "arcade",
@@ -50,7 +50,7 @@
       "enforcement": "agent:page-critic",
       "severity": "high",
       "appliesTo": ["*.html"],
-      "trap": ".topbar { pointer-events: none } in tailwind.css broke the About-me back arrow. Sidestep with a new class -- see index.css:104 for the documented precedent. Never edit the shared rule."
+      "trap": ".topbar { pointer-events: none } in tailwind.css broke the About-me back arrow. Sidestep with a new class -- see src/index.css:104 for the documented precedent. Never edit the shared rule."
     },
     {
       "id": "a11y-baseline",
@@ -87,7 +87,7 @@
       "why": "Uncapped DPR melts phones. An unclamped dt explodes the simulation on the first dropped frame or backgrounded tab. Virtual resolution is what makes one game readable on a 320px phone and a 1440px desktop.",
       "enforcement": "agent:page-critic",
       "severity": "high",
-      "appliesTo": ["arcade/**/*.js", "arcade/**/*.ts"]
+      "appliesTo": ["src/arcade/**/*.js", "src/arcade/**/*.ts"]
     },
     {
       "id": "rule-of-three",
@@ -97,9 +97,9 @@
       "enforcement": "agent:redundancy-scout",
       "severity": "medium",
       "knownClusters": [
-        "drawPlanet x3 -- script.js:197, arcade/arcade.js:83, arcade/shared/starfield.js:55",
-        "back-pill CSS x4 -- index.css, about-me/about-me.css, space-bar/space-bar.css, arcade/arcade.css",
-        "starfield init x5 -- including one inlined in scoreboard/index.html:43-87"
+        "drawPlanet x3 -- src/script.js:197, src/arcade/arcade.js:83, src/arcade/shared/starfield.js:55",
+        "back-pill CSS x4 -- src/index.css, src/about-me/about-me.css, src/space-bar/space-bar.css, src/arcade/arcade.css",
+        "starfield init x5 -- including one inlined in src/scoreboard/index.html:43-87"
       ]
     },
     {
@@ -128,7 +128,7 @@
       "why": "The stack decision is TypeScript + React, deferred to a filed issue. Components written this way are a mechanical port; components written as IIFEs that reach into document are a rewrite.",
       "enforcement": "agent:page-critic",
       "severity": "medium",
-      "appliesTo": ["shared/**", "proto/**"]
+      "appliesTo": ["src/shared/**", "src/proto/**"]
     }
   ],
   "gates": {

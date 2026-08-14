@@ -6,7 +6,7 @@ name), and `AGENTS.md`, which is where other tools look.
 
 Companion files in this directory: **`DECISIONS.md`** (why things are the way they are) · **`ANALYSIS.md`** (how the repo and the method actually work) · **`BACKLOG.md`** (known debt, one PR each, none in progress).
 
-At repo root, next to the tools that read them by path: **`../envs.json`** (the ladder) · **`../standards.json`** (the rules, machine-readable) · **`../tokens.ts`** (design tokens).
+At repo root, next to the tools that read them by path: **`../envs.json`** (the ladder) · **`../standards.json`** (the rules, machine-readable). Design tokens live with the source they mirror: **`../src/tokens.ts`**, beside `../src/tailwind.css`.
 
 ---
 
@@ -34,7 +34,7 @@ Use `/deploy` rather than pushing by hand. Two things it handles for you:
 
 All three publishing workflows share `concurrency: gh-pages-write, cancel-in-progress: false` with `keep_files: true`. One branch, many destination dirs, never cancel a write. Anything new that writes `gh-pages` must join that group.
 
-`build.yml` is reusable (`workflow_call`), hard-fails if any of seven `FIREBASE_*` repo _variables_ is empty, and regenerates `arcade/shared/firebase-config.js`. `FIREBASE_MEASUREMENT_ID` is written but not validated.
+`build.yml` is reusable (`workflow_call`), hard-fails if any of seven `FIREBASE_*` repo _variables_ is empty, and regenerates `src/arcade/shared/firebase-config.js`. `FIREBASE_MEASUREMENT_ID` is written but not validated.
 
 **`stage` is open, `main` is not.** Anyone can push straight to `stage` — no approval, no gate, that's deliberate. A PR into `main` is a different matter: `pr-source-guard.yml` fails the PR outright unless its source branch is exactly `stage`, and branch protection on `main` requires one approval — which GitHub already refuses to let the PR's own author give, so it's structurally a second person's sign-off. `stage → main` is the one hop in this repo that's actually gated.
 
@@ -46,7 +46,7 @@ Two roles, and the split is the point.
 
 |            | **Prototyper** (Tobias)                         | **Integrator** (Jesper)    |
 | ---------- | ----------------------------------------------- | -------------------------- |
-| Works in   | `preview/<topic>` branches and `proto/`         | anywhere                   |
+| Works in   | `preview/<topic>` branches and `src/proto/`     | anywhere                   |
 | Deploys to | `preview` **only**                              | `preview`, `stage`, `prod` |
 | Gate       | build must pass                                 | the full ladder            |
 | Owns       | ~70% of the work — the ideas, the exploration   | promotion into the system  |
@@ -65,12 +65,12 @@ If you are working as the prototyper: use `/idea`, `/deploy preview`, and `/expl
 Personal portfolio and browser arcade for Tobias Fullerton Støier, at `stoeier.dk`.
 
 - **Vanilla ES modules + Canvas 2D.** No framework, no SPA router, no component model yet.
-- **Vite 8 as a pure MPA bundler.** `vite.config.js` globs `**/*.html` into `rollupOptions.input`, so **routing is the filesystem** — drop an HTML file anywhere and it ships. There is no `src/`; the repo layout _is_ the route table.
+- **Vite 8 as a pure MPA bundler.** `vite.config.js` sets `root: "src"` and globs `src/**/*.html` into `rollupOptions.input`, so **routing is the filesystem** — drop an HTML file anywhere under `src/` and it ships. `src/` _is_ the route table, and `root` is the only thing mapping it onto URLs: Vite emits each page at its path relative to `root`, so `src/arcade/comet-pong/index.html` ships as `/arcade/comet-pong/`. Renaming Rollup input keys does not do this. See `DECISIONS.md` ADR-022.
 - **Tailwind v4** via `@tailwindcss/vite`, CSS-first config, no `tailwind.config.js`. Used as a **design-token layer plus a shared component layer**, not as a utility framework — only `index.html` uses utilities in markup today.
 - **Firebase Realtime Database** for arcade leaderboards only, loaded from a CDN URL rather than npm.
 - **Zero runtime dependencies.** Four devDependencies before this setup; `prettier`, `eslint` and `typescript` were added with it.
 
-14 pages, 8 Canvas games. `dist/` on disk is stale — it predates the `index.html` rename, so don't read it as ground truth; rebuild.
+25 pages, 8 Canvas games — 14 original plus the 11 that arrived with `tools/` in #56 (`DECISIONS.md` ADR-019). `envs.json` carries the count as `expectedHtmlCount`, and the build emitting a different number is the signal that the glob is anchored wrong. `dist/` on disk is stale — rebuild rather than reading it as ground truth.
 
 ---
 
@@ -112,7 +112,7 @@ Plus a fixed virtual resolution `BASE_W`/`BASE_H` letterboxed through `viewScale
 
 ### The Tailwind collision worth knowing
 
-`tailwind.css` styles `.topbar { pointer-events: none }` and gives `.pill` a 10px radius, and it loads **last**. This is what made the About-me back arrow unclickable. **Sidestep with a new class; never edit the shared rule** — every in-game HUD depends on `.pill`, `.topbar`, `.badge`, `.stat` and `.gameover`. `index.css:104` is the documented precedent, and PR #45 called the approach "sidestepped rather than fought."
+`tailwind.css` styles `.topbar { pointer-events: none }` and gives `.pill` a 10px radius, and it loads **last**. This is what made the About-me back arrow unclickable. **Sidestep with a new class; never edit the shared rule** — every in-game HUD depends on `.pill`, `.topbar`, `.badge`, `.stat` and `.gameover`. `src/index.css:104` is the documented precedent, and PR #45 called the approach "sidestepped rather than fought."
 
 Z-order is explicit and unconditional: dotgrid (1) < starfield/planets (2) < journey (5) < topbar (20).
 
@@ -126,7 +126,7 @@ Trimmed once already (`DECISIONS.md` ADR-020) — four things that looked like s
 
 |                           |                                                                                                                                                            |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/idea "<sentence>"`      | An idea → a running local page. Scaffolds `proto/<slug>/`, React-shaped, Tailwind utilities, no CSS file.                                                  |
+| `/idea "<sentence>"`      | An idea → a running local page. Scaffolds `src/proto/<slug>/`, React-shaped, Tailwind utilities, no CSS file.                                              |
 | `/promote <slug>`         | Hardens a proto into the codebase: extract, gates, verify, composes the PR via `ship`. Stops before opening.                                               |
 | `/deploy [rung] [topic]`  | The one deploy verb. Pushes, then watches the run and hands back a verified URL — no separate watch step. Reads `envs.json`. Narrates _why_ before acting. |
 | `/envs [--verify <rung>]` | What's live on every rung, including orphaned preview folders nothing else tracks. `--verify` runs a deep single-rung health check.                        |
@@ -213,7 +213,7 @@ git worktree prune
 
 A session that dies without cleaning up leaves a `locked` file naming its own pid. Check the pid is actually gone before unlocking; a live session losing its tree mid-run is a worse outcome than a stale directory.
 
-**Keep worktrees under `.claude/worktrees/` or outside the repo entirely.** `.claude/worktrees/` is gitignored, but the leading dot does a second job nobody wrote down: `getInputs()` in `vite.config.js` globs `**/*.html` ignoring only `node_modules/**` and `dist/**`, and it misses a worktree's full copy of every page **solely because `glob` skips dot-directories by default**. A worktree at `worktrees/<topic>/` would feed 25 duplicate entries back in as build input — ADR-014 again, from a new direction.
+**Keep worktrees under `.claude/worktrees/` or outside the repo entirely.** `.claude/worktrees/` is gitignored, and since the source move `getInputs()` globs with `cwd: SRC`, so a worktree is now out of the build's reach by position as well as by the leading dot. **ESLint is the one that still needs telling.** It descends into dot-directories where `glob` does not, so it linted a worktree's full second copy of the repo and reported ten errors against files nobody was editing — hence `.claude/worktrees/**` in `eslint.config.js`'s ignores. Same failure class as ADR-014, third occurrence. Any new tool that walks the repo needs the same exclusion.
 
 ---
 
@@ -243,14 +243,14 @@ TypeScript is installed with `allowJs: true`, `checkJs: false`, `strict: false` 
 
 ## 9. Known issues — documented, deliberately unfixed
 
-1. **Homepage canvas planet links are root-absolute** (`script.js:52-125`, `/arcade/<game>`) and jump out of previews onto production. The one standing violation of rule 1; the hook stops new ones.
+1. **Homepage canvas planet links are root-absolute** (`src/script.js:52-125`, `/arcade/<game>`) and jump out of previews onto production. The one standing violation of rule 1; the hook stops new ones.
 2. **`preview-cleanup.yml` doesn't match `preview/**`** — only `feature/` and `stage/`. With `keep_files: true`, deleted `preview/*` branches leave their folders on the public site forever. Eight stale previews are up now.
 3. **`public/CNAME` was added in #46 and deleted again in #52.** Production keeps `stoeier.dk` only because `keep_files: true` preserves the file already on `gh-pages`. A full rebuild or a `keep_files: false` publish drops the custom domain.
-4. **`arcade/shared/firebase-config.js` is tracked with live values.** `.gitignore` covers a non-existent `scoreboard/firebase-config.js` instead. For a client-side Firebase app these values are inherently public, so the real control is Realtime Database security rules — which aren't in this repo.
+4. **`src/arcade/shared/firebase-config.js` is tracked with live values.** `.gitignore` covers a non-existent `src/scoreboard/firebase-config.js` instead. For a client-side Firebase app these values are inherently public, so the real control is Realtime Database security rules — which aren't in this repo.
 5. **No lockfile.** `package-lock.json` is gitignored and CI runs `npm install`, so builds aren't reproducible and a transitive change can break production with no diff to review.
 6. **Dead code in `vite.config.js`** — `GTAG_ID` and an empty `gtagPlugin()` stub, commented out of the plugin array. Analytics is half-wired and abandoned.
 7. **Twelve dead symbols across the pages**, all now surfaced as `npm run lint` warnings rather than hidden: `showToast`/`toastHideAt` (`script.js`), `bhBusy` (`space-bar`), `docked` (`iss-docking`), `landed` (`phobos-lander`), `gameOverTitle` (`nebula-trail`), `DESKTOP_W`/`DESKTOP_H` (`orbit-runner`), `raf` (`about-me`), `time` (`arcade`). Each is a one-line deletion; none is urgent.
 
 None of these are in progress. Pick them off deliberately, one PR each.
 
-**Fixed while building this setup:** `vite.config.js` `getInputs()` was globbing `dist/**` back in as build input — 25 entries instead of 13, and an outright build failure whenever a stale `dist/` from a different `base` was present. CI never hit it because CI checks out fresh, so it only broke local rebuilds. See `DECISIONS.md` ADR-014.
+**Fixed while building this setup:** `vite.config.js` `getInputs()` was globbing `dist/**` back in as build input — 25 entries instead of 13, and an outright build failure whenever a stale `dist/` from a different `base` was present. CI never hit it because CI checks out fresh, so it only broke local rebuilds. See `DECISIONS.md` ADR-014. The `dist/**` ignore is kept even though `cwd: SRC` now puts `dist/` out of scope anyway — it costs nothing and the next person to move the root will be glad it is there.

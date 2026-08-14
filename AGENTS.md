@@ -5,7 +5,7 @@
 Quick orientation, so this file is useful on its own:
 
 - Personal portfolio and browser arcade at `stoeier.dk`. **Vanilla ES modules + Canvas 2D**, no framework.
-- **Vite 8 as an MPA bundler** — `vite.config.js` globs `**/*.html` into entries, so routing is the filesystem. No `src/`.
+- **Vite 8 as an MPA bundler** — `vite.config.js` sets `root: "src"` and globs `src/**/*.html` into entries, so routing is the filesystem: `src/` is the route table and `root` is what strips the prefix off the URL.
 - **Tailwind v4** is a core dependency, used as a design-token and shared-component layer. `tailwind.css` loads **last** in every `<head>`.
 - **`base: "./"` is load-bearing.** Every path must be relative or it escapes preview/stage onto production.
 - **`deploy.yml` has no `push` trigger.** A commit to `main` deploys nothing — merging a PR is the deploy.

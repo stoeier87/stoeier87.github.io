@@ -15,11 +15,11 @@ Work through the phases in order and report a checklist at the end. If a phase f
 
 ## Phase 1 — Decide where it lives
 
-Read `proto/<slug>/` and answer three questions out loud before touching anything:
+Read `src/proto/<slug>/` and answer three questions out loud before touching anything:
 
-1. **Is this a page or a component?** A page moves to its own top-level directory (`<name>/index.html`). A component moves to `shared/components/`, and the proto page becomes its first call site.
+1. **Is this a page or a component?** A page moves to its own top-level directory (`src/<name>/index.html`). A component moves to `src/shared/components/`, and the proto page becomes its first call site.
 2. **Does it duplicate something?** Run `redundancy-scout` against the proto. If it reimplements a starfield, a planet, a back pill or a HUD, use the existing one — extracting on the way in is far cheaper than a cluster to unpick later. `standards.json` → `rule-of-three`.
-3. **Does it need Firebase?** If it submits a score, use `arcade/shared/score-submit.js` (`submitScoreOnGameOver`, `submitScore`, `fetchGlobalBest`). Never write a second Firebase path.
+3. **Does it need Firebase?** If it submits a score, use `src/arcade/shared/score-submit.js` (`submitScoreOnGameOver`, `submitScore`, `fetchGlobalBest`). Never write a second Firebase path.
 
 ## Phase 2 — Satisfy every standard
 
@@ -56,14 +56,14 @@ Run `/verify <page>` across the six viewports in `envs.json`. You need the `N/N 
 
 ## Phase 7 — Clean up the proto
 
-Delete `proto/<slug>/` in the same change if the work moved out of it. Leaving both means two live copies and a stale URL people will send each other. If the proto should stay as a playground, say so explicitly in the PR body.
+Delete `src/proto/<slug>/` in the same change if the work moved out of it. Leaving both means two live copies and a stale URL people will send each other. If the proto should stay as a playground, say so explicitly in the PR body.
 
 ## Report
 
 ```
 promote <slug>
-  location      shared/components/<name>.js + <page>/index.html
-  reused        arcade/shared/score-submit.js
+  location      src/shared/components/<name>.js + src/<page>/index.html
+  reused        src/arcade/shared/score-submit.js
   standards     11/11 (page-critic clean)
   copy          Danish, matches siblings
   gates         build ✓  format ✓  lint ✓  typecheck ✓

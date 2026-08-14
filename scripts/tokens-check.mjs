@@ -17,8 +17,9 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 const root = path.resolve(import.meta.dirname, "..");
-const CSS = path.join(root, "tailwind.css");
-const TS = path.join(root, "tokens.ts");
+const SRC = path.join(root, "src");
+const CSS = path.join(SRC, "tailwind.css");
+const TS = path.join(SRC, "tokens.ts");
 
 /** Pull the @theme block's custom properties out of the stylesheet. */
 function parseTheme(css) {
