@@ -108,12 +108,38 @@
 }
 
 .pill {
-  background: rgba(10, 14, 24, .6);
-  border: 1px solid rgba(255, 255, 255, .16);
-  border-radius: 10px;
-  padding: 8px 12px;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: clamp(0.7rem, 1.8vw, 0.85rem);
+  letter-spacing: 0.08em; color: var(--ink);
+  padding: 0.85rem 1.4rem;
+  border: 1.5px solid rgba(255, 255, 255, 0.4); border-radius: 100px;
+  background: rgba(13, 20, 36, 0.72);
+  cursor: pointer;
+  transition: border-color 0.25s ease, background 0.25s ease, color 0.25s ease;
+  &.back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+}
+.hall-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0;
+  max-width: var(--breakpoint-xl);
+  /* Same gutter as about-me's bio-panel, so the back pill sits on the
+     same grid across pages instead of hugging the raw viewport edge. */
+  /* padding: 1rem clamp(1.25rem, 6vw, 4rem); */
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  margin: 22px auto;
 }
 
 .topbar {
