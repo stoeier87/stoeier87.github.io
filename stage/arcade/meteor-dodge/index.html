@@ -6,23 +6,66 @@
     <title>Meteor Dodge</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <script type="module" crossorigin src="../../assets/arcade/meteor-dodge/index-C0WkNdS8.js"></script>
-    <link rel="modulepreload" crossorigin href="../../assets/tailwind-BwqfsUub.js">
+    <script type="module" crossorigin src="../../assets/arcade/meteor-dodge/index-cSwXQJXx.js"></script>
+    <link rel="modulepreload" crossorigin href="../../assets/tailwind-5ThHHRYp.js">
     <link rel="modulepreload" crossorigin href="../../assets/firebase-config-CLc0baU0.js">
-    <link rel="modulepreload" crossorigin href="../../assets/score-submit-C2yMQjp8.js">
-    <link rel="stylesheet" crossorigin href="../../assets/tailwind-BeRJgK_l.css">
-    <link rel="stylesheet" crossorigin href="../../assets/index-C9a9hK-i.css">
+    <link rel="modulepreload" crossorigin href="../../assets/score-submit-Bewzh5NB.js">
+    <link rel="stylesheet" crossorigin href="../../assets/tailwind-D4EgMLsp.css">
+    <link rel="stylesheet" crossorigin href="../../assets/index-DHXNlr_T.css">
   </head>
   <body>
-    <canvas id="game"></canvas>
-    <div class="hud">
-      <a href="../../arcade/" class="pill link">← Arcade</a>
-      <div>Score: <span id="score">0</span></div>
-      <div>Best: <span id="best">0</span></div>
+    <canvas id="game" aria-hidden="true"></canvas>
+
+    <!-- Top bar: back link + title badge (left), best score (right). Live
+         stats (LVL, HP, RATE/GUNS/DMG/MAG/AURA, SCORE, shield) are drawn as
+         plain text inside the canvas play-field border instead. -->
+    <div class="topbar">
+      <div class="topbar-group">
+        <a href="../../arcade/" class="pill link">← Arcade</a>
+        <div class="pill badge">
+          <span class="beacon"></span>
+          METEOR DODGE
+        </div>
+      </div>
+      <div class="topbar-group">
+        <a class="pill stat" href="../../scoreboard/">BEST <strong id="best" class="best-val">0</strong></a>
+      </div>
     </div>
+
+    <!-- Upgrade choice: pauses play, offers up to two of the four permanent power-ups -->
+    <div id="upgradeChoice" class="gameover">
+      <div class="gameover-card upgrade-card">
+        <div class="gameover-title">CHOOSE AN UPGRADE</div>
+        <div class="upgrade-options">
+          <button id="upgradeOptionA" class="upgrade-btn" type="button">
+            <span class="upgrade-btn-title" id="upgradeOptionATitle"></span>
+            <span class="upgrade-btn-sub" id="upgradeOptionASub"></span>
+          </button>
+          <button id="upgradeOptionB" class="upgrade-btn" type="button">
+            <span class="upgrade-btn-title" id="upgradeOptionBTitle"></span>
+            <span class="upgrade-btn-sub" id="upgradeOptionBSub"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game over sign -->
+    <div id="gameOver" class="gameover">
+      <div class="gameover-card">
+        <div id="gameOverTitle" class="gameover-title">BURNED UP</div>
+        <div class="gameover-sub">Press R or Tap</div>
+        <button id="gameOverRestart" class="restart-btn" type="button">Restart</button>
+      </div>
+    </div>
+
     <div class="controls" id="controls">
-      <button id="left" aria-label="Move left">◀</button>
-      <button id="right" aria-label="Move right">▶</button>
+      <div class="dpad">
+        <button id="up" class="dpad-up" aria-label="Move up">▲</button>
+        <button id="left" class="dpad-left" aria-label="Move left">◀</button>
+        <button id="right" class="dpad-right" aria-label="Move right">▶</button>
+        <button id="down" class="dpad-down" aria-label="Move down">▼</button>
+      </div>
+      <button id="fire" aria-label="Fire laser">⚡</button>
     </div>
   </body>
 </html>
