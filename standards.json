@@ -30,8 +30,7 @@
       "why": "This is a static site on GitHub Pages with zero runtime deps today. Firebase is loaded from a CDN URL, not npm. A runtime dep is the one change that ends that quietly.",
       "enforcement": "hook-block",
       "severity": "fatal",
-      "appliesTo": ["package.json"],
-      "note": "Superseded if and when the React migration issue is accepted -- update this rule in the same PR, do not just disable the hook."
+      "appliesTo": ["package.json"]
     },
     {
       "id": "page-exists-when-built",
@@ -122,10 +121,10 @@
       "appliesTo": ["*.css"]
     },
     {
-      "id": "react-shaped",
-      "title": "Write components React-shaped",
+      "id": "element-shaped",
+      "title": "Write components element-shaped",
       "rule": "Props in, markup out. No module-scope side effects, no globals, and setup returns its own cleanup function.",
-      "why": "The stack decision is TypeScript + React, deferred to a filed issue. Components written this way are a mechanical port; components written as IIFEs that reach into document are a rewrite.",
+      "why": "The stack decision is native custom elements, light DOM only (DECISIONS.md ADR-023). This shape IS the connectedCallback/disconnectedCallback lifecycle contract; components written this way need no rework, components written as IIFEs that reach into document are a rewrite.",
       "enforcement": "agent:page-critic",
       "severity": "medium",
       "appliesTo": ["src/shared/**", "src/proto/**"]

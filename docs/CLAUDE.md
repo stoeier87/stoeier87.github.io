@@ -95,10 +95,10 @@ Rules 6 and 7 are not preferences. They are the two halves of the regression PR 
 
 **Change discipline**
 
-8. **Rule of three.** Two copies are fine when the variants genuinely differ; a third means stop and propose an extraction. Never extract silently as a side effect of another change. Current clusters: `drawPlanet` ×3, back-pill CSS ×4, starfield init ×5.
+8. **Rule of three.** Two copies are fine when the variants genuinely differ; a third means stop and propose an extraction. Never extract silently as a side effect of another change. Current clusters: `drawPlanet` ×3, back-pill CSS ×5 (ADR-008's ×4 was stale by one — a partial copy in `space-bar.css:45-46` was missed), starfield init ×5.
 9. **Design tokens are sole-sourced** in `tailwind.css` `@theme`, mirrored typed in `tokens.ts`. Nothing hardcodes a colour. The `--color-scoreboard-*` sub-palette is a deliberate documented drift — leave it.
 10. **Styling lives in JS from here on.** New components carry Tailwind utility classes in their templates. **No new page-local `.css` files.** The 14 existing ones are frozen: they keep working, they stop growing.
-11. **Write components React-shaped** — props in, markup out, no module-scope side effects, no globals, setup returns its own cleanup. See §7.
+11. **Write components element-shaped** — props in, markup out, no module-scope side effects, no globals, setup returns its own cleanup. See §7.
 
 ### Canvas contract
 
@@ -225,13 +225,13 @@ Mixed Danish and English is **deliberate**, not drift — `lang="da"` on the hom
 
 ## 7. Where this is going
 
-The stack decision is **TypeScript + React**, with a **hybrid architecture** — SPA for the content pages, standalone entries for the 8 games. It is **decided and deliberately not started.**
+The stack decision is **native custom elements, light DOM only, plus TypeScript** — no runtime framework, no client-side router. It supersedes the earlier TypeScript + React decision.
 
-`DECISIONS.md` ADR-011 is the record of authority. A GitHub issue was meant to be the anchor but `gh` is not installed on this machine, so it hasn't been filed yet — the ready-to-paste body and the exact command are in ADR-011.
+`DECISIONS.md` ADR-023 and ADR-024 are the record of authority. `docs/stack-decision-issue.md` carries the superseded React reasoning as a historical record — it was never filed as a `gh issue`, so there is nothing external to close.
 
-Until then, every new component is written **React-shaped on purpose**: props in, markup out, no module-scope side effects, no globals, cleanup returned from setup. A component written that way is a mechanical port later. A component written as an IIFE that reaches into `document` is a rewrite.
+Every new component is written **element-shaped on purpose**: props in, markup out, no module-scope side effects, no globals, cleanup returned from setup. That shape is the `connectedCallback`/`disconnectedCallback` lifecycle contract directly — a component written this way needs no rework when it becomes a real `<st-*>` element. Light DOM only, never Shadow DOM: `tailwind.css`'s shared component layer (`.pill`, `.topbar`, `.badge`, `.stat`, `.gameover`) has to keep reaching every element the way it reaches every page today.
 
-TypeScript is installed with `allowJs: true`, `checkJs: false`, `strict: false` — nothing is type-checked into submission today, and the toolchain is ready the moment the issue is picked up. The tightening trigger is recorded in `DECISIONS.md`.
+TypeScript is installed with `allowJs: true`, `checkJs: false`, `strict: false` — nothing is type-checked into submission today. The tightening trigger (flip `strict: true` and `noUncheckedIndexedAccess: true` on the first `.ts` file in `src/shared/`) is recorded in `DECISIONS.md` and fires with the first custom element.
 
 ---
 
