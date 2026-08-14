@@ -42,12 +42,14 @@ The fast lane. Sloppy code is allowed here on purpose — the only gate is that 
 
 ## `/deploy stage`
 
-The release candidate. One branch, one URL, always the latest.
+**`stage` is the integrator's cherry-pick workbench, not a shared branch.** It is derived state: contributors keep developing on their own long-lived branches, the integrator picks commits from those onto `stage` to assemble a production-ready set, and a nightly cron hard-resets `stage` back to `main`. Nothing exists only here, so nothing here is precious. See `DECISIONS.md` ADR-018.
 
 1. Run the stage gates locally **before** pushing — `npm run gates` (build, format:check, lint, typecheck). If they fail, fix or report; do not push a red candidate.
-2. Fast-forward `stage` onto the current work. If `stage` has diverged, stop and show the divergence — do not force-push.
+2. Get the work onto `stage`. Fast-forward if it's clean; **force-push if it isn't.** Divergence on a workbench is normal, not an incident.
 3. Confirm, push, report `/stage/`.
-4. Say explicitly that this replaced whatever was there.
+4. Say explicitly what this replaced, and — if `stage` was ahead of `main` — name the commits being dropped and where they still live, so re-picking is one command rather than an archaeology exercise.
+
+**Never rescue work off `stage`.** If something looks like it exists only there, that is a signal the contributor branch was deleted or rewritten — say so, because the actual problem is upstream. The fix is never to preserve `stage`.
 
 ## `/deploy prod`
 
@@ -60,6 +62,6 @@ The release candidate. One branch, one URL, always the latest.
 ## Rules
 
 - **Never push, open a PR, or merge without an explicit go-ahead in that turn.** Invoking `/deploy` authorises the one push it describes and nothing else.
-- Never `git push --force` to a shared branch. If history diverged, show it and ask.
+- **Never force-push a contributor branch or `main`.** Those are the source of truth — a contributor's branch is where their work actually lives, and rewriting it is the one way this model can lose something. `stage` is the sole exception, because it is derived (ADR-018).
 - If the working tree is dirty and the user asked for `stage` or `prod`, surface that first — an accidental commit of half-finished work onto the release candidate is the failure mode here.
 - If a rung named by the user isn't in `envs.json`, say so and list the ones that are.

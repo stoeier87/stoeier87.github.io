@@ -238,3 +238,27 @@ Tobias works as **prototyper** — `preview/<topic>` branches and `proto/` only,
 - `/promote` is the integrator's tool and the single handoff point. It is where extraction, standards, gates and verification happen — see ADR-007 for why they happen there and not earlier.
 - Gates stay off the `preview` rung permanently. Adding one is a decision to slow down the 70%, and should be argued for as such.
 - `proto/` ships with a build, so a prototype merged to `main` would go live. That is why `/promote` deletes the proto directory when the work moves out of it, and why merging is never an agent's call.
+
+---
+
+## ADR-018 — `stage` is a cherry-pick workbench, hard-reset to `main` nightly
+
+**Decided:** 2026-08-14
+**Status:** active · **supersedes the environment model in ADR-006**
+
+Contributors (currently the CEO and CFO, non-technical) develop on their own **long-lived branches**, which publish to the `preview` rung. The integrator cherry-picks commits from those branches onto `stage`, makes them production-ready, and releases. A scheduled workflow hard-resets `stage` to `main` every night.
+
+**Why this and not a strict `preview → stage → main` chain.** A promotion chain rots at the seam where `main` moves without `stage`: a hotfix lands, `stage` is behind, and the next release either conflicts or silently reverts it. The nightly reset removes the seam entirely — `stage` can never accumulate divergence because it never survives a day.
+
+**The property everything rests on: `stage` is derived state, never a source of truth.** Contributor branches are. So a hard reset destroys nothing, re-picking is idempotent, and the branches keep developing regardless of what happens downstream.
+
+**The reset is a deadline, not a cleanup.** Work that didn't reach production that day is re-picked tomorrow at the cost of one command. A skipped release means there was nothing urgent — which is the correct signal, and better than manufacturing release pressure to avoid losing a branch that was never at risk.
+
+**Consequences:**
+
+- **Force-pushing `stage` is correct**, and the `/deploy stage` skill was inverted to say so. Force-pushing a contributor branch or `main` is never correct — those are where work actually lives.
+- **Contributor commit hygiene becomes load-bearing.** You cannot cherry-pick half a commit, so one 400-line commit spanning three unrelated ideas is unpickable. Neither contributor will split commits by instinct, so `/deploy preview` writes the commit for them and must keep it to one logical change. This is enforced at their end precisely because they never see it.
+- **`stage.yml` will not fire on the nightly reset.** GitHub deliberately prevents a `GITHUB_TOKEN`-driven push from triggering another workflow, so `stage-reset.yml` republishes `/stage/` itself. Without that, `/stage/` would keep serving yesterday's candidate after the branch had already been reset — a stale environment that looks live.
+- The nightly job reports which commits it is discarding and where they still live, so a re-pick is a command rather than an archaeology exercise.
+
+**When to revisit.** The strict chain is the right answer at larger scale — this one works because **one person owns the production server and does all the integration**. Revisit when that stops being true: a second integrator, someone else responsible for prod, or contributors who merge their own work. At that point the safety the chain buys stops being ceremony and starts being necessary.

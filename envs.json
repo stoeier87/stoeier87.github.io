@@ -36,7 +36,8 @@
       "workflow": "stage.yml",
       "ephemeral": false,
       "gates": ["build", "format", "lint", "typecheck"],
-      "notes": "ONE persistent URL, always the latest release candidate. A single branch named 'stage' -- not the legacy stage/** pattern, which still makes per-branch folders via preview.yml."
+      "resetNightly": true,
+      "notes": "The integrator's cherry-pick workbench, not a shared branch. ONE persistent URL. Contributors develop on long-lived branches; the integrator picks commits from those onto 'stage', makes them production-ready, and releases. stage-reset.yml hard-resets it to main every night, so stage is DERIVED STATE and nothing here is precious -- force-pushing it is correct. See DECISIONS.md ADR-018. A single branch named 'stage', not the legacy stage/** pattern that preview.yml still matches."
     },
     "prod": {
       "rung": 3,
