@@ -268,6 +268,10 @@ const CSS = `
 
 .egg-burnout { transition: opacity 1.2s steps(6, end); opacity: 0 !important; }
 
+@keyframes eggConsoleOut {
+  to { transform: translate(-38vw, 6vh) rotate(220deg) scale(0.04); opacity: 0; }
+}
+
 .egg-flash { z-index: 380; background: #fff; opacity: 0; }
 .egg-blackout { z-index: 390; background: #000; opacity: 0; }
 
@@ -662,6 +666,9 @@ function initEasterEgg() {
       return;
     }
 
+    const drift = layer.querySelector(".egg-drift");
+    if (drift) drift.style.animationPlayState = "paused";
+
     const root = document.documentElement;
     const shakeEls = [
       document.getElementById("starfield"),
@@ -768,13 +775,32 @@ function initEasterEgg() {
       ramping = true;
     });
 
-    // 3.6–4.2s THE ALIEN GOES LAST
-    at(3550, () => typeBubble("Told you."));
+    // 3.6–4.2s THE ALIEN GOES LAST — dragged to centre and zoomed in
+    // close, face filling the screen as it delivers the last word.
+    at(3550, () => {
+      bubble.style.position = "fixed";
+      bubble.style.left = "50%";
+      bubble.style.right = "auto";
+      bubble.style.bottom = "auto";
+      bubble.style.top = "16%";
+      bubble.style.transform = "translateX(-50%)";
+      bubble.style.zIndex = "395";
+      document.body.appendChild(bubble);
+      typeBubble("Told you.");
+    });
     at(3600, () => {
       const alien = layer.querySelector(".egg-alien-float");
       const consoleWrap = layer.querySelector(".egg-console-wrap");
-      flingToCentre(alien, "rotate(720deg)", 0.55, 0);
-      flingToCentre(consoleWrap, "rotate(200deg)", 0.5, 0.12);
+      const r = alien.getBoundingClientRect();
+      const dx = window.innerWidth / 2 - (r.left + r.width / 2);
+      const dy = window.innerHeight / 2 - (r.top + r.height / 2);
+      const zoom = Math.min(5.5, Math.max(3, window.innerHeight / 190));
+      alien.style.animation = "none";
+      alien.firstElementChild.style.animation = "none";
+      void alien.offsetWidth; // settle the base style so the glide actually glides
+      alien.style.transition = "transform 0.55s cubic-bezier(0.5, 0, 0.6, 1)";
+      alien.style.transform = `translate(${dx.toFixed(0)}px, ${dy.toFixed(0)}px) rotate(360deg) scale(${zoom.toFixed(2)})`;
+      consoleWrap.style.animation = "eggConsoleOut 0.5s cubic-bezier(0.55, -0.15, 0.75, 0.5) 0.12s forwards";
     });
 
     // 4.2s FLASH TWO (permitted): white, hold, then to solid black
