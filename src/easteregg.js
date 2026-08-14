@@ -286,10 +286,14 @@ const CSS = `
 
 /* ── Small screens ─────────────────────────────────────── */
 @media (max-width: 500px) {
-  /* On phones the scene sits centred over the footer area rather than
-     in the right corner, where it hovered over the Spotify pill. 36px
-     keeps the DO NOT PUSH label clear of the servicedesign.dk link. */
-  .egg-layer { right: 50%; bottom: 36px; transform: translateX(50%); }
+  /* On phones the scene stays in the right corner but drops into the
+     footer band — viewport heights vary too much for it to fit between
+     the Spotify pill and the footer. The label moves above the console
+     so it never collides with the servicedesign.dk link. */
+  .egg-layer { right: 16px; bottom: 8px; }
+  .egg-console-wrap { flex-direction: column-reverse; }
+  .egg-label { margin-top: 0; margin-bottom: 2px; }
+  .egg-button { top: 24px; }
   .egg-alien { height: 64px; }
   .egg-console { width: 62px; }
   .egg-label { font-size: 0.48rem; }
