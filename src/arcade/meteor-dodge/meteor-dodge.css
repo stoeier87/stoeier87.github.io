@@ -18,31 +18,60 @@ html, body{
 
 @supports not (height: 100dvh){ #game{ height:100vh; } }
 
-.hud{
-  position:fixed;
-  top:var(--spacing-3); left:var(--spacing-3); right:var(--spacing-3);
-  z-index:15;
-  display:flex; align-items:center; justify-content:space-between; gap:10px;
-  pointer-events:none;
+:root{
+  --game-accent: #f5d79a;
+  --game-accent-dim: rgba(245,215,154,.6);
 }
-.hud > *{
-  pointer-events:auto;
-  background:rgba(10,14,24,.55);
-  border:1px solid rgba(255,255,255,.16);
+
+.upgrade-options{
+  display:flex; gap:12px; flex-wrap:wrap; justify-content:center;
+}
+.upgrade-btn{
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  min-width:130px;
+  padding:14px 16px;
   border-radius:10px;
-  padding:8px 10px;
-  backdrop-filter:blur(4px);
-  -webkit-backdrop-filter:blur(4px);
+  border:2px solid var(--game-accent-dim);
+  background:rgba(10,14,24,.7);
+  color:var(--color-ink);
+  cursor:pointer;
+  touch-action:manipulation;
 }
-.hud a{ color:#dfe9ff; text-decoration:none; font-weight:700; }
-.hud div{ color:#eef3ff; font-size:13px; line-height:1; }
+.upgrade-btn:hover, .upgrade-btn:focus-visible{
+  border-color:var(--game-accent);
+}
+.upgrade-btn-title{
+  font:700 14px "Space Mono", monospace;
+  letter-spacing:.08em;
+  color:var(--game-accent);
+}
+.upgrade-btn-sub{
+  font-size:11px;
+  color:rgba(255,255,255,.65);
+}
 
 .controls{
   position:fixed; bottom:18px; left:0; right:0;
   z-index:20;
-  display:flex; justify-content:space-between; padding:0 18px;
+  display:flex; justify-content:space-between; align-items:flex-end; padding:0 18px;
   pointer-events:none;
 }
+.controls .dpad{
+  display:grid;
+  grid-template-columns: repeat(3, 56px);
+  grid-template-rows: repeat(3, 56px);
+  grid-template-areas:
+    ".    up    ."
+    "left .     right"
+    ".    down  .";
+  gap:8px;
+  pointer-events:none;
+}
+.dpad-up{ grid-area: up; }
+.dpad-left{ grid-area: left; }
+.dpad-right{ grid-area: right; }
+.dpad-down{ grid-area: down; }
+
 .controls button{
   pointer-events:auto;
   width:72px; height:72px;
@@ -53,23 +82,18 @@ html, body{
   font-size:26px;
   touch-action:manipulation;
 }
+.controls .dpad button{
+  width:56px; height:56px;
+  font-size:19px;
+}
 .controls button:active{ background:rgba(224,58,47,.35); }
+
+.controls #fire{
+  border-color:rgba(245,215,154,.55);
+  color:#f5d79a;
+}
+.controls #fire:active{ background:rgba(245,215,154,.35); }
 
 @media (min-width: 900px){
   .controls{ display:none; }
-}
-
-.restart-btn{
-  position:fixed; left:50%; top:62%;
-  transform:translate(-50%, -50%);
-  z-index:25;
-  padding:12px 18px; min-width:132px;
-  border-radius:10px;
-  border:1px solid rgba(255,255,255,.35);
-  background:rgba(10,14,24,.78);
-  color:var(--color-ink);
-  font:700 14px "Space Mono", monospace;
-  letter-spacing:.08em; text-transform:uppercase;
-  display:none;
-  touch-action:manipulation; cursor:pointer;
 }
