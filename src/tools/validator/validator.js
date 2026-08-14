@@ -335,8 +335,7 @@ function renderQuestion(i) {
   const title = document.createElement("h2");
   title.className = "q-title";
   title.textContent = q.title;
-  titleRow.appendChild(title);
-  screen.appendChild(titleRow);
+  screen.appendChild(title);
 
   const prompt = document.createElement("p");
   prompt.className = "q-prompt";
