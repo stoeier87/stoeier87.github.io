@@ -75,6 +75,44 @@ const CSS = `
 .egg-idle .egg-particle.p2 { animation-delay: 0.35s; }
 .egg-idle .egg-particle.p3 { animation-delay: 0.7s; }
 
+/* ── Escalation states ─────────────────────────────────── */
+.egg-arms-folded { opacity: 0; transition: opacity 0.25s ease; }
+
+@keyframes eggRecoil {
+  0% { transform: translateX(0); }
+  35% { transform: translateX(10px); }
+  100% { transform: translateX(0); }
+}
+.egg-recoil .egg-alien-tilt { animation: eggRecoil 0.45s cubic-bezier(0.2, 0.8, 0.3, 1); }
+.egg-eyes-bright .egg-eyes {
+  animation: none;
+  opacity: 1;
+  filter: drop-shadow(0 0 6px rgba(224, 58, 47, 1)) brightness(1.3);
+}
+
+.egg-press2plus .egg-arms-normal { opacity: 0; transition: opacity 0.25s ease; }
+.egg-press2plus .egg-arms-folded { opacity: 1; }
+.egg-antenna { transform-origin: 33px 19px; transition: transform 0.4s ease; }
+.egg-press2plus .egg-antenna { transform: rotate(15deg); }
+.egg-idle.egg-press2plus .egg-alien-float { animation-duration: 6.5s; }
+
+.egg-alien-turn { transition: transform 0.45s ease; }
+.egg-press3 .egg-alien-turn { transform: scaleX(-1); }
+.egg-press3 .egg-eyes, .egg-press3 .egg-glint { animation: none; opacity: 0; transition: opacity 0.2s ease; }
+.egg-idle.egg-press3 .egg-particle { animation-duration: 0.7s; }
+@keyframes eggBtnPulse {
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(255, 80, 64, 0.8)); }
+  50% { filter: drop-shadow(0 0 12px rgba(255, 80, 64, 1)); }
+}
+.egg-press3 .egg-btn-cap { fill: #ff5040; animation: eggBtnPulse 0.6s ease-in-out infinite; }
+
+.egg-press4 .egg-alien-turn { transform: scaleX(1); }
+.egg-press4 .egg-eyes {
+  opacity: 1;
+  animation: none;
+  filter: drop-shadow(0 0 8px rgba(224, 58, 47, 1)) brightness(1.5);
+}
+
 /* ── Console ───────────────────────────────────────────── */
 .egg-console-wrap { position: relative; display: flex; flex-direction: column; align-items: center; }
 .egg-console { display: block; width: 86px; height: auto; overflow: visible; }
@@ -161,6 +199,16 @@ const CSS = `
   .egg-idle .egg-particle { animation: none; }
   .egg-eyes { opacity: 0.6; }
   .egg-sweep, .egg-particle { opacity: 0; }
+  /* escalation is text-only: no recoil, no fold, no turn, no pulses */
+  .egg-recoil .egg-alien-tilt,
+  .egg-press3 .egg-btn-cap { animation: none; }
+  .egg-eyes-bright .egg-eyes, .egg-press4 .egg-eyes { filter: none; opacity: 0.6; }
+  .egg-press2plus .egg-arms-normal { opacity: 1; }
+  .egg-press2plus .egg-arms-folded { opacity: 0; }
+  .egg-press2plus .egg-antenna { transform: none; }
+  .egg-press3 .egg-alien-turn, .egg-press4 .egg-alien-turn { transform: none; }
+  .egg-press3 .egg-eyes { opacity: 0.6; }
+  .egg-press3 .egg-glint { opacity: 1; }
 }
 `;
 
@@ -173,13 +221,15 @@ const ALIEN_SVG = `
   </defs>
 
   <!-- reaching arm (viewer's left, toward the console) -->
-  <g class="egg-arm-reach">
+  <g class="egg-arms-normal">
     <path class="line thin" d="M 36 68 C 24 74, 14 82, 8 92" />
     <path class="line thin" d="M 8 92 L 3.5 95.5 M 8 92 L 7.5 98 M 8 92 L 12 97" />
-  </g>
-  <!-- relaxed arm -->
-  <g class="egg-arm-relax">
     <path class="line thin" d="M 64 68 C 70 80, 68 94, 62 102" />
+  </g>
+  <!-- folded arms, hidden until press 2 -->
+  <g class="egg-arms-folded">
+    <path class="line thin" d="M 34 72 C 42 82, 54 82, 63 74" />
+    <path class="line thin" d="M 66 72 C 58 84, 46 84, 37 76" />
   </g>
 
   <!-- backpack with exhaust nozzles -->
@@ -212,8 +262,10 @@ const ALIEN_SVG = `
   </g>
 
   <!-- antenna, bent once, beacon tip -->
-  <path class="line thin" d="M 33 19 L 27 10 L 31 4" />
-  <circle class="egg-antenna-tip" cx="31" cy="3" r="2.2" />
+  <g class="egg-antenna">
+    <path class="line thin" d="M 33 19 L 27 10 L 31 4" />
+    <circle class="egg-antenna-tip" cx="31" cy="3" r="2.2" />
+  </g>
 </svg>`;
 
 const CONSOLE_SVG = `
@@ -239,7 +291,7 @@ function buildLayer() {
         <button class="egg-button" type="button" aria-label="Do not push"></button>
         <div class="egg-label">Do not push</div>
       </div>
-      <div class="egg-alien-float"><div class="egg-alien-tilt">${ALIEN_SVG}</div></div>
+      <div class="egg-alien-float"><div class="egg-alien-tilt"><div class="egg-alien-turn">${ALIEN_SVG}</div></div></div>
     </div>`;
   return layer;
 }
@@ -295,14 +347,59 @@ function initEasterEgg() {
   }
 
   scene.addEventListener("mouseenter", () => {
-    if (visible) typeBubble("Don't.");
+    if (visible && presses === 0) typeBubble("Don't.");
   });
   scene.addEventListener("mouseleave", () => {
-    hideTimer = setTimeout(() => hideBubble(false), 600);
+    if (presses === 0) hideTimer = setTimeout(() => hideBubble(false), 600);
   });
   button.addEventListener("focus", () => {
-    if (visible) typeBubble("Don't.");
+    if (visible && presses === 0) typeBubble("Don't.");
   });
+
+  /* ── Escalation: four presses, each registering immediately ── */
+  let presses = 0;
+  let recoilTimer = null;
+  let brightTimer = null;
+
+  function holdThenFade() {
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => hideBubble(false), 2500);
+  }
+
+  button.addEventListener("click", () => {
+    if (!visible || presses >= 4) return;
+    presses += 1;
+
+    if (presses === 1) {
+      typeBubble("Don't.");
+      holdThenFade();
+      layer.classList.add("egg-recoil", "egg-eyes-bright");
+      clearTimeout(recoilTimer);
+      clearTimeout(brightTimer);
+      recoilTimer = setTimeout(() => layer.classList.remove("egg-recoil"), 500);
+      brightTimer = setTimeout(() => layer.classList.remove("egg-eyes-bright"), 900);
+    } else if (presses === 2) {
+      typeBubble("I said don't.");
+      holdThenFade();
+      layer.classList.remove("egg-recoil", "egg-eyes-bright");
+      layer.classList.add("egg-press2plus");
+    } else if (presses === 3) {
+      typeBubble("Do you know how long that took to build.");
+      holdThenFade();
+      layer.classList.add("egg-press3");
+    } else {
+      layer.classList.remove("egg-press3");
+      layer.classList.add("egg-press4");
+      typeBubble("Fine.");
+      clearTimeout(hideTimer);
+      setTimeout(startDestruction, 400);
+    }
+  });
+
+  function startDestruction() {
+    // Part 3 begins here.
+    hideBubble(true);
+  }
 }
 
 initEasterEgg();
