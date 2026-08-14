@@ -1,0 +1,56 @@
+# Build output and vendored assets
+dist/
+node_modules/
+public/
+.vite/
+
+# Machine-local, not committed
+.claude/settings.local.json
+
+# Existing workflows are frozen alongside the pages they deploy. stage.yml was
+# written formatted; reformatting the other four would put a diff on the deploy
+# path for no behavioural reason.
+.github/workflows/build.yml
+.github/workflows/deploy.yml
+.github/workflows/preview.yml
+.github/workflows/preview-cleanup.yml
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Legacy pages, deliberately not formatted yet.
+#
+# DECISIONS.md ADR-007 / ADR-009: gates are graduated and the existing 14 pages
+# are frozen. Reformatting them all at once would be a several-thousand-line
+# diff across the most fragile code in the repo (the homepage scroll pipeline
+# especially) with no behavioural benefit and real risk in the CSS and HTML.
+#
+# HOW TO OPT A FILE IN: delete its line here, run `npm run format`, and review
+# the diff on its own — one file, one PR. Do it when you're already touching
+# the file for another reason, not as a separate cleanup.
+#
+# New code is NOT listed here and is formatted from day one: shared/, proto/,
+# scripts/, tokens.ts, config files, and all docs.
+# ─────────────────────────────────────────────────────────────────────────────
+
+index.html
+index.css
+script.js
+tailwind.css
+vite.config.js
+
+about-me/
+space-bar/
+scoreboard/
+arcade/
+
+# tools/ — a ONE-TIME AMNESTY, not a precedent. See DECISIONS.md ADR-019.
+#
+# The /tools section (11 pages, validator, shared modules) landed on main in
+# #56 while the toolbox was still on a branch, so it was written before this
+# config existed. Measured: formatting it would rewrite 2763 lines across 7
+# files — tools-data.js alone goes 1809-changed-of-1661, because it is compact
+# content data that Prettier would explode. That diff would bury the next real
+# content change and conflict with anything still in flight.
+#
+# Anything created AFTER the toolbox lands on main is formatted from birth and
+# does not get added here.
+tools/

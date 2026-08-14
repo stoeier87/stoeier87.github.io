@@ -5,12 +5,21 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "tokens": "node scripts/tokens-check.mjs",
+    "gates": "npm run build && npm run format:check && npm run lint && npm run typecheck && npm run tokens"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
+    "eslint": "^9.39.0",
     "glob": "^13.0.6",
+    "prettier": "^3.6.2",
     "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3",
     "vite": "^8.1.5"
   }
 }

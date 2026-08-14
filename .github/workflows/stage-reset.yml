@@ -1,0 +1,96 @@
+name: Nightly Stage Reset
+
+# Hard-resets the `stage` branch to `main` every night and republishes /stage/.
+#
+# WHY THIS IS SAFE — the property the whole model rests on:
+# `stage` is DERIVED STATE, never a source of truth. Contributors keep developing
+# on their own long-lived branches, and the integrator cherry-picks from those
+# onto `stage` to assemble a production-ready set. So nothing exists only on
+# `stage`, re-picking is idempotent, and a hard reset destroys no work.
+#
+# WHY IT'S NIGHTLY: the reset is a deadline, not a cleanup. Work that didn't
+# reach production that day is simply re-picked tomorrow. A skipped release means
+# there was nothing urgent — which is the correct signal, not a failure. See
+# DECISIONS.md ADR-018.
+#
+# This deliberately replaces a strict preview -> stage -> main promotion chain.
+# That chain is the right answer at larger scale, when more than one person is
+# responsible for production. It is not the right answer for three people where
+# one owns the prod server. ADR-018 records the trigger for revisiting.
+
+on:
+  schedule:
+    # 02:00 UTC — roughly 03:00 in Copenhagen in winter, 04:00 in summer.
+    # GitHub does not adjust cron for DST, and scheduled runs can be delayed
+    # under load, so treat this as "overnight", not as a precise time.
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: gh-pages-write
+  cancel-in-progress: false
+
+jobs:
+  reset:
+    name: Reset stage to main
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Report what is about to be discarded
+        run: |
+          AHEAD=$(git rev-list --count origin/main..origin/stage 2>/dev/null || echo 0)
+          echo "### Nightly stage reset" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$AHEAD" -gt 0 ]; then
+            echo "Discarding **$AHEAD commit(s)** that were picked onto \`stage\` but never released:" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            git log --oneline origin/main..origin/stage >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Nothing is lost — these live on their contributor branches. Re-pick them." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "\`stage\` was level with \`main\`. Nothing to discard." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Hard reset stage to main
+        run: git push --force origin origin/main:refs/heads/stage
+
+  # The push above uses GITHUB_TOKEN, and GitHub deliberately does not let a
+  # token-driven push trigger another workflow. So stage.yml will NOT fire —
+  # /stage/ is republished here instead, or it would keep serving yesterday's
+  # candidate after the branch had already been reset.
+  build:
+    needs: reset
+    uses: ./.github/workflows/build.yml
+    with:
+      ref: main
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: site-dist
+          path: dist
+
+      - name: Republish /stage/ from main
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: dist
+          destination_dir: stage
+          keep_files: true
+          commit_message: "Nightly stage reset to main: ${{ github.sha }}"
+
+      - name: Summary
+        run: |
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`stage\` is now level with \`main\`, and https://stoeier.dk/stage/ serves production content." >> "$GITHUB_STEP_SUMMARY"

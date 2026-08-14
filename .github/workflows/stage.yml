@@ -1,0 +1,84 @@
+name: Deploy Stage
+
+# Rung 2 of the ladder in envs.json. ONE persistent URL that always holds the
+# latest release candidate: https://stoeier87.github.io/stage/
+#
+# This is a single branch named `stage`, not the legacy `stage/**` pattern that
+# preview.yml still matches and publishes per-branch. That pattern is what made
+# "staging" mean eight different URLs. See DECISIONS.md ADR-006.
+#
+# The gates are what distinguish this rung from preview: preview only has to
+# build, stage has to be clean. That asymmetry is the prototyping balance
+# (ADR-007) — don't add gates to preview, and don't remove them from here.
+
+on:
+  push:
+    branches:
+      - stage
+  workflow_dispatch:
+
+# Mandatory. One gh-pages branch, many destination dirs, keep_files: true,
+# never cancel a write.
+concurrency:
+  group: gh-pages-write
+  cancel-in-progress: false
+
+jobs:
+  gates:
+    name: Gates (format, lint, typecheck, tokens)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      # `npm install`, not `npm ci` — package-lock.json is gitignored, matching
+      # build.yml. Known issue 5.
+      - name: Install
+        run: npm install
+
+      - name: Format
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Tokens match tailwind.css
+        run: npm run tokens
+
+  build:
+    needs: gates
+    uses: ./.github/workflows/build.yml
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: site-dist
+          path: dist
+
+      - name: Deploy stage
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: dist
+          destination_dir: stage
+          keep_files: true
+          commit_message: "Deploy stage: ${{ github.sha }}"
+
+      - name: Summary
+        run: |
+          echo "### Stage deployed :satellite:" >> "$GITHUB_STEP_SUMMARY"
+          echo "https://stoeier87.github.io/stage/" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "This is the single persistent release candidate — it replaced whatever was there." >> "$GITHUB_STEP_SUMMARY"

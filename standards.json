@@ -1,0 +1,142 @@
+{
+  "$comment": "The standards, machine-readable. Hooks and the page-critic agent read this file; humans and models read the prose version in CLAUDE.md. Adding a rule here makes page-critic enforce it with no code change. Keep this list SHORT -- a standard nobody remembers is not a standard.",
+  "version": 1,
+  "rules": [
+    {
+      "id": "relative-paths",
+      "title": "Every path is relative",
+      "rule": "Use ./ or ../ for every href, src, import and navigation target. Never a root-absolute path.",
+      "why": "vite.config.js sets base: \"./\" which is the only reason sub-directory deploys work. A root-absolute path resolves against the host root, so it silently escapes /preview/<topic>/ and /stage/ and lands the user on production.",
+      "enforcement": "hook-block",
+      "severity": "fatal",
+      "appliesTo": ["*.html", "*.js", "*.ts", "*.jsx", "*.tsx"],
+      "knownViolation": "script.js:52-125 -- homepage canvas planet links are /arcade/<game>. Deliberately left; the hook stops the next one.",
+      "escape": "Add the comment guard:allow-absolute on the same line if you genuinely need it.",
+      "routePrefixes": [
+        "arcade",
+        "about-me",
+        "space-bar",
+        "scoreboard",
+        "preview",
+        "stage",
+        "proto"
+      ],
+      "$routePrefixes": "Top-level site paths. Read by BOTH .claude/hooks/guard.mjs and eslint.config.js -- add a route here and both pick it up with no code change."
+    },
+    {
+      "id": "no-runtime-deps",
+      "title": "No runtime dependencies",
+      "rule": "package.json \"dependencies\" stays empty. devDependencies are fine.",
+      "why": "This is a static site on GitHub Pages with zero runtime deps today. Firebase is loaded from a CDN URL, not npm. A runtime dep is the one change that ends that quietly.",
+      "enforcement": "hook-block",
+      "severity": "fatal",
+      "appliesTo": ["package.json"],
+      "note": "Superseded if and when the React migration issue is accepted -- update this rule in the same PR, do not just disable the hook."
+    },
+    {
+      "id": "page-exists-when-built",
+      "title": "A page exists when the build emits it",
+      "rule": "After adding or moving an HTML file, confirm it appears in dist/.",
+      "why": "vite.config.js builds rollupOptions.input from globSync(\"**/*.html\"). Routing is the filesystem, so a page that is not in dist/ does not exist -- and nothing else will tell you.",
+      "enforcement": "skill:/verify",
+      "severity": "high",
+      "appliesTo": ["*.html"]
+    },
+    {
+      "id": "head-order",
+      "title": "tailwind.css loads last",
+      "rule": "Head order is: page CSS -> icon CSS -> tailwind.css. Always last.",
+      "why": "tailwind.css carries the shared component layer (.pill, .topbar, .badge, .stat, .gameover) and loading last means it wins on equal specificity. Reordering silently restyles eight in-game HUDs.",
+      "enforcement": "agent:page-critic",
+      "severity": "high",
+      "appliesTo": ["*.html"],
+      "trap": ".topbar { pointer-events: none } in tailwind.css broke the About-me back arrow. Sidestep with a new class -- see index.css:104 for the documented precedent. Never edit the shared rule."
+    },
+    {
+      "id": "a11y-baseline",
+      "title": "Decorative canvas is hidden; focus is visible",
+      "rule": "Every decorative canvas and ornament carries aria-hidden=\"true\". Interactive elements have a focus-visible outline in --color-red.",
+      "why": "The pages are almost entirely canvas. Without aria-hidden a screen reader walks a wall of nothing, and without focus rings the site is unusable by keyboard.",
+      "enforcement": "agent:page-critic",
+      "severity": "high",
+      "appliesTo": ["*.html", "*.css"]
+    },
+    {
+      "id": "reduced-motion-only-fallback",
+      "title": "prefers-reduced-motion is the ONLY motion fallback",
+      "rule": "Gate motion on prefers-reduced-motion. Never gate it on viewport width.",
+      "why": "Disabling parallax below 760px was an incident fix that treated a symptom -- the real bug was per-letter scatter during scroll. PR #53 root-caused it and removed the width gate. Reintroducing one re-creates the incident.",
+      "enforcement": "agent:page-critic",
+      "severity": "fatal",
+      "appliesTo": ["*.js", "*.ts", "*.css"],
+      "pattern": "html.static-home flattens the journey and calls updateHeadline(1) once; html.js-anim hides un-split words so the name never flashes static."
+    },
+    {
+      "id": "one-raf-loop",
+      "title": "One rAF loop per page, scroll effects are pure functions of p",
+      "rule": "A page has exactly one requestAnimationFrame loop. Scroll listeners are { passive: true } and only set scrollPos plus a dirty flag. Every scroll effect is a pure function of p = scrollPos / journeyEnd, clamped to [0,1].",
+      "why": "The clamp is what makes letters settle and hold instead of re-scattering later in the scroll -- it is the whole trick, and removing it was the other half of the PR #53 regression. Multiple loops fight each other and cost frames.",
+      "enforcement": "agent:page-critic",
+      "severity": "fatal",
+      "appliesTo": ["*.js", "*.ts"]
+    },
+    {
+      "id": "canvas-contract",
+      "title": "The canvas contract",
+      "rule": "Fixed virtual resolution BASE_W/BASE_H with letterboxed viewScale/viewOffX/viewOffY. dpr = Math.min(devicePixelRatio || 1, 2). ctx.setTransform(dpr,0,0,dpr,0,0) after every resize. Pointer input via screenToWorld(clientX, clientY). dt = Math.min(33, ts - last) * 0.001.",
+      "why": "Uncapped DPR melts phones. An unclamped dt explodes the simulation on the first dropped frame or backgrounded tab. Virtual resolution is what makes one game readable on a 320px phone and a 1440px desktop.",
+      "enforcement": "agent:page-critic",
+      "severity": "high",
+      "appliesTo": ["arcade/**/*.js", "arcade/**/*.ts"]
+    },
+    {
+      "id": "rule-of-three",
+      "title": "Rule of three",
+      "rule": "Two copies are fine when the variants genuinely differ. A third occurrence means stop and propose an extraction -- do not extract silently as a side effect of another change.",
+      "why": "Replaces the old 'pragmatic duplication' stance from AGENTS.md, which canonised triplicated drawPlanet as a virtue. It stopped being one at 14 pages.",
+      "enforcement": "agent:redundancy-scout",
+      "severity": "medium",
+      "knownClusters": [
+        "drawPlanet x3 -- script.js:197, arcade/arcade.js:83, arcade/shared/starfield.js:55",
+        "back-pill CSS x4 -- index.css, about-me/about-me.css, space-bar/space-bar.css, arcade/arcade.css",
+        "starfield init x5 -- including one inlined in scoreboard/index.html:43-87"
+      ]
+    },
+    {
+      "id": "tokens-sole-sourced",
+      "title": "Design tokens are sole-sourced",
+      "rule": "Colours, type, spacing, radii and motion come from the @theme block in tailwind.css, mirrored in tokens.ts. Nothing hardcodes a colour.",
+      "why": "One palette, one place. tokens.ts gives JS a typed handle on the same names so components stop guessing.",
+      "enforcement": "agent:page-critic",
+      "severity": "medium",
+      "appliesTo": ["*.css", "*.js", "*.ts"],
+      "exception": "The scoreboard sub-palette (--color-scoreboard-*) is a deliberate, documented drift. Leave it."
+    },
+    {
+      "id": "no-new-css-files",
+      "title": "Styling lives in JS from here on",
+      "rule": "New components carry Tailwind utility classes in their JS/TS templates. Do not add new page-local .css files. The 14 existing ones are frozen -- they keep working, they just stop growing.",
+      "why": "Utility classes in JS is the shape React wants, so every component written this way ports mechanically when the migration issue is picked up. Every new .css file is one more thing to unpick.",
+      "enforcement": "agent:page-critic",
+      "severity": "medium",
+      "appliesTo": ["*.css"]
+    },
+    {
+      "id": "react-shaped",
+      "title": "Write components React-shaped",
+      "rule": "Props in, markup out. No module-scope side effects, no globals, and setup returns its own cleanup function.",
+      "why": "The stack decision is TypeScript + React, deferred to a filed issue. Components written this way are a mechanical port; components written as IIFEs that reach into document are a rewrite.",
+      "enforcement": "agent:page-critic",
+      "severity": "medium",
+      "appliesTo": ["shared/**", "proto/**"]
+    }
+  ],
+  "gates": {
+    "$comment": "Which gates run at which rung. Mirrors envs.json. The asymmetry IS the prototyping balance: sloppy code reaches a preview URL in ninety seconds, and gets cleaned on the way to stage.",
+    "build": "npm run build",
+    "format": "npm run format:check",
+    "lint": "npm run lint",
+    "typecheck": "npm run typecheck",
+    "verify": "skill:/verify"
+  }
+}
