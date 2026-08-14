@@ -26,7 +26,7 @@ Restore `public/CNAME` so the build ships it. **Tiny, and the cheapest insurance
 
 No required status checks, no review requirement, `enforcement_level: off`. With non-technical contributors in the repo, one merge button sits between them and `stoeier.dk`.
 
-Not code — a GitHub settings change. Require the build check, at minimum. **Five minutes, highest value on this page.**
+**Ready to apply, not just tracked.** `DECISIONS.md` ADR-020 has the exact settings for both `main` and `stage` — require the `build` check and restrict merge rights to Jesper on `main`; restrict push rights to Jesper plus `github-actions[bot]` on `stage`. Not code — a GitHub settings change, needs the account owner to click it through. **Five minutes, highest value on this page.**
 
 ---
 

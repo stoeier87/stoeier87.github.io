@@ -1,13 +1,17 @@
 ---
 name: pr-watch
-description: Watch open pull requests for merge-readiness — build status, whether a preview actually deployed, and whether the body carries the required root cause and verification sections. Never merges. Designed for /loop /pr-watch. Use when the user asks about open PRs or what's ready to merge.
+description: Watch open pull requests for merge-readiness — build status, whether a preview actually deployed, and whether the body carries the required root cause and verification sections. Never merges. Use when the user asks about open PRs or what's ready to merge, or for a point-in-time sweep across several open PRs at once.
 ---
 
 # /pr-watch
 
-Standalone, or as `/loop /pr-watch`.
-
 **Merging a PR to `main` is the production deploy** — `deploy.yml` has no `push` trigger. So "merge-ready" here means "ready to be live on `stoeier.dk` in about a minute." Judge it that way.
+
+## For one PR you just opened: don't use this, ask to be watched instead
+
+The default for a single PR is event-driven, not a poll loop. The moment a PR exists, subscribing to it means CI failures, review comments, and merge-conflict notices arrive as they happen — no scheduled checking, nothing to remember to re-run. Ask for that directly ("watch this PR") rather than reaching for `/loop /pr-watch`.
+
+`/pr-watch` (this skill) is for a different job: a **point-in-time sweep across every open PR at once** — "what's ready to merge right now" — which event subscription doesn't give you, since it only covers PRs you're already watching. Use it as a one-shot report, or as `/loop /pr-watch` when you specifically want a recurring summary across the whole PR list rather than live handling of one.
 
 ## One pass
 

@@ -52,6 +52,8 @@ Two roles, and the split is the point.
 
 If you are working as the prototyper: use `/idea`, `/deploy preview`, and `/explain`. That's the whole surface. You do not need the rest, and nothing you do on a `preview/` branch can break `stoeier.dk`.
 
+**This table is documentation, not enforcement — GitHub branch protection on `main` and `stage` is the actual mechanism**, since pre-contract history shows exactly the failure this split exists to stop (direct merges to `main`, pushes to `stage/*`). See `DECISIONS.md` ADR-020 for the exact settings.
+
 ## 2. What this is
 
 Personal portfolio and browser arcade for Tobias Fullerton Støier, at `stoeier.dk`.
@@ -112,29 +114,34 @@ Z-order is explicit and unconditional: dotgrid (1) < starfield/planets (2) < jou
 
 ## 4. The toolbox
 
+Trimmed once already (`DECISIONS.md` ADR-020) — four things that looked like separate tools turned out to be one tool with a mode, or a subroutine wearing a top-level name. What's left is what a two-person team actually reaches for.
+
 ### Skills
 
-|                          |                                                                                                           |
-| ------------------------ | --------------------------------------------------------------------------------------------------------- |
-| `/idea "<sentence>"`     | An idea → a running local page. Scaffolds `proto/<slug>/`, React-shaped, Tailwind utilities, no CSS file. |
-| `/promote <slug>`        | Hardens a proto into the codebase: extract, gates, verify, PR body. Stops before opening.                 |
-| `/deploy [rung] [topic]` | The one deploy verb. Reads `envs.json`. Narrates _why_ before acting.                                     |
-| `/envs`                  | What's live on every rung, including orphaned preview folders nothing else tracks.                        |
-| `/new-page <name>`       | Scaffolds a page against the contract.                                                                    |
-| `/new-game <name>`       | The above plus the canvas contract and score submission.                                                  |
-| `/verify [page]`         | Build + six-viewport check run. Emits the `N/N checks` line and the `⚠️` caveat.                          |
-| `/ship`                  | Composes the PR body to template. Stops before opening.                                                   |
-| `/explain <thing>`       | "What happens when I push to stage?" Answers from this file plus live repo state.                         |
+|                           |                                                                                                                                                            |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/idea "<sentence>"`      | An idea → a running local page. Scaffolds `proto/<slug>/`, React-shaped, Tailwind utilities, no CSS file.                                                  |
+| `/promote <slug>`         | Hardens a proto into the codebase: extract, gates, verify, composes the PR via `ship`. Stops before opening.                                               |
+| `/deploy [rung] [topic]`  | The one deploy verb. Pushes, then watches the run and hands back a verified URL — no separate watch step. Reads `envs.json`. Narrates _why_ before acting. |
+| `/envs [--verify <rung>]` | What's live on every rung, including orphaned preview folders nothing else tracks. `--verify` runs a deep single-rung health check.                        |
+| `/new-page <name>`        | Scaffolds a page against the contract.                                                                                                                     |
+| `/new-game <name>`        | The above plus the canvas contract and score submission.                                                                                                   |
+| `/verify [page]`          | Build + six-viewport check run. Emits the `N/N checks` line and the `⚠️` caveat.                                                                           |
+| `/explain <thing>`        | "What happens when I push to stage?" Answers from this file plus live repo state.                                                                          |
+
+`ship` still exists (`.claude/skills/ship/`) as `promote`'s final step and for the rare already-clean change with no extraction needed — it's not a separate thing to remember, `promote` reaches for it.
 
 ### Loops — `/loop /<name>`, self-paced
 
-`/deploy-watch` · `/pr-watch` · `/ux-polish <page>` · `/drift-check` · `/dedupe`
+`/ux-polish <page>` · `/drift-check` · `/dedupe`
 
 `/dedupe` is deliberately two-phase: it reports duplication and **stops**. Extraction happens only after a human approves a cluster.
 
+**PR watching is event-driven, not a loop.** For one PR you just opened, ask to have it watched — `subscribe_pr_activity` fires once and CI failures, review comments, and merge-conflict notices arrive as they happen. `/pr-watch` (or `/loop /pr-watch`) is for a point-in-time sweep across _every_ open PR at once, a different job event subscription doesn't cover.
+
 ### Agents — all read-only, they report and you decide
 
-`page-critic` (diff vs `standards.json`) · `env-verifier` (a rung end to end) · `redundancy-scout` (ranked duplication) · `copy-keeper` (voice and the Danish/English split).
+`page-critic` (diff vs `standards.json`) and `copy-keeper` (voice and the Danish/English split) run automatically inside `promote`/`ux-polish` — not something you invoke standalone. `redundancy-scout` and `env-verifier` are the same pattern: invoked by `/dedupe` and `/envs --verify` respectively, not separate entry points.
 
 ### Hooks — two hard blocks, nothing else
 
@@ -160,11 +167,10 @@ Subjects are **prose judgments, not changelog lines**. Bodies explain **cause an
 68px desktop / 54px mobile, up from the original 58/46 — noticeably more
 presence without the bulk the full 40% bump added.
 
-Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01Fx1PN1RacHCrY8vkkA8cvW
 ```
 
-Trailers: `Co-Authored-By` naming the **exact model**, and a `Claude-Session:` URL so any line traces back to the conversation that produced it. **Do not put the "🤖 Generated with Claude Code" line in commit messages** — it belongs in PR bodies only. This overrides the global default.
+Trailer: `Claude-Session:` only — a URL so any line traces back to the conversation that produced it. **No `Co-Authored-By` line.** **Do not put the "🤖 Generated with Claude Code" line in commit messages** — it belongs in PR bodies only. This overrides the global default.
 
 ### PR bodies
 
