@@ -66,7 +66,7 @@ fix(homepage,arcade,scoreboard,space-bar): unify the back pill
 content(about): revise the teaching and jury paragraphs
 ```
 
-`content:` is a non-standard type reserved for copy-only edits. Subjects are prose judgments ("dial back down, read as too heavy"), not terse changelog lines. See `CLAUDE.md` §5 for the full convention, including the `Co-Authored-By` / `Claude-Session:` trailers Claude-authored commits carry.
+`content:` is a non-standard type reserved for copy-only edits. Subjects are prose judgments ("dial back down, read as too heavy"), not terse changelog lines. See `CLAUDE.md` §5 for the full convention, including the `Claude-Session:` trailer Claude-authored commits carry.
 
 ---
 

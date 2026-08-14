@@ -35,7 +35,7 @@ The fast lane. Sloppy code is allowed here on purpose — the only gate is that 
 
 1. `npm run build` locally first. A broken build wastes a CI round trip.
 2. Branch: `preview/<topic>` (kebab-case the topic). If already on it, stay.
-3. Commit in house style — see `CLAUDE.md` §5. Conventional Commits, page-level scope, a prose-judgment subject, a body that explains cause and measurement, `Co-Authored-By` with your exact model, and a `Claude-Session:` trailer. **No 🤖 line in commits.**
+3. Commit in house style — see `CLAUDE.md` §5. Conventional Commits, page-level scope, a prose-judgment subject, a body that explains cause and measurement, and a `Claude-Session:` trailer. **No `Co-Authored-By` line, no 🤖 line in commits.**
 4. **Confirm once before pushing**, then push with `-u`.
 5. Report the URL. **`preview.yml` uses `destination_dir: preview/${{ github.ref_name }}` and `ref_name` already contains the slash**, so the branch `preview/foo` actually publishes to `/preview/preview/foo/`. Report the real, doubled URL — do not report the tidy one and let the user hit a 404. Say plainly that the doubling is a known quirk (`CLAUDE.md` known issue 2).
 6. **Watch and verify — see below.** Don't stop at "pushed."

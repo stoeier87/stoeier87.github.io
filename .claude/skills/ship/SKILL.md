@@ -83,7 +83,7 @@ If while writing this you find yourself reaching for a before/after number or ex
 
 ## Commit, if needed
 
-House style, `CLAUDE.md` §5. Conventional Commits with page-level scope, `content:` for copy-only edits, a prose-judgment subject, a body explaining cause and measurement, `Co-Authored-By` naming your **exact model**, and a `Claude-Session:` URL. **No 🤖 line in commit messages** — that belongs in the PR body only.
+House style, `CLAUDE.md` §5. Conventional Commits with page-level scope, `content:` for copy-only edits, a prose-judgment subject, a body explaining cause and measurement, and a `Claude-Session:` URL. **No `Co-Authored-By` line, no 🤖 line in commit messages** — the latter belongs in the PR body only.
 
 ## Then stop
 

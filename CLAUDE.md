@@ -167,11 +167,10 @@ Subjects are **prose judgments, not changelog lines**. Bodies explain **cause an
 68px desktop / 54px mobile, up from the original 58/46 — noticeably more
 presence without the bulk the full 40% bump added.
 
-Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01Fx1PN1RacHCrY8vkkA8cvW
 ```
 
-Trailers: `Co-Authored-By` naming the **exact model**, and a `Claude-Session:` URL so any line traces back to the conversation that produced it. **Do not put the "🤖 Generated with Claude Code" line in commit messages** — it belongs in PR bodies only. This overrides the global default.
+Trailer: `Claude-Session:` only — a URL so any line traces back to the conversation that produced it. **No `Co-Authored-By` line.** **Do not put the "🤖 Generated with Claude Code" line in commit messages** — it belongs in PR bodies only. This overrides the global default.
 
 ### PR bodies
 
