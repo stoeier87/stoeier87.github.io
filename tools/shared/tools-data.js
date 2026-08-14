@@ -251,13 +251,20 @@ const SBP2_ROW_ORDER = [
   { type: "band", label: "Line of Internal Interaction" },
   { type: "content", label: "Support Processes" },
 ];
-const SBP2_HEADER_LABEL = "BEFORE";
-const SBP2_ROW_H = { content: 24, band: 13 };
+// Three phase segments, spanning only the content columns — the area
+// above the row-label column stays empty. Below 400px these abbreviate
+// to BEF/DUR/AFT rather than wrapping.
+const SBP2_PHASES = ["Before", "During", "After"];
+const SBP2_PHASES_SHORT = ["Bef", "Dur", "Aft"];
+const SBP2_ROW_H = { content: 24, band: 6.5 };
 const SBP2_LABEL_COL_W = 44;
 const SBP2_COL_W = 24;
 const SBP2_GUTTER = 3;
 const SBP2_HEADER_H = 16, SBP2_HEADER_GAP = 5;
-const SBP2_BAND_FILL = "rgba(224, 58, 47, 0.2)";
+// The phase header sits at full strength; the three boundary bands
+// sit behind the content, much fainter.
+const SBP2_HEADER_FILL = "rgba(224, 58, 47, 0.2)";
+const SBP2_BAND_FILL = "rgba(224, 58, 47, 0.1)";
 // Three illustrative numbered markers connecting steps across rows —
 // not tied to real content. Indices are into SBP2_ROW_ORDER; all three
 // land on content rows (Evidence, Frontstage, Support Processes).
@@ -943,7 +950,10 @@ export const DIAGRAMS = {
       const photoInner = svgEl("g", { class: "emp2-photo" });
       photoInner.style.transform = "scale(0)";
       photoInner.style.transformOrigin = "center";
-      photoInner.appendChild(svgEl("rect", { x: -9, y: -6.5, width: 18, height: 13, fill: "var(--panel-photo)" }));
+      // A thin outlined figure — "a person goes here" — not a filled
+      // block, and small enough that it never covers panel content.
+      photoInner.appendChild(svgEl("circle", { cx: 0, cy: -3.5, r: 3, fill: "none", stroke: "var(--ink-muted)", "stroke-width": "1.2" }));
+      photoInner.appendChild(svgEl("path", { d: "M -7,4 Q 0,-3 7,4", fill: "none", stroke: "var(--ink-muted)", "stroke-width": "1.2", "stroke-linecap": "round" }));
       photoOuter.appendChild(photoInner);
       svg.appendChild(photoOuter);
 
@@ -1034,12 +1044,38 @@ export const DIAGRAMS = {
 
       const svg = svgEl("svg", { viewBox: "-8 -8 " + (gridW + 16) + " " + (totalH + 16), draggable: "false" });
 
-      const header = svgEl("rect", { x: 0, y: 0, width: gridW, height: headerH, fill: SBP2_BAND_FILL, class: "sbp2-header" });
-      header.style.opacity = "0";
-      svg.appendChild(header);
-      const headerLabel = svgText(gridW / 2, headerH / 2 + 2, "middle", SBP2_HEADER_LABEL, "sbp2-band-label sbp2-header-label");
-      headerLabel.style.opacity = "0";
-      svg.appendChild(headerLabel);
+      // Three chevron segments — Before, During, After — spanning only
+      // the content columns, plus two faint vertical guides at the
+      // phase divisions running down through the grid. The area above
+      // the row-label column stays empty.
+      const headerGroup = svgEl("g", { class: "sbp2-header" });
+      headerGroup.style.opacity = "0";
+      const contentX0 = labelW + gutter;
+      const contentW = gridW - contentX0;
+      const segW = contentW / 3;
+      const notch = headerH * 0.4;
+      const chevronPoints = (x) => [
+        x + ",0",
+        (x + segW - notch) + ",0",
+        (x + segW) + "," + headerH / 2,
+        (x + segW - notch) + "," + headerH,
+        x + "," + headerH,
+        (x + notch) + "," + headerH / 2,
+      ].join(" ");
+      // Abbreviate whenever the narrower three-column layout is active —
+      // full-length labels are too wide for a three-way split and
+      // collide with each other well before 400px on their own.
+      const phases = cols === 3 ? SBP2_PHASES_SHORT : SBP2_PHASES;
+      phases.forEach((label, i) => {
+        const segX = contentX0 + i * segW;
+        headerGroup.appendChild(svgEl("polygon", { points: chevronPoints(segX), fill: SBP2_HEADER_FILL }));
+        headerGroup.appendChild(svgText(segX + segW / 2, headerH / 2 + 2, "middle", label, "sbp2-band-label sbp2-header-label"));
+      });
+      for (let i = 1; i < 3; i++) {
+        const gx = contentX0 + i * segW;
+        headerGroup.appendChild(svgEl("line", { x1: gx, y1: gridTop, x2: gx, y2: gridTop + gridH, stroke: "var(--ink-dim)", "stroke-width": "0.6" }));
+      }
+      svg.appendChild(headerGroup);
 
       let contentRowIdx = 0;
       let bandIdx = 0;
@@ -1089,8 +1125,8 @@ export const DIAGRAMS = {
         const inner = svgEl("g", { class: "sbp2-marker sbp2-marker-" + mi });
         inner.style.transform = "scale(0)";
         inner.style.transformOrigin = "center";
-        inner.appendChild(svgEl("circle", { cx: 0, cy: 0, r: 6, fill: "var(--red)" }));
-        inner.appendChild(svgText(0, 2.1, "middle", String(mi + 1), "sbp2-marker-num"));
+        inner.appendChild(svgEl("circle", { cx: 0, cy: 0, r: 4, fill: "none", stroke: "var(--red)", "stroke-width": "1" }));
+        inner.appendChild(svgText(0, 1.6, "middle", String(mi + 1), "sbp2-marker-num"));
         outer.appendChild(inner);
         svg.appendChild(outer);
       });
@@ -1099,7 +1135,6 @@ export const DIAGRAMS = {
     },
     assemble(diagramEl) {
       const header = diagramEl.querySelector(".sbp2-header");
-      const headerLabel = diagramEl.querySelector(".sbp2-header-label");
       const labelRows = Array.from({ length: 5 }, (_, i) => Array.from(diagramEl.querySelectorAll(".sbp2-label-row-" + i)));
       const contentRows = Array.from({ length: 5 }, (_, r) => {
         const cells = [];
@@ -1118,7 +1153,6 @@ export const DIAGRAMS = {
 
       function applyFinal() {
         header.style.transition = "none"; header.style.opacity = "1";
-        headerLabel.style.transition = "none"; headerLabel.style.opacity = "1";
         labelRows.forEach((row) => row.forEach((el) => { el.style.transition = "none"; el.style.opacity = "1"; }));
         contentRows.forEach((row) => row.forEach((el) => { el.style.transition = "none"; el.style.opacity = "1"; }));
         bandPairs.forEach((pair) => pair.forEach((el) => { el.style.transition = "none"; el.style.opacity = "1"; }));
@@ -1135,7 +1169,6 @@ export const DIAGRAMS = {
       // 1. Header band fades in.
       const headerDur = 80;
       fade(header, 0, headerDur);
-      fade(headerLabel, 0, headerDur);
       let t = headerDur + 10;
 
       // 2. Five label cells fade in top to bottom.

@@ -245,11 +245,10 @@ function renderIntro() {
   const body = document.createElement("div");
   body.className = "intro-body";
   const paragraphs = [
-    "This is the third step in a process, not the first.",
-    "Start by brainstorming everything you could imagine doing. Do not filter, do not cost anything out, and do not stop at what seems realistic. Then write each idea up as a project card: what it is, who it is for, what it would change, what it would take. The card is the work. If you cannot describe an idea properly, your answers below are guesses.",
-    "Once you have the cards, run each idea through the twelve questions here. You will get a position on three matrices and a recommendation on how to treat it.",
-    "Twelve questions, one idea at a time, about two minutes.",
-    "Nothing is stored. Nothing is sent anywhere. If you want to compare several ideas, write the results down as you go.",
+    "Twelve questions that place one idea on three matrices and tell you how to treat it.",
+    "It works best on an idea you have already described properly: what it is, who it is for, what it would change, what it would take. Without that, the answers are guesses, and the output is only as good as they are.",
+    "One idea at a time, about two minutes.",
+    "Nothing is stored and nothing is sent anywhere, so write the results down if you want to compare several ideas.",
   ];
   for (const text of paragraphs) {
     const p = document.createElement("p");

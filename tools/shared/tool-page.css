@@ -10,7 +10,6 @@
   --edge: rgba(255, 255, 255, 0.14);
   --panel-1: #0d1424;
   --panel-2: #182449;
-  --panel-photo: #dfe3ee;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -220,7 +219,7 @@ a { color: inherit; text-decoration: none; }
 .sbp2-row-label { font-size: 4.6px; letter-spacing: 0.02em; fill: var(--ink-body); }
 .sbp2-band-label { font-size: 5px; letter-spacing: 0.08em; text-transform: uppercase; fill: var(--red); }
 .sbp2-header-label { font-size: 6px; letter-spacing: 0.12em; }
-.sbp2-marker-num { font-size: 6px; font-weight: 700; fill: var(--bg); }
+.sbp2-marker-num { font-size: 5px; font-weight: 700; fill: var(--red); }
 .emp2-panel-label { font-size: 5px; letter-spacing: 0.02em; text-transform: uppercase; fill: var(--red); }
 
 @media (max-width: 760px) {
