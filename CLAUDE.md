@@ -190,7 +190,26 @@ Superseded PRs get an explicit hand-off: _"Superseded by #45 — same commits, n
 
 ### Branches
 
-Prefix by tool of origin or intent: `claude/` `copilot/` `iterm/` `github/` for origin; `fix/` `hotfix/` `patch/` `findings/` for intent; `preview/<topic>` and `stage` for the ladder. Legacy `stage/**` branches still make per-branch preview folders via `preview.yml` — harmless, but `stage` (no slash) is the rung.
+Prefix by tool of origin or intent: `claude/` `copilot/` `iterm/` `github/` for origin; `fix/` `hotfix/` `patch/` `findings/` for intent; `worktree-<topic>` for a browser or cloud Claude session (see below); `preview/<topic>` and `stage` for the ladder. Legacy `stage/**` branches still make per-branch preview folders via `preview.yml` — harmless, but `stage` (no slash) is the rung.
+
+### Worktrees
+
+Claude in the browser and in the cloud does not work in your checkout. It creates a **git worktree** — a second working directory at `.claude/worktrees/<topic>/` on a branch named `worktree-<topic>`, sharing the one `.git/`. The directory's `.git` is a file pointing at `.git/worktrees/<topic>/`; objects, refs and remotes are shared, so **a commit made in there is visible from `main`'s directory instantly.** Only the files on disk are separate. That's the whole mechanism, and three rules follow from it.
+
+1. **A `worktree-*` branch is a contributor branch, not a fourth rung.** ADR-018 terms: a source of truth, developed on, never promoted directly. It reaches production the way every contributor branch does — the integrator cherry-picks onto `stage` and releases. **Never open a PR from `worktree-*` into `main`.** `pr-source-guard.yml` fails it, and it is right to.
+2. **The work is local until it is pushed.** A worktree branch is created with no upstream, so it exists on exactly one machine and no dashboard shows it. `git push -u origin worktree-<topic>` before it is the only copy of anything you would mind losing.
+3. **Removing the directory does not remove the branch.** That is why `git branch` lists `worktree-*` entries whose directories are long gone. Once the commits are on `stage` or `main`:
+
+```bash
+git worktree unlock .claude/worktrees/<topic>   # only if a dead session left a lock
+git worktree remove  .claude/worktrees/<topic>
+git branch -d worktree-<topic>                  # -d, never -D — it refuses if unmerged
+git worktree prune
+```
+
+A session that dies without cleaning up leaves a `locked` file naming its own pid. Check the pid is actually gone before unlocking; a live session losing its tree mid-run is a worse outcome than a stale directory.
+
+**Keep worktrees under `.claude/worktrees/` or outside the repo entirely.** `.claude/worktrees/` is gitignored, but the leading dot does a second job nobody wrote down: `getInputs()` in `vite.config.js` globs `**/*.html` ignoring only `node_modules/**` and `dist/**`, and it misses a worktree's full copy of every page **solely because `glob` skips dot-directories by default**. A worktree at `worktrees/<topic>/` would feed 25 duplicate entries back in as build input — ADR-014 again, from a new direction.
 
 ---
 

@@ -308,3 +308,25 @@ What's genuinely different and was kept apart on purpose: `verify` (runtime/brow
 Settings (`main`): require the `build` status check (already runs on every PR via `deploy.yml`'s `pull_request` trigger, no new CI needed) before merge; restrict push/merge rights to Jesper's account. Settings (`stage`): restrict push rights to Jesper's account plus `github-actions[bot]` (needed for `stage-reset.yml`'s nightly force-push). Neither setting was applied by an agent — GitHub repo permissions are a shared-system change requiring the account owner's own action, consistent with `CLAUDE.md` §8.
 
 **Consequences:** the toolbox table in `CLAUDE.md` §4 was rewritten to match — fewer top-level rows, `ship`/`redundancy-scout`/`env-verifier` reframed as subroutines rather than peers. No skill's underlying logic changed except `/deploy` (which now blocks on `gh run watch`) and `/envs` (which gained `--verify`). `BACKLOG.md` B3 should be marked ready-to-apply against this ADR's exact settings once branch protection is turned on.
+
+---
+
+## ADR-021 — A `worktree-*` branch is a contributor branch, not a shortcut to `main`
+
+**Decided:** 2026-08-14
+**Status:** active · **extends ADR-018**
+
+Claude sessions run from the browser and from the cloud check out into `.claude/worktrees/<topic>/` on a `worktree-<topic>` branch rather than into the primary working directory. Nothing in the contract described this, so the branches were arriving with no defined lifecycle — and the failure mode showed up before the rule did: a locked, unpushed worktree holding the `pr-source-guard.yml` commit, and `worktree-relative-paths-fix` still on `origin` with four commits and no directory anywhere.
+
+**The temptation this closes.** A worktree branch is already on the integrator's machine, its commits are already visible from `main`'s directory, and it costs one `git merge` to land. That framing is wrong: proximity is a property of the checkout, not of the work. The branch has had no more review than any contributor branch, and merging it directly skips `stage` — the one hop in this repo that is actually gated. So it is classified as what it behaviourally is: a contributor branch, cherry-picked onto `stage` and released from there.
+
+**`pr-source-guard.yml` makes this mechanical rather than advisory**, which is the same reasoning as ADR-020's branch protection — a rule that only exists as a paragraph is not a mechanism.
+
+**The bootstrap trap, recorded because it will confuse the next person.** For `pull_request` events GitHub runs the workflow files from the head branch. A PR opened from `worktree-main-pr-guard` therefore runs the very guard it is adding, reads its own `head_ref`, and fails itself. The guard has to reach `main` by the route it prescribes: create `stage`, land the commits there, PR `stage → main`. Self-application is the correct first test of the rule, not an obstacle to it.
+
+**Consequences:**
+
+- **`stage` does not exist yet** — no local branch, nothing on `origin`, only the legacy `stage/pipeline`, `stage/testing` and `stage/preview-patch`. Until it is created off `main`, this guard closes `main` to PRs entirely. Creating it is the first step of shipping this ADR, not a follow-up.
+- **A dead session's lock outlives it.** `.git/worktrees/<topic>/locked` names the owning pid; nothing clears it when that process dies. Verify the pid before unlocking — the lock exists to stop a live session losing its tree.
+- **`git worktree remove` leaves the branch.** Cleanup is four commands, written out in `CLAUDE.md` §5. `git branch -d` (not `-D`) is deliberate: it refuses on unmerged commits, which is the only automatic protection a local-only branch has.
+- **The dot in `.claude/` is load-bearing twice.** It keeps the directory out of git via `.gitignore`, and it keeps a full second copy of every page out of `getInputs()` in `vite.config.js` — which ignores only `node_modules/**` and `dist/**` and would otherwise glob 25 duplicate entries. Verified by running the glob, not assumed. A worktree placed at a non-dot path inside the repo reproduces ADR-014.
