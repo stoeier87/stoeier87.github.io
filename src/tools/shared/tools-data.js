@@ -3000,7 +3000,7 @@ export const TOOLS = [
     attribution: "No single origin. Common in design sprints and dot voting practice",
     whatItIs: "Everyone marks the ideas they think should go forward, without discussion and without seeing anyone else explain their choice first.",
     strongFor: "Getting an honest read of the room before the loudest person has framed what counts as a good idea.",
-    howIUse: "Always after storyboards, never after a verbal round. If people pitch first, they vote on who spoke well. The dots go up in silence, and anyone senior votes last, with larger dots if their judgement should weigh more. Weight belongs in the vote, not in the timing.",
+    howIUse: "Always after storyboards, never after a verbal round. If people pitch first, they vote on who spoke well. The dots go up in silence. And if one voice genuinely carries more weight, a director in the room, you can hand them larger dots and let them vote last. Weight belongs in the vote, not in the timing.",
     watchOut: "It measures appeal, not feasibility. A wall of dots tells you what the room liked, which is worth knowing and is not the same as what should be built.",
   },
   {
