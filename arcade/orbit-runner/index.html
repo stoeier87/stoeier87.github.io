@@ -6,19 +6,41 @@
     <title>Orbit Runner</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <script type="module" crossorigin src="../../assets/arcade/orbit-runner/index-DY3iyIby.js"></script>
-    <link rel="modulepreload" crossorigin href="../../assets/tailwind-C5m0IdXT.js">
+    <script type="module" crossorigin src="../../assets/arcade/orbit-runner/index-CJeCHflK.js"></script>
+    <link rel="modulepreload" crossorigin href="../../assets/tailwind-D3cAdbGj.js">
     <link rel="modulepreload" crossorigin href="../../assets/firebase-config-CLc0baU0.js">
     <link rel="modulepreload" crossorigin href="../../assets/score-submit-Bewzh5NB.js">
-    <link rel="stylesheet" crossorigin href="../../assets/tailwind-CFbt9Xfq.css">
-    <link rel="stylesheet" crossorigin href="../../assets/index-D5mb46hz.css">
+    <link rel="stylesheet" crossorigin href="../../assets/tailwind-DPbJPjfp.css">
+    <link rel="stylesheet" crossorigin href="../../assets/index-WA3Eib5D.css">
   </head>
   <body>
     <canvas id="game"></canvas>
-    <div class="hud">
-      <a href="../../arcade/" class="pill link">← Arcade</a>
-      <div>Score: <span id="score">0</span></div>
-      <div>Best: <span id="best">0</span></div>
+
+    <!-- Canonical chrome: circular back arrow + title pill top left,
+         SCORE and BEST top right. -->
+    <div class="topbar">
+      <div class="topbar-group">
+        <a href="../../arcade/" class="pill back-circle" aria-label="Back to arcade" title="Back to arcade">←</a>
+        <div class="pill badge">
+          <span class="beacon"></span>
+          <span class="badge-name">ORBIT RUNNER</span>
+        </div>
+      </div>
+      <div class="topbar-group">
+        <div class="pill stat">SCORE <strong id="score">0</strong></div>
+        <a class="pill stat" href="../../scoreboard/"
+          >BEST <strong id="best" class="best-val">0</strong></a
+        >
+      </div>
     </div>
+
+    <!-- Auto-pause overlay -->
+    <div id="pause" class="gameover">
+      <div class="gameover-card">
+        <div class="gameover-title">PAUSED</div>
+        <button id="resumeBtn" class="restart-btn" type="button">Resume</button>
+      </div>
+    </div>
+
   </body>
 </html>

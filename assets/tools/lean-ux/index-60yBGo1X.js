@@ -1,0 +1,1 @@
+import"../../tailwind-D3cAdbGj.js";import{t as e}from"../../tool-page-Cd9Wz52t.js";e(`lean-ux`);

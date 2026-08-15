@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GALILEO</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <script type="module" crossorigin src="../../assets/arcade/galileo/index-B8ZOXUkR.js"></script>
+    <link rel="modulepreload" crossorigin href="../../assets/tailwind-D3cAdbGj.js">
+    <link rel="modulepreload" crossorigin href="../../assets/tokens-DZhOMBh-.js">
+    <link rel="modulepreload" crossorigin href="../../assets/firebase-config-CLc0baU0.js">
+    <link rel="modulepreload" crossorigin href="../../assets/score-submit-Bewzh5NB.js">
+    <link rel="stylesheet" crossorigin href="../../assets/tailwind-DPbJPjfp.css">
+    <link rel="stylesheet" crossorigin href="../../assets/index-CUfwSzOk.css">
+  </head>
+  <body>
+    <!-- Jupiter and the starfield. `driven`: galileo.js owns the single
+         rAF loop and ticks the backdrop each frame. -->
+    <st-planet-field id="bg" driven aria-hidden="true"></st-planet-field>
+    <canvas id="game" aria-hidden="true"></canvas>
+
+    <!-- Canonical chrome: circular back arrow + title pill top left,
+         SCORE and BEST top right, status panel bottom left. -->
+    <div class="topbar">
+      <div class="topbar-group">
+        <a href="../../arcade/" class="pill back-circle" aria-label="Back to arcade" title="Back to arcade">←</a>
+        <div class="pill badge">
+          <span class="beacon"></span>
+          <span class="badge-name">GALILEO</span>
+        </div>
+      </div>
+      <div class="topbar-group">
+        <div class="pill stat">SCORE <strong id="score">0</strong></div>
+        <a class="pill stat" href="../../scoreboard/"
+          >BEST <strong id="best" class="best-val">0</strong></a
+        >
+      </div>
+    </div>
+
+    <!-- Status panel, same shape as ISS Docking's APPROACH panel -->
+    <div class="approach" id="status">
+      <div class="approach-title">SURVEY</div>
+      <div class="approach-row">
+        <span class="approach-label">BOARD</span>
+        <strong class="approach-value" id="boardVal">1</strong>
+      </div>
+      <div class="approach-row">
+        <span class="approach-label">POCKETS</span>
+        <strong class="approach-value" id="pocketsVal">10</strong>
+      </div>
+      <div class="approach-row">
+        <span class="approach-label">RADIATION</span>
+        <div class="bar"><div class="bar-fill" id="radFill"></div></div>
+      </div>
+      <div class="approach-row">
+        <span class="approach-label">TIME</span>
+        <strong class="approach-value" id="timeVal">120</strong>
+      </div>
+    </div>
+
+    <!-- Briefing card, dismissed on first input -->
+    <div class="intro-container">
+      <div class="intro" id="intro">
+        <div class="intro-title">GALILEO</div>
+        <div class="intro-body">Map the field. Radiation builds. Three hits and the probe is gone.</div>
+        <div class="intro-keys" id="introKeys">
+          <span><b>Click</b> reveal</span><span><b>Right click</b> flag</span
+          ><span><b>Middle / both buttons</b> chord</span>
+        </div>
+        <div class="intro-keys" id="introTouch">
+          <span><b>Tap</b> reveal</span><span><b>Long press</b> flag</span
+          ><span><b>Double tap</b> chord</span><span><b>Pinch</b> zoom</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Auto-pause overlay: appears on tab switch or window blur, and the
+         run resumes only when asked to. -->
+    <div id="pause" class="gameover">
+      <div class="gameover-card">
+        <div class="gameover-title">PAUSED</div>
+        <div class="pause-sub">The survey holds position</div>
+        <button id="resumeBtn" class="restart-btn" type="button">Resume</button>
+      </div>
+    </div>
+
+    <!-- Game over sign -->
+    <div id="gameOver" class="gameover">
+      <div class="gameover-card">
+        <div id="gameOverTitle" class="gameover-title">PROBE LOST</div>
+        <div class="final-rows">
+          <div class="final-row"><span>SCORE</span><strong id="finalScore">0</strong></div>
+          <div class="final-row"><span>BOARDS</span><strong id="finalBoards">0</strong></div>
+          <div class="final-row final-best">
+            <span>BEST</span><strong id="finalBest">0</strong>
+            <span class="best-marker" id="bestMarker">NEW</span>
+          </div>
+        </div>
+        <div class="gameover-sub">Press R or Tap</div>
+        <button id="gameOverRestart" class="restart-btn" type="button">Play again</button>
+      </div>
+    </div>
+
+  </body>
+</html>

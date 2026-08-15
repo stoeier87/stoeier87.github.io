@@ -6,19 +6,105 @@
     <title>Star Memory</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <script type="module" crossorigin src="../../assets/arcade/star-memory/index-BKHh2tsu.js"></script>
-    <link rel="modulepreload" crossorigin href="../../assets/tailwind-C5m0IdXT.js">
+    <script type="module" crossorigin src="../../assets/arcade/star-memory/index-BAnt4xZu.js"></script>
+    <link rel="modulepreload" crossorigin href="../../assets/tailwind-D3cAdbGj.js">
+    <link rel="modulepreload" crossorigin href="../../assets/tokens-DZhOMBh-.js">
+    <link rel="modulepreload" crossorigin href="../../assets/tools-data-lETy8iGk.js">
+    <link rel="modulepreload" crossorigin href="../../assets/constellation-source-BCkXpJxX.js">
     <link rel="modulepreload" crossorigin href="../../assets/firebase-config-CLc0baU0.js">
     <link rel="modulepreload" crossorigin href="../../assets/score-submit-Bewzh5NB.js">
-    <link rel="stylesheet" crossorigin href="../../assets/tailwind-CFbt9Xfq.css">
-    <link rel="stylesheet" crossorigin href="../../assets/index-oouXMu9m.css">
+    <link rel="stylesheet" crossorigin href="../../assets/tailwind-DPbJPjfp.css">
+    <link rel="stylesheet" crossorigin href="../../assets/index-BjR0tD5z.css">
   </head>
   <body>
-    <canvas id="game"></canvas>
-    <div class="hud">
-      <a href="../../arcade/" class="pill link">← Arcade</a>
-      <div>Score: <span id="score">0</span></div>
-      <div>Best: <span id="best">0</span></div>
+    <!-- Neptune, Triton and the starfield. `driven`: the game owns the single
+         rAF loop and calls tick() on the backdrop each frame. -->
+    <st-planet-field id="bg" driven aria-hidden="true"></st-planet-field>
+    <canvas id="game" aria-hidden="true"></canvas>
+
+    <!-- Top bar: back link + title badge (left), score + best (right) -->
+    <div class="topbar">
+      <div class="topbar-group">
+        <a href="../../arcade/" class="pill back-circle" aria-label="Back to arcade" title="Back to arcade">←</a>
+        <div class="pill badge">
+          <span class="beacon"></span>
+          <span class="badge-name">STAR MEMORY</span>
+        </div>
+      </div>
+      <div class="topbar-group">
+        <div class="pill stat">SCORE <strong id="score">0</strong></div>
+        <a class="pill stat" href="../../scoreboard/"
+          >BEST <strong id="best" class="best-val">0</strong></a
+        >
+      </div>
     </div>
+
+    <!-- Status panel, same shape as ISS Docking's APPROACH panel -->
+    <div class="approach" id="status">
+      <div class="approach-title">RUN</div>
+      <div class="approach-row">
+        <span class="approach-label">ROUND</span>
+        <strong class="approach-value" id="roundVal">1</strong>
+      </div>
+      <div class="approach-row">
+        <span class="approach-label">PAIRS</span>
+        <strong class="approach-value" id="pairsVal">0 / 6</strong>
+      </div>
+      <div class="approach-row">
+        <span class="approach-label">MULTI</span>
+        <strong class="approach-value" id="multVal">x1</strong>
+      </div>
+      <div class="approach-row">
+        <span class="approach-label">TIME</span>
+        <div class="bar"><div class="bar-fill" id="timeFill"></div></div>
+      </div>
+    </div>
+
+    <!-- Auto-pause overlay -->
+    <div id="pause" class="gameover">
+      <div class="gameover-card">
+        <div class="gameover-title">PAUSED</div>
+        <button id="resumeBtn" class="restart-btn" type="button">Resume</button>
+      </div>
+    </div>
+
+    <!-- Intro card, dismissed on first input -->
+    <div class="intro-container">
+      <div class="intro" id="intro">
+        <div class="intro-title">STAR MEMORY</div>
+        <div class="intro-body">
+          Match the constellations before the clock runs down. Saturn has been keeping time for a
+          while; now it is your turn.
+        </div>
+        <div class="intro-keys" id="introKeys">
+          <span><b>Click</b> turn a card</span><span><b>R</b> restart when time is out</span>
+        </div>
+        <div class="intro-keys" id="introTouch">
+          <span><b>Tap</b> turn a card</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game over sign -->
+    <div id="gameOver" class="gameover">
+      <div class="gameover-card">
+        <div id="gameOverTitle" class="gameover-title">CONSTELLATION COMPLETE</div>
+        <div class="final-rows">
+          <div class="final-row">
+            <span>SCORE</span><strong id="finalScore">0</strong>
+          </div>
+          <div class="final-row">
+            <span>ROUNDS</span><strong id="finalRounds">0</strong>
+          </div>
+          <div class="final-row final-best">
+            <span>BEST</span><strong id="finalBest">0</strong>
+            <span class="best-marker" id="bestMarker">NEW</span>
+          </div>
+        </div>
+        <div class="gameover-sub">Press R or Tap</div>
+        <button id="gameOverRestart" class="restart-btn" type="button">Play again</button>
+      </div>
+    </div>
+
   </body>
 </html>
