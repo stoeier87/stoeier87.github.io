@@ -505,13 +505,16 @@ function initEasterEgg() {
     const r = oLetter.getBoundingClientRect();
     if (!r.width || !r.height) return;
     /* The counter of a display-weight O is roughly the middle half of the
-       glyph box; a touch under that leaves the asked-for room around it.
-       On a phone that fraction of a small letter disappears entirely, so
-       small letters get a floor: the station may fill most of the O
-       (0.85 of its width, up to 30px) before it ever shrinks below
-       sight. It still never exceeds the letter itself. */
+       glyph box; a touch under that leaves the asked-for room around it —
+       that is the desktop fit. On a phone that fraction of a small letter
+       disappears entirely, so small letters get a floor: the station may
+       fill the O completely (1.05 of its width, up to 44px) before it
+       ever shrinks below sight. The 30px first attempt still read as a
+       speck next to the phone-size letterforms; at the full letter width
+       the station is unmistakably there, and the letter dimming keeps the
+       O readable behind it. */
     const frac = Math.min(r.width, r.height) * 0.46;
-    const floor = Math.min(30, r.width * 0.85);
+    const floor = Math.min(44, r.width * 1.05);
     const size = Math.max(frac, floor);
     layer.style.setProperty("--egg-size", size.toFixed(0) + "px");
     /* Stray just outside the letter at each extreme: centre travels far
