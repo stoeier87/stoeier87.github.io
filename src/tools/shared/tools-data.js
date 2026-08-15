@@ -453,6 +453,41 @@ function sixbysixIcon(kind) {
   return g;
 }
 
+
+/* ── Helpers for the eight 2026 diagrams ─────────────────────
+   One drawing idiom, three verbs: prepStroke arms an element for the
+   dash-draw, runStroke plays it, snapStroke jumps to done (the reduced
+   -motion path and the tap-to-skip path both end there). */
+function prepStroke(el) {
+  el.style.strokeDasharray = "1";
+  el.style.strokeDashoffset = "1";
+}
+function runStroke(el, ms) {
+  el.style.transition = "stroke-dashoffset " + ms + "ms ease";
+  el.style.strokeDashoffset = "0";
+}
+function snapStroke(el) {
+  el.style.transition = "none";
+  el.style.strokeDashoffset = "0";
+}
+
+/* A REAN chevron: rectangle with a pointed right edge; every one after
+   the first is notched on the left so it nests into its neighbour. */
+function reanChevronPath(x, y, w, h, d, flatLeft) {
+  const yMid = y + h / 2;
+  let p = "M " + x + " " + y + " L " + (x + w - d) + " " + y + " L " + (x + w) + " " + yMid +
+          " L " + (x + w - d) + " " + (y + h) + " L " + x + " " + (y + h);
+  p += flatLeft ? " Z" : " L " + (x + d) + " " + yMid + " Z";
+  return p;
+}
+
+/* The Peak-End experience line: several small bumps, one tall peak about
+   two thirds along, a decline, then a modest rise at the very end. */
+const PEAKEND_D_THUMB = "M 25 105 C 40 92, 48 110, 58 100 C 68 92, 74 108, 82 95 C 88 80, 92 58, 95 55 C 100 60, 108 92, 118 105 C 124 112, 130 98, 133 92";
+const PEAKEND_D_STAGE =
+  "M 30 122 C 48 108, 62 126, 78 114 C 94 104, 104 124, 122 112 C 140 102, 152 120, 168 108 " +
+  "C 190 92, 214 52, 235 42 C 252 50, 268 92, 288 116 C 304 132, 322 118, 336 96";
+
 export const DIAGRAMS = {
   venn: {
     thumb() { return vennCirclesSvg(VB, false); },
@@ -2116,6 +2151,610 @@ export const DIAGRAMS = {
     },
     stageWidth(mobile) { return mobile ? "min(360px, calc(100vw - 3rem))" : "min(520px, 90vw)"; },
   },
+
+  /* ────────────────────────────────────────────────────────────
+     The eight 2026 additions. Same contract as everything above:
+     thumb() for the overview, buildStage() for the subpage,
+     assemble() returning { doneAt, timers, applyFinal }, every
+     animation under 1.2s, reduced() jumping straight to final.
+     Narrow-viewport degradations follow the brief: below 500px
+     Kano drops its decay arrow and shortens labels, Core Model
+     halves its chevrons and stacks the goal blocks, Crazy Eights
+     moves the timer below the sheet.
+     ──────────────────────────────────────────────────────────── */
+
+  rean: {
+    thumb() {
+      const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
+      for (let i = 0; i < 4; i++) {
+        svg.appendChild(svgEl("path", { d: reanChevronPath(22 + i * 32, 62, 30, 36, 9, i === 0), ...LINE }));
+      }
+      svg.appendChild(svgEl("path", { d: "M 140 104 C 140 124, 62 124, 58 106", fill: "none", stroke: "currentColor", "stroke-width": "1.5" }));
+      return svg;
+    },
+    stageWidth(mobile) { return mobile ? "min(380px, calc(100vw - 3rem))" : "min(560px, 90vw)"; },
+    buildStage() {
+      // Height closes around the chevrons and the return arc alone — the
+      // ownership row is gone and the space went with it.
+      const svg = svgEl("svg", { viewBox: "0 0 360 128", draggable: "false" });
+      const STAGES = ["REACH", "ENGAGE", "ACTIVATE", "NURTURE"];
+      const w = 78, d = 14, y = 30, h = 44, step = 80, x0 = 16;
+      for (let i = 0; i < 4; i++) {
+        const x = x0 + i * step;
+        const p = svgEl("path", { d: reanChevronPath(x, y, w, h, d, i === 0), ...LINE, pathLength: "1", class: "rean-chev rean-chev-" + i });
+        prepStroke(p);
+        svg.appendChild(p);
+        const t = svgText(x + w / 2 + (i === 0 ? -2 : 5), y + h / 2 + 2.5, "middle", STAGES[i], "tool-label neutral rean-stage rean-stage-" + i);
+        svg.appendChild(t);
+      }
+      // Return arc: right edge of NURTURE back under the row to ENGAGE's left edge.
+      const arc = svgEl("path", { d: "M 332 78 C 332 126, 120 132, 99 84", fill: "none", stroke: "var(--red)", "stroke-width": "1.5", pathLength: "1", class: "rean-arc" });
+      prepStroke(arc);
+      svg.appendChild(arc);
+      const head = arrowHead(99, 84, -115, "rean-arc-head");
+      head.setAttribute("fill", "var(--red)");
+      head.setAttribute("stroke", "var(--red)");
+      head.style.opacity = "0";
+      svg.appendChild(head);
+      return svg;
+    },
+    assemble(el) {
+      const chevs = [0, 1, 2, 3].map((i) => el.querySelector(".rean-chev-" + i));
+      const stages = [0, 1, 2, 3].map((i) => el.querySelectorAll(".rean-stage-" + i)[0]);
+      const arc = el.querySelector(".rean-arc");
+      const head = el.querySelector(".rean-arc-head");
+      function applyFinal() {
+        chevs.forEach((c) => snapStroke(c));
+        stages.forEach((s) => s.classList.add("show"));
+        snapStroke(arc);
+        head.style.transition = "none";
+        head.style.opacity = "1";
+      }
+      if (reduced()) { applyFinal(); return { doneAt: 0, timers: [], applyFinal }; }
+      const timers = [];
+      chevs.forEach((c, i) => {
+        timers.push(setTimeout(() => { runStroke(c, 160); stages[i].classList.add("show"); }, i * 120));
+      });
+      timers.push(setTimeout(() => { runStroke(arc, 280); }, 540));
+      timers.push(setTimeout(() => { head.style.transition = "opacity 100ms ease"; head.style.opacity = "1"; }, 800));
+      return { doneAt: 900, timers, applyFinal };
+    },
+  },
+
+  coremodel: {
+    thumb() {
+      const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
+      svg.appendChild(svgEl("rect", { x: 55, y: 60, width: 50, height: 40, ...LINE }));
+      for (let i = 0; i < 3; i++) {
+        svg.appendChild(svgEl("path", { d: "M 30 " + (66 + i * 12) + " l 12 0 l 5 4 l -5 4 l -12 0 z", ...LINE, "stroke-width": "1" }));
+        svg.appendChild(svgEl("path", { d: "M 113 " + (66 + i * 12) + " l 12 0 l 5 4 l -5 4 l -12 0 z", ...LINE, "stroke-width": "1" }));
+      }
+      for (let i = 0; i < 3; i++) {
+        svg.appendChild(svgEl("line", { x1: 60, y1: 42 + i * 5, x2: 76, y2: 42 + i * 5, ...LINE, "stroke-width": "1" }));
+        svg.appendChild(svgEl("line", { x1: 84, y1: 42 + i * 5, x2: 100, y2: 42 + i * 5, ...LINE, "stroke-width": "1" }));
+      }
+      return svg;
+    },
+    stageWidth(mobile) { return mobile ? "min(360px, calc(100vw - 3rem))" : "min(540px, 90vw)"; },
+    buildStage() {
+      const narrow = window.innerWidth < 500;
+      const svg = svgEl("svg", { viewBox: narrow ? "0 0 300 210" : "0 0 360 180", draggable: "false" });
+      const R = narrow ? { x: 105, y: 96, w: 90, h: 74 } : { x: 130, y: 66, w: 100, h: 84 };
+      const rect = svgEl("rect", { x: R.x, y: R.y, width: R.w, height: R.h, ...LINE, pathLength: "1", class: "cm-rect" });
+      prepStroke(rect);
+      svg.appendChild(rect);
+      svg.appendChild(svgText(R.x + R.w / 2, R.y + R.h / 2 + 2.5, "middle", "CORE CONTENT", "tool-label neutral cm-corelabel cm-rectlabel"));
+
+      const nCh = narrow ? 2 : 4;
+      const chH = 16, chGap = narrow ? 10 : 5;
+      const colH = nCh * chH + (nCh - 1) * chGap;
+      const chY0 = R.y + (R.h - colH) / 2;
+      const mkChev = (x, i, cls) => {
+        const y = chY0 + i * (chH + chGap);
+        const p = svgEl("path", { d: "M " + x + " " + y + " l 30 0 l 9 " + chH / 2 + " l -9 " + chH / 2 + " l -30 0 z", ...LINE, "stroke-width": "1.2", class: cls });
+        p.style.opacity = "0";
+        return p;
+      };
+      for (let i = 0; i < nCh; i++) {
+        svg.appendChild(mkChev(R.x - 62, i, "cm-in cm-in-" + i));
+        svg.appendChild(mkChev(R.x + R.w + 14, i, "cm-fwd cm-fwd-" + i));
+      }
+      svg.appendChild(svgText(R.x - 43, chY0 - 10, "middle", "INWARD PATHS", "tool-label neutral cm-colhead cm-pathlabel-in"));
+      svg.appendChild(svgText(R.x + R.w + 37, chY0 - 10, "middle", "FORWARD PATHS", "tool-label neutral cm-colhead cm-pathlabel-fwd"));
+
+      // Goal blocks: two stacks of ruled lines, side by side on desktop,
+      // stacked vertically on narrow screens.
+      const stacks = narrow
+        ? [{ x: R.x + 8, y: 24, label: "BUSINESS GOALS" }, { x: R.x + 8, y: 58, label: "USER TASKS" }]
+        : [{ x: R.x + 4, y: 30, label: "BUSINESS GOALS" }, { x: R.x + R.w / 2 + 6, y: 30, label: "USER TASKS" }];
+      stacks.forEach((st, si) => {
+        svg.appendChild(svgText(st.x + 20, st.y - 6, "middle", st.label, "tool-label neutral cm-colhead cm-goal-" + si));
+        for (let i = 0; i < 3; i++) {
+          const ln = svgEl("line", { x1: st.x, y1: st.y + i * 6, x2: st.x + 40, y2: st.y + i * 6, ...LINE, "stroke-width": "1", pathLength: "1", class: "cm-rule cm-rule-" + si });
+          prepStroke(ln);
+          svg.appendChild(ln);
+        }
+      });
+      return svg;
+    },
+    assemble(el) {
+      const rect = el.querySelector(".cm-rect");
+      const rectLabel = el.querySelector(".cm-rectlabel");
+      const rules = [...el.querySelectorAll(".cm-rule")];
+      const goalLabels = [el.querySelector(".cm-goal-0"), el.querySelector(".cm-goal-1")];
+      const ins = [...el.querySelectorAll(".cm-in")];
+      const fwds = [...el.querySelectorAll(".cm-fwd")];
+      const pathLabels = [el.querySelector(".cm-pathlabel-in"), el.querySelector(".cm-pathlabel-fwd")];
+      function applyFinal() {
+        snapStroke(rect);
+        rectLabel.classList.add("show");
+        rules.forEach(snapStroke);
+        goalLabels.forEach((l) => l.classList.add("show"));
+        [...ins, ...fwds].forEach((c) => { c.style.transition = "none"; c.style.opacity = "1"; });
+        pathLabels.forEach((l) => l.classList.add("show"));
+      }
+      if (reduced()) { applyFinal(); return { doneAt: 0, timers: [], applyFinal }; }
+      const timers = [];
+      timers.push(setTimeout(() => { runStroke(rect, 240); }, 0));
+      timers.push(setTimeout(() => rectLabel.classList.add("show"), 220));
+      timers.push(setTimeout(() => {
+        rules.forEach((r, i) => setTimeout(() => runStroke(r, 90), i * 25));
+        goalLabels.forEach((l) => l.classList.add("show"));
+      }, 300));
+      ins.forEach((c, i) => timers.push(setTimeout(() => { c.style.transition = "opacity 110ms ease"; c.style.opacity = "1"; }, 560 + i * 70)));
+      timers.push(setTimeout(() => pathLabels[0].classList.add("show"), 560));
+      fwds.forEach((c, i) => timers.push(setTimeout(() => { c.style.transition = "opacity 110ms ease"; c.style.opacity = "1"; }, 840 + i * 70)));
+      timers.push(setTimeout(() => pathLabels[1].classList.add("show"), 840));
+      return { doneAt: 1120 + 110, timers, applyFinal };
+    },
+  },
+
+  peakend: {
+    thumb() {
+      const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
+      svg.appendChild(svgEl("path", { d: "M 25 130 L 25 40 M 25 130 L 135 130", ...LINE, "stroke-width": "1" }));
+      svg.appendChild(svgEl("path", { d: PEAKEND_D_THUMB, ...LINE }));
+      svg.appendChild(svgEl("circle", { cx: 95, cy: 55, r: 4, fill: "currentColor", stroke: "none" }));
+      svg.appendChild(svgEl("circle", { cx: 133, cy: 92, r: 4, fill: "currentColor", stroke: "none" }));
+      return svg;
+    },
+    stageWidth(mobile) { return mobile ? "min(380px, calc(100vw - 3rem))" : "min(560px, 90vw)"; },
+    buildStage() {
+      const svg = svgEl("svg", { viewBox: "0 0 360 190", draggable: "false" });
+      const axes = svgEl("path", { d: "M 30 20 L 30 155 L 340 155", ...LINE, "stroke-width": "1.2", pathLength: "1", class: "pe-axes" });
+      prepStroke(axes);
+      svg.appendChild(axes);
+      svg.appendChild(svgText(30, 14, "middle", "INTENSITY", "tool-label neutral pe-axlabel pe-ax-0"));
+      svg.appendChild(svgText(340, 168, "end", "TIME", "tool-label neutral pe-axlabel pe-ax-1"));
+      const line = svgEl("path", { d: PEAKEND_D_STAGE, ...LINE, pathLength: "1", class: "pe-line" });
+      prepStroke(line);
+      svg.appendChild(line);
+      const avg = svgEl("line", { x1: 34, y1: 108, x2: 336, y2: 108, stroke: "currentColor", "stroke-width": "1", "stroke-dasharray": "4 5", class: "pe-avg" });
+      avg.style.opacity = "0";
+      svg.appendChild(avg);
+      svg.appendChild(svgText(40, 103, "start", "AVERAGE", "tool-label neutral dim pe-avglabel"));
+      const peak = svgEl("circle", { cx: 235, cy: 42, r: 4.5, fill: "var(--red)", stroke: "none", class: "pe-peak" });
+      peak.style.opacity = "0";
+      svg.appendChild(peak);
+      svg.appendChild(svgText(235, 28, "middle", "PEAK", "tool-label pe-peaklabel"));
+      const end = svgEl("circle", { cx: 336, cy: 96, r: 4.5, fill: "var(--red)", stroke: "none", class: "pe-end" });
+      end.style.opacity = "0";
+      svg.appendChild(end);
+      svg.appendChild(svgText(330, 132, "middle", "END", "tool-label pe-endlabel"));
+      return svg;
+    },
+    assemble(el) {
+      const axes = el.querySelector(".pe-axes");
+      const axLabels = [...el.querySelectorAll(".pe-axlabel")];
+      const line = el.querySelector(".pe-line");
+      const avg = el.querySelector(".pe-avg");
+      const avgLabel = el.querySelector(".pe-avglabel");
+      const peak = el.querySelector(".pe-peak"), peakLabel = el.querySelector(".pe-peaklabel");
+      const end = el.querySelector(".pe-end"), endLabel = el.querySelector(".pe-endlabel");
+      function applyFinal() {
+        snapStroke(axes); snapStroke(line);
+        axLabels.forEach((l) => l.classList.add("show"));
+        avg.style.transition = "none"; avg.style.opacity = "0.4";
+        avgLabel.classList.add("show");
+        [peak, end].forEach((d) => { d.style.transition = "none"; d.style.opacity = "1"; });
+        peakLabel.classList.add("show"); endLabel.classList.add("show");
+      }
+      if (reduced()) { applyFinal(); return { doneAt: 0, timers: [], applyFinal }; }
+      const timers = [];
+      timers.push(setTimeout(() => { runStroke(axes, 220); axLabels.forEach((l) => l.classList.add("show")); }, 0));
+      timers.push(setTimeout(() => { runStroke(line, 420); }, 200));
+      timers.push(setTimeout(() => { avg.style.transition = "opacity 140ms ease"; avg.style.opacity = "0.4"; avgLabel.classList.add("show"); }, 650));
+      timers.push(setTimeout(() => { peak.style.transition = "opacity 120ms ease"; peak.style.opacity = "1"; peakLabel.classList.add("show"); }, 840));
+      timers.push(setTimeout(() => { end.style.transition = "opacity 120ms ease"; end.style.opacity = "1"; endLabel.classList.add("show"); }, 1000));
+      return { doneAt: 1120, timers, applyFinal };
+    },
+  },
+
+  kano: {
+    thumb() {
+      const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
+      svg.appendChild(svgEl("path", { d: "M 80 25 L 80 135 M 25 80 L 135 80", ...LINE, "stroke-width": "1" }));
+      svg.appendChild(svgEl("path", { d: "M 30 125 C 60 70, 90 45, 130 35", ...LINE }));
+      svg.appendChild(svgEl("path", { d: "M 30 125 L 130 40", ...LINE, "stroke-width": "1" }));
+      svg.appendChild(svgEl("path", { d: "M 30 130 C 65 90, 95 78, 130 74", ...LINE, "stroke-width": "1" }));
+      return svg;
+    },
+    stageWidth(mobile) { return mobile ? "min(360px, calc(100vw - 3rem))" : "min(540px, 90vw)"; },
+    buildStage() {
+      const narrow = window.innerWidth < 500;
+      const svg = svgEl("svg", { viewBox: "0 0 340 205", draggable: "false" });
+      const axes = svgEl("path", { d: "M 170 16 L 170 186 M 22 101 L 322 101", ...LINE, "stroke-width": "1.1", pathLength: "1", class: "kn-axes" });
+      prepStroke(axes);
+      svg.appendChild(axes);
+      svg.appendChild(svgText(170, 10, "middle", "SATISFACTION", "tool-label neutral kn-axlabel"));
+      svg.appendChild(svgText(322, 114, "end", "IMPLEMENTATION", "tool-label neutral kn-axlabel"));
+      const L = narrow ? { d: "DELIGHT", p: "PERF", m: "MUST" } : { d: "DELIGHTER", p: "PERFORMANCE", m: "MUST-BE" };
+      const mkCurve = (d, cls, stroke, w2) => {
+        const p = svgEl("path", { d, fill: "none", stroke, "stroke-width": w2, "stroke-linecap": "round", pathLength: "1", class: cls });
+        prepStroke(p);
+        return p;
+      };
+      svg.appendChild(mkCurve("M 30 182 C 95 122, 160 104, 300 92", "kn-must", "rgba(255,255,255,0.45)", "1.3"));
+      svg.appendChild(mkCurve("M 30 178 L 300 30", "kn-perf", "currentColor", "1.3"));
+      svg.appendChild(mkCurve("M 30 132 C 120 128, 165 48, 300 24", "kn-delight", "var(--red)", "1.6"));
+      svg.appendChild(svgText(305, 95, "start", L.m, "tool-label neutral dim kn-lab kn-lab-must"));
+      svg.appendChild(svgText(305, 33, "start", L.p, "tool-label neutral kn-lab kn-lab-perf"));
+      svg.appendChild(svgText(305, 21, "start", L.d, "tool-label kn-lab kn-lab-delight"));
+      if (!narrow) {
+        const decay = svgEl("path", { d: "M 218 38 C 232 52, 236 68, 230 84", fill: "none", stroke: "var(--red)", "stroke-width": "1.2", pathLength: "1", class: "kn-decay" });
+        prepStroke(decay);
+        svg.appendChild(decay);
+        const head = arrowHead(230, 84, 105, "kn-decay-head");
+        head.setAttribute("fill", "var(--red)");
+        head.setAttribute("stroke", "var(--red)");
+        head.style.opacity = "0";
+        svg.appendChild(head);
+        svg.appendChild(svgText(252, 47, "middle", "OVER TIME", "tool-label kn-decaylabel"));
+      }
+      return svg;
+    },
+    assemble(el) {
+      const axes = el.querySelector(".kn-axes");
+      const axLabels = [...el.querySelectorAll(".kn-axlabel")];
+      const curves = ["must", "perf", "delight"].map((k) => el.querySelector(".kn-" + k));
+      const labels = ["must", "perf", "delight"].map((k) => el.querySelector(".kn-lab-" + k));
+      const decay = el.querySelector(".kn-decay");
+      const decayHead = el.querySelector(".kn-decay-head");
+      const decayLabel = el.querySelector(".kn-decaylabel");
+      function applyFinal() {
+        snapStroke(axes);
+        axLabels.forEach((l) => l.classList.add("show"));
+        curves.forEach(snapStroke);
+        labels.forEach((l) => l.classList.add("show"));
+        if (decay) { snapStroke(decay); decayHead.style.transition = "none"; decayHead.style.opacity = "1"; decayLabel.classList.add("show"); }
+      }
+      if (reduced()) { applyFinal(); return { doneAt: 0, timers: [], applyFinal }; }
+      const timers = [];
+      timers.push(setTimeout(() => { runStroke(axes, 200); axLabels.forEach((l) => l.classList.add("show")); }, 0));
+      curves.forEach((c, i) => timers.push(setTimeout(() => { runStroke(c, 260); labels[i].classList.add("show"); }, 220 + i * 180)));
+      if (decay) {
+        timers.push(setTimeout(() => { runStroke(decay, 180); decayLabel.classList.add("show"); }, 860));
+        timers.push(setTimeout(() => { decayHead.style.transition = "opacity 90ms ease"; decayHead.style.opacity = "1"; }, 1030));
+      }
+      return { doneAt: 1120, timers, applyFinal };
+    },
+  },
+
+  doublediamond: {
+    thumb() {
+      const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
+      svg.appendChild(svgEl("polygon", { points: "20,80 55,48 90,80 55,112", ...LINE }));
+      svg.appendChild(svgEl("polygon", { points: "90,80 125,48 160,80 125,112", ...LINE }));
+      return svg;
+    },
+    stageWidth(mobile) { return mobile ? "min(380px, calc(100vw - 3rem))" : "min(600px, 92vw)"; },
+    buildStage() {
+      const svg = svgEl("svg", { viewBox: "0 0 380 190", draggable: "false" });
+      const d1 = svgEl("path", { d: "M 30 95 L 105 35 L 180 95 L 105 155 Z", ...LINE, pathLength: "1", class: "dd-d1" });
+      const d2 = svgEl("path", { d: "M 180 95 L 255 35 L 330 95 L 255 155 Z", ...LINE, pathLength: "1", class: "dd-d2" });
+      [d1, d2].forEach(prepStroke);
+      svg.appendChild(d1);
+      svg.appendChild(d2);
+      const mid = svgEl("line", { x1: 180, y1: 45, x2: 180, y2: 145, stroke: "currentColor", "stroke-width": "1", class: "dd-mid" });
+      mid.style.opacity = "0";
+      svg.appendChild(mid);
+      const PHASES = [["DISCOVER", 67], ["DEFINE", 142], ["DEVELOP", 217], ["DELIVER", 292]];
+      PHASES.forEach(([txt, x], i) => svg.appendChild(svgText(x, 24, "middle", txt, "tool-label neutral dd-phase dd-phase-" + i)));
+      svg.appendChild(svgText(105, 176, "middle", "THE PROBLEM", "tool-label dd-lower dd-lower-0"));
+      svg.appendChild(svgText(255, 176, "middle", "THE SOLUTION", "tool-label dd-lower dd-lower-1"));
+      const ARROWS = [70, 140, 220, 290];
+      ARROWS.forEach((x, i) => {
+        const g = svgEl("g", { class: "dd-arrow dd-arrow-" + i });
+        g.appendChild(svgEl("line", { x1: x - 9, y1: 95, x2: x + 5, y2: 95, stroke: "currentColor", "stroke-width": "1" }));
+        const h = arrowHead(x + 6, 95, 0, "");
+        h.setAttribute("fill", "currentColor");
+        g.appendChild(h);
+        g.style.opacity = "0";
+        svg.appendChild(g);
+      });
+      return svg;
+    },
+    assemble(el) {
+      const d1 = el.querySelector(".dd-d1"), d2 = el.querySelector(".dd-d2"), mid = el.querySelector(".dd-mid");
+      const phases = [...el.querySelectorAll(".dd-phase")];
+      const lowers = [...el.querySelectorAll(".dd-lower")];
+      const arrows = [...el.querySelectorAll(".dd-arrow")];
+      function applyFinal() {
+        [d1, d2].forEach(snapStroke);
+        mid.style.transition = "none"; mid.style.opacity = "0.5";
+        phases.forEach((p) => p.classList.add("show"));
+        lowers.forEach((l) => l.classList.add("show"));
+        arrows.forEach((a) => { a.style.transition = "none"; a.style.opacity = "0.7"; });
+      }
+      if (reduced()) { applyFinal(); return { doneAt: 0, timers: [], applyFinal }; }
+      const timers = [];
+      timers.push(setTimeout(() => runStroke(d1, 260), 0));
+      timers.push(setTimeout(() => runStroke(d2, 260), 240));
+      timers.push(setTimeout(() => { mid.style.transition = "opacity 120ms ease"; mid.style.opacity = "0.5"; }, 480));
+      phases.forEach((p, i) => timers.push(setTimeout(() => p.classList.add("show"), 540 + i * 80)));
+      timers.push(setTimeout(() => lowers.forEach((l) => l.classList.add("show")), 880));
+      timers.push(setTimeout(() => arrows.forEach((a) => { a.style.transition = "opacity 140ms ease"; a.style.opacity = "0.7"; }), 1000));
+      return { doneAt: 1140, timers, applyFinal };
+    },
+  },
+
+  fivewhys: {
+    thumb() {
+      const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
+      const widths = [56, 74, 92, 110, 128];
+      widths.forEach((w, i) => {
+        svg.appendChild(svgEl("rect", { x: 80 - w / 2, y: 22 + i * 25, width: w, height: 12, ...LINE, "stroke-width": i === 4 ? "2" : "1.2" }));
+        if (i < 4) svg.appendChild(svgEl("line", { x1: 80, y1: 34 + i * 25 + 2, x2: 80, y2: 34 + i * 25 + 9, ...LINE, "stroke-width": "1" }));
+      });
+      return svg;
+    },
+    stageWidth(mobile) { return mobile ? "min(320px, calc(100vw - 3rem))" : "min(440px, 86vw)"; },
+    buildStage() {
+      const svg = svgEl("svg", { viewBox: "0 0 300 215", draggable: "false" });
+      const widths = [100, 130, 160, 190, 220];
+      widths.forEach((w, i) => {
+        const y = 12 + i * 40;
+        const r = svgEl("rect", { x: 150 - w / 2, y, width: w, height: 20, ...LINE, "stroke-width": i === 4 ? "2.2" : "1.3", pathLength: "1", class: "fw-rect fw-rect-" + i });
+        prepStroke(r);
+        svg.appendChild(r);
+        if (i < 4) {
+          const ay = y + 24;
+          const g = svgEl("g", { class: "fw-arrow fw-arrow-" + i });
+          g.appendChild(svgEl("line", { x1: 150, y1: ay, x2: 150, y2: ay + 9, stroke: "currentColor", "stroke-width": "1.1" }));
+          const h = arrowHead(150, ay + 10.5, 90, "");
+          h.setAttribute("fill", "currentColor");
+          g.appendChild(h);
+          g.style.opacity = "0";
+          svg.appendChild(g);
+          svg.appendChild(svgText(162, ay + 9, "start", "WHY", "tool-label fw-why fw-why-" + i));
+        }
+      });
+      svg.appendChild(svgText(150, 25, "middle", "SYMPTOM", "tool-label neutral dim fw-symptom"));
+      svg.appendChild(svgText(150, 185, "middle", "CAUSE", "tool-label fw-cause"));
+      return svg;
+    },
+    assemble(el) {
+      const rects = [...el.querySelectorAll(".fw-rect")];
+      const arrows = [...el.querySelectorAll(".fw-arrow")];
+      const whys = [...el.querySelectorAll(".fw-why")];
+      const symptom = el.querySelector(".fw-symptom");
+      const cause = el.querySelector(".fw-cause");
+      function applyFinal() {
+        rects.forEach(snapStroke);
+        arrows.forEach((a) => { a.style.transition = "none"; a.style.opacity = "0.8"; });
+        whys.forEach((w) => w.classList.add("show"));
+        symptom.classList.add("show");
+        cause.classList.add("show");
+      }
+      if (reduced()) { applyFinal(); return { doneAt: 0, timers: [], applyFinal }; }
+      const timers = [];
+      timers.push(setTimeout(() => { runStroke(rects[0], 150); symptom.classList.add("show"); }, 0));
+      for (let i = 0; i < 4; i++) {
+        timers.push(setTimeout(() => {
+          arrows[i].style.transition = "opacity 100ms ease";
+          arrows[i].style.opacity = "0.8";
+          whys[i].classList.add("show");
+        }, 170 + i * 200));
+        timers.push(setTimeout(() => runStroke(rects[i + 1], 150), 250 + i * 200));
+      }
+      timers.push(setTimeout(() => cause.classList.add("show"), 1060));
+      return { doneAt: 1160, timers, applyFinal };
+    },
+  },
+
+  crazyeights: {
+    thumb() {
+      const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
+      // Eight frames — the sheet folded into 4x2, as the name promises.
+      svg.appendChild(svgEl("path", { d: "M 25 45 L 134 44 L 135 116 L 26 117 Z", ...LINE }));
+      svg.appendChild(svgEl("line", { x1: 52.5, y1: 45, x2: 52.5, y2: 116, ...LINE, "stroke-width": "1.8" }));
+      svg.appendChild(svgEl("line", { x1: 80, y1: 44.6, x2: 80, y2: 116.4, ...LINE, "stroke-width": "1.8" }));
+      svg.appendChild(svgEl("line", { x1: 107.5, y1: 44.8, x2: 107.5, y2: 116.2, ...LINE, "stroke-width": "1.8" }));
+      svg.appendChild(svgEl("line", { x1: 25.5, y1: 80.5, x2: 134.5, y2: 80, ...LINE, "stroke-width": "1.8" }));
+      return svg;
+    },
+    stageWidth(mobile) { return mobile ? "min(320px, calc(100vw - 3rem))" : "min(540px, 90vw)"; },
+    buildStage() {
+      const narrow = window.innerWidth < 500;
+      const svg = svgEl("svg", { viewBox: narrow ? "0 0 260 268" : "0 0 340 180", draggable: "false" });
+      // The sheet: outer edge hand-jittered so it reads as paper, fold
+      // lines heavier than a table's rules would be.
+      const S = narrow ? { x: 20, y: 14, w: 220, h: 140 } : { x: 20, y: 20, w: 220, h: 140 };
+      const edge = svgEl("path", {
+        d: "M " + S.x + " " + (S.y + 1) + " L " + (S.x + S.w * 0.5) + " " + (S.y - 0.8) + " L " + (S.x + S.w) + " " + (S.y + 0.6) +
+           " L " + (S.x + S.w + 0.9) + " " + (S.y + S.h * 0.5) + " L " + (S.x + S.w - 0.6) + " " + (S.y + S.h) +
+           " L " + (S.x + S.w * 0.5) + " " + (S.y + S.h + 0.9) + " L " + (S.x + 0.7) + " " + (S.y + S.h - 0.5) + " Z",
+        ...LINE, "stroke-width": "1.3", pathLength: "1", class: "ce-edge",
+      });
+      prepStroke(edge);
+      svg.appendChild(edge);
+      // Three vertical folds and one horizontal: eight frames, as the
+      // name promises. The copy's six-frame variant lives in the text.
+      const folds = [];
+      [1 / 4, 2 / 4, 3 / 4].forEach((f, i) => {
+        const x = S.x + S.w * f + (i === 0 ? 0.6 : i === 1 ? -0.4 : 0.3);
+        const ln = svgEl("line", { x1: x, y1: S.y + 0.5, x2: x - 0.8, y2: S.y + S.h - 0.5, stroke: "currentColor", "stroke-width": "1.9", "stroke-linecap": "round", pathLength: "1", class: "ce-fold ce-fold-v" });
+        prepStroke(ln);
+        folds.push(ln);
+        svg.appendChild(ln);
+      });
+      const hy = S.y + S.h / 2;
+      const hl = svgEl("line", { x1: S.x + 0.5, y1: hy - 0.5, x2: S.x + S.w - 0.5, y2: hy + 0.7, stroke: "currentColor", "stroke-width": "1.9", "stroke-linecap": "round", pathLength: "1", class: "ce-fold ce-fold-h" });
+      prepStroke(hl);
+      folds.push(hl);
+      svg.appendChild(hl);
+      for (let i = 0; i < 8; i++) {
+        const col = i % 4, row = Math.floor(i / 4);
+        const nx = S.x + (S.w * (col + 1)) / 4 - 6;
+        const ny = S.y + S.h * (row + 1) / 2 - 7;
+        const n = svgText(nx, ny, "end", String(i + 1), "tool-label neutral dim ce-num ce-num-" + i);
+        svg.appendChild(n);
+      }
+      // The timer, beside the sheet on desktop, below it on narrow screens.
+      const T = narrow ? { cx: 130, cy: S.y + S.h + 46, r: 26 } : { cx: 293, cy: 74, r: 28 };
+      const face = svgEl("circle", { cx: T.cx, cy: T.cy, r: T.r, ...LINE, "stroke-width": "1.3", pathLength: "1", class: "ce-face" });
+      prepStroke(face);
+      svg.appendChild(face);
+      const hand = svgEl("line", { x1: T.cx, y1: T.cy, x2: T.cx + T.r * 0.55, y2: T.cy - T.r * 0.62, stroke: "currentColor", "stroke-width": "1.4", "stroke-linecap": "round", class: "ce-hand" });
+      hand.style.opacity = "0";
+      svg.appendChild(hand);
+      const a0 = -Math.PI / 2, a1 = a0 + Math.PI * 1.65;
+      const arc = svgEl("path", {
+        d: "M " + T.cx + " " + (T.cy - T.r - 5) + " A " + (T.r + 5) + " " + (T.r + 5) + " 0 1 1 " +
+           (T.cx + (T.r + 5) * Math.cos(a1)) + " " + (T.cy + (T.r + 5) * Math.sin(a1)),
+        fill: "none", stroke: "var(--red)", "stroke-width": "1.6", "stroke-linecap": "round", pathLength: "1", class: "ce-arc",
+      });
+      prepStroke(arc);
+      svg.appendChild(arc);
+      svg.appendChild(svgText(T.cx, T.cy + T.r + 22, "middle", "30 SECONDS", "tool-label ce-timerlabel"));
+      return svg;
+    },
+    assemble(el) {
+      const edge = el.querySelector(".ce-edge");
+      const foldsV = [...el.querySelectorAll(".ce-fold-v")];
+      const foldH = el.querySelector(".ce-fold-h");
+      const nums = [...el.querySelectorAll(".ce-num")];
+      const face = el.querySelector(".ce-face");
+      const hand = el.querySelector(".ce-hand");
+      const arc = el.querySelector(".ce-arc");
+      const timerLabel = el.querySelector(".ce-timerlabel");
+      function applyFinal() {
+        [edge, ...foldsV, foldH, face, arc].forEach(snapStroke);
+        nums.forEach((n) => n.classList.add("show"));
+        hand.style.transition = "none"; hand.style.opacity = "1";
+        timerLabel.classList.add("show");
+      }
+      if (reduced()) { applyFinal(); return { doneAt: 0, timers: [], applyFinal }; }
+      const timers = [];
+      timers.push(setTimeout(() => runStroke(edge, 220), 0));
+      foldsV.forEach((f, i) => timers.push(setTimeout(() => runStroke(f, 110), 220 + i * 80)));
+      timers.push(setTimeout(() => runStroke(foldH, 130), 460));
+      nums.forEach((n, i) => timers.push(setTimeout(() => n.classList.add("show"), 520 + i * 36)));
+      timers.push(setTimeout(() => runStroke(face, 170), 830));
+      timers.push(setTimeout(() => { hand.style.transition = "opacity 90ms ease"; hand.style.opacity = "1"; }, 990));
+      timers.push(setTimeout(() => { runStroke(arc, 190); timerLabel.classList.add("show"); }, 1000));
+      return { doneAt: 1190, timers, applyFinal };
+    },
+  },
+
+  silentvoting: {
+    thumb() {
+      const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
+      for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) {
+        svg.appendChild(svgEl("rect", { x: 28 + c * 38, y: 30 + r * 36, width: 30, height: 24, ...LINE, "stroke-width": "1" }));
+      }
+      [[44, 40], [82, 42], [120, 76], [46, 112], [84, 108]].forEach(([x, y]) => {
+        svg.appendChild(svgEl("circle", { cx: x, cy: y, r: 3.2, fill: "currentColor", stroke: "none" }));
+      });
+      return svg;
+    },
+    stageWidth(mobile) { return mobile ? "min(360px, calc(100vw - 3rem))" : "min(540px, 90vw)"; },
+    buildStage() {
+      const svg = svgEl("svg", { viewBox: "0 0 340 190", draggable: "false" });
+      const CARD_W = 54, CARD_H = 40;
+      const xs = [30, 96, 162], ys = [20, 72, 124];
+      const rnd = mulberry32(8181);
+      for (let i = 0; i < 9; i++) {
+        const x = xs[i % 3], y = ys[Math.floor(i / 3)];
+        const card = svgEl("rect", { x, y, width: CARD_W, height: CARD_H, ...LINE, "stroke-width": "1.1", pathLength: "1", class: "sv-card sv-card-" + i });
+        prepStroke(card);
+        svg.appendChild(card);
+        const nLines = 2 + (i % 2);
+        for (let l = 0; l < nLines; l++) {
+          const lw = 18 + rnd() * 22;
+          const ln = svgEl("line", { x1: x + 8, y1: y + 10 + l * 9, x2: x + 8 + lw, y2: y + 10 + l * 9, stroke: "rgba(255,255,255,0.4)", "stroke-width": "1", pathLength: "1", class: "sv-sketch sv-sketch-" + i });
+          prepStroke(ln);
+          svg.appendChild(ln);
+        }
+      }
+      /* Dots clustered unevenly: some cards three, some one, two with
+         none. Two dots noticeably larger — weight in the vote, not the
+         timing. */
+      const DOTS = [
+        [0, 3, false], [1, 1, false], [2, 0, false],
+        [3, 2, false], [4, 3, true], [5, 1, false],
+        [6, 0, false], [7, 1, true], [8, 2, false],
+      ];
+      let dotIdx = 0;
+      const dotPositions = [];
+      DOTS.forEach(([card, n, hasBig]) => {
+        const x = xs[card % 3], y = ys[Math.floor(card / 3)];
+        for (let k = 0; k < n; k++) {
+          dotPositions.push({ cx: x + 12 + ((dotIdx * 7 + k * 17) % (CARD_W - 22)), cy: y + CARD_H - 9 - ((dotIdx * 5 + k * 9) % 14), r: 3.2, big: false });
+          dotIdx++;
+        }
+        if (hasBig) {
+          dotPositions.push({ cx: x + CARD_W - 13, cy: y + 12, r: 5.6, big: true });
+        }
+      });
+      dotPositions.forEach((d, i) => {
+        const c = svgEl("circle", { cx: d.cx.toFixed(1), cy: d.cy.toFixed(1), r: d.r, fill: "var(--red)", stroke: "none", class: "sv-dot" + (d.big ? " sv-dot-big" : "") + " sv-dot-" + i });
+        c.style.opacity = "0";
+        svg.appendChild(c);
+      });
+      // The sequence of voters, seniors last.
+      const FY = [40, 85, 130];
+      const seq = svgEl("line", { x1: 300, y1: FY[0], x2: 300, y2: FY[2], stroke: "currentColor", "stroke-width": "1", pathLength: "1", class: "sv-seqline" });
+      prepStroke(seq);
+      svg.appendChild(seq);
+      FY.forEach((fy, i) => {
+        const f = svgEl("circle", { cx: 300, cy: fy, r: 7, ...LINE, "stroke-width": "1.2", pathLength: "1", class: "sv-fig sv-fig-" + i });
+        prepStroke(f);
+        svg.appendChild(f);
+      });
+      svg.appendChild(svgText(300, 152, "middle", "LAST", "tool-label sv-last"));
+      return svg;
+    },
+    assemble(el) {
+      const cards = [...el.querySelectorAll(".sv-card")];
+      const sketches = [...el.querySelectorAll(".sv-sketch")];
+      const dots = [...el.querySelectorAll(".sv-dot:not(.sv-dot-big)")];
+      const bigDots = [...el.querySelectorAll(".sv-dot-big")];
+      const seqLine = el.querySelector(".sv-seqline");
+      const figs = [...el.querySelectorAll(".sv-fig")];
+      const last = el.querySelector(".sv-last");
+      function applyFinal() {
+        [...cards, ...sketches, seqLine, ...figs].forEach(snapStroke);
+        [...dots, ...bigDots].forEach((d) => { d.style.transition = "none"; d.style.opacity = "1"; });
+        last.classList.add("show");
+      }
+      if (reduced()) { applyFinal(); return { doneAt: 0, timers: [], applyFinal }; }
+      const timers = [];
+      cards.forEach((c, i) => timers.push(setTimeout(() => runStroke(c, 110), i * 40)));
+      timers.push(setTimeout(() => sketches.forEach((s) => runStroke(s, 90)), 300));
+      const scatter = [4, 9, 1, 7, 11, 2, 8, 0, 5, 10, 3, 6];
+      dots.forEach((d, i) => {
+        const at = 460 + (scatter[i % scatter.length] * 28);
+        timers.push(setTimeout(() => { d.style.transition = "opacity 80ms ease"; d.style.opacity = "1"; }, at));
+      });
+      bigDots.forEach((d, i) => timers.push(setTimeout(() => { d.style.transition = "opacity 110ms ease"; d.style.opacity = "1"; }, 830 + i * 70)));
+      timers.push(setTimeout(() => runStroke(seqLine, 120), 940));
+      figs.forEach((f, i) => timers.push(setTimeout(() => runStroke(f, 90), 980 + i * 60)));
+      timers.push(setTimeout(() => last.classList.add("show"), 1130));
+      return { doneAt: 1180, timers, applyFinal };
+    },
+  },
+
 };
 
 /* ============================================================
@@ -2125,34 +2764,94 @@ export const DIAGRAMS = {
    is the subpage URL segment; `shortName` is the single-line
    overview label; `name` is the full title on the tool's page.
    ============================================================ */
+/* The overview renders TOOLS in array order, and the array order is the
+   page's information architecture: strongest first, grouped by purpose,
+   with the groups never labelled — the sequence carries the meaning on
+   its own. Do not sort, shuffle, or append casually; a new model gets
+   spliced into its slot in this list. */
 export const TOOLS = [
   {
-    id: "design-thinking",
-    slug: "design-thinking",
-    diagram: "venn",
+    id: "service-blueprint",
+    slug: "service-blueprint",
+    diagram: "layered",
     ready: true,
-    shortName: "Design Thinking",
-    name: "Design Thinking: The Three Lenses",
-    attribution: "IDEO / Tim Brown, Change by Design, 2009",
-    whatItIs: "Desirable, viable, feasible. A solution has to sit where all three meet.",
-    strongFor: "Stopping a team that has already fallen in love with one solution. Naming which lens is missing turns an argument about taste into a conversation about risk.",
-    howIUse: "Early, as a question rather than a process. One lens is almost always doing all the talking, and it is usually feasibility.",
-    watchOut: "Useless once the decision is already made. Then it becomes a slide that justifies rather than a lens that tests.",
-    source: "https://designthinking.ideo.com/introduction",
+    shortName: "Service Blueprint",
+    name: "Service Blueprint",
+    attribution: "After G. Lynn Shostack, Harvard Business Review, 1984",
+    whatItIs: "The visible journey above the line, and everything that has to happen behind it: staff, systems and support processes.",
+    strongFor: "The parts of a service the customer never sees but always feels.",
+    howIUse: "One per archetype, split into before, during and after. Most failures I have found were not in the interface. They were two lines below it.",
+    watchOut: "It gets long fast. One archetype, one journey. A blueprint that tries to cover everyone covers nobody.",
+    source: "https://hbr.org/1984/01/designing-services-that-deliver",
   },
   {
-    id: "lean-ux",
-    slug: "lean-ux",
-    diagram: "triangle",
+    id: "rean",
+    slug: "rean",
+    diagram: "rean",
     ready: true,
-    shortName: "Lean UX",
-    name: "Lean UX",
-    attribution: "Jeff Gothelf and Josh Seiden, Lean UX, 2013",
-    whatItIs: "Assumptions become hypotheses. Hypotheses get tested with the smallest thing that can answer the question. Research runs continuously instead of in a phase at the start.",
-    strongFor: "Turning \"make onboarding better\" into a claim that can be proven wrong. The hypothesis format is the real tool here, not the loop.",
-    howIUse: "When a team wants to specify everything before building anything. The prototype settles in a week what the document would have argued about for a month.",
-    watchOut: "Agree what counts as success before you run the test. Deciding afterwards is not research, it is decoration.",
-    source: "https://jeffgothelf.com/blog/category/lean-ux/",
+    shortName: "REAN",
+    name: "REAN",
+    attribution: "Xavier Blanc. Popularised by Steve Jackson, Cult of Analytics, 2009",
+    whatItIs: "Four things a digital service has to do. Reach people, engage them, activate the behaviour you want, and keep them coming back.",
+    strongFor: "Showing that one chain runs through four different parts of an organisation, and that nobody is standing anywhere they can see all of it.",
+    howIUse: "Backwards, starting at Nurture. Working out what would actually bring someone back usually reveals there is nothing to bring them back to yet, and that changes what Engage and Activate need to contain.",
+    watchOut: "It is four containers, not a journey. It tells you both ends must exist. It tells you nothing about how anyone gets from one to the next, and using it as a journey map loses everything a blueprint would have caught.",
+  },
+  {
+    id: "core-model",
+    slug: "core-model",
+    diagram: "coremodel",
+    ready: true,
+    shortName: "Core Model",
+    name: "Core Model",
+    attribution: "Are Halland, IA Summit, 2007",
+    whatItIs: "One page at a time. What brings someone here, what the page has to deliver, and where they should go next. Business goals and user tasks are named before any content is written.",
+    strongFor: "Killing the argument about what goes on the front page. The front page is a route, not a destination.",
+    howIUse: "On the pages that actually carry the work, not on the sitemap. Most sites I have worked on had good core pages that nobody could reach and a navigation nobody read.",
+    watchOut: "It is a page-level tool. Run it across a whole site and you have rebuilt an information architecture the slow way.",
+    source: "https://www.corepages.io",
+  },
+  {
+    id: "peak-end-rule",
+    slug: "peak-end-rule",
+    diagram: "peakend",
+    ready: true,
+    shortName: "Peak-End Rule",
+    name: "Peak-End Rule",
+    attribution: "Daniel Kahneman and Barbara Fredrickson, 1993",
+    whatItIs: "People do not remember an experience as an average. They remember the most intense moment and how it ended.",
+    strongFor: "Deciding where to spend the budget. You cannot make every touchpoint remarkable, so the question becomes which two.",
+    howIUse: "Forwards, to place the moment rather than backwards to explain a score. In hospitality the ending is checkout, not the stay, and checkout is where almost nobody invests because the arrival got the money.",
+    watchOut: "A peak in the wrong place is expensive and forgettable. Work out what people already expect as standard before deciding what will surprise them, or the surprise turns out to be something they assumed came with the room.",
+    source: "https://en.wikipedia.org/wiki/Peak-end_rule",
+  },
+  {
+    id: "value-complexity",
+    slug: "value-complexity",
+    diagram: "matrix",
+    ready: true,
+    shortName: "Value / Complexity",
+    name: "Value / Complexity Matrix",
+    attribution: "No single origin",
+    whatItIs: "Value on one axis, complexity and cost on the other.",
+    strongFor: "Making a prioritisation conversation short, and forcing people to name what they will not do.",
+    howIUse: "To decide sequence within a quadrant, not whether something should be done at all. The matrix ranks work. It does not decide strategy.",
+    watchOut: "Both axes are estimates, and the effort axis is usually the one being guessed at. Ask who filled it in and what they were assuming.",
+    sources: [{ label: "I built my own version of this. Try it", url: "../validator/", internal: true }],
+  },
+  {
+    id: "empathy-map",
+    slug: "empathy-map",
+    diagram: "grid6",
+    ready: true,
+    shortName: "Empathy Map",
+    name: "Empathy Map",
+    attribution: "Dave Gray, XPLANE, in Gamestorming, 2010",
+    whatItIs: "What a person sees, hears, says, does, thinks and feels, plus their pains and gains.",
+    strongFor: "Separating what people say from what they actually do. The gap between those two is where most service problems live.",
+    howIUse: "As the layer underneath a blueprint, never on its own. On its own it tells you about a person. Attached to a service, it changes decisions.",
+    watchOut: "Built on assumptions rather than research, it is worse than nothing, because it makes guesses look like insight.",
+    source: "https://gamestorming.com/empathy-map/",
   },
   {
     id: "behavior-model",
@@ -2178,7 +2877,7 @@ export const TOOLS = [
     attribution: "Yu-kai Chou",
     whatItIs: "Eight core drives behind why people engage with anything. The top four pull people in. The bottom four push them. Both work, and they do not feel the same to be on the receiving end of.",
     strongFor: "Making the difference between pull and pressure impossible to ignore once you have seen where your own design sits.",
-    howIUse: "Mostly when reviewing loyalty programmes. Mapping the mechanics against the eight drives shows within an hour whether members are being invited or cornered.",
+    howIUse: "Mostly when reviewing loyalty programmes. Mapping the mechanics against the eight drives shows whether members are being invited or cornered, and it is rarely flattering.",
     watchOut: "Most loyalty programmes cluster in the bottom right, around scarcity and reward, because those are the cheapest to build. That is exactly why so many of them feel identical.",
     sources: [
       { label: "The framework", url: "https://yukaichou.com/gamification-examples/octalysis-gamification-framework/" },
@@ -2186,74 +2885,74 @@ export const TOOLS = [
     ],
   },
   {
-    id: "11-star-experience",
-    slug: "11-star-experience",
-    diagram: "pyramid",
+    id: "kano",
+    slug: "kano",
+    diagram: "kano",
     ready: true,
-    shortName: "11-Star Experience",
-    name: "The 11-Star Experience",
-    attribution: "Brian Chesky, Airbnb, on Masters of Scale, episode 1, 2017",
-    whatItIs: "Describe the ridiculous version first, the one nobody could possibly build, then scale back until it meets reality.",
-    strongFor: "Getting out of incremental thinking. Start from what is possible and you will land on a slightly better version of what already exists.",
-    howIUse: "At the very start of concept work, before constraints walk into the room. Where you land after scaling back is still somewhere you would never have reached from the budget.",
-    watchOut: "It works once. Run it after estimation has started and the room will treat it as a joke.",
-    source: "https://mastersofscale.com/brian-chesky/",
+    shortName: "Kano Model",
+    name: "Kano Model",
+    attribution: "Noriaki Kano, Tokyo University of Science, 1984",
+    whatItIs: "Three kinds of feature. Must-be, which nobody notices until it is missing. Performance, where more is better. And delighters, which nobody asked for.",
+    strongFor: "Explaining why a long list of improvements produced no change in satisfaction. Most of them were must-be features, and meeting an expectation is invisible.",
+    howIUse: "When deciding what goes into a paid add-on and what has to be included. Charging for a must-be feature reads as a fee, not an offer, and that distinction is worth more than any pricing model.",
+    watchOut: "Delighters decay. Today's surprise is next year's baseline, and anything you built to be remarkable is on a clock from the day it ships.",
+    source: "https://en.wikipedia.org/wiki/Kano_model",
   },
   {
-    id: "business-model-canvas",
-    slug: "business-model-canvas",
-    diagram: "grid9",
+    id: "design-thinking",
+    slug: "design-thinking",
+    diagram: "venn",
     ready: true,
-    shortName: "Business Model Canvas",
-    name: "Business Model Canvas",
-    attribution: "Alexander Osterwalder and Yves Pigneur, Business Model Generation, 2010",
-    whatItIs: "Nine blocks covering who it is for, what it delivers, how it reaches people, and what it costs and earns.",
-    strongFor: "Showing that a product idea is not yet a business. The gaps are the output, not the filled blocks.",
-    howIUse: "When someone wants to build something but cannot say who pays, or what it costs to keep alive once it exists. The cost side is where enthusiasm usually dies.",
-    watchOut: "It describes a model, it does not validate one. A completed canvas is a hypothesis with nine parts, not evidence.",
-    source: "https://www.strategyzer.com/library/the-business-model-canvas",
+    shortName: "Design Thinking",
+    name: "Design Thinking: The Three Lenses",
+    attribution: "IDEO / Tim Brown, Change by Design, 2009",
+    whatItIs: "Desirable, viable, feasible. A solution has to sit where all three meet.",
+    strongFor: "Stopping a team that has already fallen in love with one solution. Naming which lens is missing turns an argument about taste into a conversation about risk.",
+    howIUse: "Early, as a question rather than a process. One lens is almost always doing all the talking, and it is usually feasibility.",
+    watchOut: "Useless once the decision is already made. Then it becomes a slide that justifies rather than a lens that tests.",
+    source: "https://designthinking.ideo.com/introduction",
   },
   {
-    id: "empathy-map",
-    slug: "empathy-map",
-    diagram: "grid6",
+    id: "double-diamond",
+    slug: "double-diamond",
+    diagram: "doublediamond",
     ready: true,
-    shortName: "Empathy Map",
-    name: "Empathy Map",
-    attribution: "Dave Gray, XPLANE, in Gamestorming, 2010",
-    whatItIs: "What a person sees, hears, says, does, thinks and feels, plus their pains and gains.",
-    strongFor: "Separating what people say from what they actually do. The gap between those two is where most service problems live.",
-    howIUse: "One per archetype, as direct input to the blueprint. On its own it tells you about a person. Connected to a service, it changes decisions.",
-    watchOut: "Built on assumptions rather than research, it is worse than nothing, because it makes guesses look like insight.",
-    source: "https://gamestorming.com/empathy-map/",
+    shortName: "Double Diamond",
+    name: "Double Diamond",
+    attribution: "British Design Council, 2004",
+    whatItIs: "Open up, narrow down, twice. First on the problem, then on the solution.",
+    strongFor: "Explaining why the brief you were given is not the problem you are solving yet. The first diamond is the one people want to skip.",
+    howIUse: "To describe where we are, not to plan where we go. Naming the phase out loud settles most arguments about whether it is too early to decide something.",
+    watchOut: "It is a description of divergence, not a project plan. Turned into a Gantt chart with four boxes it stops being true, because the widening was never meant to happen on schedule.",
+    source: "https://www.designcouncil.org.uk",
   },
   {
-    id: "service-blueprint",
-    slug: "service-blueprint",
-    diagram: "layered",
+    id: "design-squiggle",
+    slug: "design-squiggle",
+    diagram: "squiggle",
     ready: true,
-    shortName: "Service Blueprint",
-    name: "Service Blueprint",
-    attribution: "After G. Lynn Shostack, Harvard Business Review, 1984",
-    whatItIs: "The visible journey above the line, and everything that has to happen behind it: staff, systems and support processes.",
-    strongFor: "The parts of a service the customer never sees but always feels.",
-    howIUse: "One per archetype, split into before, during and after. Most failures I have found were not in the interface. They were two lines below it.",
-    watchOut: "It gets long fast. One archetype, one journey. A blueprint that tries to cover everyone covers nobody.",
-    source: "https://hbr.org/1984/01/designing-services-that-deliver",
+    shortName: "Design Squiggle",
+    name: "The Design Squiggle",
+    attribution: "Damien Newman, Central, 2003",
+    whatItIs: "One line from mess to clarity. Chaos on the left, a single straight line on the right, and no shortcut between them.",
+    strongFor: "Managing expectations upward. It answers why there is no solution yet after three weeks.",
+    howIUse: "At the start of a project, once, with whoever is paying for it. Showing people the shape of the process in advance is the difference between patience and panic.",
+    watchOut: "It describes how the work feels, not how to do it. Nobody ever built anything from the squiggle, and treating it as a method is how you end up with mess and no clarity.",
+    source: "https://thedesignsquiggle.com/about",
   },
   {
-    id: "value-complexity",
-    slug: "value-complexity",
-    diagram: "matrix",
+    id: "five-whys",
+    slug: "five-whys",
+    diagram: "fivewhys",
     ready: true,
-    shortName: "Value / Complexity",
-    name: "Value / Complexity Matrix",
-    attribution: "No single origin",
-    whatItIs: "Value on one axis, complexity and cost on the other.",
-    strongFor: "Making a prioritisation conversation short, and forcing people to name what they will not do.",
-    howIUse: "To decide sequence within a quadrant, not whether something should be done at all. The matrix ranks work. It does not decide strategy.",
-    watchOut: "Both axes are estimates, and the effort axis is usually the one being guessed at. Ask who filled it in and what they were assuming.",
-    sources: [{ label: "I built my own version of this. Try it", url: "../validator/", internal: true }],
+    shortName: "Five Whys",
+    name: "Five Whys",
+    attribution: "Sakichi Toyoda, Toyota",
+    whatItIs: "Ask why the problem happened. Then ask why that happened. Five times, or until the answers stop changing.",
+    strongFor: "Getting past the first answer, which is almost always a description of the symptom wearing the clothes of a cause.",
+    howIUse: "When a fix has already been proposed before anyone explained the problem. It takes four minutes and it usually moves the conversation from the interface to the process behind it.",
+    watchOut: "It follows one chain. Real failures usually have several, and asking why five times gives you a confident answer to a question that had more than one.",
+    source: "https://en.wikipedia.org/wiki/Five_whys",
   },
   {
     id: "muda",
@@ -2264,7 +2963,7 @@ export const TOOLS = [
     name: "Muda: The Seven Wastes",
     attribution: "Taiichi Ohno, Toyota Production System",
     whatItIs: "Seven categories of waste from the Toyota Production System. An eighth, unused talent, was added decades later, which is why it sits apart.",
-    strongFor: "Looking at a service from the inside, which none of the other tools on this page do.",
+    strongFor: "Asking what in a service is waste rather than what it does. A blueprint shows you the backstage. This tells you which of it should not be there.",
     howIUse: "As a checklist when building a business case. The savings side is usually thin because nobody counted the waste, and waiting and over-processing are the two that hide best in service work.",
     watchOut: "Built for factories. Applied literally to a service it produces nonsense, so treat the seven as prompts rather than categories.",
     source: "https://en.wikipedia.org/wiki/Muda_(Japanese_term)",
@@ -2283,18 +2982,44 @@ export const TOOLS = [
     watchOut: "Closeness is not influence. Someone in the outer ring with a veto belongs in the middle, whatever the org chart says.",
   },
   {
-    id: "reflective-sketching",
-    slug: "reflective-sketching",
-    diagram: "reflect",
+    id: "crazy-eights",
+    slug: "crazy-eights",
+    diagram: "crazyeights",
     ready: true,
-    shortName: "Reflective Sketching",
-    name: "The Reflective Sketching Loop",
-    attribution: "Bill Buxton, Sketching User Experiences, 2007",
-    whatItIs: "You sketch what you are thinking, then read the sketch and learn something you did not know before you drew it. Create, then read, then create again.",
-    strongFor: "Explaining why sketching is thinking rather than documenting. The sketch talks back.",
-    howIUse: "When a room is stuck arguing in the abstract. Ten minutes of drawing settles more than an hour of discussion, because everyone is finally looking at the same thing.",
-    watchOut: "It only works if the sketch is rough enough to argue with. A polished mockup stops the loop, because nobody wants to redraw something that looks finished.",
-    source: "https://www.sciencedirect.com/book/9780123740373/sketching-user-experiences",
+    shortName: "Crazy Eights",
+    name: "Crazy Eights",
+    attribution: "Popularised by Google Ventures design sprints. Eight frames, eight minutes",
+    whatItIs: "Fold a sheet into equal frames and sketch one idea per frame against the clock. One minute each in the original.",
+    strongFor: "Getting past the ideas people walked in with. Under time pressure nobody has room to censor themselves, which is the entire mechanism.",
+    howIUse: "As six frames at thirty seconds, not eight at a minute. With a large group the last two frames produce polite variations rather than new ideas, and the shorter clock keeps the sketching fast and ugly. The timer sits visibly in the room on an iPad, so the pressure comes from the clock and not from me.",
+    watchOut: "It is individual work. Run it as a group and you get one person's ideas with five witnesses.",
+  },
+  {
+    id: "silent-voting",
+    slug: "silent-voting",
+    diagram: "silentvoting",
+    ready: true,
+    shortName: "Silent Voting",
+    name: "Silent Voting",
+    attribution: "No single origin. Common in design sprints and dot voting practice",
+    whatItIs: "Everyone marks the ideas they think should go forward, without discussion and without seeing anyone else explain their choice first.",
+    strongFor: "Getting an honest read of the room before the loudest person has framed what counts as a good idea.",
+    howIUse: "Always after storyboards, never after a verbal round. If people pitch first, they vote on who spoke well. The dots go up in silence. And if one voice genuinely carries more weight, a director in the room, you can hand them larger dots and let them vote last. Weight belongs in the vote, not in the timing.",
+    watchOut: "It measures appeal, not feasibility. A wall of dots tells you what the room liked, which is worth knowing and is not the same as what should be built.",
+  },
+  {
+    id: "11-star-experience",
+    slug: "11-star-experience",
+    diagram: "pyramid",
+    ready: true,
+    shortName: "11-Star Experience",
+    name: "The 11-Star Experience",
+    attribution: "Brian Chesky, Airbnb, on Masters of Scale, episode 1, 2017",
+    whatItIs: "Describe the ridiculous version first, the one nobody could possibly build, then scale back until it meets reality.",
+    strongFor: "Getting out of incremental thinking. Start from what is possible and you will land on a slightly better version of what already exists.",
+    howIUse: "At the very start of concept work, before constraints walk into the room. Where you land after scaling back is still somewhere you would never have reached from the budget.",
+    watchOut: "It works once. Run it after estimation has started and the room will treat it as a joke.",
+    source: "https://mastersofscale.com/brian-chesky/",
   },
   {
     id: "lotus-blossom",
@@ -2311,18 +3036,46 @@ export const TOOLS = [
     source: "https://innovationmanagement.se/2004/10/21/creative-thinking-technique-lotus-blossom/",
   },
   {
-    id: "design-squiggle",
-    slug: "design-squiggle",
-    diagram: "squiggle",
+    id: "reflective-sketching",
+    slug: "reflective-sketching",
+    diagram: "reflect",
     ready: true,
-    shortName: "Design Squiggle",
-    name: "The Design Squiggle",
-    attribution: "Damien Newman, Central, 2003",
-    whatItIs: "One line from mess to clarity. Chaos on the left, a single straight line on the right, and no shortcut between them.",
-    strongFor: "Managing expectations upward. It answers why there is no solution yet after three weeks.",
-    howIUse: "At the start of a project, once, with whoever is paying for it. Showing people the shape of the process in advance is the difference between patience and panic.",
-    watchOut: "It describes how the work feels, not how to do it. Nobody ever built anything from the squiggle, and treating it as a method is how you end up with mess and no clarity.",
-    source: "https://thedesignsquiggle.com/about",
+    shortName: "Reflective Sketching",
+    name: "The Reflective Sketching Loop",
+    attribution: "Bill Buxton, Sketching User Experiences, 2007",
+    whatItIs: "You sketch what you are thinking, then read the sketch and learn something you did not know before you drew it. Create, then read, then create again.",
+    strongFor: "Explaining why sketching is thinking rather than documenting. The sketch talks back.",
+    howIUse: "When a room is stuck arguing in the abstract. Ten minutes of drawing settles more than an hour of discussion, because everyone is finally looking at the same thing.",
+    watchOut: "It only works if the sketch is rough enough to argue with. A polished mockup stops the loop, because nobody wants to redraw something that looks finished.",
+    source: "https://www.sciencedirect.com/book/9780123740373/sketching-user-experiences",
+  },
+  {
+    id: "business-model-canvas",
+    slug: "business-model-canvas",
+    diagram: "grid9",
+    ready: true,
+    shortName: "Business Model Canvas",
+    name: "Business Model Canvas",
+    attribution: "Alexander Osterwalder and Yves Pigneur, Business Model Generation, 2010",
+    whatItIs: "Nine blocks covering who it is for, what it delivers, how it reaches people, and what it costs and earns.",
+    strongFor: "Showing that a product idea is not yet a business. The gaps are the output, not the filled blocks.",
+    howIUse: "When someone wants to build something but cannot say who pays, or what it costs to keep alive once it exists. The cost side is where enthusiasm usually dies.",
+    watchOut: "It describes a model, it does not validate one. A completed canvas is a hypothesis with nine parts, not evidence.",
+    source: "https://www.strategyzer.com/library/the-business-model-canvas",
+  },
+  {
+    id: "lean-ux",
+    slug: "lean-ux",
+    diagram: "triangle",
+    ready: true,
+    shortName: "Lean UX",
+    name: "Lean UX",
+    attribution: "Jeff Gothelf and Josh Seiden, Lean UX, 2013",
+    whatItIs: "Assumptions become hypotheses. Hypotheses get tested with the smallest thing that can answer the question. Research runs continuously instead of in a phase at the start.",
+    strongFor: "Turning \"make onboarding better\" into a claim that can be proven wrong. The hypothesis format is the real tool here, not the loop.",
+    howIUse: "When a team wants to specify everything before building anything. The prototype settles in a week what the document would have argued about for a month.",
+    watchOut: "Agree what counts as success before you run the test. Deciding afterwards is not research, it is decoration.",
+    source: "https://jeffgothelf.com/blog/category/lean-ux/",
   },
   {
     id: "six-by-six",
@@ -2334,11 +3087,29 @@ export const TOOLS = [
     attribution: "Dan Roam, The Back of the Napkin, 2008",
     whatItIs: "Six questions, and for each one the picture type that answers it best. Who or what needs a portrait. How much needs a chart. Where needs a map. When needs a timeline. How needs a flowchart. Why needs a plot with more than one variable.",
     strongFor: "Deciding what to draw before you start drawing. Most bad slides are the right data in the wrong picture.",
-    howIUse: "When preparing anything for a leadership audience. Working out which of the six questions I am actually answering usually reveals that I was about to answer a different one.",
+    howIUse: "Before building a deck that has to survive a leadership meeting. Working out which of the six questions I am answering usually reveals I was about to answer a different one.",
     watchOut: "The pairings are a starting point, not a law. But if you are reaching for a bar chart to answer a why question, that is worth noticing.",
     source: "https://www.danroam.com",
   },
 ];
+
+/* Two forward-looking fields on every model, defined here so they never
+   have to be retrofitted across twenty-three pages later. Both are empty
+   and render nothing anywhere yet.
+   - sequences: references to combination pages where this model is used
+     as part of a sequence of tools applied to a real problem.
+   - facilitation: how to actually run the tool in a room. */
+for (const tool of TOOLS) {
+  tool.sequences = [];
+  tool.facilitation = {
+    groupSize: "",
+    duration: "",
+    materials: "",
+    commonFailure: "",
+    recovery: "",
+  };
+}
+
 
 /* Renders a tool's title/attribution/sections/source(s) into a given
    container. Shared by every tool subpage. */

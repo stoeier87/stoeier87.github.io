@@ -32,19 +32,55 @@ body {
 }
 
 :root {
-  --game-accent: #d6c491;
-  --game-accent-dim: rgba(214, 196, 145, 0.6);
+  --game-accent: #a8d8e8;
+  --game-accent-dim: rgba(168, 216, 232, 0.6);
 }
 
-/* Neptune and its sky behind the playfield. Luminance is capped here as
-   well as on the 2D layer — the shards have to stay legible everywhere. */
+/* Pluto and its sky sit behind the playfield. Luminance is capped here as
+   well as in the spec colours — the falling pieces have to stay legible
+   where they cross the lit crescent. */
 st-planet-field#bg {
   @apply pointer-events-none fixed inset-0 z-0 block;
-  opacity: 0.68;
+  opacity: 0.72;
+}
+
+/* The blur is the pause treatment; it never runs during play. */
+st-planet-field#bg {
   transition: filter 0.35s ease;
 }
 body.is-paused st-planet-field#bg {
   filter: blur(3px);
+}
+
+/* ---- Next queue ---- */
+.slot {
+  position: fixed;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.slot.show {
+  opacity: 1;
+}
+/* The pill row wraps to two lines below md, so the slot band has to
+   clear both. */
+.slot-next {
+  @apply right-3 top-[126px] md:top-[74px] items-end;
+}
+.slot-label {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.4);
+}
+.slot canvas {
+  display: block;
+  border-radius: 8px;
+  background: rgba(10, 14, 24, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 /* ---- Status panel: the ISS Docking APPROACH panel, same shape ---- */
@@ -87,14 +123,20 @@ body.is-paused st-planet-field#bg {
   color: var(--color-ink);
 }
 
-/* DESCENT warns how close the field is to the floor line, and flashes for
-   the last two steps before a block lands on it. */
+/* PRESSURE sits unlit until garbage actually begins, so it reads as a
+   threat appearing rather than a meter that was always there. */
 .bar {
   flex: 1;
   height: 5px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 3px;
   overflow: hidden;
+  opacity: 0.35;
+  transition: opacity 0.5s ease;
+}
+.approach.armed .bar {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.12);
 }
 .bar-fill {
   height: 100%;
@@ -102,7 +144,7 @@ body.is-paused st-planet-field#bg {
   background: var(--game-accent);
   transition: background 0.15s linear;
 }
-@keyframes smFlash {
+@keyframes icePressureFlash {
   0%,
   100% {
     opacity: 1;
@@ -113,11 +155,11 @@ body.is-paused st-planet-field#bg {
 }
 .approach.imminent .bar-fill {
   background: #e8896a;
-  animation: smFlash 0.45s ease-in-out infinite;
+  animation: icePressureFlash 0.45s ease-in-out infinite;
 }
 
 /* ---- Intro card ---- */
-@keyframes smFadeIn {
+@keyframes iceFadeIn {
   0% {
     opacity: 0;
   }
@@ -149,7 +191,7 @@ body.is-paused st-planet-field#bg {
   transition:
     opacity 0.45s ease-out,
     transform 0.45s ease-out;
-  animation: smFadeIn 1s ease-in-out;
+  animation: iceFadeIn 1s ease-in-out;
   max-width: min(420px, 100%);
 }
 
@@ -234,6 +276,12 @@ body.is-paused st-planet-field#bg {
 .restart-btn:focus-visible {
   outline: 2px solid var(--game-accent);
   outline-offset: 3px;
+}
+
+@media (max-width: 520px) {
+  .slot canvas {
+    transform-origin: top;
+  }
 }
 
 /* The site's circular back arrow: a circle, an arrow, no text. */

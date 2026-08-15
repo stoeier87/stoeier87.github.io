@@ -77,8 +77,8 @@ export const color = {
     uranusLo: "#4a98a8",
     neptunHi: "#6a8ce8",
     neptunLo: "#2a3f9c",
-    plutoHi: "#cbb8a4",
-    plutoLo: "#6b5a4c",
+    plutoHi: "#ded5c6",
+    plutoLo: "#5c4b3f",
   },
 
   /**

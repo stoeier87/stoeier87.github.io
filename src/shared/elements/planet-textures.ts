@@ -27,6 +27,13 @@ export interface SurfaceSpec {
   bands?: boolean;
   /** Continents and ice caps. */
   earth?: boolean;
+  /**
+   * Pluto: pale nitrogen ice, rust-brown tholin staining toward the equator,
+   * and the heart-shaped Sputnik Planitia glacier. Deliberately sparse — the
+   * real body is mostly featureless at this scale, and the heart only reads
+   * as the heart if nothing else competes with it.
+   */
+  pluto?: boolean;
   /** Varies the deterministic mottling between planets. */
   seed?: number;
 }
@@ -104,6 +111,32 @@ function wrappedBlob(
 }
 
 /**
+ * Sputnik Planitia, drawn three times so it survives the u=0 seam like
+ * `wrappedBlob`. Two lobes and a point — the only bezier shape in this file,
+ * because a heart is the one feature here that has to be recognisable rather
+ * than merely plausible.
+ */
+function wrappedHeart(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  x: number,
+  y: number,
+  s: number,
+  fill: string,
+): void {
+  ctx.fillStyle = fill;
+  for (const dx of [-w, 0, w]) {
+    const cx = x + dx;
+    ctx.beginPath();
+    ctx.moveTo(cx, y + s * 0.95);
+    ctx.bezierCurveTo(cx - s * 1.5, y - s * 0.15, cx - s * 0.62, y - s * 1.05, cx, y - s * 0.34);
+    ctx.bezierCurveTo(cx + s * 0.62, y - s * 1.05, cx + s * 1.5, y - s * 0.15, cx, y + s * 0.95);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+/**
  * The planet's surface, equirectangular.
  *
  * Note what this deliberately does NOT do: the old `drawPlanet` baked the
@@ -113,7 +146,7 @@ function wrappedBlob(
  * darkening, plus mottling and per-planet features.
  */
 export function surfaceTexture(spec: SurfaceSpec): CanvasTexture {
-  const detailed = Boolean(spec.bands || spec.earth);
+  const detailed = Boolean(spec.bands || spec.earth || spec.pluto);
   const W = detailed ? 1024 : 512;
   const H = W / 2;
   const canvas = makeCanvas(W, H);
@@ -179,9 +212,56 @@ export function surfaceTexture(spec: SurfaceSpec): CanvasTexture {
     ctx.fillRect(0, 0, W, H);
   }
 
+  if (spec.pluto) {
+    // Tholin staining: organic haze fallout, concentrated near the equator
+    // and never at the poles. Literal colours here follow the same precedent
+    // as Earth's `land` and Jupiter's Great Red Spot above — a feature colour
+    // that is not a site design token.
+    const tholin: RGB = [122, 68, 46];
+    for (let i = 0; i < 7; i++) {
+      const x = rand(seed + i * 4.1) * W;
+      const y = H * (0.36 + rand(seed + i * 8.7) * 0.28);
+      const rx = W * (0.05 + rand(seed + i * 3.3) * 0.08);
+      const ry = H * (0.05 + rand(seed + i * 6.9) * 0.07);
+      wrappedBlob(
+        ctx,
+        W,
+        x,
+        y,
+        rx,
+        ry,
+        rand(seed + i * 2.2) * Math.PI,
+        css(mix(lo, tholin, 0.75), 0.42),
+      );
+    }
+
+    // Cratered highlands: a darker belt on the far side of the body from the
+    // glacier, so the lit face has somewhere to be dark as it turns.
+    for (let i = 0; i < 4; i++) {
+      const x = W * 0.58 + rand(seed + i * 11.3) * W * 0.26;
+      const y = H * (0.3 + rand(seed + i * 5.5) * 0.4);
+      const r = W * (0.03 + rand(seed + i * 7.7) * 0.035);
+      wrappedBlob(ctx, W, x, y, r, r * 0.8, 0, css(lo, 0.5));
+    }
+
+    /* Sputnik Planitia — smooth, bright, and the whole point. Drawn after the
+       staining so nothing sits on top of it, with a soft halo first so it does
+       not read like a sticker.
+
+       u = 0.21 is not arbitrary: that is the longitude facing the camera at
+       rest, measured by placing features at known u and reading them back off
+       the rendered card icon. The brief asks for the heart to be clearly
+       visible on the lit face, and on a body this small in the card grid, a
+       heart on the far limb is a heart nobody ever sees. */
+    const ice: RGB = [246, 242, 232];
+    wrappedHeart(ctx, W, W * 0.21, H * 0.53, W * 0.115, css(mix(hi, ice, 0.45), 0.5));
+    wrappedHeart(ctx, W, W * 0.21, H * 0.53, W * 0.1, css(ice, 0.92));
+  }
+
   // Mottling. Subtle on every planet — it is what stops a sphere reading as a
-  // flat disc once it starts rotating.
-  const spots = detailed ? 26 : 44;
+  // flat disc once it starts rotating. Pluto gets a fraction of it: the brief
+  // is sparse, and this pass runs over the glacier.
+  const spots = spec.pluto ? 12 : detailed ? 26 : 44;
   for (let i = 0; i < spots; i++) {
     const x = rand(seed * 3 + i * 1.7) * W;
     const y = rand(seed * 3 + i * 4.3) * H;

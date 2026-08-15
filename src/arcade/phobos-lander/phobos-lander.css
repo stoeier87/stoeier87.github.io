@@ -35,19 +35,6 @@ body {
 }
 
 /* Phobos uses a full-height column topbar for mobile layout */
-.topbar {
-  position: relative;
-  z-index: 25;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  pointer-events: none;
-  height: 100%;
-  @apply px-3 pt-3 pb-28;
-  @apply justify-between lg:justify-start;
-}
 
 /* Intro card */
 @keyframes phobosFadeIn {
@@ -160,4 +147,88 @@ body {
 
 @media (min-width: 900px) {
   .controls { display: none; }
+}
+
+/* The site's circular back arrow: a circle, an arrow, no text. */
+.pill.back-circle {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* Status panel: the ISS Docking APPROACH panel, same shape */
+.approach {
+  position: fixed;
+  @apply left-3 bottom-3 right-3 md:right-auto;
+  z-index: 15;
+  background: rgba(10, 14, 24, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  padding: 11px 13px;
+  @apply flex flex-col w-auto md:w-44 gap-2;
+  @apply pointer-events-none;
+}
+.approach-title {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 2px;
+}
+.approach-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.approach-label {
+  width: 44px;
+  flex: none;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.55);
+}
+.approach-value {
+  font-size: 12px;
+  color: var(--color-ink);
+}
+
+/* Mobile chrome: one row — back arrow, title pill, SCORE, BEST — never
+   wrapping. Local override of the shared topbar's stacked mobile layout,
+   identical in every game. Fit ladder: tighter stat padding, 8px gaps,
+   one type step down on the title, then ellipsis. The back arrow never
+   drops below its 44px tap target. */
+@media (max-width: 767px) {
+  /* div.topbar outguns the shared .topbar rule, which loads last. */
+  div.topbar {
+    flex-wrap: nowrap;
+    gap: 8px;
+    justify-content: flex-start;
+  }
+  .topbar .topbar-group {
+    display: contents;
+  }
+  .topbar .pill.stat {
+    flex: none;
+    padding: 0.75rem 0.8rem;
+  }
+  .topbar .pill.back-circle {
+    flex: none;
+  }
+  .topbar .pill.badge {
+    flex: 0 1 auto;
+    min-width: 0;
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
+    font-size: 11px;
+  }
+  .topbar .badge-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }

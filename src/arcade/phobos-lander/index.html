@@ -15,16 +15,32 @@
     <!-- Top bar: back link + title badge (left), score + best (right) -->
     <div class="topbar">
       <div class="topbar-group">
-        <a href="../../arcade/" class="pill link">← Arcade</a>
+        <a href="../../arcade/" class="pill back-circle" aria-label="Back to arcade" title="Back to arcade">←</a>
         <div class="pill badge">
           <span class="beacon"></span>
-          PHOBOS LANDER
+          <span class="badge-name">PHOBOS LANDER</span>
         </div>
       </div>
       <div class="topbar-group">
-        <div class="pill stat">FUEL <strong id="fuel">100</strong>%</div>
         <div class="pill stat">SCORE <strong id="score">0</strong></div>
         <a class="pill stat" href="../../scoreboard/">BEST <strong id="best" class="best-val">0</strong></a>
+      </div>
+    </div>
+
+    <!-- Status panel, same shape as ISS Docking's APPROACH panel -->
+    <div class="approach" id="status">
+      <div class="approach-title">LANDER</div>
+      <div class="approach-row">
+        <span class="approach-label">FUEL</span>
+        <strong class="approach-value"><span id="fuel">100</span>%</strong>
+      </div>
+    </div>
+
+    <!-- Auto-pause overlay -->
+    <div id="pause" class="gameover">
+      <div class="gameover-card">
+        <div class="gameover-title">PAUSED</div>
+        <button id="resumeBtn" class="restart-btn" type="button">Resume</button>
       </div>
     </div>
 

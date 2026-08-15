@@ -1,4 +1,5 @@
 import { DIAGRAMS, TOOLS, reduced, isMobile, mulberry32 } from "./shared/tools-data.js";
+import { extractConstellation, polylineLength } from "./shared/constellation-source.js";
 
 const $ = (id) => document.getElementById(id);
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -62,6 +63,7 @@ const SVG_NS = "http://www.w3.org/2000/svg";
   const wrap = document.createElement("div");
   wrap.className = "zodiac";
   wrap.setAttribute("aria-hidden", "true");
+  const figs = [];
   for (const s of SPOTS) {
     const fig = document.createElement("div");
     fig.className = "zodiac-fig";
@@ -71,10 +73,197 @@ const SVG_NS = "http://www.w3.org/2000/svg";
     fig.style.height = s.size;
     fig.style.setProperty("--zd", s.dur + "s");
     fig.style.animationDelay = s.delay + "s";
-    fig.appendChild(DIAGRAMS[s.key].thumb());
+    const svg = DIAGRAMS[s.key].thumb();
+    fig.appendChild(svg);
     wrap.appendChild(fig);
+    figs.push({ el: fig, svg, key: s.key, dots: [], stars: [], polys: [], anims: [] });
   }
   document.body.appendChild(wrap);
+
+  /* ── Life. Vertices twinkle, lines breathe, a constellation traces
+     itself now and then, and about once a minute the sky draws one line
+     that isn't there. All of it stays at or below the figures' current
+     luminance: strokes now breathe around a mean of ~0.7 of their old
+     constant brightness, which pays for the stars.
+
+     Everything animates through the Web Animations API — no CSS added,
+     per-element random timing for free, and one cancel() call per
+     animation when reduced motion switches on. ── */
+  const rnd = mulberry32(4119);
+  const small = window.matchMedia("(max-width: 499px)");
+  const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const STATIC_DOT = 0.5;
+  let lastTraceIdx = -1;
+
+  function buildStars() {
+    for (const f of figs) {
+      const { stars, polylines } = extractConstellation(f.svg);
+      f.stars = stars;
+      f.polys = polylines;
+      const g = document.createElementNS(SVG_NS, "g");
+      g.setAttribute("class", "zodiac-stars");
+      for (const p of stars) {
+        const c = document.createElementNS(SVG_NS, "circle");
+        c.setAttribute("cx", p.x.toFixed(1));
+        c.setAttribute("cy", p.y.toFixed(1));
+        c.setAttribute("r", (1.3 + rnd() * 1.1).toFixed(2));
+        c.setAttribute("fill", "currentColor");
+        c.style.opacity = STATIC_DOT;
+        g.appendChild(c);
+        f.dots.push(c);
+      }
+      f.svg.appendChild(g);
+    }
+  }
+
+  function startAmbient() {
+    for (const f of figs) {
+      for (const c of f.dots) {
+        // 2–6 s, each on its own clock — never in unison.
+        const dur = 2000 + rnd() * 4000;
+        const base = 0.12 + rnd() * 0.16;
+        const peak = 0.7 + rnd() * 0.3;
+        f.anims.push(
+          c.animate([{ opacity: base }, { opacity: peak }, { opacity: base }], {
+            duration: dur,
+            delay: -rnd() * dur,
+            iterations: Infinity,
+            easing: "ease-in-out",
+          }),
+        );
+      }
+      for (const el of f.svg.querySelectorAll("path, line, polyline, polygon, circle, ellipse, rect")) {
+        if (el.parentNode.getAttribute && el.parentNode.getAttribute("class") === "zodiac-stars") continue;
+        // Slower than the stars and phase-scattered, so nothing beats in step.
+        const dur = 5000 + rnd() * 4000;
+        f.anims.push(
+          el.animate([{ opacity: 0.55 }, { opacity: 0.85 }, { opacity: 0.55 }], {
+            duration: dur,
+            delay: -rnd() * dur,
+            iterations: Infinity,
+            easing: "ease-in-out",
+          }),
+        );
+      }
+    }
+  }
+
+  function stopAmbient() {
+    for (const f of figs) {
+      for (const a of f.anims) a.cancel();
+      f.anims = [];
+      for (const c of f.dots) c.style.opacity = STATIC_DOT;
+    }
+  }
+
+  /* One constellation redraws itself: a brighter pulse rides its lines end
+     to end over ~2 s while the whole figure lifts slightly, then settles. */
+  function traceOne() {
+    const candidates = figs.filter((_, i) => i !== lastTraceIdx && figs[i].polys.length);
+    if (!candidates.length) return;
+    const f = candidates[Math.floor(Math.random() * candidates.length)];
+    lastTraceIdx = figs.indexOf(f);
+
+    f.el.animate(
+      [
+        { opacity: 0.07 },
+        { opacity: 0.12, offset: 0.3 },
+        { opacity: 0.12, offset: 0.7 },
+        { opacity: 0.07 },
+      ],
+      { duration: 2600, easing: "ease-in-out" },
+    );
+
+    const lens = f.polys.map(polylineLength);
+    const total = lens.reduce((a, b) => a + b, 0) || 1;
+    let acc = 0;
+    const overlays = [];
+    f.polys.forEach((points, i) => {
+      const d = points.map((p, j) => (j ? "L" : "M") + " " + p.x.toFixed(1) + " " + p.y.toFixed(1)).join(" ");
+      const path = document.createElementNS(SVG_NS, "path");
+      path.setAttribute("d", d);
+      path.setAttribute("fill", "none");
+      path.setAttribute("stroke", "currentColor");
+      path.setAttribute("stroke-width", "1.8");
+      path.setAttribute("stroke-linecap", "round");
+      path.style.opacity = "0.9";
+      f.svg.appendChild(path);
+      overlays.push(path);
+      const L = path.getTotalLength();
+      const seg = Math.max(12, L * 0.25);
+      path.setAttribute("stroke-dasharray", seg + " " + (L + seg));
+      const dur = Math.max(120, 2000 * (lens[i] / total));
+      path.animate([{ strokeDashoffset: seg }, { strokeDashoffset: -L }], {
+        duration: dur,
+        delay: acc,
+        easing: "linear",
+        fill: "both",
+      });
+      acc += dur;
+    });
+    setTimeout(() => overlays.forEach((o) => o.remove()), acc + 400);
+  }
+
+  /* The sky rearranging itself: a thin line between two vertices that are
+     not normally connected, drawn in, held, gone. */
+  function strayLine() {
+    const f = figs[Math.floor(Math.random() * figs.length)];
+    if (f.stars.length < 2) return;
+    let a = null;
+    let b = null;
+    for (let tries = 0; tries < 14; tries++) {
+      const p = f.stars[Math.floor(Math.random() * f.stars.length)];
+      const q = f.stars[Math.floor(Math.random() * f.stars.length)];
+      if (Math.hypot(p.x - q.x, p.y - q.y) > 45) {
+        a = p;
+        b = q;
+        break;
+      }
+    }
+    if (!a) return;
+    const line = document.createElementNS(SVG_NS, "line");
+    line.setAttribute("x1", a.x.toFixed(1));
+    line.setAttribute("y1", a.y.toFixed(1));
+    line.setAttribute("x2", b.x.toFixed(1));
+    line.setAttribute("y2", b.y.toFixed(1));
+    line.setAttribute("stroke", "currentColor");
+    line.setAttribute("stroke-width", "0.8");
+    const L = Math.hypot(b.x - a.x, b.y - a.y);
+    line.setAttribute("stroke-dasharray", L + " " + L);
+    line.setAttribute("stroke-dashoffset", String(L));
+    line.style.opacity = "0.7";
+    f.svg.appendChild(line);
+    line.animate([{ strokeDashoffset: L }, { strokeDashoffset: 0 }], {
+      duration: 650,
+      easing: "ease-out",
+      fill: "forwards",
+    });
+    const fade = line.animate([{ opacity: 0.7 }, { opacity: 0 }], {
+      delay: 1100,
+      duration: 900,
+      fill: "forwards",
+    });
+    fade.onfinish = () => line.remove();
+  }
+
+  /* Recursive timers; each firing re-checks viewport and motion, so
+     resizing under 500px or enabling reduced motion quiets them without
+     tearing anything down. */
+  function schedule(fn, min, max) {
+    setTimeout(() => {
+      if (!reduced() && !small.matches && !document.hidden) fn();
+      schedule(fn, min, max);
+    }, min + Math.random() * (max - min));
+  }
+
+  buildStars();
+  if (!reduced()) startAmbient();
+  motionQuery.addEventListener("change", () => {
+    if (reduced()) stopAmbient();
+    else if (!figs[0].anims.length) startAmbient();
+  });
+  schedule(traceOne, 15000, 25000);
+  schedule(strayLine, 45000, 75000);
 })();
 
 /* ============================================================
@@ -128,7 +317,10 @@ function buildNodes() {
   const labelMaxWidth = m ? 96 : 140;
   const labelMaxPx = m ? 8.6 : 10.56;
   const labelMinPx = m ? 7 : 8.5;
-  const wanderRadius = m ? 7 : 10;
+  /* Order now carries meaning, so position must read as fixed: a small
+     oscillation around the slot, never more than 6px in any direction,
+     always returning home. Free wander would say position is arbitrary. */
+  const wanderRadius = m ? 5 : 6;
   const rnd = mulberry32(20260814);
 
   drifters = TOOLS.map((tool) => {

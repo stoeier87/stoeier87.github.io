@@ -3,15 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Star Memory</title>
+    <title>Ice Fall</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="star-memory.css" />
+    <link rel="stylesheet" href="ice-fall.css" />
     <link rel="stylesheet" href="../../tailwind.css" />
   </head>
   <body>
-    <!-- Neptune, Triton and the starfield. `driven`: the game owns the single
-         rAF loop and calls tick() on the backdrop each frame. -->
+    <!-- Pluto, Charon, the sun and the starfield. `driven`: ice-fall.js owns
+         the single rAF loop and calls tick() on the backdrop each frame. -->
     <st-planet-field id="bg" driven aria-hidden="true"></st-planet-field>
     <canvas id="game" aria-hidden="true"></canvas>
 
@@ -21,7 +21,7 @@
         <a href="../../arcade/" class="pill back-circle" aria-label="Back to arcade" title="Back to arcade">←</a>
         <div class="pill badge">
           <span class="beacon"></span>
-          <span class="badge-name">STAR MEMORY</span>
+          <span class="badge-name">ICE FALL</span>
         </div>
       </div>
       <div class="topbar-group">
@@ -32,63 +32,70 @@
       </div>
     </div>
 
-    <!-- Status panel, same shape as ISS Docking's APPROACH panel -->
-    <div class="approach" id="status">
-      <div class="approach-title">RUN</div>
-      <div class="approach-row">
-        <span class="approach-label">ROUND</span>
-        <strong class="approach-value" id="roundVal">1</strong>
-      </div>
-      <div class="approach-row">
-        <span class="approach-label">PAIRS</span>
-        <strong class="approach-value" id="pairsVal">0 / 6</strong>
-      </div>
-      <div class="approach-row">
-        <span class="approach-label">MULTI</span>
-        <strong class="approach-value" id="multVal">x1</strong>
-      </div>
-      <div class="approach-row">
-        <span class="approach-label">TIME</span>
-        <div class="bar"><div class="bar-fill" id="timeFill"></div></div>
-      </div>
+    <!-- Next queue, under the score pills -->
+    <div class="slot slot-next" id="nextSlot">
+      <div class="slot-label">NEXT</div>
+      <canvas id="nextCanvas" aria-hidden="true"></canvas>
     </div>
 
-    <!-- Auto-pause overlay -->
-    <div id="pause" class="gameover">
-      <div class="gameover-card">
-        <div class="gameover-title">PAUSED</div>
-        <button id="resumeBtn" class="restart-btn" type="button">Resume</button>
+    <!-- Status panel, same shape as ISS Docking's APPROACH panel -->
+    <div class="approach" id="status">
+      <div class="approach-title">STATUS</div>
+      <div class="approach-row">
+        <span class="approach-label">LEVEL</span>
+        <strong class="approach-value" id="levelVal">1</strong>
+      </div>
+      <div class="approach-row">
+        <span class="approach-label">LINES</span>
+        <strong class="approach-value" id="linesVal">0</strong>
+      </div>
+      <div class="approach-row">
+        <span class="approach-label">PRESSURE</span>
+        <div class="bar"><div class="bar-fill" id="pressureFill"></div></div>
       </div>
     </div>
 
     <!-- Intro card, dismissed on first input -->
     <div class="intro-container">
       <div class="intro" id="intro">
-        <div class="intro-title">STAR MEMORY</div>
+        <div class="intro-title">ICE FALL</div>
         <div class="intro-body">
-          Match the constellations before the clock runs down. Saturn has been keeping time for a
-          while; now it is your turn.
+          Stack the ice. Clear the lines. Pluto is patient and you are not.
         </div>
         <div class="intro-keys" id="introKeys">
-          <span><b>Click</b> turn a card</span><span><b>R</b> restart when time is out</span>
+          <span><b>← →</b> move</span><span><b>↓</b> soft drop</span
+          ><span><b>↑ / X</b> rotate</span><span><b>Z</b> rotate back</span
+          ><span><b>Space</b> hard drop</span><span><b>P / Esc</b> pause</span>
         </div>
         <div class="intro-keys" id="introTouch">
-          <span><b>Tap</b> turn a card</span>
+          <span><b>Swipe</b> move</span><span><b>Tap</b> rotate</span
+          ><span><b>Two-finger tap</b> rotate back</span
+          ><span><b>Swipe down</b> soft drop</span
+          ><span><b>Swipe up</b> hard drop</span
+          >
         </div>
+      </div>
+    </div>
+
+    <!-- Pause overlay -->
+    <div id="pause" class="gameover">
+      <div class="gameover-card">
+        <div class="gameover-title">PAUSED</div>
+        <div class="pause-sub">Press P to resume</div>
+        <button id="resumeBtn" class="restart-btn" type="button">Resume</button>
       </div>
     </div>
 
     <!-- Game over sign -->
     <div id="gameOver" class="gameover">
       <div class="gameover-card">
-        <div id="gameOverTitle" class="gameover-title">CONSTELLATION COMPLETE</div>
+        <div id="gameOverTitle" class="gameover-title">ICE FALL</div>
         <div class="final-rows">
           <div class="final-row">
             <span>SCORE</span><strong id="finalScore">0</strong>
           </div>
-          <div class="final-row">
-            <span>ROUNDS</span><strong id="finalRounds">0</strong>
-          </div>
+          <div class="final-row"><span>LINES</span><strong id="finalLines">0</strong></div>
+          <div class="final-row"><span>LEVEL</span><strong id="finalLevel">1</strong></div>
           <div class="final-row final-best">
             <span>BEST</span><strong id="finalBest">0</strong>
             <span class="best-marker" id="bestMarker">NEW</span>
@@ -99,6 +106,6 @@
       </div>
     </div>
 
-    <script type="module" src="./star-memory.js"></script>
+    <script type="module" src="./ice-fall.js"></script>
   </body>
 </html>

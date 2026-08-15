@@ -15,10 +15,10 @@
     <!-- Top bar: back link + title badge (left), score + best (right) -->
     <div class="topbar">
       <div class="topbar-group">
-        <a href="../../arcade/" class="pill link">← Arcade</a>
+        <a href="../../arcade/" class="pill back-circle" aria-label="Back to arcade" title="Back to arcade">←</a>
         <div class="pill badge">
           <span class="beacon"></span>
-          ISS DOCKING
+          <span class="badge-name">ISS DOCKING</span>
         </div>
       </div>
       <div class="topbar-group">
@@ -41,6 +41,14 @@
       <div class="approach-row">
         <span class="approach-label">ALIGN</span>
         <div class="bar"><div class="bar-fill" id="angleFill"></div></div>
+      </div>
+    </div>
+
+    <!-- Auto-pause overlay -->
+    <div id="pause" class="gameover">
+      <div class="gameover-card">
+        <div class="gameover-title">PAUSED</div>
+        <button id="resumeBtn" class="restart-btn" type="button">Resume</button>
       </div>
     </div>
 

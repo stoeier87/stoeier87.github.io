@@ -31,6 +31,7 @@ import {
     viewScale = 1,
     viewOffX = 0,
     viewOffY = 0;
+  const scorePillEl = document.getElementById("score");
   let score = 0,
     best = 0,
     last = 0,
@@ -387,7 +388,30 @@ import {
     }
   }
 
+  /* Auto-pause: tab switch or window blur pauses; the run resumes only
+     by hand, and there is no manual pause control. */
+  let paused = false;
+  const pauseEl = document.getElementById("pause");
+  function autoPause() {
+    if (paused || gameOver) return;
+    paused = true;
+    pauseEl?.classList.add("show");
+  }
+  addEventListener("blur", autoPause);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) autoPause();
+  });
+  document.getElementById("resumeBtn")?.addEventListener("click", () => {
+    paused = false;
+    pauseEl?.classList.remove("show");
+    last = 0;
+  });
+
   function step(ts) {
+    if (paused) {
+      requestAnimationFrame(step);
+      return;
+    }
     if (!last) last = ts;
     const dt = Math.min(33, ts - last) * 0.001;
     last = ts;
@@ -412,6 +436,7 @@ import {
     if (!gameOver && !choosing) {
       runTime += dt;
       score += dt * 10 * scoreMultiplier();
+      scorePillEl.textContent = Math.floor(score);
 
       if (runTime >= level * LEVEL_TIME_STEP) {
         level++;

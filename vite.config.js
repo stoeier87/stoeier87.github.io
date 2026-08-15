@@ -78,6 +78,8 @@ function sitemapPlugin() {
         return dir === "." ? "/" : "/" + dir + "/"; // guard:allow-absolute
       })
         .filter((route) => route !== "/scoreboard/") // guard:allow-absolute
+        // the comet-pong stub is a redirect, not a page worth indexing
+        .filter((route) => route !== "/arcade/comet-pong/") // guard:allow-absolute
         .sort();
       const urls = routes.map((route) => `  <url><loc>${SITE_URL}${route}</loc></url>`).join("\n");
       const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
