@@ -2565,9 +2565,11 @@ export const DIAGRAMS = {
   crazyeights: {
     thumb() {
       const svg = svgEl("svg", { viewBox: VB, draggable: "false" });
+      // Eight frames — the sheet folded into 4x2, as the name promises.
       svg.appendChild(svgEl("path", { d: "M 25 45 L 134 44 L 135 116 L 26 117 Z", ...LINE }));
-      svg.appendChild(svgEl("line", { x1: 61.5, y1: 45, x2: 61.5, y2: 116, ...LINE, "stroke-width": "1.8" }));
-      svg.appendChild(svgEl("line", { x1: 98, y1: 44.6, x2: 98, y2: 116.4, ...LINE, "stroke-width": "1.8" }));
+      svg.appendChild(svgEl("line", { x1: 52.5, y1: 45, x2: 52.5, y2: 116, ...LINE, "stroke-width": "1.8" }));
+      svg.appendChild(svgEl("line", { x1: 80, y1: 44.6, x2: 80, y2: 116.4, ...LINE, "stroke-width": "1.8" }));
+      svg.appendChild(svgEl("line", { x1: 107.5, y1: 44.8, x2: 107.5, y2: 116.2, ...LINE, "stroke-width": "1.8" }));
       svg.appendChild(svgEl("line", { x1: 25.5, y1: 80.5, x2: 134.5, y2: 80, ...LINE, "stroke-width": "1.8" }));
       return svg;
     },
@@ -2586,9 +2588,11 @@ export const DIAGRAMS = {
       });
       prepStroke(edge);
       svg.appendChild(edge);
+      // Three vertical folds and one horizontal: eight frames, as the
+      // name promises. The copy's six-frame variant lives in the text.
       const folds = [];
-      [1 / 3, 2 / 3].forEach((f, i) => {
-        const x = S.x + S.w * f + (i === 0 ? 0.6 : -0.4);
+      [1 / 4, 2 / 4, 3 / 4].forEach((f, i) => {
+        const x = S.x + S.w * f + (i === 0 ? 0.6 : i === 1 ? -0.4 : 0.3);
         const ln = svgEl("line", { x1: x, y1: S.y + 0.5, x2: x - 0.8, y2: S.y + S.h - 0.5, stroke: "currentColor", "stroke-width": "1.9", "stroke-linecap": "round", pathLength: "1", class: "ce-fold ce-fold-v" });
         prepStroke(ln);
         folds.push(ln);
@@ -2599,9 +2603,9 @@ export const DIAGRAMS = {
       prepStroke(hl);
       folds.push(hl);
       svg.appendChild(hl);
-      for (let i = 0; i < 6; i++) {
-        const col = i % 3, row = Math.floor(i / 3);
-        const nx = S.x + S.w * (col + 1) / 3 - 8;
+      for (let i = 0; i < 8; i++) {
+        const col = i % 4, row = Math.floor(i / 4);
+        const nx = S.x + (S.w * (col + 1)) / 4 - 6;
         const ny = S.y + S.h * (row + 1) / 2 - 7;
         const n = svgText(nx, ny, "end", String(i + 1), "tool-label neutral dim ce-num ce-num-" + i);
         svg.appendChild(n);
@@ -2642,14 +2646,14 @@ export const DIAGRAMS = {
       }
       if (reduced()) { applyFinal(); return { doneAt: 0, timers: [], applyFinal }; }
       const timers = [];
-      timers.push(setTimeout(() => runStroke(edge, 240), 0));
-      foldsV.forEach((f, i) => timers.push(setTimeout(() => runStroke(f, 120), 240 + i * 90)));
-      timers.push(setTimeout(() => runStroke(foldH, 140), 430));
-      nums.forEach((n, i) => timers.push(setTimeout(() => n.classList.add("show"), 560 + i * 45)));
-      timers.push(setTimeout(() => runStroke(face, 180), 760));
-      timers.push(setTimeout(() => { hand.style.transition = "opacity 90ms ease"; hand.style.opacity = "1"; }, 930));
-      timers.push(setTimeout(() => { runStroke(arc, 200); timerLabel.classList.add("show"); }, 950));
-      return { doneAt: 1150, timers, applyFinal };
+      timers.push(setTimeout(() => runStroke(edge, 220), 0));
+      foldsV.forEach((f, i) => timers.push(setTimeout(() => runStroke(f, 110), 220 + i * 80)));
+      timers.push(setTimeout(() => runStroke(foldH, 130), 460));
+      nums.forEach((n, i) => timers.push(setTimeout(() => n.classList.add("show"), 520 + i * 36)));
+      timers.push(setTimeout(() => runStroke(face, 170), 830));
+      timers.push(setTimeout(() => { hand.style.transition = "opacity 90ms ease"; hand.style.opacity = "1"; }, 990));
+      timers.push(setTimeout(() => { runStroke(arc, 190); timerLabel.classList.add("show"); }, 1000));
+      return { doneAt: 1190, timers, applyFinal };
     },
   },
 
