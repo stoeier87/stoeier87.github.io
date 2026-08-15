@@ -72,33 +72,23 @@ document.querySelectorAll(".planet-card").forEach((card) => {
   cardRenderer.add(spec, canvas);
 });
 
-/* Card hover:
-   - backdrop pans + zooms to the hovered planet (setTravelTarget)
-   - header padding collapses so the planet has room to breathe
+/* Card hover: the header padding collapses so the grid has room to
+   breathe. That is the whole hover response now — the backdrop no longer
+   pans or zooms toward the hovered planet. The travel pan translated the
+   entire background on pointer movement, and the desktop backdrop must
+   not move: no drift, no parallax, no pointer-driven translation. The
+   planets keep their own rotation and full 3D treatment; the card's own
+   hover styling is untouched.
 
-   Gated on actual hover capability, not viewport width — a touch tap fires
-   a synthetic mouseenter with no matching mouseleave until the next tap
-   elsewhere, so on a device that can't hover this would fire the travel-pan
-   once and leave it stuck aimed at whatever card was tapped last. Same
-   pointer-capability check script.js already uses for the UFO cursor. The
-   backdrop itself (stars, planets) still renders everywhere — this only
-   stops the pan/zoom animation from ever starting on a device that can't
-   trigger it on purpose. */
+   Still gated on actual hover capability — a touch tap fires a synthetic
+   mouseenter with no matching mouseleave, which would leave the header
+   collapsed after every tap. */
 const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 const hall = document.querySelector(".hall");
 if (canHover) {
   document.querySelectorAll(".planet-card.live").forEach((card) => {
-    const key = card.getAttribute("data-planet");
-    const spec = FEATURED_SPECS[key];
-    if (!spec || !backdrop) return;
-    card.addEventListener("mouseenter", () => {
-      backdrop.setTravelTarget(spec.name);
-      hall?.classList.add("card-hovered");
-    });
-    card.addEventListener("mouseleave", () => {
-      backdrop.setTravelTarget(null);
-      hall?.classList.remove("card-hovered");
-    });
+    card.addEventListener("mouseenter", () => hall?.classList.add("card-hovered"));
+    card.addEventListener("mouseleave", () => hall?.classList.remove("card-hovered"));
   });
 }
 
@@ -106,26 +96,11 @@ if (canHover) {
    Drives the backdrop (driven) and the card renderer. One loop, two renderers.
    Under prefers-reduced-motion: one static frame, then stop. */
 const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-const header = document.querySelector("header");
-const solarSystem = document.getElementById("solarSystem");
 let last = 0;
-
-/* Aims the travel-target pan at the open gap between the header (which
-   moves up on hover, see arcade.css) and the card grid below it, rather
-   than dead viewport centre. Read from live rects every frame so it tracks
-   the header's padding-top transition and any resize, no separate hover
-   handling needed. */
-function updateFocusY() {
-  if (!backdrop || !header || !solarSystem) return;
-  const headerBottom = header.getBoundingClientRect().bottom;
-  const solarTop = solarSystem.getBoundingClientRect().top;
-  backdrop.focusY = (headerBottom + solarTop) / 2 / window.innerHeight;
-}
 
 function frame(time) {
   const dt = last ? Math.min(33, time - last) * 0.001 : 0;
   last = time;
-  updateFocusY();
   if (backdrop) backdrop.tick(time);
   cardRenderer.tick(dt);
   if (!motionQuery.matches) requestAnimationFrame(frame);
