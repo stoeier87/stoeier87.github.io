@@ -965,10 +965,6 @@ el.overRestart.addEventListener(
 const held = { left: false, right: false };
 addEventListener("keydown", (e) => {
   if (e.code === "KeyR" && gameOver) return reset();
-  if (e.code === "KeyP" || e.code === "Escape") {
-    e.preventDefault();
-    return togglePause();
-  }
   if (gameOver || paused) return;
   let used = true;
   switch (e.code) {

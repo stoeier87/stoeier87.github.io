@@ -635,7 +635,7 @@ function handleMatch() {
 
 function onTap(clientX, clientY) {
   hideIntro();
-  if (lock || phase !== "play") return;
+  if (paused || lock || phase !== "play") return;
   const r = canvas.getBoundingClientRect();
   const wx = (clientX - r.left - viewOffX) / viewScale;
   const wy = (clientY - r.top - viewOffY) / viewScale;
@@ -868,7 +868,31 @@ let last = 0;
 let dtGlobal = 0.016;
 let backdropPainted = false;
 
+/* Auto-pause: tab switch or window blur pauses; the run resumes only by
+   hand, and there is no manual pause control. The clock is dt-driven, so
+   freezing the loop freezes it. */
+let paused = false;
+const pauseOverlayEl = document.getElementById("pause");
+function autoPause() {
+  if (paused || gameOver) return;
+  paused = true;
+  pauseOverlayEl?.classList.add("show");
+}
+addEventListener("blur", autoPause);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) autoPause();
+});
+document.getElementById("resumeBtn")?.addEventListener("click", () => {
+  paused = false;
+  pauseOverlayEl?.classList.remove("show");
+  last = 0;
+});
+
 function step(ts) {
+  if (paused) {
+    requestAnimationFrame(step);
+    return;
+  }
   if (!last) last = ts;
   dtGlobal = Math.min(33, ts - last) * 0.001;
   last = ts;

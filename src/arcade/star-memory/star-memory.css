@@ -235,3 +235,16 @@ body.is-paused st-planet-field#bg {
   outline: 2px solid var(--game-accent);
   outline-offset: 3px;
 }
+
+/* The site's circular back arrow: a circle, an arrow, no text. */
+.pill.back-circle {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+}

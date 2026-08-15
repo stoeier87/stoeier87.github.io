@@ -1375,11 +1375,6 @@ addEventListener("keydown", (e) => {
     reset();
     return;
   }
-  if (e.code === "KeyP" || e.code === "Escape") {
-    e.preventDefault();
-    togglePause();
-    return;
-  }
   if (gameOver || paused) return;
   let used = true;
   switch (e.code) {

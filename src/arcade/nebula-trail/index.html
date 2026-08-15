@@ -15,7 +15,7 @@
     <!-- Top bar: back link + title badge (left), score + best (right) -->
     <div class="topbar">
       <div class="topbar-group">
-        <a href="../../arcade/" class="pill link">← Arcade</a>
+        <a href="../../arcade/" class="pill back-circle" aria-label="Back to arcade" title="Back to arcade">←</a>
         <div class="pill badge">
           <span class="beacon"></span>
           NEBULA TRAIL
@@ -24,6 +24,14 @@
       <div class="topbar-group">
         <div class="pill stat">SCORE <strong id="score">0</strong></div>
         <a class="pill stat" href="../../scoreboard/">BEST <strong id="best" class="best-val">0</strong></a>
+      </div>
+    </div>
+
+    <!-- Auto-pause overlay -->
+    <div id="pause" class="gameover">
+      <div class="gameover-card">
+        <div class="gameover-title">PAUSED</div>
+        <button id="resumeBtn" class="restart-btn" type="button">Resume</button>
       </div>
     </div>
 

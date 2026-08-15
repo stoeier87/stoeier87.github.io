@@ -556,7 +556,36 @@ import {
     c.closePath();
   }
 
+  /* Auto-pause: tab switch or window blur pauses; the run resumes only
+     by hand, and there is no manual pause control. The countdown is
+     anchored to startTime, so the pause duration is added back on resume
+     and no time is lost. */
+  let paused = false;
+  let pausedAt = 0;
+  const pauseEl = document.getElementById("pause");
+  function autoPause() {
+    if (paused || gameOver) return;
+    paused = true;
+    pausedAt = performance.now();
+    pauseEl?.classList.add("show");
+  }
+  addEventListener("blur", autoPause);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) autoPause();
+  });
+  document.getElementById("resumeBtn")?.addEventListener("click", () => {
+    if (!paused) return;
+    paused = false;
+    startTime += performance.now() - pausedAt;
+    pauseEl?.classList.remove("show");
+    last = 0;
+  });
+
   function step(ts) {
+    if (paused) {
+      requestAnimationFrame(step);
+      return;
+    }
     if (!last) last = ts;
     const dt = Math.min(33, ts - last) * 0.001;
     last = ts;
