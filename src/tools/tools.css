@@ -136,7 +136,7 @@ a { color: inherit; text-decoration: none; }
   max-width: 900px;
   margin: 0 auto;
 }
-/* grid-column: 2 centring removed — 15 items fill five rows exactly */
+/* 23 items, three columns: seven full rows and a two-item last row. */
 
 .tool-node {
   display: flex;

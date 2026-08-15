@@ -227,6 +227,24 @@ a { color: inherit; text-decoration: none; }
   .muda-label { font-size: 5.8px; }
 }
 
+/* ── The eight 2026 diagrams ── */
+.rean-stage { font-size: 7px; letter-spacing: 0.06em; }
+.rean-ownlabel { font-size: 5.6px; letter-spacing: 0.1em; }
+.cm-corelabel { font-size: 7px; letter-spacing: 0.06em; }
+.cm-colhead { font-size: 5.4px; letter-spacing: 0.1em; }
+.pe-axlabel, .pe-avglabel { font-size: 6px; letter-spacing: 0.12em; }
+.pe-peaklabel, .pe-endlabel { font-size: 6.6px; letter-spacing: 0.12em; }
+.kn-axlabel { font-size: 6px; letter-spacing: 0.12em; }
+.kn-lab { font-size: 6px; letter-spacing: 0.06em; }
+.kn-decaylabel { font-size: 5.4px; letter-spacing: 0.12em; }
+.dd-phase { font-size: 7px; letter-spacing: 0.1em; }
+.dd-lower { font-size: 6.6px; letter-spacing: 0.12em; }
+.fw-why { font-size: 5.8px; letter-spacing: 0.18em; }
+.fw-symptom, .fw-cause { font-size: 7px; letter-spacing: 0.1em; }
+.ce-num { font-size: 6px; }
+.ce-timerlabel { font-size: 6.2px; letter-spacing: 0.18em; }
+.sv-last { font-size: 6.2px; letter-spacing: 0.14em; }
+
 .stakemap-ring-label { font-size: 6px; letter-spacing: 0.14em; }
 .stakemap-node-label { font-size: 3.3px; letter-spacing: 0.02em; }
 .reflect-label { font-size: 8px; letter-spacing: 0.08em; }
