@@ -235,10 +235,15 @@ const PIECE_COLORS = {
 };
 
 /* ── Gravity and lock delay ────────────────────────────────
-   Milliseconds per row by level, and the lock delay that goes with it. The
-   curve alone does not end a game; the rising garbage in Part 6 does. */
+   Milliseconds per row by level. The first pass used the brief's table,
+   opening at 900ms — a piece took nine seconds to reach the floor untouched
+   and the opening played like a screensaver. This opens at 300ms and the
+   levels arrive every 8 lines rather than 10, so the game is asking
+   something of you from the first piece and level 9, where the garbage
+   starts, lands at 64 lines instead of 80. The late levels are near the
+   original floor, so the ramp still has somewhere to go. */
 const GRAVITY = [
-  900, 780, 670, 570, 480, 400, 330, 270, 220, 180, 150, 125, 105, 88, 74, 62, 52, 44, 37, 30,
+  300, 270, 243, 218, 195, 174, 154, 136, 119, 104, 90, 77, 66, 56, 47, 40, 34, 29, 25, 22,
 ];
 function gravityMs(level) {
   return GRAVITY[Math.min(level, GRAVITY.length) - 1] ?? 30;
@@ -258,6 +263,7 @@ function garbageEvery(level) {
 }
 
 const MAX_LOCK_RESETS = 15;
+const LINES_PER_LEVEL = 8;
 
 /* ── Canvas + view ─────────────────────────────────────── */
 const canvas = document.getElementById("game");
@@ -488,35 +494,6 @@ function drawSun() {
   ctx.restore();
 }
 
-function drawHaze() {
-  /* Pluto's haze is its most distinctive feature: a thin blue-grey ring at
-     the limb, brightest where the surface is lit and thinning into shadow.
-     The light comes from the upper left, so the ring peaks there. */
-  const p = planetScreen(plutoSpec);
-  const LIT = Math.PI * 1.28; // up-left
-  ctx.save();
-  ctx.globalCompositeOperation = "lighter";
-  for (let i = 0; i < 3; i++) {
-    const rr = p.r + 1 + i * 2.6;
-    const base = 0.2 - i * 0.055;
-    const steps = 44;
-    ctx.lineWidth = 2.2 - i * 0.4;
-    for (let s = 0; s < steps; s++) {
-      const a0 = (s / steps) * Math.PI * 2;
-      const a1 = ((s + 1.02) / steps) * Math.PI * 2;
-      let d = Math.abs(((a0 - LIT + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
-      d = 1 - d / Math.PI; // 1 on the lit side, 0 opposite
-      const alpha = base * Math.pow(d, 1.6);
-      if (alpha < 0.004) continue;
-      ctx.strokeStyle = `rgba(158,196,228,${alpha.toFixed(3)})`;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, rr, a0, a1);
-      ctx.stroke();
-    }
-  }
-  ctx.restore();
-}
-
 /* The terminator. planet-field lights every scene from one shared
    DirectionalLight, which is right for the rest of the site and far too
    generous for a body 5 billion km from the sun. Rather than dim that light
@@ -525,7 +502,7 @@ function drawHaze() {
    only a crescent survives. This is the luminance cap as well as the
    terminator — it is what keeps the falling pieces legible where they cross
    the planet. */
-const LIT_ANGLE = Math.PI * 1.28; // up and to the left, matching the haze
+const LIT_ANGLE = Math.PI * 1.28; // up and to the left
 
 function drawPlutoShadow() {
   const p = planetScreen(plutoSpec);
@@ -930,7 +907,7 @@ function lockPiece() {
 
   if (full.length) {
     lines += full.length;
-    const newLevel = Math.min(30, 1 + Math.floor(lines / 10));
+    const newLevel = Math.min(30, 1 + Math.floor(lines / LINES_PER_LEVEL));
     if (newLevel !== level) level = newLevel;
     scoreClear(full.length, spin);
     beginClear(full);
@@ -1170,25 +1147,6 @@ function drawBlock(g2, px, py, size, type, opts = {}) {
   g2.restore();
 }
 
-function drawGhost() {
-  if (!piece || gameOver) return;
-  const gy = ghostY();
-  if (gy === piece.y) return;
-  ctx.save();
-  ctx.strokeStyle = "rgba(255,255,255,0.34)";
-  ctx.lineWidth = Math.max(1, cell * 0.05);
-  for (const [cx, cy] of cellsOf(piece.type, piece.rot, piece.x, gy)) {
-    if (cy < HIDDEN) continue;
-    ctx.strokeRect(
-      gridX + cx * cell + 1.5,
-      gridY + (cy - HIDDEN) * cell + 1.5,
-      cell - 3,
-      cell - 3,
-    );
-  }
-  ctx.restore();
-}
-
 function drawPlayfield(now) {
   // Panel: the background stays visible behind it, just quietened.
   ctx.fillStyle = "rgba(6,10,20,0.55)";
@@ -1221,8 +1179,6 @@ function drawPlayfield(now) {
       }
     }
   }
-
-  drawGhost();
 
   // Active piece.
   if (piece && !gameOver) {
@@ -1760,7 +1716,6 @@ function draw(now) {
   ctx.scale(viewScale, viewScale);
 
   drawPlutoShadow();
-  drawHaze();
   drawPlumes(now);
   drawSun();
 

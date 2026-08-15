@@ -186,32 +186,6 @@ function buildStationSvg() {
   return { svg, crackEls };
 }
 
-function buildFragmentSvg(isDish) {
-  const size = 34,
-    cx = 17,
-    cy = 17;
-  const svg = svgEl("svg", { viewBox: `0 0 ${size} ${size}`, class: "egg-fragment-svg" });
-  const n = 5 + Math.floor(Math.random() * 3);
-  const pts = [];
-  for (let i = 0; i < n; i++) {
-    const a = (i / n) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
-    const r = 8 + Math.random() * 6;
-    pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
-  }
-  let d = `M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
-  for (let i = 1; i < pts.length; i++) d += ` L ${pts[i][0].toFixed(1)} ${pts[i][1].toFixed(1)}`;
-  d += " Z";
-  if (isDish) svg.appendChild(svgEl("circle", { cx, cy, r: "7", class: "egg-fragment-glow" }));
-  svg.appendChild(svgEl("path", { d, class: "egg-fragment-shape" }));
-  svg.appendChild(
-    svgEl("path", {
-      d: `M ${(cx - 5).toFixed(1)} ${(cy - 3).toFixed(1)} L ${(cx + 4).toFixed(1)} ${(cy + 5).toFixed(1)}`,
-      class: "egg-fragment-seam",
-    }),
-  );
-  return svg;
-}
-
 const CSS = `
 .egg-layer {
   position: fixed;
@@ -324,39 +298,12 @@ const CSS = `
 }
 .egg-station-wrap { position: relative; display: block; }
 
-/* ── Speech bubble (complaints) ────────────────────────── */
-.egg-bubble {
-  position: absolute;
-  right: 0;
-  bottom: calc(100% + 14px);
-  max-width: min(300px, calc(100vw - 32px));
-  width: max-content;
-  padding: 6px 11px;
-  border: 1.5px solid rgba(255, 255, 255, 0.5);
-  border-radius: 10px;
-  background: rgba(5, 7, 15, 0.85);
-  color: var(--color-ink);
-  font-size: 13px;
-  line-height: 1.45;
-  white-space: normal;
-  opacity: 0;
-  transform: translateY(4px);
-  transition: opacity 0.25s ease, transform 0.25s ease;
-  pointer-events: none;
-}
-.egg-bubble::after {
-  content: "";
-  position: absolute;
-  right: 26px;
-  top: 100%;
-  border: 6px solid transparent;
-  border-top-color: rgba(255, 255, 255, 0.5);
-}
-.egg-bubble.show { opacity: 1; transform: translateY(0); }
-
 /* ── Shots ─────────────────────────────────────────────
    The homepage's own UFO already follows the cursor, so it is the ship —
    the bolt just leaves from wherever it is. */
+/* Return fire is the station's, so it is white-hot rather than the red of
+   the shot that provoked it — you can tell incoming from outgoing. */
+.egg-bolt-return { background: #eaf2ff; box-shadow: 0 0 8px rgba(190, 220, 255, 0.95); width: 20px; }
 .egg-bolt { position: fixed; left: 0; top: 0; width: 16px; height: 2px; background: var(--color-red); border-radius: 2px; transform-origin: 0 50%; box-shadow: 0 0 6px var(--color-red); pointer-events: none; z-index: 95; }
 .egg-ring { position: fixed; left: 0; top: 0; width: 6px; height: 6px; margin: -3px 0 0 -3px; border: 1.5px solid var(--color-red); border-radius: 50%; opacity: 0.9; transform: scale(1); pointer-events: none; z-index: 95; transition: transform 0.3s ease-out, opacity 0.3s ease-out; }
 .egg-ring.run { transform: scale(6); opacity: 0; }
@@ -419,12 +366,6 @@ const CSS = `
   box-shadow: 0 0 6px 1px currentColor; color: #fff; background: currentColor;
 }
 
-/* ── Fragments ─────────────────────────────────────────── */
-.egg-fragment { position: fixed; left: 0; top: 0; width: 34px; height: 34px; margin: -17px 0 0 -17px; pointer-events: none; z-index: 340; }
-.egg-fragment-shape { fill: #6f7683; stroke: rgba(240, 243, 248, 0.85); stroke-width: 1; stroke-linejoin: round; }
-.egg-fragment-seam { stroke: rgba(16, 19, 25, 0.6); stroke-width: 0.8; }
-.egg-fragment-glow { fill: #fff; opacity: 0.4; filter: blur(2px); }
-
 /* ── Destruction (unchanged mechanics, ported from the alien build) ── */
 .egg-shaken {
   transform: translate(var(--egg-sx, 0px), var(--egg-sy, 0px))
@@ -486,7 +427,6 @@ const CSS = `
 @media (max-width: 500px) {
   .egg-layer { right: 8px; --egg-wander-x: 100px; }
   .egg-station { width: 68px; height: 68px; }
-  .egg-bubble { font-size: 12px; max-width: min(250px, calc(100vw - 24px)); }
   .egg-surface-seams > *:nth-child(n+4) { display: none; }
 }
 
@@ -508,7 +448,6 @@ function buildLayer() {
   layer.innerHTML = `
     <div class="egg-wander">
     <div class="egg-scene">
-      <div class="egg-bubble" role="status" aria-live="polite"></div>
       <div class="egg-station-entrance">
         <div class="egg-station-float">
           <div class="egg-station-tilt">
@@ -536,7 +475,6 @@ function initEasterEgg() {
   document.body.appendChild(layer);
 
   const scene = layer.querySelector(".egg-scene");
-  const bubble = layer.querySelector(".egg-bubble");
   const stationBtn = layer.querySelector(".egg-station-btn");
   const stationWrap = layer.querySelector(".egg-station-wrap");
   const stationEntrance = layer.querySelector(".egg-station-entrance");
@@ -574,31 +512,6 @@ function initEasterEgg() {
   window.addEventListener("scroll", checkBottom, { passive: true });
   window.addEventListener("resize", checkBottom, { passive: true });
   checkBottom();
-
-  /* ── Complaint bubble (typewriter, same technique as space-bar) ── */
-  let typeTimer = null;
-  let hideTimer = null;
-  function typeBubble(text) {
-    clearInterval(typeTimer);
-    clearTimeout(hideTimer);
-    bubble.textContent = "";
-    bubble.classList.add("show");
-    let i = 0;
-    typeTimer = setInterval(() => {
-      bubble.textContent = text.slice(0, ++i);
-      if (i >= text.length) clearInterval(typeTimer);
-    }, 40);
-  }
-  function hideBubble(instant) {
-    clearInterval(typeTimer);
-    clearTimeout(hideTimer);
-    bubble.classList.remove("show");
-    if (instant) bubble.textContent = "";
-  }
-  function holdThenFade() {
-    clearTimeout(hideTimer);
-    hideTimer = setTimeout(() => hideBubble(false), 2500);
-  }
 
   let lastShot = 0;
   let pointer = null;
@@ -667,14 +580,32 @@ function initEasterEgg() {
     fire(far ? pointer : nearestEdgePoint());
   });
 
-  /* ── Escalation: five hits, damage accumulates, nothing resets ── */
-  const LINES = {
-    1: "Ow.",
-    2: "Read the sign.",
-    3: "Right. Noted. Still here.",
-    4: "This is load-bearing.",
-    5: "Ah.",
-  };
+  /* The station's only reply: a bolt back down the line of fire, aimed at
+     the cursor — which on this page is the UFO. It always misses, because
+     the joke is that it is still there. */
+  function returnFire() {
+    const r = stationBtn.getBoundingClientRect();
+    const ox = r.left + r.width * 0.42;
+    const oy = r.top + r.height * 0.4;
+    const t = pointer ?? nearestEdgePoint();
+    const dx = t.x - ox,
+      dy = t.y - oy;
+    const len = Math.hypot(dx, dy) || 1;
+    const ang = (Math.atan2(dy, dx) * 180) / Math.PI;
+    const bolt = document.createElement("div");
+    bolt.className = "egg-bolt egg-bolt-return";
+    bolt.style.transform = `translate(${ox.toFixed(0)}px, ${oy.toFixed(0)}px) rotate(${ang}deg)`;
+    document.body.appendChild(bolt);
+    requestAnimationFrame(() => {
+      bolt.style.transition = "transform 0.22s linear, opacity 0.22s ease-in";
+      bolt.style.transform = `translate(${(ox + (dx / len) * (len + 90)).toFixed(0)}px, ${(oy + (dy / len) * (len + 90)).toFixed(0)}px) rotate(${ang}deg)`;
+      bolt.style.opacity = "0";
+    });
+    setTimeout(() => bolt.remove(), 260);
+  }
+
+  /* ── Escalation: five hits, damage accumulates, nothing resets ──
+     The station says nothing. It shoots back. */
   let recoilTimer = null;
   let sparkTimer = null;
 
@@ -688,7 +619,7 @@ function initEasterEgg() {
     if (destroying || presses >= 5) return;
     presses += 1;
     layer.classList.add("egg-hit" + presses);
-    typeBubble(LINES[presses]);
+    if (!reduced) returnFire();
     revealCracksForHit(presses);
 
     if (!reduced) {
@@ -715,12 +646,7 @@ function initEasterEgg() {
       }
     }
 
-    if (presses === 5) {
-      clearTimeout(hideTimer);
-      setTimeout(startDestruction, 400);
-    } else {
-      holdThenFade();
-    }
+    if (presses === 5) setTimeout(startDestruction, 400);
   }
 
   /* ── Destruction: unchanged mechanics through the fracture/collapse
@@ -785,73 +711,47 @@ function initEasterEgg() {
      The station goes critical and becomes the singularity. Its debris and
      the whole page collapse into one point, the point holds alone for a
      beat, and then it detonates outward as the new universe. */
-  function collapseStation(rect, onDone) {
-    const cx = rect.left + rect.width / 2,
-      cy = rect.top + rect.height / 2;
-    const centreX = window.innerWidth / 2,
-      centreY = window.innerHeight / 2;
+  /* The station goes critical: it shrinks in place into a single bright
+     point, which is what then detonates. No fragments — the whole thing
+     becomes the singularity. */
+  function stationToPoint(onDone) {
+    const r = stationBtn.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
 
-    const frags = [];
-    for (let i = 0; i < 6; i++) {
-      const wrap = document.createElement("div");
-      wrap.className = "egg-fragment";
-      wrap.appendChild(buildFragmentSvg(i === 5));
-      wrap.style.transform = `translate(${cx.toFixed(0)}px, ${cy.toFixed(0)}px)`;
-      document.body.appendChild(wrap);
-      frags.push(wrap);
-    }
+    stationEntrance.style.transformOrigin = "center center";
+    stationEntrance.style.transition =
+      "transform 0.55s cubic-bezier(0.7, 0, 0.85, 0.2), filter 0.5s ease-in, opacity 0.15s ease 0.5s";
+    stationEntrance.style.filter = "brightness(3.4)";
+    stationEntrance.style.transform = "scale(0.04)";
+    stationEntrance.style.opacity = "0";
 
-    // Burst outward off the station's own position...
-    frags.forEach((f, i) => {
-      const ang = (i / 6) * Math.PI * 2 + (Math.random() - 0.5) * 0.6;
-      const dist = 40 + Math.random() * 26;
-      f.style.transition = "transform 0.26s cubic-bezier(0.15, 0.85, 0.3, 1)";
-      f.style.transform = `translate(${(cx + Math.cos(ang) * dist).toFixed(0)}px, ${(cy + Math.sin(ang) * dist).toFixed(0)}px) rotate(${(Math.random() * 160 - 80).toFixed(0)}deg)`;
-    });
-
-    // ...then every piece is dragged into the centre, the glowing dish last.
-    frags.forEach((f, seq) => {
-      setTimeout(
-        () => {
-          f.style.transition =
-            "transform 0.42s cubic-bezier(0.6, -0.2, 0.75, 0.4), opacity 0.18s ease 0.3s";
-          f.style.transform = `translate(${centreX.toFixed(0)}px, ${centreY.toFixed(0)}px) rotate(${(Math.random() * 220 - 110).toFixed(0)}deg) scale(0.03)`;
-          f.style.opacity = "0";
-        },
-        260 + seq * 90,
-      );
-    });
-
-    setTimeout(
-      () => {
-        frags.forEach((f) => f.remove());
-        onDone();
-      },
-      260 + 5 * 90 + 430,
-    );
+    setTimeout(() => onDone({ x: cx, y: cy }), 560);
   }
 
   /* One point of light alone on black, then the bang. */
-  function bigBang(onDone) {
-    const centreX = window.innerWidth / 2,
-      centreY = window.innerHeight / 2;
-    const reach = Math.hypot(centreX, centreY);
+  function bigBang(at, onDone) {
+    const centreX = at?.x ?? window.innerWidth / 2;
+    const centreY = at?.y ?? window.innerHeight / 2;
+    // Reach has to cover the farthest corner from wherever it went off.
+    const reach = Math.max(
+      Math.hypot(centreX, centreY),
+      Math.hypot(window.innerWidth - centreX, centreY),
+      Math.hypot(centreX, window.innerHeight - centreY),
+      Math.hypot(window.innerWidth - centreX, window.innerHeight - centreY),
+    );
 
     const core = document.createElement("div");
     core.className = "egg-singularity";
     core.style.transform = `translate(${centreX.toFixed(0)}px, ${centreY.toFixed(0)}px) scale(0)`;
     document.body.appendChild(core);
 
-    // It swells, holds, and compresses hard just before it goes.
+    // A short bright hold where the station was, then it goes.
     requestAnimationFrame(() => {
-      core.style.transition = "transform 0.5s ease-out, opacity 0.3s ease-out";
+      core.style.transition = "transform 0.18s ease-out, opacity 0.12s ease-out";
       core.style.opacity = "1";
-      core.style.transform = `translate(${centreX.toFixed(0)}px, ${centreY.toFixed(0)}px) scale(1)`;
+      core.style.transform = `translate(${centreX.toFixed(0)}px, ${centreY.toFixed(0)}px) scale(1.1)`;
     });
-    setTimeout(() => {
-      core.style.transition = "transform 0.22s cubic-bezier(0.7, 0, 0.9, 0.2)";
-      core.style.transform = `translate(${centreX.toFixed(0)}px, ${centreY.toFixed(0)}px) scale(0.25)`;
-    }, 900);
 
     // Detonation: the point snaps out and becomes light, three shockwaves
     // chase it out, and embers fly past the edges.
@@ -913,18 +813,19 @@ function initEasterEgg() {
         });
         setTimeout(() => e.remove(), 1100);
       }
-    }, 1140);
+    }, 330);
 
-    // Detonation is at 1140; hold past the last ember before the dead screen.
+    /* Detonation is at 330. Hand off while the embers are still travelling —
+       waiting for the last one leaves the page sitting empty and undramatic
+       for the better part of a second. */
     setTimeout(() => {
       core.remove();
       onDone();
-    }, 2500);
+    }, 1050);
   }
 
   function startDestruction() {
     destroying = true;
-    hideBubble(true);
     /* Both, not just body: the debris, shockwaves and embers are fixed
        elements that overflow the viewport on purpose, and only the root
        element's overflow suppresses the scrollbar they would otherwise
@@ -1050,22 +951,11 @@ function initEasterEgg() {
       ramping = true;
     });
 
-    // 3.6s COLLAPSE: the station shatters and every piece is dragged into
-    // the centre, where it becomes the singularity.
+    /* 3.6s THE STATION GOES. It collapses to a point in place and that
+       point detonates — the explosion is the transition, not a prelude to
+       one. Everything still shaking is dismantled under the blast. */
     at(3600, () => {
-      stationEntrance.style.transition = "opacity 0.15s ease";
-      stationEntrance.style.opacity = "0";
-      collapseStation(stationEntrance.getBoundingClientRect(), goDark);
-    });
-
-    /* Everything that was still shaking or glowing is dismantled behind a
-       black curtain, leaving one point of light alone on nothing. */
-    function goDark() {
-      const black = fxDiv("egg-blackout");
-      black.style.transition = "opacity 0.45s ease";
-      requestAnimationFrame(() => (black.style.opacity = "1"));
-
-      setTimeout(() => {
+      stationToPoint((at) => {
         clearInterval(shaker);
         shakeEls.forEach((el) => el.classList.remove("egg-shaken"));
         ["--egg-sx", "--egg-sy", "--egg-rot", "--egg-scl"].forEach((v) =>
@@ -1076,9 +966,16 @@ function initEasterEgg() {
         border.remove();
         flash.remove();
         layer.remove();
-        bigBang(showDeadScreen);
-      }, 500);
-    }
+
+        bigBang(at, () => {
+          // The blast has already whited the screen out; settle onto black.
+          const black = fxDiv("egg-blackout");
+          black.style.transition = "opacity 0.5s ease";
+          requestAnimationFrame(() => (black.style.opacity = "1"));
+          setTimeout(showDeadScreen, 520);
+        });
+      });
+    });
   }
 
   function showDeadScreen() {
