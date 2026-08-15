@@ -179,9 +179,36 @@ Claude-Session: https://claude.ai/code/session_01Fx1PN1RacHCrY8vkkA8cvW
 
 Trailer: `Claude-Session:` only — a URL so any line traces back to the conversation that produced it. **No `Co-Authored-By` line.** **Do not put the "🤖 Generated with Claude Code" line in commit messages** — it belongs in PR bodies only. This overrides the global default.
 
+### Versioning
+
+`package.json`'s version is never bumped by hand. It's computed on every push to `stage` — a direct
+push, a cherry-pick, or a merged PR into `stage` are all just push events to that ref — and only
+committed if the computed target actually changed since the last time. Re-running on five pushes in
+one release cycle that are all `fix:`-shaped produces one commit, not five; a late `feat:` landing
+in the same cycle produces one more. The target is always `last release tag + highest-severity
+commit type since that tag`, set directly rather than incremented, which is what makes it safe to
+recompute on every push without the number running away.
+
+**Bump type**, from the Conventional Commit type of everything since the last release tag (highest
+severity wins):
+
+| Commit shape                                                                                   | Bump  |
+| ---------------------------------------------------------------------------------------------- | ----- |
+| `feat:` / `feat(scope):`                                                                       | minor |
+| `type!:` or a `BREAKING CHANGE:` footer, any type                                              | major |
+| everything else (`fix`, `content`, `chore`, `docs`, `refactor`, `perf`, `style`, `test`, `ci`) | patch |
+
+Because the bump reads the type prefix literally, `feat:` vs `fix:` isn't just style here — it
+decides minor vs patch. `!` or a `BREAKING CHANGE:` footer is the only path to major.
+
+The `vX.Y.Z` tag is pushed at merge-to-`main` time, pointing at the merge commit — that's the "what's
+actually live on `stoeier.dk` right now" marker. `main`'s ruleset blocks any direct push including
+from CI (see §1's ladder gates), so the bump itself has to land on `stage` and ride into `main`
+through the normal PR diff — never by pushing straight to `main`.
+
 ### PR bodies
 
-There have been zero code reviews across 53 PRs and `main` is unprotected, so **the PR body is the review artifact.** Required shape:
+There have been zero code reviews across 53 PRs, so **the PR body is the review artifact.** Required shape:
 
 1. **Preview URL on line one.**
 2. A `##` heading per touched surface.
