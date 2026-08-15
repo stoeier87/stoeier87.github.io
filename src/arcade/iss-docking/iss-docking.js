@@ -482,7 +482,7 @@ import {
     rocks.length = 0;
     debris.length = 0;
     impacts.length = 0;
-    nextRockAt = 5000;
+    nextRockAt = 3000;
     nextDebrisAt = 13000;
   }
 
@@ -603,9 +603,9 @@ import {
 
       // ── Hazards: spawn (density ramps with the run), move, collide ──
       const elapsedMs = elapsed * 1000;
-      if (elapsedMs >= nextRockAt && rocks.length < 6) {
+      if (elapsedMs >= nextRockAt && rocks.length < 10) {
         spawnRock();
-        nextRockAt = elapsedMs + Math.max(1700, 4200 - elapsed * 55);
+        nextRockAt = elapsedMs + Math.max(950, 2600 - elapsed * 50);
       }
       if (elapsedMs >= nextDebrisAt && debris.length < (elapsed > 35 ? 2 : 1)) {
         spawnDebris();
