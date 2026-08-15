@@ -34,10 +34,22 @@
 
     <!-- Status panel, same shape as ISS Docking's APPROACH panel -->
     <div class="approach" id="status">
-      <div class="approach-title">BOARD</div>
+      <div class="approach-title">RUN</div>
+      <div class="approach-row">
+        <span class="approach-label">ROUND</span>
+        <strong class="approach-value" id="roundVal">1</strong>
+      </div>
       <div class="approach-row">
         <span class="approach-label">PAIRS</span>
-        <strong class="approach-value" id="pairsVal">0 / 8</strong>
+        <strong class="approach-value" id="pairsVal">0 / 6</strong>
+      </div>
+      <div class="approach-row">
+        <span class="approach-label">MULTI</span>
+        <strong class="approach-value" id="multVal">x1</strong>
+      </div>
+      <div class="approach-row">
+        <span class="approach-label">TIME</span>
+        <div class="bar"><div class="bar-fill" id="timeFill"></div></div>
       </div>
     </div>
 
@@ -46,10 +58,11 @@
       <div class="intro" id="intro">
         <div class="intro-title">STAR MEMORY</div>
         <div class="intro-body">
-          Match the pairs. Saturn has been keeping time for a while and is in no hurry.
+          Match the constellations before the clock runs down. Saturn has been keeping time for a
+          while; now it is your turn.
         </div>
         <div class="intro-keys" id="introKeys">
-          <span><b>Click</b> turn a card</span><span><b>R</b> restart after a match-out</span>
+          <span><b>Click</b> turn a card</span><span><b>R</b> restart when time is out</span>
         </div>
         <div class="intro-keys" id="introTouch">
           <span><b>Tap</b> turn a card</span>
@@ -64,6 +77,9 @@
         <div class="final-rows">
           <div class="final-row">
             <span>SCORE</span><strong id="finalScore">0</strong>
+          </div>
+          <div class="final-row">
+            <span>ROUNDS</span><strong id="finalRounds">0</strong>
           </div>
           <div class="final-row final-best">
             <span>BEST</span><strong id="finalBest">0</strong>

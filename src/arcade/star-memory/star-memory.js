@@ -1,19 +1,27 @@
-/* STAR MEMORY — the visual layer rebuilt over the existing logic.
+/* STAR MEMORY — constellation faces from the tools library, and a run
+ * against the clock.
  *
- * The matching game is unchanged: eight pairs, flip two, 100 a match,
- * minus 10 a miss, 200 for the board. What changed is everything the eye
- * sees: Saturn with real perspective rings behind the board, and card
- * faces that are eight different kinds of star, distinguishable by
- * silhouette alone — colour is only the secondary cue.
+ * The card faces are the 23 model diagrams from /tools, sampled into
+ * constellations by the same shared module the tools backdrop uses
+ * (constellation-source.js) — star points at the vertices, thin faint
+ * lines between them, a fixed background scatter and a fixed colour cast
+ * per model, so a returning player recognises a shape. The geometry is
+ * imported, never redrawn.
  *
- * Canvas contract: the meteor-dodge variant this game already used —
- * fixed 720x1280 virtual board, letterboxed. DPR cap, setTransform after
- * resize, world-space pointer conversion, clamped dt.
+ * The run is continuous: clearing a board starts the next round on a
+ * shorter clock (90s, minus 5 per round, floor 35 at round 12), with up
+ * to 15 unspent seconds carried forward. Fewer mistakes still earn more
+ * — 100 a match times a streak multiplier that one mismatch resets.
+ *
+ * Canvas contract: fixed 720x1280 virtual board, letterboxed. DPR cap,
+ * setTransform after resize, world-space pointer conversion, clamped dt.
  */
 
 import { definePlanetField } from "../../shared/elements/planet-field.ts";
 import { color } from "../../tokens.ts";
 import { submitScoreOnGameOver, fetchGlobalBest } from "../shared/score-submit.js";
+import { DIAGRAMS, TOOLS, mulberry32 } from "../../tools/shared/tools-data.js";
+import { extractConstellation } from "../../tools/shared/constellation-source.js";
 
 definePlanetField();
 
@@ -125,9 +133,7 @@ function drawSaturnShadow() {
 }
 
 /* The ring shadow: a soft dark band across the lit face where the ring
-   plane crosses it. The single detail that does the most for
-   dimensionality, so it gets its own pass — and it sweeps once when the
-   board completes. */
+   plane crosses it — and it sweeps once when a board completes. */
 let ringSweep = -1; // 0..1 while sweeping
 function drawRingShadow() {
   const p = planetScreen(saturnSpec);
@@ -188,21 +194,223 @@ function drawTitanHaze() {
   ctx.fill();
 }
 
-/* ── Cards ─────────────────────────────────────────────── */
-const TYPES = [
-  "REDGIANT",
-  "WHITEDWARF",
-  "BINARY",
-  "PULSAR",
-  "SUPERNOVA",
-  "NEBULA",
-  "BLACKHOLE",
-  "PROTOSTAR",
+/* ── The 23 model constellations ───────────────────────────
+   Extracted once at boot from the very SVGs /tools draws, via the shared
+   sampler. Extraction needs the SVGs in the DOM with real layout, so
+   they pass through a hidden host and are gone before first paint. */
+
+/* Dense diagrams sample coarser so a card reads as a constellation, not
+   a scatter plot — the brief's "simplify rather than enlarge". */
+const STEP_OVERRIDE = {
+  grid9: 44,
+  grid6: 40,
+  lotus: 44,
+  crazyeights: 36,
+  sixbysix: 38,
+  matrix: 32,
+  stakemap: 32,
+  octagon: 30,
+  fivewhys: 36,
+  silentvoting: 44,
+  coremodel: 36,
+  layered: 42,
+  venn: 32,
+  rean: 30,
+  kano: 30,
+};
+
+/* Silhouette families for board spacing. Six families; no board carries
+   more than two of a family, and the EXCLUSIVE groups below are pairs or
+   trios close enough to confuse (Design Thinking's venn and Octalysis's
+   octagon are both round mandalas; the three axis-plus-curve charts;
+   the two triangles; the two row-lists; the two 3x3 grids). */
+const FAMILY = {
+  venn: "circular",
+  octagon: "circular",
+  reflect: "circular",
+  triangle: "angular",
+  pyramid: "angular",
+  doublediamond: "angular",
+  grid9: "grid",
+  grid6: "grid",
+  matrix: "grid",
+  lotus: "grid",
+  crazyeights: "grid",
+  curve: "curve",
+  peakend: "curve",
+  kano: "curve",
+  squiggle: "curve",
+  radial7: "radial",
+  stakemap: "radial",
+  coremodel: "radial",
+  silentvoting: "radial",
+  rean: "linear",
+  fivewhys: "linear",
+  layered: "linear",
+  sixbysix: "linear",
+};
+const EXCLUSIVE = [
+  ["venn", "octagon"],
+  ["grid9", "lotus"],
+  ["curve", "peakend", "kano"],
+  ["triangle", "pyramid"],
+  ["grid6", "sixbysix"],
 ];
 
+const GEO = {};
+(function extractAllModels() {
+  const host = document.createElement("div");
+  host.style.cssText = "position:fixed;left:0;top:0;visibility:hidden;pointer-events:none;";
+  host.setAttribute("aria-hidden", "true");
+  document.body.appendChild(host);
+
+  TOOLS.forEach((tool, i) => {
+    const key = tool.diagram;
+    if (GEO[key]) return;
+    const svg = DIAGRAMS[key].thumb();
+    svg.style.cssText = "display:block;width:160px;height:160px;";
+    host.appendChild(svg);
+    const { stars, polylines } = extractConstellation(svg, { step: STEP_OVERRIDE[key] ?? 26 });
+    svg.remove();
+    if (!stars.length) return;
+
+    // Normalise to a centred [-1, 1] box, aspect preserved.
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
+    const scan = (p) => {
+      minX = Math.min(minX, p.x);
+      minY = Math.min(minY, p.y);
+      maxX = Math.max(maxX, p.x);
+      maxY = Math.max(maxY, p.y);
+    };
+    stars.forEach(scan);
+    polylines.forEach((line) => line.forEach(scan));
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+    const scale = 2 / Math.max(maxX - minX, maxY - minY, 1);
+    const norm = (p) => ({ x: (p.x - cx) * scale, y: (p.y - cy) * scale });
+
+    /* Everything seeded from the model's index, so size, brightness, the
+       one-or-two off-grid points, the scatter and the hue are fixed for
+       that model forever — a returning player recognises it. */
+    const rnd = mulberry32(1000 + i * 77);
+    const offA = Math.floor(rnd() * stars.length);
+    const offB = (offA + 1 + Math.floor(rnd() * Math.max(1, stars.length - 1))) % stars.length;
+    let normStars = stars.map((p, si) => {
+      const q = norm(p);
+      if (si === offA || si === offB) {
+        q.x += (rnd() - 0.5) * 0.11;
+        q.y += (rnd() - 0.5) * 0.11;
+      }
+      return { ...q, r: 0.55 + rnd() * 0.75, a: 0.55 + rnd() * 0.45 };
+    });
+    /* Corner-heavy diagrams (nine boxes = 36 corners) stay dense no matter
+       the sampling step, so the last resort is merging: fuse the closest
+       pair until at most 30 stars remain. The thin lines still carry the
+       full shape — this only calms the sparkle. */
+    while (normStars.length > 30) {
+      let bi = 0,
+        bj = 1,
+        bd = Infinity;
+      for (let a = 0; a < normStars.length; a++)
+        for (let b2 = a + 1; b2 < normStars.length; b2++) {
+          const d =
+            (normStars[a].x - normStars[b2].x) ** 2 + (normStars[a].y - normStars[b2].y) ** 2;
+          if (d < bd) {
+            bd = d;
+            bi = a;
+            bj = b2;
+          }
+        }
+      const A = normStars[bi];
+      const B = normStars[bj];
+      const merged = {
+        x: (A.x + B.x) / 2,
+        y: (A.y + B.y) / 2,
+        r: Math.max(A.r, B.r),
+        a: Math.max(A.a, B.a),
+      };
+      normStars = normStars.filter((_, idx) => idx !== bi && idx !== bj);
+      normStars.push(merged);
+    }
+    const scatter = [...Array(9)].map(() => ({
+      x: (rnd() * 2 - 1) * 1.12,
+      y: (rnd() * 2 - 1) * 1.12,
+      r: 0.25 + rnd() * 0.35,
+      a: 0.12 + rnd() * 0.14,
+    }));
+
+    GEO[key] = {
+      stars: normStars,
+      polys: polylines.map((line) => line.map(norm)),
+      scatter,
+      hue: (i * 137.508) % 360, // golden-angle spread: 23 distinct casts
+    };
+  });
+  host.remove();
+})();
+
+const ALL_KEYS = TOOLS.map((t) => t.diagram).filter((k) => GEO[k]);
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+/* Fresh set each round: models from the previous round sit at the back
+   of each family's queue (rule 2 relaxes before rule 3 by construction),
+   families cap at two per board, and an EXCLUSIVE group contributes at
+   most one model. Round-robin across shuffled families spreads the rest. */
+function selectModels(pairs, prev) {
+  const groupOf = (k) => EXCLUSIVE.findIndex((g) => g.includes(k));
+  const byFam = {};
+  for (const k of ALL_KEYS) (byFam[FAMILY[k]] ??= []).push(k);
+  const famNames = shuffle(Object.keys(byFam));
+  for (const f of famNames) {
+    const fresh = shuffle(byFam[f].filter((k) => !prev.includes(k)));
+    const stale = shuffle(byFam[f].filter((k) => prev.includes(k)));
+    byFam[f] = fresh.concat(stale);
+  }
+  const picked = [];
+  const famCount = {};
+  const usedGroups = new Set();
+  // Two sweeps: every family's fresh models first, and only once fresh is
+  // exhausted everywhere may last round's models return — rule 2 relaxes
+  // before rule 3, never the other way around.
+  for (const freshOnly of [true, false]) {
+    for (let pass = 0; pass < 6 && picked.length < pairs; pass++) {
+      for (const f of famNames) {
+        if (picked.length >= pairs) break;
+        if ((famCount[f] || 0) >= 2) continue;
+        const next = byFam[f].find(
+          (k) =>
+            !picked.includes(k) &&
+            (!freshOnly || !prev.includes(k)) &&
+            (groupOf(k) < 0 || !usedGroups.has(groupOf(k))),
+        );
+        if (!next) continue;
+        picked.push(next);
+        famCount[f] = (famCount[f] || 0) + 1;
+        if (groupOf(next) >= 0) usedGroups.add(groupOf(next));
+      }
+    }
+  }
+  return picked;
+}
+
+/* ── Run state ─────────────────────────────────────────── */
 const scoreEl = document.getElementById("score");
 const bestEl = document.getElementById("best");
 const pairsEl = document.getElementById("pairsVal");
+const roundEl = document.getElementById("roundVal");
+const multEl = document.getElementById("multVal");
+const timeFill = document.getElementById("timeFill");
+const statusEl = document.getElementById("status");
 
 let score = 0,
   best = 0,
@@ -214,118 +422,173 @@ let matched = 0;
 let lock = false;
 let nowMs = 0;
 
+let phase = "intro"; // intro | play | transition | reveal | over
+let round = 1;
+let roundsCleared = 0;
+let boardPairsNow = 6;
+let roundTotal = 90;
+let timeLeft = 90;
+let streak = 0;
+let mult = 1;
+let prevKeys = [];
+
 fetchGlobalBest("star-memory").then((b) => {
   best = Math.max(best, b);
   bestEl.textContent = best;
 });
 
-function shuffle(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
+const baseTime = (r) => Math.max(35, 90 - 5 * (r - 1));
+const boardPairs = (r) => (r <= 3 ? 6 : r <= 7 ? 8 : r <= 12 ? 10 : 12);
+const GRIDS = { 6: [3, 4], 8: [4, 4], 10: [4, 5], 12: [4, 6] };
 
-function makeCards() {
-  const deck = shuffle([...TYPES, ...TYPES]);
-  cards = [];
-  const cols = 4,
-    rows = 4,
-    cardW = 132,
-    cardH = 172,
-    gap = 22;
+function makeBoard() {
+  boardPairsNow = boardPairs(round);
+  const keys = selectModels(boardPairsNow, prevKeys);
+  prevKeys = keys;
+  const deck = shuffle([...keys, ...keys]);
+  const [cols, rows] = GRIDS[boardPairsNow];
+  const gap = 20;
+  const topY = 200;
+  const botY = 1170;
+  let cardW = (BASE_W - 52 - (cols - 1) * gap) / cols;
+  let cardH = cardW * 1.3;
+  const availH = botY - topY - (rows - 1) * gap;
+  if (cardH * rows > availH) {
+    cardH = availH / rows;
+    cardW = cardH / 1.3;
+  }
   const startX = (BASE_W - (cols * cardW + (cols - 1) * gap)) / 2 + cardW / 2;
   const startY = (BASE_H - (rows * cardH + (rows - 1) * gap)) / 2 + cardH / 2 - 20;
-  for (let i = 0; i < deck.length; i++) {
-    cards.push({
-      x: startX + (i % cols) * (cardW + gap),
-      y: startY + Math.floor(i / cols) * (cardH + gap),
-      w: cardW,
-      h: cardH,
-      type: deck[i],
-      open: false,
-      matched: false,
-      flip: 0, // 0 back .. 1 face
-      shudderUntil: 0,
-      matchAnimStart: 0,
-      completeFlash: 0,
-      driftPhase: Math.random() * 6.28,
-      driftFreq: 0.25 + Math.random() * 0.2,
-    });
-  }
+  cards = deck.map((key, i) => ({
+    x: startX + (i % cols) * (cardW + gap),
+    y: startY + Math.floor(i / cols) * (cardH + gap),
+    w: cardW,
+    h: cardH,
+    key,
+    open: false,
+    matched: false,
+    flip: 0, // 0 back .. 1 face
+    shudderUntil: 0,
+    matchAnimStart: 0,
+    completeFlash: 0,
+    driftPhase: Math.random() * 6.28,
+    driftFreq: 0.25 + Math.random() * 0.2,
+  }));
+  matched = 0;
+  flipped = [];
+  updateHud();
 }
-makeCards();
 
-function updatePairs() {
-  pairsEl.textContent = matched / 2 + " / 8";
+function updateHud() {
+  pairsEl.textContent = matched / 2 + " / " + boardPairsNow;
+  roundEl.textContent = round;
+  multEl.textContent = "x" + mult;
 }
 
 function reset() {
   score = 0;
-  matched = 0;
-  flipped = [];
+  round = 1;
+  roundsCleared = 0;
+  streak = 0;
+  mult = 1;
+  prevKeys = [];
   lock = false;
   gameOver = false;
   scoreSubmitted = false;
   ringSweep = -1;
+  roundTotal = baseTime(1);
+  timeLeft = roundTotal;
   scoreEl.textContent = "0";
-  makeCards();
-  updatePairs();
+  makeBoard();
+  phase = introHidden ? "play" : "intro";
   el.over.classList.remove("show");
 }
 
-function endGame() {
+/* Board cleared: bonus, flash, ring sweep, then the next round on a
+   shorter clock with up to 15 unspent seconds carried in. */
+function boardCleared() {
+  score += 200;
+  scoreEl.textContent = score;
+  roundsCleared = round;
+  phase = "transition";
+  const seq = reduced ? 0 : 1;
+  cards.forEach((c, i) => {
+    setTimeout(() => (c.completeFlash = 1), seq * i * 50);
+  });
+  if (!reduced) setTimeout(() => (ringSweep = 0), 900);
+  setTimeout(
+    () => {
+      const carry = Math.min(15, Math.max(0, timeLeft));
+      round += 1;
+      roundTotal = baseTime(round) + carry;
+      timeLeft = roundTotal;
+      makeBoard();
+      phase = "play";
+    },
+    reduced ? 500 : 1800,
+  );
+}
+
+/* Time out: the remaining cards show themselves one at a time, then the
+   completion card. This is the run's only ending. */
+function beginTimeout() {
+  phase = "reveal";
+  lock = true;
+  statusEl.classList.remove("imminent");
+  const hidden = cards.filter((c) => !c.open && !c.matched);
+  const stepMs = reduced ? 45 : 130;
+  hidden.forEach((c, i) => {
+    setTimeout(() => (c.open = true), i * stepMs);
+  });
+  setTimeout(showFinal, hidden.length * stepMs + (reduced ? 350 : 750));
+}
+
+function showFinal() {
+  phase = "over";
   gameOver = true;
   if (score > best) {
     best = score;
     bestEl.textContent = best;
   }
-  // board complete: matched cards brighten in sequence, then the ring
-  // shadow sweeps once, then the card.
-  const seq = reduced ? 0 : 1;
-  cards.forEach((c, i) => {
-    setTimeout(() => (c.completeFlash = 1), seq * i * 60);
-  });
-  if (!reduced) setTimeout(() => (ringSweep = 0), 1100);
-  setTimeout(
-    () => {
-      el.finalScore.textContent = score;
-      el.finalBest.textContent = best;
-      el.bestMarker.classList.toggle("show", score >= best && score > 0);
-      el.over.classList.add("show");
-      if (!scoreSubmitted) {
-        scoreSubmitted = true;
-        setTimeout(() => {
-          submitScoreOnGameOver({
-            gameKey: "star-memory",
-            gameLabel: "Star Memory",
-            score,
-            ask: true,
-          });
-        }, 60);
-      }
-    },
-    reduced ? 400 : 2100,
-  );
+  document.getElementById("gameOverTitle").textContent = "OUT OF TIME";
+  el.finalScore.textContent = score;
+  el.finalRounds.textContent = roundsCleared;
+  el.finalBest.textContent = best;
+  el.bestMarker.classList.toggle("show", score >= best && score > 0);
+  el.over.classList.add("show");
+  if (!scoreSubmitted) {
+    scoreSubmitted = true;
+    setTimeout(() => {
+      submitScoreOnGameOver({
+        gameKey: "star-memory",
+        gameLabel: "Star Memory",
+        score,
+        ask: true,
+      });
+    }, 60);
+  }
 }
 
 function handleMatch() {
   const [a, b] = flipped;
-  if (a.type === b.type) {
+  if (a.key === b.key) {
     a.matched = true;
     b.matched = true;
     a.matchAnimStart = nowMs;
     b.matchAnimStart = nowMs;
-    score += 100;
+    streak += 1;
+    mult = Math.min(5, streak);
+    score += 100 * mult;
     matched += 2;
-    updatePairs();
-    if (matched === cards.length) {
-      score += 200;
-      endGame();
-    }
+    updateHud();
+    if (matched === cards.length) boardCleared();
+    flipped = [];
+    setTimeout(() => (lock = false), 500);
   } else {
     score = Math.max(0, score - 10);
+    streak = 0;
+    mult = 1;
+    updateHud();
     // hold 900ms, shudder once, flip back
     setTimeout(() => {
       if (!reduced) {
@@ -337,15 +600,15 @@ function handleMatch() {
         b.open = false;
       }, 170);
     }, 900);
+    flipped = [];
+    setTimeout(() => (lock = false), 1100);
   }
-  flipped = [];
-  setTimeout(() => (lock = false), 1100);
   scoreEl.textContent = score;
 }
 
 function onTap(clientX, clientY) {
   hideIntro();
-  if (lock || gameOver) return;
+  if (lock || phase !== "play") return;
   const r = canvas.getBoundingClientRect();
   const wx = (clientX - r.left - viewOffX) / viewScale;
   const wy = (clientY - r.top - viewOffY) / viewScale;
@@ -373,201 +636,67 @@ addEventListener("keydown", (e) => {
   if (gameOver && e.code === "KeyR") reset();
 });
 
-/* ── Drawing the star types ────────────────────────────────
-   Every face must be identifiable by silhouette alone. The geometry is
-   the identity; colour is a courtesy. */
-function drawFace(c, t) {
-  const R = 42;
-  switch (c.type) {
-    case "REDGIANT": {
-      // large soft circle, wavering edge, short flare licks
-      ctx.strokeStyle = "#d1603f";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      for (let i = 0; i <= 40; i++) {
-        const a = (i / 40) * Math.PI * 2;
-        const rr = R * (1 + 0.05 * Math.sin(a * 5 + 1.3));
-        const x = Math.cos(a) * rr,
-          y = Math.sin(a) * rr;
-        i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
-      }
-      ctx.closePath();
-      ctx.stroke();
-      for (let i = 0; i < 5; i++) {
-        const a = (i / 5) * Math.PI * 2 + 0.5;
-        ctx.beginPath();
-        ctx.moveTo(Math.cos(a) * R * 1.05, Math.sin(a) * R * 1.05);
-        ctx.lineTo(Math.cos(a + 0.12) * R * 1.28, Math.sin(a + 0.12) * R * 1.28);
-        ctx.stroke();
-      }
-      break;
-    }
-    case "WHITEDWARF": {
-      // tiny dense circle, four long diffraction spikes
-      ctx.strokeStyle = "#cfe8ff";
-      ctx.fillStyle = "#cfe8ff";
-      ctx.beginPath();
-      ctx.arc(0, 0, 7, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.lineWidth = 1.6;
-      for (let i = 0; i < 4; i++) {
-        const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
-        ctx.beginPath();
-        ctx.moveTo(Math.cos(a) * 10, Math.sin(a) * 10);
-        ctx.lineTo(Math.cos(a) * R * 1.35, Math.sin(a) * R * 1.35);
-        ctx.stroke();
-      }
-      break;
-    }
-    case "BINARY": {
-      // two unequal circles on a shared orbit, a stream between them
-      const orbitA = t * Math.PI * 2; // completes an orbit on match
-      ctx.strokeStyle = "#d6c491";
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, R * 1.1, R * 0.45, -0.3, 0, Math.PI * 2);
-      ctx.stroke();
-      const ax = Math.cos(orbitA) * R * 0.75,
-        ay = Math.sin(orbitA) * R * 0.3;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(-ax, -ay, 15, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(ax, ay, 8, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(ax - 6, ay - 2);
-      ctx.quadraticCurveTo(0, -6, -ax + 10, -ay);
-      ctx.stroke();
-      break;
-    }
-    case "PULSAR": {
-      // small circle, two tilted light cones, three sweep arcs
-      const sweep = t * 0.8;
-      ctx.strokeStyle = "#b48ade";
-      ctx.lineWidth = 1.6;
-      ctx.beginPath();
-      ctx.arc(0, 0, 9, 0, Math.PI * 2);
-      ctx.stroke();
-      const tilt = -0.5 + sweep;
-      for (const dir of [1, -1]) {
-        ctx.beginPath();
-        ctx.moveTo(Math.cos(tilt) * 10 * dir, Math.sin(tilt) * 10 * dir);
-        ctx.lineTo(Math.cos(tilt + 0.22) * R * 1.25 * dir, Math.sin(tilt + 0.22) * R * 1.25 * dir);
-        ctx.moveTo(Math.cos(tilt) * 10 * dir, Math.sin(tilt) * 10 * dir);
-        ctx.lineTo(Math.cos(tilt - 0.22) * R * 1.25 * dir, Math.sin(tilt - 0.22) * R * 1.25 * dir);
-        ctx.stroke();
-      }
-      ctx.lineWidth = 1;
-      for (let i = 1; i <= 3; i++) {
-        ctx.beginPath();
-        ctx.arc(0, 0, 14 + i * 9, tilt - 0.5, tilt + 0.5);
-        ctx.stroke();
-      }
-      break;
-    }
-    case "SUPERNOVA": {
-      // broken concentric shell arcs, radial filaments
-      const grow = 1 + t * 0.35; // expands on match
-      for (let ring = 0; ring < 3; ring++) {
-        const rr = (R * (0.55 + ring * 0.28)) * grow;
-        ctx.strokeStyle = ring === 2 ? "#f5ead2" : "#e8b46a";
-        ctx.lineWidth = ring === 2 ? 2 : 1.3;
-        for (let s = 0; s < 6; s++) {
-          const a0 = (s / 6) * Math.PI * 2 + ring * 0.4;
-          ctx.beginPath();
-          ctx.arc(0, 0, rr, a0, a0 + 0.7);
-          ctx.stroke();
-        }
-      }
-      ctx.strokeStyle = "#e8b46a";
-      ctx.lineWidth = 1;
-      for (let i = 0; i < 8; i++) {
-        const a = (i / 8) * Math.PI * 2 + 0.26;
-        ctx.beginPath();
-        ctx.moveTo(Math.cos(a) * R * 0.25, Math.sin(a) * R * 0.25);
-        ctx.lineTo(Math.cos(a) * R * 1.15 * grow, Math.sin(a) * R * 1.15 * grow);
-        ctx.stroke();
-      }
-      break;
-    }
-    case "NEBULA": {
-      // soft irregular cloud of overlapping open curves + 3 embedded points
-      ctx.strokeStyle = "#6fbfb4";
-      ctx.lineWidth = 1.4;
-      const lobes = [
-        [-14, -8, 26], [12, -14, 22], [16, 10, 24], [-10, 14, 20], [0, 0, 30],
-      ];
-      for (const [lx, ly, lr] of lobes) {
-        ctx.beginPath();
-        ctx.arc(lx, ly, lr, 0.4, 5.6);
-        ctx.stroke();
-      }
-      ctx.fillStyle = "#d8f2ee";
-      for (const [px, py] of [[-8, -4], [10, 2], [2, 12]]) {
-        ctx.beginPath();
-        ctx.arc(px, py, 2.2, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      break;
-    }
-    case "BLACKHOLE": {
-      // the only card with a solid fill
-      const bend = 0.9 + t * 0.5; // the arc bends further on match
-      ctx.fillStyle = "#000";
-      ctx.beginPath();
-      ctx.arc(0, 0, R * 0.55, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = "#f2f6ff";
-      ctx.lineWidth = 2.2;
-      ctx.beginPath();
-      ctx.arc(0, 0, R * 0.62, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.lineWidth = 1.3;
-      ctx.strokeStyle = "rgba(242,246,255,0.7)";
-      ctx.beginPath();
-      ctx.ellipse(0, -R * 0.35, R * 0.85, R * 0.3 * bend, 0, Math.PI * 1.15, Math.PI * 1.85);
-      ctx.stroke();
-      break;
-    }
-    case "PROTOSTAR": {
-      // dim centre in a flattened spiral disc of three inward arcs
-      ctx.strokeStyle = "#c98f96";
-      ctx.fillStyle = "rgba(201,143,150,0.5)";
-      ctx.beginPath();
-      ctx.arc(0, 0, 7, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.lineWidth = 1.4;
-      for (let i = 0; i < 3; i++) {
-        const a0 = (i / 3) * Math.PI * 2;
-        ctx.beginPath();
-        for (let s = 0; s <= 16; s++) {
-          const u = s / 16;
-          const a = a0 + u * 2.4;
-          const rr = R * 1.1 * (1 - u * 0.72);
-          const x = Math.cos(a) * rr,
-            y = Math.sin(a) * rr * 0.45;
-          s ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
-        }
-        ctx.stroke();
-      }
-      break;
-    }
+/* ── Drawing a constellation face ──────────────────────────
+   Shape first, colour second: the geometry is the model's own, the cast
+   is a courtesy, and everything must survive greyscale. */
+function drawFace(c, matchT) {
+  const g = GEO[c.key];
+  if (!g) return;
+  const side = Math.min(c.w * 0.82, c.h * 0.62);
+  const s = side / 2;
+  const px = (v) => v * s;
+
+  // fixed background scatter — part of the model's identity
+  for (const q of g.scatter) {
+    ctx.fillStyle = `hsla(${g.hue},40%,85%,${q.a.toFixed(2)})`;
+    ctx.beginPath();
+    ctx.arc(px(q.x), px(q.y), Math.max(0.6, q.r * (side / 130)), 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // the connecting lines, very thin and faint
+  ctx.strokeStyle = `hsla(${g.hue},45%,80%,${(0.22 + matchT * 0.3).toFixed(2)})`;
+  ctx.lineWidth = Math.max(0.7, side * 0.008);
+  for (const line of g.polys) {
+    ctx.beginPath();
+    line.forEach((p, i) => {
+      if (i === 0) ctx.moveTo(px(p.x), px(p.y));
+      else ctx.lineTo(px(p.x), px(p.y));
+    });
+    ctx.stroke();
+  }
+
+  // the stars — varied sizes and brightness, a couple slightly off-true
+  const rScale = side / 130;
+  for (const st of g.stars) {
+    const rr = Math.max(0.9, st.r * 2.4 * rScale) * (1 + matchT * 0.3);
+    ctx.fillStyle = `hsla(${g.hue},55%,${Math.round(72 + st.a * 20)}%,${Math.min(1, st.a + matchT * 0.25).toFixed(2)})`;
+    ctx.beginPath();
+    ctx.arc(px(st.x), px(st.y), rr, 0, Math.PI * 2);
+    ctx.fill();
   }
 }
 
-function drawCardBack() {
-  // faint ring-plane motif echoing Saturn, small accent dot at centre
-  ctx.strokeStyle = "rgba(214,196,145,0.22)";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.ellipse(0, 0, 44, 14, -0.3, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.ellipse(0, 0, 32, 10, -0.3, 0, Math.PI * 2);
-  ctx.stroke();
+/* All backs identical: dark, low contrast, a faint scatter of stars and
+   a small accent dot at the centre. Fixed seed — every back the same. */
+const BACK_SCATTER = (() => {
+  const rnd = mulberry32(424242);
+  return [...Array(12)].map(() => ({
+    x: rnd() * 2 - 1,
+    y: rnd() * 2 - 1,
+    r: 0.5 + rnd() * 0.8,
+    a: 0.1 + rnd() * 0.12,
+  }));
+})();
+
+function drawCardBack(c) {
+  const s = Math.min(c.w, c.h) * 0.4;
+  for (const q of BACK_SCATTER) {
+    ctx.fillStyle = `rgba(223,232,255,${q.a.toFixed(2)})`;
+    ctx.beginPath();
+    ctx.arc(q.x * s, q.y * s * 1.35, q.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
   ctx.fillStyle = "#d6c491";
   ctx.beginPath();
   ctx.arc(0, 0, 3, 0, Math.PI * 2);
@@ -633,7 +762,7 @@ function drawCardShell(c, alpha, backAlpha, _now) {
   ctx.stroke();
   if (backAlpha > 0) {
     ctx.globalAlpha = alpha * backAlpha;
-    drawCardBack();
+    drawCardBack(c);
   }
   ctx.globalAlpha = 1;
 }
@@ -677,6 +806,7 @@ const el = {
   over: document.getElementById("gameOver"),
   overRestart: document.getElementById("gameOverRestart"),
   finalScore: document.getElementById("finalScore"),
+  finalRounds: document.getElementById("finalRounds"),
   finalBest: document.getElementById("finalBest"),
   bestMarker: document.getElementById("bestMarker"),
 };
@@ -692,7 +822,8 @@ function hideIntro() {
   el.intro.style.transform = "translateY(-10px)";
   el.intro.style.pointerEvents = "none";
   el.status.classList.add("show");
-  updatePairs();
+  phase = "play"; // the clock starts with the first touch
+  updateHud();
 }
 
 el.overRestart.addEventListener("click", reset);
@@ -715,6 +846,15 @@ function step(ts) {
   dtGlobal = Math.min(33, ts - last) * 0.001;
   last = ts;
   nowMs = ts;
+
+  if (phase === "play") {
+    timeLeft -= dtGlobal;
+    if (timeFill) {
+      timeFill.style.width = Math.max(0, (timeLeft / roundTotal) * 100).toFixed(1) + "%";
+    }
+    statusEl.classList.toggle("imminent", timeLeft <= 10);
+    if (timeLeft <= 0) beginTimeout();
+  }
 
   if (ringSweep >= 0) {
     ringSweep += dtGlobal * 0.7;
@@ -744,14 +884,17 @@ function draw(now) {
   ctx.scale(viewScale, viewScale);
 
   // a quiet scrim behind the board so faces never fight the rings
-  ctx.fillStyle = "rgba(5,8,16,0.35)";
-  const bx = cards.length ? cards[0].x - cards[0].w / 2 - 24 : 0;
-  const by = cards.length ? cards[0].y - cards[0].h / 2 - 24 : 0;
-  const bw = cards.length ? cards[15].x + cards[15].w / 2 + 24 - bx : BASE_W;
-  const bh = cards.length ? cards[15].y + cards[15].h / 2 + 24 - by : BASE_H;
-  ctx.beginPath();
-  ctx.roundRect(bx, by, bw, bh, 18);
-  ctx.fill();
+  if (cards.length) {
+    const lastCard = cards[cards.length - 1];
+    ctx.fillStyle = "rgba(5,8,16,0.35)";
+    const bx = cards[0].x - cards[0].w / 2 - 24;
+    const by = cards[0].y - cards[0].h / 2 - 24;
+    const bw = lastCard.x + lastCard.w / 2 + 24 - bx;
+    const bh = lastCard.y + lastCard.h / 2 + 24 - by;
+    ctx.beginPath();
+    ctx.roundRect(bx, by, bw, bh, 18);
+    ctx.fill();
+  }
 
   for (const c of cards) drawCard(c, now);
 
@@ -759,4 +902,6 @@ function draw(now) {
 }
 
 resize();
+makeBoard();
+timeLeft = roundTotal;
 requestAnimationFrame(step);
