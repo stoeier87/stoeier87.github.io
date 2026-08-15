@@ -1,5 +1,9 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 import {
+  initializeAppCheck,
+  ReCaptchaV3Provider,
+} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app-check.js";
+import {
   getDatabase,
   ref,
   push,
@@ -11,6 +15,20 @@ import {
 import { ARCADE_FIREBASE_CONFIG } from "./firebase-config.js";
 
 const app = initializeApp(ARCADE_FIREBASE_CONFIG, "arcade-game");
+
+// reCAPTCHA v3 only verifies registered domains; localhost needs a debug
+// token instead (register it once in Firebase console > App Check > Apps).
+if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+}
+// App Check's reCAPTCHA v3 loader references a Node `process` global that
+// doesn't exist when this module is loaded raw over CDN (no bundler).
+window.process ??= { env: {} };
+initializeAppCheck(app, {
+  provider: new ReCaptchaV3Provider(ARCADE_FIREBASE_CONFIG.appCheckSiteKey),
+  isTokenAutoRefreshEnabled: true,
+});
+
 const db = getDatabase(app);
 
 const DEFAULTS = {
