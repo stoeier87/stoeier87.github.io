@@ -24,6 +24,8 @@ import {
   let BASE_W = 900;
   let BASE_H = 900;
 
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
   // Countdown / scoring: docking faster leaves more time on the clock.
   const MAX_TIME = 60; // countdown start + seconds used for time-based scoring
   const POINTS_PER_SEC = 50;
@@ -129,89 +131,14 @@ import {
     o.arc(eX, eY, eR, 0, Math.PI * 2);
     o.fill();
 
-    o.save();
-    o.beginPath();
-    o.arc(eX, eY, eR, 0, Math.PI * 2);
-    o.clip();
-    // recognizable continent silhouettes (stylized), drawn as smooth blobs
-    const blob = (pts) => {
-      const p = pts.map(([nx, ny]) => [eX + nx * eR, eY + ny * eR]);
-      const n = p.length;
-      o.beginPath();
-      o.moveTo((p[0][0] + p[n - 1][0]) / 2, (p[0][1] + p[n - 1][1]) / 2);
-      for (let i = 0; i < n; i++) {
-        const a = p[i],
-          b = p[(i + 1) % n];
-        o.quadraticCurveTo(a[0], a[1], (a[0] + b[0]) / 2, (a[1] + b[1]) / 2);
-      }
-      o.closePath();
-    };
-    const africa = [[-0.05, -0.6], [0.2, -0.55], [0.34, -0.36], [0.2, -0.18], [0.3, 0.05], [0.18, 0.3], [0.05, 0.62], [-0.1, 0.36], [-0.24, 0.14], [-0.08, -0.1], [-0.2, -0.32], [-0.1, -0.5]];
-    const euroAsia = [[-0.55, -0.85], [-0.2, -0.92], [0.2, -0.88], [0.55, -0.75], [0.8, -0.55], [0.6, -0.42], [0.35, -0.5], [0.1, -0.4], [0.05, -0.15], [-0.15, -0.35], [-0.45, -0.55], [-0.65, -0.7]];
-    const australia = [[0.55, 0.42], [0.72, 0.38], [0.78, 0.55], [0.65, 0.65], [0.48, 0.58], [0.45, 0.46]];
-    const americas = [[-0.85, -0.6], [-0.72, -0.5], [-0.68, -0.1], [-0.78, 0.2], [-0.7, 0.55], [-0.85, 0.6], [-0.96, 0.2], [-0.96, -0.3]];
-    o.fillStyle = "rgba(84,138,72,0.9)";
-    for (const shape of [africa, euroAsia, australia, americas]) {
-      blob(shape);
-      o.fill();
-    }
-    o.fillStyle = "rgba(58,100,50,0.55)";
-    blob(africa.map(([x, y]) => [x * 0.55, y * 0.55 - 0.05]));
-    o.fill();
-    blob(euroAsia.map(([x, y]) => [x * 0.6, y * 0.6 - 0.1]));
-    o.fill();
-    o.fillStyle = "rgba(84,138,72,0.9)";
-    o.beginPath();
-    o.ellipse(eX + 0.34 * eR, eY + 0.34 * eR, eR * 0.035, eR * 0.06, 0.3, 0, Math.PI * 2);
-    o.fill(); // madagascar
-    // polar ice caps
-    let capN = o.createLinearGradient(eX, eY - eR, eX, eY - eR * 0.62);
-    capN.addColorStop(0, "rgba(255,255,255,0.95)");
-    capN.addColorStop(1, "rgba(255,255,255,0)");
-    o.fillStyle = capN;
-    o.fillRect(eX - eR, eY - eR, eR * 2, eR * 0.42);
-    let capS = o.createLinearGradient(eX, eY + eR, eX, eY + eR * 0.62);
-    capS.addColorStop(0, "rgba(255,255,255,0.95)");
-    capS.addColorStop(1, "rgba(255,255,255,0)");
-    o.fillStyle = capS;
-    o.fillRect(eX - eR, eY + eR * 0.58, eR * 2, eR * 0.42);
-    // cloud bands, foreshortened toward the limb like a real sphere
-    const clouds = [
-      { x: -0.05, y: -0.55, s: 0.16 }, { x: 0.35, y: -0.3, s: 0.2 }, { x: -0.45, y: -0.15, s: 0.18 },
-      { x: 0.55, y: 0.1, s: 0.15 }, { x: -0.3, y: 0.4, s: 0.19 }, { x: 0.15, y: 0.55, s: 0.14 },
-      { x: -0.65, y: 0.35, s: 0.13 }, { x: 0.7, y: -0.5, s: 0.12 }, { x: 0.02, y: 0.02, s: 0.13 },
-    ];
-    o.fillStyle = "rgba(255,255,255,0.55)";
-    for (const cl of clouds) {
-      const dist = Math.min(0.96, Math.hypot(cl.x, cl.y));
-      const fs = Math.sqrt(Math.max(0.2, 1 - dist * dist));
-      const ang = Math.atan2(cl.y, cl.x);
-      o.globalAlpha = 0.3;
-      o.beginPath();
-      o.ellipse(eX + cl.x * eR, eY + cl.y * eR, eR * cl.s, eR * cl.s * 0.42 * fs, ang, 0, Math.PI * 2);
-      o.fill();
-    }
-    o.globalAlpha = 1;
-    o.restore();
-
-    // terminator (day/night shadow) opposite the light source
-    o.save();
-    o.globalCompositeOperation = "multiply";
-    let shadow = o.createLinearGradient(
-      eX - Math.cos(lightAngle) * eR,
-      eY - Math.sin(lightAngle) * eR,
-      eX + Math.cos(lightAngle) * eR,
-      eY + Math.sin(lightAngle) * eR,
-    );
-    shadow.addColorStop(0, "rgba(255,255,255,1)");
-    shadow.addColorStop(0.45, "rgba(120,130,150,0.55)");
-    shadow.addColorStop(0.75, "rgba(0,0,0,0.55)");
-    shadow.addColorStop(1, "rgba(0,0,0,0.75)");
-    o.fillStyle = shadow;
-    o.beginPath();
-    o.arc(eX, eY, eR, 0, Math.PI * 2);
-    o.fill();
-    o.restore();
+    /* Continents, caps, clouds and the terminator moved to the live pass
+       (drawEarthDynamic): the surface now rotates and the cloud bands ride
+       over it at their own speed, so nothing painted here may sit above
+       them. Same shapes, same colours, same light. */
+    EARTH.x = eX;
+    EARTH.y = eY;
+    EARTH.r = eR;
+    EARTH.light = lightAngle;
 
     // moon: maria + varied craters + terminator
     const mR = BASE_W * 0.075,
@@ -301,6 +228,141 @@ import {
     bgCanvas = c;
   }
 
+  /* ── Earth, dimensional ─────────────────────────────────
+     The Pluto/Neptune treatment: the surface turns, the cloud deck turns
+     faster and unevenly (banded), and the light side / terminator stays
+     fixed to the sun. Every colour is the one the static bake used.
+
+     Geometry: a point painted at normalized (nx, ny) on the old flat disc
+     is treated as sitting on the sphere at latitude-band sqrt(1-ny²); its
+     longitude advances with time and it re-projects to x = sin(λ)·band,
+     foreshortening toward the limb and vanishing onto the far side. */
+  const EARTH = { x: 0, y: 0, r: 1, light: -0.78 };
+  const EARTH_SURFACE_W = 0.02; // rad/s — one lap in ~5 min
+  const EARTH_CLOUD_W = 0.034; // faster than the ground below
+
+  const CONTINENTS = [
+    [[-0.05, -0.6], [0.2, -0.55], [0.34, -0.36], [0.2, -0.18], [0.3, 0.05], [0.18, 0.3], [0.05, 0.62], [-0.1, 0.36], [-0.24, 0.14], [-0.08, -0.1], [-0.2, -0.32], [-0.1, -0.5]],
+    [[-0.55, -0.85], [-0.2, -0.92], [0.2, -0.88], [0.55, -0.75], [0.8, -0.55], [0.6, -0.42], [0.35, -0.5], [0.1, -0.4], [0.05, -0.15], [-0.15, -0.35], [-0.45, -0.55], [-0.65, -0.7]],
+    [[0.55, 0.42], [0.72, 0.38], [0.78, 0.55], [0.65, 0.65], [0.48, 0.58], [0.45, 0.46]],
+    [[-0.85, -0.6], [-0.72, -0.5], [-0.68, -0.1], [-0.78, 0.2], [-0.7, 0.55], [-0.85, 0.6], [-0.96, 0.2], [-0.96, -0.3]],
+  ];
+  const CLOUDS = [
+    { x: -0.05, y: -0.55, s: 0.16 }, { x: 0.35, y: -0.3, s: 0.2 }, { x: -0.45, y: -0.15, s: 0.18 },
+    { x: 0.55, y: 0.1, s: 0.15 }, { x: -0.3, y: 0.4, s: 0.19 }, { x: 0.15, y: 0.55, s: 0.14 },
+    { x: -0.65, y: 0.35, s: 0.13 }, { x: 0.7, y: -0.5, s: 0.12 }, { x: 0.02, y: 0.02, s: 0.13 },
+  ];
+
+  function earthProject(nx, ny, rot) {
+    const band = Math.sqrt(Math.max(0.0004, 1 - ny * ny));
+    const lam0 = Math.asin(Math.max(-1, Math.min(1, nx / band)));
+    const lam = (((lam0 + rot + Math.PI) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
+    const front = Math.cos(lam) > 0;
+    // Back-side points clamp to their limb so a shape straddling the edge
+    // squashes onto it instead of folding across the disc.
+    const x = front ? Math.sin(lam) * band : Math.sign(Math.sin(lam) || 1) * band;
+    return { x, y: ny, front, cos: Math.max(0, Math.cos(lam)) };
+  }
+
+  function drawEarthDynamic(c, t) {
+    const { x: eX, y: eY, r: eR, light } = EARTH;
+    const rot = reducedMotion ? 0 : t * EARTH_SURFACE_W;
+
+    c.save();
+    c.beginPath();
+    c.arc(eX, eY, eR, 0, Math.PI * 2);
+    c.clip();
+
+    const blobRot = (pts, rot2, scale = 1, dy = 0) => {
+      const proj = pts.map(([nx, ny]) => earthProject(nx * scale, ny * scale + dy, rot2));
+      if (!proj.some((p) => p.front)) return false;
+      const p = proj.map((q) => [eX + q.x * eR, eY + q.y * eR]);
+      const n = p.length;
+      c.beginPath();
+      c.moveTo((p[0][0] + p[n - 1][0]) / 2, (p[0][1] + p[n - 1][1]) / 2);
+      for (let i = 0; i < n; i++) {
+        const a = p[i],
+          b = p[(i + 1) % n];
+        c.quadraticCurveTo(a[0], a[1], (a[0] + b[0]) / 2, (a[1] + b[1]) / 2);
+      }
+      c.closePath();
+      return true;
+    };
+
+    c.fillStyle = "rgba(84,138,72,0.9)";
+    for (const shape of CONTINENTS) if (blobRot(shape, rot)) c.fill();
+    // Inland shading on the two big landmasses, as before.
+    c.fillStyle = "rgba(58,100,50,0.55)";
+    if (blobRot(CONTINENTS[0], rot, 0.55, -0.05)) c.fill();
+    if (blobRot(CONTINENTS[1], rot, 0.6, -0.1)) c.fill();
+    // Madagascar rides its longitude too.
+    const mad = earthProject(0.34, 0.34, rot);
+    if (mad.front) {
+      c.fillStyle = "rgba(84,138,72,0.9)";
+      c.beginPath();
+      c.ellipse(eX + mad.x * eR, eY + mad.y * eR, eR * 0.035 * Math.max(0.25, mad.cos), eR * 0.06, 0.3, 0, Math.PI * 2);
+      c.fill();
+    }
+
+    // Polar caps sit on the axis: they do not travel. Identical gradients.
+    let capN = c.createLinearGradient(eX, eY - eR, eX, eY - eR * 0.62);
+    capN.addColorStop(0, "rgba(255,255,255,0.95)");
+    capN.addColorStop(1, "rgba(255,255,255,0)");
+    c.fillStyle = capN;
+    c.fillRect(eX - eR, eY - eR, eR * 2, eR * 0.42);
+    let capS = c.createLinearGradient(eX, eY + eR, eX, eY + eR * 0.62);
+    capS.addColorStop(0, "rgba(255,255,255,0.95)");
+    capS.addColorStop(1, "rgba(255,255,255,0)");
+    c.fillStyle = capS;
+    c.fillRect(eX - eR, eY + eR * 0.58, eR * 2, eR * 0.42);
+
+    // Cloud deck: same nine clouds, banded speeds — each latitude row slides
+    // at its own rate over the ground, shearing where bands meet.
+    const cloudRot = reducedMotion ? 0 : t * EARTH_CLOUD_W;
+    c.fillStyle = "rgba(255,255,255,0.55)";
+    for (const cl of CLOUDS) {
+      const bandSpeed = 1 + 0.35 * Math.sin(cl.y * 6.5);
+      const p = earthProject(cl.x, cl.y, cloudRot * bandSpeed);
+      if (!p.front) continue;
+      const dist = Math.min(0.96, Math.hypot(p.x, p.y));
+      const fs = Math.sqrt(Math.max(0.2, 1 - dist * dist));
+      const ang = Math.atan2(p.y, p.x);
+      c.globalAlpha = 0.3;
+      c.beginPath();
+      c.ellipse(eX + p.x * eR, eY + p.y * eR, eR * cl.s * Math.max(0.3, p.cos), eR * cl.s * 0.42 * fs, ang, 0, Math.PI * 2);
+      c.fill();
+    }
+    c.globalAlpha = 1;
+    c.restore();
+
+    // Terminator, fixed to the sun — drawn over the moving surface so the
+    // night side always wins. Same multiply gradient as the old bake.
+    c.save();
+    c.globalCompositeOperation = "multiply";
+    const shadow = c.createLinearGradient(
+      eX - Math.cos(light) * eR,
+      eY - Math.sin(light) * eR,
+      eX + Math.cos(light) * eR,
+      eY + Math.sin(light) * eR,
+    );
+    shadow.addColorStop(0, "rgba(255,255,255,1)");
+    shadow.addColorStop(0.45, "rgba(120,130,150,0.55)");
+    shadow.addColorStop(0.75, "rgba(0,0,0,0.55)");
+    shadow.addColorStop(1, "rgba(0,0,0,0.75)");
+    c.fillStyle = shadow;
+    c.beginPath();
+    c.arc(eX, eY, eR, 0, Math.PI * 2);
+    c.fill();
+    c.restore();
+
+    // Thin atmospheric limb, crisp against the soft rim the bake carries.
+    c.strokeStyle = "rgba(160,205,255,0.28)";
+    c.lineWidth = Math.max(1.2, eR * 0.006);
+    c.beginPath();
+    c.arc(eX, eY, eR * 1.004, 0, Math.PI * 2);
+    c.stroke();
+  }
+
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
     W = window.innerWidth;
@@ -328,6 +390,79 @@ import {
   }
   addEventListener("resize", resize, { passive: true });
 
+  /* ── Hazards ────────────────────────────────────────────
+     Three kinds, all telegraphed: micrometeoroids cross the field and cost
+     alignment on contact (an impulse, never the run); one large debris
+     fragment at a time tumbles through the corridor on a straight,
+     readable path and ends the approach on contact; and the station's own
+     solar wings sweep the approach as it rotates — timing the gap is the
+     intended skill. Density ramps with elapsed time. Everything spawns at
+     an edge and travels in, so nothing appears without warning. */
+  const rocks = [];
+  const debris = [];
+  const impacts = [];
+  let nextRockAt = 0;
+  let nextDebrisAt = 0;
+
+  function edgeSpawn(speed, aimX, aimY) {
+    const side = Math.floor(Math.random() * 4);
+    const x = side === 2 ? -40 : side === 3 ? BASE_W + 40 : Math.random() * BASE_W;
+    const y = side === 0 ? -40 : side === 1 ? BASE_H + 40 : Math.random() * BASE_H;
+    const ang = Math.atan2(aimY - y, aimX - x);
+    return { x, y, vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed };
+  }
+
+  function spawnRock() {
+    // Aimed loosely across the middle of the field so it crosses the
+    // approach path at some angle rather than hugging an edge.
+    const s = edgeSpawn(
+      120 + Math.random() * 170,
+      BASE_W * (0.25 + Math.random() * 0.5),
+      BASE_H * (0.25 + Math.random() * 0.5),
+    );
+    const r = 3.5 + Math.random() * 3;
+    rocks.push({
+      ...s,
+      r,
+      rot: Math.random() * Math.PI * 2,
+      rv: (Math.random() < 0.5 ? -1 : 1) * (1 + Math.random() * 2.4),
+      verts: [...Array(7)].map(() => 0.7 + Math.random() * 0.5),
+    });
+  }
+
+  function spawnDebris() {
+    // A predictable straight line that passes near the station — through
+    // the docking corridor — slow enough to be read minutes ahead.
+    const s = edgeSpawn(
+      55 + Math.random() * 35,
+      station.x + (Math.random() * 2 - 1) * 110,
+      station.y + (Math.random() * 2 - 1) * 110,
+    );
+    debris.push({
+      ...s,
+      r: 15 + Math.random() * 7,
+      rot: Math.random() * Math.PI * 2,
+      rv: (Math.random() < 0.5 ? -1 : 1) * (0.7 + Math.random() * 0.9),
+    });
+  }
+
+  /* Capsule vs the station's solar wings, in the station's rotating frame.
+     Wing rectangles match drawISS: y = ±82, x from mast (10) to tip (68),
+     half-width 9.5. The small gimbal wobble is cosmetic and ignored. */
+  function wingHit() {
+    const dx = capsule.x - station.x;
+    const dy = capsule.y - station.y;
+    const ca = Math.cos(-station.angle);
+    const sa = Math.sin(-station.angle);
+    const lx = dx * ca - dy * sa;
+    const ly = dx * sa + dy * ca;
+    const m = capsule.r * 0.7;
+    for (const wy of [-82, 82]) {
+      if (Math.abs(ly - wy) < 9.5 + m && Math.abs(lx) > 10 - m && Math.abs(lx) < 68 + m) return true;
+    }
+    return false;
+  }
+
   function reset() {
     score = 0;
     docked = false;
@@ -344,6 +479,11 @@ import {
     startTime = performance.now();
     scoreEl.textContent = MAX_TIME;
     gameOverEl.classList.remove("show");
+    rocks.length = 0;
+    debris.length = 0;
+    impacts.length = 0;
+    nextRockAt = 5000;
+    nextDebrisAt = 13000;
   }
 
   function endGame(won) {
@@ -461,6 +601,59 @@ import {
       const timeLeft = Math.max(0, MAX_TIME - elapsed);
       scoreEl.textContent = Math.ceil(timeLeft);
 
+      // ── Hazards: spawn (density ramps with the run), move, collide ──
+      const elapsedMs = elapsed * 1000;
+      if (elapsedMs >= nextRockAt && rocks.length < 6) {
+        spawnRock();
+        nextRockAt = elapsedMs + Math.max(1700, 4200 - elapsed * 55);
+      }
+      if (elapsedMs >= nextDebrisAt && debris.length < (elapsed > 35 ? 2 : 1)) {
+        spawnDebris();
+        nextDebrisAt = elapsedMs + Math.max(9000, 16000 - elapsed * 130);
+      }
+
+      for (let i = rocks.length - 1; i >= 0; i--) {
+        const rk = rocks[i];
+        rk.x += rk.vx * dt;
+        rk.y += rk.vy * dt;
+        rk.rot += rk.rv * dt;
+        if (rk.x < -60 || rk.x > BASE_W + 60 || rk.y < -60 || rk.y > BASE_H + 60) {
+          rocks.splice(i, 1);
+          continue;
+        }
+        if (Math.hypot(rk.x - capsule.x, rk.y - capsule.y) < rk.r + capsule.r) {
+          // Costs alignment, not the run: shoved off axis along the rock's
+          // own line of travel, forcing a correction.
+          const sp = Math.hypot(rk.vx, rk.vy) || 1;
+          const push = 100 + Math.random() * 50;
+          capsule.vx += (rk.vx / sp) * push;
+          capsule.vy += (rk.vy / sp) * push;
+          impacts.push({ x: rk.x, y: rk.y, until: ts + 350 });
+          rocks.splice(i, 1);
+        }
+      }
+
+      for (let i = debris.length - 1; i >= 0; i--) {
+        const db = debris[i];
+        db.x += db.vx * dt;
+        db.y += db.vy * dt;
+        db.rot += db.rv * dt;
+        if (db.x < -80 || db.x > BASE_W + 80 || db.y < -80 || db.y > BASE_H + 80) {
+          debris.splice(i, 1);
+          continue;
+        }
+        if (Math.hypot(db.x - capsule.x, db.y - capsule.y) < db.r * 0.85 + capsule.r) {
+          score = Math.floor(MAX_TIME - timeLeft);
+          endGame(false);
+        }
+      }
+
+      // The panels sweep the corridor; clipping one ends the approach.
+      if (!gameOver && wingHit()) {
+        score = Math.floor(MAX_TIME - timeLeft);
+        endGame(false);
+      }
+
       const DIST_MARGIN = station.r + capsule.r + 8;
       const distPct = Math.max(0, Math.min(100, 100 - (dist / (DIST_MARGIN * 3)) * 100));
       const speedPct = Math.max(0, Math.min(100, 100 - (approachSpeed / set.speedThresh) * 60));
@@ -478,18 +671,81 @@ import {
         angleFill.style.background = angleDiff < set.angleThresh ? "#3fd67a" : "#e03a2f";
       }
 
-      if (dist < DIST_MARGIN && approachSpeed < set.speedThresh && angleDiff < set.angleThresh) {
-        score = Math.floor(timeLeft * POINTS_PER_SEC) + DOCKING_BONUS;
-        scoreEl.textContent = score;
-        endGame(true);
-      } else if (dist < station.r + capsule.r + 2) {
-        score = Math.floor(MAX_TIME - timeLeft);
-        endGame(false);
+      // gameOver may already be set by a debris or wing strike this frame.
+      if (!gameOver) {
+        if (dist < DIST_MARGIN && approachSpeed < set.speedThresh && angleDiff < set.angleThresh) {
+          score = Math.floor(timeLeft * POINTS_PER_SEC) + DOCKING_BONUS;
+          scoreEl.textContent = score;
+          endGame(true);
+        } else if (dist < station.r + capsule.r + 2) {
+          score = Math.floor(MAX_TIME - timeLeft);
+          endGame(false);
+        }
       }
     }
 
     draw();
     requestAnimationFrame(step);
+  }
+
+  function drawRock(c, rk) {
+    c.save();
+    c.translate(rk.x, rk.y);
+    c.rotate(rk.rot);
+    c.beginPath();
+    rk.verts.forEach((v, i) => {
+      const a = (i / rk.verts.length) * Math.PI * 2;
+      const x = Math.cos(a) * rk.r * v;
+      const y = Math.sin(a) * rk.r * v;
+      if (i === 0) c.moveTo(x, y);
+      else c.lineTo(x, y);
+    });
+    c.closePath();
+    c.fillStyle = "#59606c";
+    c.fill();
+    c.strokeStyle = "rgba(230,238,248,0.55)";
+    c.lineWidth = 1;
+    c.stroke();
+    c.restore();
+  }
+
+  function drawDebris(c, db) {
+    // A torn panel fragment: a shard with the solar-cell blues and a bent
+    // strut, tumbling — the same palette drawSolarWing uses.
+    c.save();
+    c.translate(db.x, db.y);
+    c.rotate(db.rot);
+    const r = db.r;
+    c.beginPath();
+    c.moveTo(-r, -r * 0.55);
+    c.lineTo(r * 0.7, -r * 0.85);
+    c.lineTo(r, r * 0.35);
+    c.lineTo(-r * 0.25, r * 0.8);
+    c.closePath();
+    const g = c.createLinearGradient(0, -r, 0, r);
+    g.addColorStop(0, "#1c4a73");
+    g.addColorStop(0.55, "#0d2c47");
+    g.addColorStop(1, "#0a2038");
+    c.fillStyle = g;
+    c.fill();
+    c.strokeStyle = "rgba(200,220,240,0.7)";
+    c.lineWidth = 1.6;
+    c.stroke();
+    c.strokeStyle = "rgba(140,180,230,0.35)";
+    c.lineWidth = 0.7;
+    for (let gx = -r * 0.7; gx < r; gx += r * 0.32) {
+      c.beginPath();
+      c.moveTo(gx, -r * 0.7);
+      c.lineTo(gx * 0.8, r * 0.6);
+      c.stroke();
+    }
+    c.strokeStyle = "#8b93a0";
+    c.lineWidth = 2.2;
+    c.beginPath();
+    c.moveTo(-r * 1.1, r * 0.2);
+    c.lineTo(-r * 0.2, -r * 0.15);
+    c.stroke();
+    c.restore();
   }
 
   function drawSolarWing(c, dir) {
@@ -708,6 +964,7 @@ import {
     ctx.scale(viewScale, viewScale);
 
     if (bgCanvas) ctx.drawImage(bgCanvas, 0, 0);
+    drawEarthDynamic(ctx, t);
 
     for (const s of stars) {
       ctx.globalAlpha = 0.6;
@@ -719,6 +976,24 @@ import {
     ctx.globalAlpha = 1;
 
     drawISS(ctx, station, t);
+
+    // Hazards render above the station so nothing sneaks up hidden by it.
+    for (const db of debris) drawDebris(ctx, db);
+    for (const rk of rocks) drawRock(ctx, rk);
+    for (let i = impacts.length - 1; i >= 0; i--) {
+      const im = impacts[i];
+      const left = (im.until - performance.now()) / 350;
+      if (left <= 0) {
+        impacts.splice(i, 1);
+        continue;
+      }
+      ctx.strokeStyle = `rgba(255,190,120,${(left * 0.8).toFixed(2)})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(im.x, im.y, 8 + (1 - left) * 16, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
     drawCapsule(ctx, capsule, keys);
 
     ctx.strokeStyle = "rgba(255,255,255,.08)";
