@@ -8,4 +8,5 @@ export const ARCADE_FIREBASE_CONFIG = {
   measurementId: "G-9M0GB4HHY0",
   databaseURL:
     "https://servicedesign-e1fe5-default-rtdb.europe-west1.firebasedatabase.app/",
+  appCheckSiteKey: "6LfvdoYtAAAAADsKCwFpMnjfOIKRbO1HNMN8RzXY",
 };
