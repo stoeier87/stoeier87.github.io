@@ -41,8 +41,8 @@
   --color-planet-uranus-lo: #4a98a8;
   --color-planet-neptun-hi: #6a8ce8;
   --color-planet-neptun-lo: #2a3f9c;
-  --color-planet-pluto-hi: #cbb8a4;
-  --color-planet-pluto-lo: #6b5a4c;
+  --color-planet-pluto-hi: #ded5c6;
+  --color-planet-pluto-lo: #5c4b3f;
 
   /* Colors — semantic aliases */
   --color-surface-app: var(--color-bg);
