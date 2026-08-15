@@ -13,7 +13,6 @@
 
 import { definePlanetField } from "../../shared/elements/planet-field.ts";
 import { color } from "../../tokens.ts";
-import { submitScoreOnGameOver, fetchGlobalBest } from "../shared/score-submit.js";
 
 definePlanetField();
 
@@ -669,7 +668,6 @@ let backToBack = false;
 let gameOver = false;
 let paused = false;
 let started = false;
-let scoreSubmitted = false;
 
 let dropTimer = 0;
 let lockTimer = 0;
@@ -720,10 +718,19 @@ const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches
 if (canHover) el.introKeys.classList.add("show");
 else el.introTouch.classList.add("show");
 
-fetchGlobalBest("ice-fall").then((b) => {
-  best = Math.max(best, b);
-  el.best.textContent = best;
-});
+/* ── Scoreboard: deliberately not wired up yet ─────────────
+   The shared arcade leaderboard is held back on request until the difficulty
+   curve is settled — submitting scores from an untuned game would seed the
+   index with numbers that mean nothing once the tuning moves. BEST is the
+   best of this session only, in memory, and resets on reload.
+
+   To connect it, restore three things and nothing else:
+     import { submitScoreOnGameOver, fetchGlobalBest } from "../shared/score-submit.js";
+     fetchGlobalBest("ice-fall").then((b) => { best = Math.max(best, b); el.best.textContent = best; });
+     submitScoreOnGameOver({ gameKey: "ice-fall", gameLabel: "Ice Fall", score: Math.floor(score), ask: true });
+   The third goes back inside tickFreeze, behind a once-per-game guard —
+   tickFreeze runs every frame. gameKey must stay "ice-fall": it is the
+   Firebase path segment the scoreboard reads. */
 
 /* ── Grid helpers ──────────────────────────────────────── */
 function emptyGrid() {
@@ -1544,17 +1551,9 @@ function tickFreeze(now) {
   if (t < 1 || cardShown) return;
   cardShown = true;
   el.over.classList.add("show");
-  if (!scoreSubmitted) {
-    scoreSubmitted = true;
-    setTimeout(() => {
-      submitScoreOnGameOver({
-        gameKey: "ice-fall",
-        gameLabel: "Ice Fall",
-        score: Math.floor(score),
-        ask: true,
-      });
-    }, 60);
-  }
+  // Score submission goes here when the leaderboard is connected — see the
+  // note where fetchGlobalBest used to live. It needs a once-per-game guard
+  // when it comes back; tickFreeze runs every frame.
 }
 
 function reset() {
@@ -1573,7 +1572,6 @@ function reset() {
   backToBack = false;
   gameOver = false;
   paused = false;
-  scoreSubmitted = false;
   freezeRow = -1;
   freezeStart = 0;
   cardShown = false;
