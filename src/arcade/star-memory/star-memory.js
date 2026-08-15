@@ -52,6 +52,7 @@ function resize() {
   viewOffX = (W - BASE_W * viewScale) * 0.5;
   viewOffY = (H - BASE_H * viewScale) * 0.5;
   layoutBackdrop();
+  if (typeof placeCards === "function" && cards?.length) placeCards();
 }
 addEventListener("resize", resize, { passive: true });
 
@@ -441,29 +442,54 @@ const baseTime = (r) => Math.max(35, 90 - 5 * (r - 1));
 const boardPairs = (r) => (r <= 3 ? 6 : r <= 7 ? 8 : r <= 12 ? 10 : 12);
 const GRIDS = { 6: [3, 4], 8: [4, 4], 10: [4, 5], 12: [4, 6] };
 
-function makeBoard() {
-  boardPairsNow = boardPairs(round);
-  const keys = selectModels(boardPairsNow, prevKeys);
-  prevKeys = keys;
-  const deck = shuffle([...keys, ...keys]);
+/* The chrome is DOM in screen space and the cards live in world space, so
+   the clear band between the pill rows and the status panel has to be
+   measured, not assumed — on a phone the pills wrap to two rows and the
+   panel spans the full width, and both were eating the board. */
+function boardArea() {
+  const toWorldY = (sy) => (sy - viewOffY) / viewScale;
+  const tb = document.querySelector(".topbar")?.getBoundingClientRect();
+  const pn = document.getElementById("status")?.getBoundingClientRect();
+  const top = Math.max(110, tb ? toWorldY(tb.bottom) + 22 : 200);
+  // The desktop panel is a narrow bottom-left box the centred board never
+  // meets; only a full-width (mobile) panel actually caps the band.
+  const panelCaps = pn && pn.width > window.innerWidth * 0.55;
+  const bot = Math.min(1250, panelCaps ? toWorldY(pn.top) - 22 : toWorldY(window.innerHeight) - 40);
+  return { top, bot: Math.max(top + 320, bot) };
+}
+
+function placeCards() {
+  if (!cards.length) return;
   const [cols, rows] = GRIDS[boardPairsNow];
   const gap = 20;
-  const topY = 200;
-  const botY = 1170;
+  const { top, bot } = boardArea();
   let cardW = (BASE_W - 52 - (cols - 1) * gap) / cols;
   let cardH = cardW * 1.3;
-  const availH = botY - topY - (rows - 1) * gap;
+  const availH = bot - top - (rows - 1) * gap;
   if (cardH * rows > availH) {
     cardH = availH / rows;
     cardW = cardH / 1.3;
   }
   const startX = (BASE_W - (cols * cardW + (cols - 1) * gap)) / 2 + cardW / 2;
-  const startY = (BASE_H - (rows * cardH + (rows - 1) * gap)) / 2 + cardH / 2 - 20;
-  cards = deck.map((key, i) => ({
-    x: startX + (i % cols) * (cardW + gap),
-    y: startY + Math.floor(i / cols) * (cardH + gap),
-    w: cardW,
-    h: cardH,
+  const startY = top + (bot - top - (rows * cardH + (rows - 1) * gap)) / 2 + cardH / 2;
+  cards.forEach((c, i) => {
+    c.x = startX + (i % cols) * (cardW + gap);
+    c.y = startY + Math.floor(i / cols) * (cardH + gap);
+    c.w = cardW;
+    c.h = cardH;
+  });
+}
+
+function makeBoard() {
+  boardPairsNow = boardPairs(round);
+  const keys = selectModels(boardPairsNow, prevKeys);
+  prevKeys = keys;
+  const deck = shuffle([...keys, ...keys]);
+  cards = deck.map((key) => ({
+    x: 0,
+    y: 0,
+    w: 100,
+    h: 130,
     key,
     open: false,
     matched: false,
@@ -474,6 +500,7 @@ function makeBoard() {
     driftPhase: Math.random() * 6.28,
     driftFreq: 0.25 + Math.random() * 0.2,
   }));
+  placeCards();
   matched = 0;
   flipped = [];
   updateHud();
