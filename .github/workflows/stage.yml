@@ -24,11 +24,87 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Computes and, if needed, commits the next package.json version -- see
+  # docs/CLAUDE.md's Versioning section for the full rule set. Fires on
+  # every push to stage (direct push, cherry-pick, or a merged PR into
+  # stage are all just push events here), but only ever pushes a new
+  # commit when the computed target actually differs from what's already
+  # committed -- so a chatty release cycle with five pushes doesn't
+  # produce five bumps. The `if` guard stops the bump commit's own push
+  # from re-triggering this whole workflow a second time.
+  bump:
+    if: "!startsWith(github.event.head_commit.message || '', 'chore(release):')"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.finalize.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: stage
+          fetch-depth: 0
+
+      - name: Compute and apply version bump
+        id: finalize
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          if [ -z "$LAST_TAG" ]; then
+            LAST_TAG="v$(node -p "require('./package.json').version")"
+          fi
+
+          if git rev-parse "$LAST_TAG" >/dev/null 2>&1; then
+            LOG=$(git log "${LAST_TAG}..HEAD" --pretty=%s%n%b)
+          else
+            LOG=$(git log --pretty=%s%n%b)
+          fi
+
+          BUMP=patch
+          if echo "$LOG" | grep -qE "BREAKING CHANGE:|^[a-zA-Z]+(\([^)]*\))?!:"; then
+            BUMP=major
+          elif echo "$LOG" | grep -qE "^feat(\([^)]*\))?:"; then
+            BUMP=minor
+          fi
+
+          BASE="${LAST_TAG#v}"
+          NEXT=$(node -e "
+            const [maj, min, pat] = '$BASE'.split('.').map(Number);
+            const bump = '$BUMP';
+            const v = bump === 'major' ? [maj + 1, 0, 0] : bump === 'minor' ? [maj, min + 1, 0] : [maj, min, pat + 1];
+            console.log(v.join('.'));
+          ")
+
+          CURRENT=$(node -p "require('./package.json').version")
+          if [ "$NEXT" != "$CURRENT" ]; then
+            node -e "
+              const fs = require('fs');
+              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+              pkg.version = '$NEXT';
+              fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+            "
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add package.json
+            git commit -m "chore(release): v$NEXT [skip ci]"
+            git push origin HEAD:stage
+            echo "Bumped $CURRENT -> $NEXT ($BUMP)"
+          else
+            echo "Already at $CURRENT for this release cycle, nothing to commit."
+          fi
+
+          echo "version=$NEXT" >> "$GITHUB_OUTPUT"
+
   gates:
+    needs: bump
     name: Gates (format, lint, typecheck, tokens)
     runs-on: ubuntu-latest
     steps:
+      # ref: stage, not the default trigger SHA -- picks up the bump
+      # job's commit when it made one, instead of building the stale
+      # pre-bump snapshot.
       - uses: actions/checkout@v4
+        with:
+          ref: stage
 
       - uses: actions/setup-node@v4
         with:
@@ -54,9 +130,11 @@ jobs:
   build:
     needs: gates
     uses: ./.github/workflows/build.yml
+    with:
+      ref: stage
 
   deploy:
-    needs: build
+    needs: [bump, build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -113,7 +191,7 @@ jobs:
 
       - name: Summary
         run: |
-          echo "### Stage deployed :satellite:" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Stage deployed :satellite: v${{ needs.bump.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
           echo "https://stoeier87.github.io/stage/" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "This is the single persistent release candidate — it replaced whatever was there." >> "$GITHUB_STEP_SUMMARY"
