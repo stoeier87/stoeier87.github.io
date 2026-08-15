@@ -263,7 +263,16 @@ function garbageEvery(level) {
 }
 
 const MAX_LOCK_RESETS = 15;
-const LINES_PER_LEVEL = 8;
+/* Levels advance on whichever comes first: lines cleared, or pieces placed.
+   Lines alone meant a player having a bad game never levelled at all and so
+   never met the garbage — the whole back half of the design was unreachable
+   unless you were already good at it. Pieces placed is the floor that
+   guarantees the arc happens for everybody, and it has to be tight: a real
+   run ends well short of a hundred pieces, so a generous floor is the same
+   as no floor at all. At 10 pieces a level, the garbage arrives at 80
+   pieces — a few minutes in, and reachable on a bad game. */
+const LINES_PER_LEVEL = 4;
+const PIECES_PER_LEVEL = 10;
 
 /* ── Canvas + view ─────────────────────────────────────── */
 const canvas = document.getElementById("game");
@@ -304,15 +313,14 @@ function resize() {
   BASE_H = H;
 
   /* Insets keep the grid clear of the two DOM overlays at every width. The
-     top one covers the pill row plus the hold/next slots under it; the
+     top one covers the pill row plus the next-queue slot under it; the
      bottom one covers the status panel. */
   const topInset = isNarrow() ? 182 : 158;
   const bottomInset = isNarrow() ? 128 : 118;
   const availH = Math.max(120, H - topInset - bottomInset);
-  /* On narrow screens the hold and next previews sit either side of the
-     grid rather than clear of it, so the width budget has to reserve their
-     columns — at 390px an unreserved grid lands exactly against the next
-     preview with zero margin. */
+  /* On narrow screens the next preview sits beside the grid rather than
+     clear of it, so the width budget reserves its column — at 390px an
+     unreserved grid lands flush against it with zero margin. */
   const availW = W - (isNarrow() ? 132 : 40);
 
   cell = Math.floor(Math.min(availH / ROWS, availW / COLS));
@@ -647,8 +655,6 @@ const KICKS_I = {
 /* ── State ─────────────────────────────────────────────── */
 let grid = [];
 let piece = null;
-let holdType = null;
-let holdUsed = false;
 let bag = [];
 let queue = [];
 
@@ -657,6 +663,7 @@ let lines = 0;
 let level = 1;
 let best = 0;
 let garbageCountdown = null; // pieces remaining until the next rise
+let piecesPlaced = 0;
 let backToBack = false;
 
 let gameOver = false;
@@ -679,6 +686,8 @@ let shakeUntil = 0;
 let shakeAmp = 0;
 let bgPulse = 0;
 let freezeRow = -1; // game-over freeze-over progress
+let freezeStart = 0;
+let cardShown = false;
 
 const MAX_SHARDS = 160;
 const MAX_FROST = 60;
@@ -694,9 +703,7 @@ const el = {
   intro: document.getElementById("intro"),
   introKeys: document.getElementById("introKeys"),
   introTouch: document.getElementById("introTouch"),
-  hold: document.getElementById("holdSlot"),
   next: document.getElementById("nextSlot"),
-  holdCanvas: document.getElementById("holdCanvas"),
   nextCanvas: document.getElementById("nextCanvas"),
   pause: document.getElementById("pause"),
   resume: document.getElementById("resumeBtn"),
@@ -766,7 +773,6 @@ function spawn(type) {
     return;
   }
   piece = p;
-  holdUsed = false;
   locking = false;
   lockTimer = 0;
   lockResets = 0;
@@ -823,21 +829,6 @@ function onPieceMoved() {
     lockTimer = 0;
   }
   if (fits(piece.type, piece.rot, piece.x, piece.y + 1)) locking = false;
-}
-
-function hold() {
-  if (!piece || holdUsed || gameOver || paused) return;
-  const cur = piece.type;
-  if (holdType === null) {
-    holdType = cur;
-    spawn();
-  } else {
-    const swap = holdType;
-    holdType = cur;
-    spawn(swap);
-  }
-  holdUsed = true;
-  drawSlots();
 }
 
 function softDrop() {
@@ -899,6 +890,7 @@ function lockPiece() {
     grid[cy][cx] = piece.type;
   }
   if (!reduced) puffFrost();
+  piecesPlaced++;
 
   const full = [];
   for (let y = 0; y < TOTAL_ROWS; y++) {
@@ -907,8 +899,6 @@ function lockPiece() {
 
   if (full.length) {
     lines += full.length;
-    const newLevel = Math.min(30, 1 + Math.floor(lines / LINES_PER_LEVEL));
-    if (newLevel !== level) level = newLevel;
     scoreClear(full.length, spin);
     beginClear(full);
   } else if (spin) {
@@ -917,6 +907,13 @@ function lockPiece() {
   } else {
     backToBack = false;
   }
+
+  // Recomputed on every lock, not only when a line clears — the pieces-placed
+  // floor is the half that has to fire for a player who is not clearing.
+  level = Math.min(
+    30,
+    1 + Math.max(Math.floor(lines / LINES_PER_LEVEL), Math.floor(piecesPlaced / PIECES_PER_LEVEL)),
+  );
 
   tickGarbage();
   updateHud();
@@ -1273,13 +1270,11 @@ function drawEffects(now) {
   }
 }
 
-/* ── Hold and next previews ────────────────────────────── */
+/* ── Next queue preview ────────────────────────────────── */
 let slotCell = 16;
 function sizeSlots() {
   slotCell = isNarrow() ? 9 : 13;
   const unit = slotCell * 4 + 10;
-  el.holdCanvas.width = unit;
-  el.holdCanvas.height = slotCell * 2 + 10;
   if (isNarrow()) {
     // Three previews across rather than down, so the band stays one row tall
     // and the grid keeps its height.
@@ -1314,7 +1309,6 @@ function drawPreview(c, types, horizontal = false) {
 }
 
 function drawSlots() {
-  drawPreview(el.holdCanvas, [holdType]);
   drawPreview(el.nextCanvas, queue.slice(0, 3), isNarrow());
 }
 
@@ -1328,7 +1322,6 @@ function hideIntro() {
   el.intro.style.transform = "translateY(-10px)";
   el.intro.style.pointerEvents = "none";
   el.status.classList.add("show");
-  el.hold.classList.add("show");
   el.next.classList.add("show");
 }
 
@@ -1395,11 +1388,6 @@ addEventListener("keydown", (e) => {
     case "Space":
       hardDrop();
       break;
-    case "ShiftLeft":
-    case "ShiftRight":
-    case "KeyC":
-      hold();
-      break;
     default:
       used = false;
   }
@@ -1426,7 +1414,6 @@ const SWIPE_MOVE = () => Math.max(22, cell * 0.72);
 const SWIPE_DOWN = () => Math.max(26, cell * 0.85);
 const TAP_MAX_MS = 220;
 const TAP_MAX_DIST = 14;
-const LONG_PRESS_MS = 420;
 
 canvas.addEventListener(
   "touchstart",
@@ -1450,12 +1437,6 @@ canvas.addEventListener(
       movedCols: 0,
       softing: false,
       consumed: false,
-      longTimer: setTimeout(() => {
-        if (touch && !touch.consumed) {
-          touch.consumed = true;
-          hold();
-        }
-      }, LONG_PRESS_MS),
     };
     e.preventDefault();
   },
@@ -1483,8 +1464,7 @@ canvas.addEventListener(
         touch.movedCols += step;
       }
       touch.consumed = true;
-      clearTimeout(touch.longTimer);
-      dasDir = step;
+        dasDir = step;
       dasTimer = 0;
       arrTimer = 0;
     }
@@ -1492,8 +1472,7 @@ canvas.addEventListener(
     if (dy > SWIPE_DOWN() && Math.abs(dx) < Math.abs(dy)) {
       touch.softing = true;
       touch.consumed = true;
-      clearTimeout(touch.longTimer);
-    }
+      }
     e.preventDefault();
   },
   { passive: false },
@@ -1503,7 +1482,6 @@ canvas.addEventListener(
   "touchend",
   (e) => {
     if (!touch) return;
-    clearTimeout(touch.longTimer);
     const dt = performance.now() - touch.t0;
     const dx = touch.x - touch.x0;
     const dy = touch.y - touch.y0;
@@ -1549,27 +1527,34 @@ function endGame() {
   el.finalBest.textContent = best;
   el.bestMarker.classList.toggle("show", beat);
 
-  // The stack freezes over from the bottom up before the card appears.
+  /* The stack freezes over from the bottom up before the card appears. This
+     is driven from the rAF loop rather than a setInterval: at 800/22 ≈ 36ms
+     a tick, the interval callbacks queued behind the draw loop and the card
+     took 2.7 seconds to arrive instead of 0.8. Time-based in the loop is
+     both correct and the one-rAF-loop rule. */
+  freezeStart = performance.now();
   freezeRow = TOTAL_ROWS;
-  const step = 800 / TOTAL_ROWS;
-  const freeze = setInterval(() => {
-    freezeRow--;
-    if (freezeRow <= 0) {
-      clearInterval(freeze);
-      el.over.classList.add("show");
-      if (!scoreSubmitted) {
-        scoreSubmitted = true;
-        setTimeout(() => {
-          submitScoreOnGameOver({
-            gameKey: "ice-fall",
-            gameLabel: "Ice Fall",
-            score: Math.floor(score),
-            ask: true,
-          });
-        }, 60);
-      }
-    }
-  }, step);
+}
+
+/** Advances the freeze-over, then reveals the card once. Called every frame. */
+function tickFreeze(now) {
+  if (!gameOver || freezeStart === 0) return;
+  const t = Math.min(1, (now - freezeStart) / 800);
+  freezeRow = Math.round(TOTAL_ROWS * (1 - t));
+  if (t < 1 || cardShown) return;
+  cardShown = true;
+  el.over.classList.add("show");
+  if (!scoreSubmitted) {
+    scoreSubmitted = true;
+    setTimeout(() => {
+      submitScoreOnGameOver({
+        gameKey: "ice-fall",
+        gameLabel: "Ice Fall",
+        score: Math.floor(score),
+        ask: true,
+      });
+    }, 60);
+  }
 }
 
 function reset() {
@@ -1578,11 +1563,10 @@ function reset() {
   queue = [];
   fillQueue();
   piece = null;
-  holdType = null;
-  holdUsed = false;
   score = 0;
   lines = 0;
   level = 1;
+  piecesPlaced = 0;
   garbageCountdown = null;
   garbageRowsSinceGapChange = 0;
   garbageGapCol = Math.floor(Math.random() * COLS);
@@ -1591,6 +1575,8 @@ function reset() {
   paused = false;
   scoreSubmitted = false;
   freezeRow = -1;
+  freezeStart = 0;
+  cardShown = false;
   shards.length = 0;
   frost.length = 0;
   trails.length = 0;
@@ -1694,6 +1680,7 @@ function step(ts) {
     backdropPainted = true;
   }
 
+  tickFreeze(ts);
   draw(ts);
   requestAnimationFrame(step);
 }

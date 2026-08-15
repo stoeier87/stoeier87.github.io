@@ -52,7 +52,7 @@ body.is-paused st-planet-field#bg {
   filter: blur(3px);
 }
 
-/* ---- Hold slot and next queue ---- */
+/* ---- Next queue ---- */
 .slot {
   position: fixed;
   z-index: 15;
@@ -68,9 +68,6 @@ body.is-paused st-planet-field#bg {
 }
 /* The pill row wraps to two lines below md, so the slot band has to
    clear both. */
-.slot-hold {
-  @apply left-3 top-[126px] md:top-[74px] items-start;
-}
 .slot-next {
   @apply right-3 top-[126px] md:top-[74px] items-end;
 }
