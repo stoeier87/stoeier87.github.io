@@ -21,6 +21,9 @@ const app = initializeApp(ARCADE_FIREBASE_CONFIG, "arcade-game");
 if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
   self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
 }
+// App Check's reCAPTCHA v3 loader references a Node `process` global that
+// doesn't exist when this module is loaded raw over CDN (no bundler).
+window.process ??= { env: {} };
 initializeAppCheck(app, {
   provider: new ReCaptchaV3Provider(ARCADE_FIREBASE_CONFIG.appCheckSiteKey),
   isTokenAutoRefreshEnabled: true,
