@@ -189,8 +189,10 @@ function buildStationSvg() {
 const CSS = `
 .egg-layer {
   position: fixed;
-  right: 48px;
-  bottom: 48px;
+  left: 0;
+  top: 0;
+  width: var(--egg-size, 100px);
+  height: var(--egg-size, 100px);
   z-index: 90;
   pointer-events: none;
   opacity: 0;
@@ -227,7 +229,9 @@ const CSS = `
 }
 .egg-crack.show { opacity: 1; stroke-dashoffset: 0; }
 
-.egg-station { display: block; width: 100px; height: 100px; overflow: visible; }
+/* Sized by placeScene to sit inside the counter of FULLERTON's O with a
+   little room around it — the O is its orbit. */
+.egg-station { display: block; width: var(--egg-size, 100px); height: var(--egg-size, 100px); overflow: visible; }
 .egg-station-btn {
   display: block;
   background: transparent;
@@ -254,15 +258,37 @@ const CSS = `
 }
 .egg-idle .egg-station-float { animation: eggStationBob 6s ease-in-out infinite; }
 
-/* The station drifts across the name and back, the same travel the alien
-   used. Capped on phones so the complaint bubble can never leave the left
-   edge while the station is fully drifted. */
-.egg-layer { --egg-wander-x: min(60vw, 820px); }
-@keyframes eggWander {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(calc(-1 * var(--egg-wander-x)), -10px); }
+/* The station drifts back and forth around the O — an 8 s loop that strays
+   just past the letter at each extreme before returning. Amplitude comes
+   from the measured letter width in placeScene. Vertical travel stays the
+   6px bob in eggStationBob; this axis is horizontal only. */
+.egg-layer { --egg-orbit-x: 40px; }
+@keyframes eggOrbit {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(var(--egg-orbit-x)); }
+  75% { transform: translateX(calc(-1 * var(--egg-orbit-x))); }
 }
-.egg-idle .egg-wander { animation: eggWander 26s ease-in-out infinite; }
+.egg-idle .egg-wander { animation: eggOrbit 8s ease-in-out infinite; }
+
+/* FULLERTON renders in the accent colour and the station in front of it is
+   white line work, so the letters it covers step back a touch. Filter, not
+   opacity: the journey writes inline opacity on every .ltr and would win. */
+#stageName .ltr { transition: filter 0.25s ease; }
+#stageName .ltr.egg-ltr-dim { filter: brightness(0.55); }
+
+/* DO NOT SHOOT, directly below the O. Dropped on small screens rather than
+   shrunk below readable size. */
+.egg-label {
+  position: absolute;
+  top: calc(100% + var(--egg-label-dy, 10px));
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+}
 
 @keyframes eggStationSpin { to { transform: rotate(360deg); } }
 @keyframes eggStationSpinUneven {
@@ -425,8 +451,7 @@ const CSS = `
 
 /* ── Small screens ─────────────────────────────────────── */
 @media (max-width: 500px) {
-  .egg-layer { right: 8px; --egg-wander-x: 100px; }
-  .egg-station { width: 68px; height: 68px; }
+  .egg-label { display: none; }
   .egg-surface-seams > *:nth-child(n+4) { display: none; }
 }
 
@@ -460,7 +485,8 @@ function buildLayer() {
         </div>
       </div>
     </div>
-    </div>`;
+    </div>
+    <div class="egg-label" aria-hidden="true">Do not shoot</div>`;
   const { svg, crackEls } = buildStationSvg();
   layer.querySelector(".egg-station-btn").appendChild(svg);
   return { layer, crackEls };
@@ -480,17 +506,65 @@ function initEasterEgg() {
   const stationEntrance = layer.querySelector(".egg-station-entrance");
   stationBtn.tabIndex = -1;
 
-  /* Same anchoring as the old alien+console scene: vertically centred on
-     the name block, clamped to the viewport, right-aligned via CSS. */
+  /* The station lives at the O in FULLERTON — sized to sit inside the
+     letter's counter with a little room, so the O reads as its orbit. The
+     headline is never touched: this is an overlay placed over the letter,
+     re-measured on every scroll/resize while visible. */
+  const oLetter = document
+    .querySelector('#stageName .word[data-word="1"]')
+    ?.querySelectorAll(".ltr")[7];
+  const fullertonLtrs = [...document.querySelectorAll('#stageName .word[data-word="1"] .ltr')];
+
   function placeScene() {
-    const name = document.getElementById("stageName");
-    if (!name) return;
-    const nameRect = name.getBoundingClientRect();
-    const sceneH = scene.offsetHeight || 120;
-    let top = nameRect.top + nameRect.height / 2 - sceneH / 2;
-    top = Math.max(8, Math.min(top, window.innerHeight - sceneH - 8));
-    layer.style.top = top.toFixed(0) + "px";
-    layer.style.bottom = "auto";
+    if (!oLetter) return;
+    const r = oLetter.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    /* The counter of a display-weight O is roughly the middle half of the
+       glyph box; a touch under that leaves the asked-for room around it. */
+    /* On a phone the counter is tiny; the brief's call is to shrink the
+       station rather than let it swallow neighbouring letters. */
+    const size = Math.max(15, Math.min(r.width, r.height) * 0.46);
+    layer.style.setProperty("--egg-size", size.toFixed(0) + "px");
+    /* Stray just outside the letter at each extreme: centre travels far
+       enough that the station's inner edge clears the letter's edge. */
+    layer.style.setProperty("--egg-orbit-x", (r.width * 0.72).toFixed(0) + "px");
+    /* Label clears the glyph below the station box. */
+    layer.style.setProperty("--egg-label-dy", ((r.height - size) / 2 + 6).toFixed(0) + "px");
+    layer.style.left = (r.left + r.width / 2 - size / 2).toFixed(0) + "px";
+    layer.style.top = (r.top + r.height / 2 - size / 2).toFixed(0) + "px";
+  }
+
+  /* Where the station covers the accent letterforms, those letters step
+     back slightly (a filter, so the journey's inline opacity still wins on
+     its own axis). Runs only while the egg is visible. */
+  let dimRaf = 0;
+  function dimStep() {
+    /* Re-anchor every frame: the journey writes letter transforms in its own
+       rAF, one frame behind any scroll handler, so a one-shot measurement on
+       the scroll event reads the O mid-flight. Following it per frame also
+       keeps the station glued through resizes and font swaps. */
+    placeScene();
+    const s = stationBtn.getBoundingClientRect();
+    for (const el of fullertonLtrs) {
+      const lr = el.getBoundingClientRect();
+      const overlap = !(
+        s.right < lr.left ||
+        s.left > lr.right ||
+        s.bottom < lr.top ||
+        s.top > lr.bottom
+      );
+      el.classList.toggle("egg-ltr-dim", overlap);
+    }
+    if (!reduced) dimRaf = requestAnimationFrame(dimStep);
+  }
+  function startDim() {
+    cancelAnimationFrame(dimRaf);
+    dimStep();
+  }
+  function stopDim() {
+    cancelAnimationFrame(dimRaf);
+    dimRaf = 0;
+    for (const el of fullertonLtrs) el.classList.remove("egg-ltr-dim");
   }
 
   /* Visible only within 200px of the very bottom of the page. */
@@ -508,6 +582,8 @@ function initEasterEgg() {
     visible = nowVisible;
     layer.classList.toggle("egg-in", visible);
     stationBtn.tabIndex = visible ? 0 : -1;
+    if (visible && !destroying) startDim();
+    else stopDim();
   }
   window.addEventListener("scroll", checkBottom, { passive: true });
   window.addEventListener("resize", checkBottom, { passive: true });
@@ -826,6 +902,7 @@ function initEasterEgg() {
 
   function startDestruction() {
     destroying = true;
+    stopDim();
     /* Both, not just body: the debris, shockwaves and embers are fixed
        elements that overflow the viewport on purpose, and only the root
        element's overflow suppresses the scrollbar they would otherwise
