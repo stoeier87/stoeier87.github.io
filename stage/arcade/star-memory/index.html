@@ -6,13 +6,15 @@
     <title>Star Memory</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <script type="module" crossorigin src="../../assets/arcade/star-memory/index-2-R8FVGe.js"></script>
-    <link rel="modulepreload" crossorigin href="../../assets/tailwind-PzvKiVMJ.js">
+    <script type="module" crossorigin src="../../assets/arcade/star-memory/index-TisM2_Xz.js"></script>
+    <link rel="modulepreload" crossorigin href="../../assets/tailwind-vN0XEIAB.js">
     <link rel="modulepreload" crossorigin href="../../assets/tokens-DZhOMBh-.js">
+    <link rel="modulepreload" crossorigin href="../../assets/tools-data-lETy8iGk.js">
+    <link rel="modulepreload" crossorigin href="../../assets/constellation-source-BCkXpJxX.js">
     <link rel="modulepreload" crossorigin href="../../assets/firebase-config-CLc0baU0.js">
     <link rel="modulepreload" crossorigin href="../../assets/score-submit-Bewzh5NB.js">
-    <link rel="stylesheet" crossorigin href="../../assets/tailwind-DNjuwYgt.css">
-    <link rel="stylesheet" crossorigin href="../../assets/index-CYdk4qHe.css">
+    <link rel="stylesheet" crossorigin href="../../assets/tailwind-CcSOQN3m.css">
+    <link rel="stylesheet" crossorigin href="../../assets/index-Cdyz8iQZ.css">
   </head>
   <body>
     <!-- Neptune, Triton and the starfield. `driven`: the game owns the single
@@ -39,10 +41,22 @@
 
     <!-- Status panel, same shape as ISS Docking's APPROACH panel -->
     <div class="approach" id="status">
-      <div class="approach-title">BOARD</div>
+      <div class="approach-title">RUN</div>
+      <div class="approach-row">
+        <span class="approach-label">ROUND</span>
+        <strong class="approach-value" id="roundVal">1</strong>
+      </div>
       <div class="approach-row">
         <span class="approach-label">PAIRS</span>
-        <strong class="approach-value" id="pairsVal">0 / 8</strong>
+        <strong class="approach-value" id="pairsVal">0 / 6</strong>
+      </div>
+      <div class="approach-row">
+        <span class="approach-label">MULTI</span>
+        <strong class="approach-value" id="multVal">x1</strong>
+      </div>
+      <div class="approach-row">
+        <span class="approach-label">TIME</span>
+        <div class="bar"><div class="bar-fill" id="timeFill"></div></div>
       </div>
     </div>
 
@@ -51,10 +65,11 @@
       <div class="intro" id="intro">
         <div class="intro-title">STAR MEMORY</div>
         <div class="intro-body">
-          Match the pairs. Saturn has been keeping time for a while and is in no hurry.
+          Match the constellations before the clock runs down. Saturn has been keeping time for a
+          while; now it is your turn.
         </div>
         <div class="intro-keys" id="introKeys">
-          <span><b>Click</b> turn a card</span><span><b>R</b> restart after a match-out</span>
+          <span><b>Click</b> turn a card</span><span><b>R</b> restart when time is out</span>
         </div>
         <div class="intro-keys" id="introTouch">
           <span><b>Tap</b> turn a card</span>
@@ -69,6 +84,9 @@
         <div class="final-rows">
           <div class="final-row">
             <span>SCORE</span><strong id="finalScore">0</strong>
+          </div>
+          <div class="final-row">
+            <span>ROUNDS</span><strong id="finalRounds">0</strong>
           </div>
           <div class="final-row final-best">
             <span>BEST</span><strong id="finalBest">0</strong>
