@@ -61,6 +61,10 @@ function getInputs() {
   return inputs;
 }
 
+// See docs/CLAUDE.md's Versioning section: package.json's version is bumped
+// automatically by CI, never by hand. This just surfaces whatever's there.
+const APP_VERSION = JSON.parse(fs.readFileSync(path.resolve(__dirname, "package.json"), "utf8")).version;
+
 const SITE_URL = "https://stoeier.dk";
 
 // sitemap.xml, generated from the same HTML_FILES the build already globbed —
@@ -102,6 +106,9 @@ export default defineConfig({
   // every Font Awesome icon while the rest of the site looked fine.
   root: "src",
   base: "./",
+  define: {
+    __APP_VERSION__: JSON.stringify(APP_VERSION),
+  },
   plugins: [tailwindcss(), directoryIndexRedirect(), sitemapPlugin()
     // , gtagPlugin()
   ],
