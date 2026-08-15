@@ -6,12 +6,12 @@
     <title>ISS Docking</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <script type="module" crossorigin src="../../assets/arcade/iss-docking/index-CQpAEdKW.js"></script>
-    <link rel="modulepreload" crossorigin href="../../assets/tailwind-vN0XEIAB.js">
+    <script type="module" crossorigin src="../../assets/arcade/iss-docking/index-tIKu4PAr.js"></script>
+    <link rel="modulepreload" crossorigin href="../../assets/tailwind-D3cAdbGj.js">
     <link rel="modulepreload" crossorigin href="../../assets/firebase-config-CLc0baU0.js">
     <link rel="modulepreload" crossorigin href="../../assets/score-submit-Bewzh5NB.js">
-    <link rel="stylesheet" crossorigin href="../../assets/tailwind-CcSOQN3m.css">
-    <link rel="stylesheet" crossorigin href="../../assets/index-DjYCf5Z4.css">
+    <link rel="stylesheet" crossorigin href="../../assets/tailwind-DPbJPjfp.css">
+    <link rel="stylesheet" crossorigin href="../../assets/index-DifkngdU.css">
   </head>
   <body>
     <canvas id="game" aria-hidden="true"></canvas>
@@ -19,10 +19,10 @@
     <!-- Top bar: back link + title badge (left), score + best (right) -->
     <div class="topbar">
       <div class="topbar-group">
-        <a href="../../arcade/" class="pill link">← Arcade</a>
+        <a href="../../arcade/" class="pill back-circle" aria-label="Back to arcade" title="Back to arcade">←</a>
         <div class="pill badge">
           <span class="beacon"></span>
-          ISS DOCKING
+          <span class="badge-name">ISS DOCKING</span>
         </div>
       </div>
       <div class="topbar-group">
@@ -45,6 +45,14 @@
       <div class="approach-row">
         <span class="approach-label">ALIGN</span>
         <div class="bar"><div class="bar-fill" id="angleFill"></div></div>
+      </div>
+    </div>
+
+    <!-- Auto-pause overlay -->
+    <div id="pause" class="gameover">
+      <div class="gameover-card">
+        <div class="gameover-title">PAUSED</div>
+        <button id="resumeBtn" class="restart-btn" type="button">Resume</button>
       </div>
     </div>
 

@@ -6,12 +6,12 @@
     <title>Meteor Dodge</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <script type="module" crossorigin src="../../assets/arcade/meteor-dodge/index-BvwW5I3G.js"></script>
-    <link rel="modulepreload" crossorigin href="../../assets/tailwind-vN0XEIAB.js">
+    <script type="module" crossorigin src="../../assets/arcade/meteor-dodge/index-CDsQIVGq.js"></script>
+    <link rel="modulepreload" crossorigin href="../../assets/tailwind-D3cAdbGj.js">
     <link rel="modulepreload" crossorigin href="../../assets/firebase-config-CLc0baU0.js">
     <link rel="modulepreload" crossorigin href="../../assets/score-submit-Bewzh5NB.js">
-    <link rel="stylesheet" crossorigin href="../../assets/tailwind-CcSOQN3m.css">
-    <link rel="stylesheet" crossorigin href="../../assets/index-DHXNlr_T.css">
+    <link rel="stylesheet" crossorigin href="../../assets/tailwind-DPbJPjfp.css">
+    <link rel="stylesheet" crossorigin href="../../assets/index-BDfchz3x.css">
   </head>
   <body>
     <canvas id="game" aria-hidden="true"></canvas>
@@ -21,14 +21,23 @@
          plain text inside the canvas play-field border instead. -->
     <div class="topbar">
       <div class="topbar-group">
-        <a href="../../arcade/" class="pill link">← Arcade</a>
+        <a href="../../arcade/" class="pill back-circle" aria-label="Back to arcade" title="Back to arcade">←</a>
         <div class="pill badge">
           <span class="beacon"></span>
-          METEOR DODGE
+          <span class="badge-name">METEOR DODGE</span>
         </div>
       </div>
       <div class="topbar-group">
+        <div class="pill stat">SCORE <strong id="score">0</strong></div>
         <a class="pill stat" href="../../scoreboard/">BEST <strong id="best" class="best-val">0</strong></a>
+      </div>
+    </div>
+
+    <!-- Auto-pause overlay -->
+    <div id="pause" class="gameover">
+      <div class="gameover-card">
+        <div class="gameover-title">PAUSED</div>
+        <button id="resumeBtn" class="restart-btn" type="button">Resume</button>
       </div>
     </div>
 
