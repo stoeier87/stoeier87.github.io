@@ -69,3 +69,30 @@ jobs:
               environment_url: "https://stoeier.dk/",
               description: "Deployed to production",
             });
+
+      # The version bump itself already landed via the merged PR's diff
+      # (docs/CLAUDE.md's Versioning section) -- this just reads whatever's
+      # in package.json at the merge commit and tags it, so there's a
+      # permanent "what's actually live" marker. Tags aren't covered by
+      # main's ruleset, so this needs no bypass unlike a direct push would.
+      - name: Checkout merge commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
+
+      - name: Tag release
+        id: tag
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if git ls-remote --tags origin "refs/tags/v$VERSION" | grep -q .; then
+            echo "v$VERSION already tagged (likely a workflow_dispatch re-run), skipping."
+          else
+            git tag "v$VERSION"
+            git push origin "v$VERSION"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Summary
+        run: |
+          echo "### Production deployed :rocket: v${{ steps.tag.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "https://stoeier.dk/" >> "$GITHUB_STEP_SUMMARY"
