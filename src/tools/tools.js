@@ -128,7 +128,10 @@ function buildNodes() {
   const labelMaxWidth = m ? 96 : 140;
   const labelMaxPx = m ? 8.6 : 10.56;
   const labelMinPx = m ? 7 : 8.5;
-  const wanderRadius = m ? 7 : 10;
+  /* Order now carries meaning, so position must read as fixed: a small
+     oscillation around the slot, never more than 6px in any direction,
+     always returning home. Free wander would say position is arbitrary. */
+  const wanderRadius = m ? 5 : 6;
   const rnd = mulberry32(20260814);
 
   drifters = TOOLS.map((tool) => {
