@@ -2174,9 +2174,10 @@ export const DIAGRAMS = {
     },
     stageWidth(mobile) { return mobile ? "min(380px, calc(100vw - 3rem))" : "min(560px, 90vw)"; },
     buildStage() {
-      const svg = svgEl("svg", { viewBox: "0 0 360 150", draggable: "false" });
+      // Height closes around the chevrons and the return arc alone — the
+      // ownership row is gone and the space went with it.
+      const svg = svgEl("svg", { viewBox: "0 0 360 128", draggable: "false" });
       const STAGES = ["REACH", "ENGAGE", "ACTIVATE", "NURTURE"];
-      const OWNERS = ["MARKETING", "PRODUCT", "PRODUCT", "CRM"];
       const w = 78, d = 14, y = 30, h = 44, step = 80, x0 = 16;
       for (let i = 0; i < 4; i++) {
         const x = x0 + i * step;
@@ -2185,12 +2186,6 @@ export const DIAGRAMS = {
         svg.appendChild(p);
         const t = svgText(x + w / 2 + (i === 0 ? -2 : 5), y + h / 2 + 2.5, "middle", STAGES[i], "tool-label neutral rean-stage rean-stage-" + i);
         svg.appendChild(t);
-        const tickX = x + w / 2 + 3;
-        const tick = svgEl("path", { d: "M " + tickX + " " + (y + h + 8) + " L " + tickX + " " + (y + h + 16), fill: "none", stroke: "currentColor", "stroke-width": "1.2", class: "rean-own rean-own-" + i });
-        tick.style.opacity = "0";
-        svg.appendChild(tick);
-        const ot = svgText(tickX, y + h + 27, "middle", OWNERS[i], "tool-label rean-ownlabel rean-own-" + i);
-        svg.appendChild(ot);
       }
       // Return arc: right edge of NURTURE back under the row to ENGAGE's left edge.
       const arc = svgEl("path", { d: "M 332 78 C 332 126, 120 132, 99 84", fill: "none", stroke: "var(--red)", "stroke-width": "1.5", pathLength: "1", class: "rean-arc" });
@@ -2206,15 +2201,11 @@ export const DIAGRAMS = {
     assemble(el) {
       const chevs = [0, 1, 2, 3].map((i) => el.querySelector(".rean-chev-" + i));
       const stages = [0, 1, 2, 3].map((i) => el.querySelectorAll(".rean-stage-" + i)[0]);
-      const owns = [...el.querySelectorAll(".rean-own")];
-      const ownLabels = [...el.querySelectorAll(".rean-ownlabel")];
       const arc = el.querySelector(".rean-arc");
       const head = el.querySelector(".rean-arc-head");
       function applyFinal() {
         chevs.forEach((c) => snapStroke(c));
         stages.forEach((s) => s.classList.add("show"));
-        owns.forEach((o) => { o.style.transition = "none"; o.style.opacity = "1"; });
-        ownLabels.forEach((l) => l.classList.add("show"));
         snapStroke(arc);
         head.style.transition = "none";
         head.style.opacity = "1";
@@ -2224,13 +2215,9 @@ export const DIAGRAMS = {
       chevs.forEach((c, i) => {
         timers.push(setTimeout(() => { runStroke(c, 160); stages[i].classList.add("show"); }, i * 120));
       });
-      timers.push(setTimeout(() => {
-        owns.forEach((o) => { o.style.transition = "opacity 140ms ease"; o.style.opacity = "1"; });
-        ownLabels.forEach((l) => l.classList.add("show"));
-      }, 540));
-      timers.push(setTimeout(() => { runStroke(arc, 280); }, 700));
-      timers.push(setTimeout(() => { head.style.transition = "opacity 100ms ease"; head.style.opacity = "1"; }, 960));
-      return { doneAt: 1060, timers, applyFinal };
+      timers.push(setTimeout(() => { runStroke(arc, 280); }, 540));
+      timers.push(setTimeout(() => { head.style.transition = "opacity 100ms ease"; head.style.opacity = "1"; }, 800));
+      return { doneAt: 900, timers, applyFinal };
     },
   },
 
@@ -2802,7 +2789,7 @@ export const TOOLS = [
     name: "REAN",
     attribution: "Xavier Blanc. Popularised by Steve Jackson, Cult of Analytics, 2009",
     whatItIs: "Four things a digital service has to do. Reach people, engage them, activate the behaviour you want, and keep them coming back.",
-    strongFor: "Showing that four different people own four parts of the same chain, and that none of them can see the whole of it from where they sit.",
+    strongFor: "Showing that one chain runs through four different parts of an organisation, and that nobody is standing anywhere they can see all of it.",
     howIUse: "Backwards, starting at Nurture. Working out what would actually bring someone back usually reveals there is nothing to bring them back to yet, and that changes what Engage and Activate need to contain.",
     watchOut: "It is four containers, not a journey. It tells you both ends must exist. It tells you nothing about how anyone gets from one to the next, and using it as a journey map loses everything a blueprint would have caught.",
   },
@@ -3013,7 +3000,7 @@ export const TOOLS = [
     attribution: "No single origin. Common in design sprints and dot voting practice",
     whatItIs: "Everyone marks the ideas they think should go forward, without discussion and without seeing anyone else explain their choice first.",
     strongFor: "Getting an honest read of the room before the loudest person has framed what counts as a good idea.",
-    howIUse: "Anyone senior votes last. If their judgement should carry more weight, they get physically larger dots rather than earlier ones. Weight belongs in the vote, not in the timing, and the moment a director's dot goes up first the rest of the wall arranges itself around it.",
+    howIUse: "Always after storyboards, never after a verbal round. If people pitch first, they vote on who spoke well. The dots go up in silence, and anyone senior votes last, with larger dots if their judgement should weigh more. Weight belongs in the vote, not in the timing.",
     watchOut: "It measures appeal, not feasibility. A wall of dots tells you what the room liked, which is worth knowing and is not the same as what should be built.",
   },
   {
