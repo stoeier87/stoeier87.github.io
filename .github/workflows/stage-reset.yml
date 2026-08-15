@@ -19,11 +19,13 @@ name: Nightly Stage Reset
 # one owns the prod server. ADR-018 records the trigger for revisiting.
 
 on:
-  schedule:
-    # 02:00 UTC — roughly 03:00 in Copenhagen in winter, 04:00 in summer.
-    # GitHub does not adjust cron for DST, and scheduled runs can be delayed
-    # under load, so treat this as "overnight", not as a precise time.
-    - cron: "0 2 * * *"
+  # Nightly schedule disabled — trigger manually via workflow_dispatch instead.
+  # Also disabled because of a real bug: a force-push to refs/heads/stage
+  # fails with "directory file conflict" whenever any refs/heads/stage/*
+  # branch exists (e.g. a stray stage/testing branch) — git refs can't hold
+  # both `stage` and `stage/foo` at once. When that happens the reset job
+  # fails silently overnight and /stage/ is left serving whatever was
+  # deployed last, which reads as "an old build" the next morning.
   workflow_dispatch:
 
 concurrency:
