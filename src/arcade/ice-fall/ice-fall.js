@@ -392,8 +392,18 @@ function layoutBackdrop() {
   const portrait = H >= W;
   plutoSpec.r = portrait ? 0.62 : 0.78;
   plutoSpec.px = portrait ? 0.82 : 0.86;
-  plutoSpec.s0 = portrait ? 0.46 : 0.5;
+  plutoBaseS0 = portrait ? 0.46 : 0.5;
+  plutoSpec.s0 = plutoBaseS0;
 }
+
+/* Pluto breathes down the sky and eases back — a full round trip in eight
+   minutes, cosine-eased at both ends. The drift only ever adds to s0, so the
+   planet moves down and further into its lower-right crop: away from the
+   playfield, the pills and the status panel, never toward them. */
+const PLUTO_DRIFT_MS = 480000;
+const PLUTO_DRIFT_AMP = 0.1;
+let plutoDriftClock = 0;
+let plutoBaseS0 = 0.46;
 
 if (backdrop) {
   backdrop.starLayers = [
@@ -1670,6 +1680,13 @@ function step(ts) {
       const c = charonAt(charonPhase);
       charonSpec.px = c.px;
       charonSpec.s0 = c.s0;
+
+      // Pluto's slow descent-and-return. Mutated in place like Charon; the
+      // 2D layer (shadow, plumes) reads planetScreen() live and follows.
+      plutoDriftClock += dt * 1000;
+      plutoSpec.s0 =
+        plutoBaseS0 +
+        PLUTO_DRIFT_AMP * 0.5 * (1 - Math.cos((plutoDriftClock / PLUTO_DRIFT_MS) * Math.PI * 2));
     }
   }
 
