@@ -89,7 +89,7 @@ import { color } from "./tokens.ts";
       bands: true,
       spin: 0.16,
       depth: 150,
-      link: "./arcade/comet-pong/",
+      link: "./arcade/galileo/",
     },
     {
       name: "SATURN",

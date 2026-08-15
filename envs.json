@@ -85,13 +85,14 @@
   ],
   "pages": {
     "$comment": "Routing is the filesystem: vite.config.js globs **/*.html into rollupOptions.input. This list is for skills that need to enumerate routes; verify against dist/ after a build rather than trusting it.",
-    "expectedHtmlCount": 39,
+    "expectedHtmlCount": 40,
     "routes": [
       "/",
       "/about-me/",
       "/arcade/",
       "/arcade/asteroid-breaker/",
       "/arcade/comet-pong/",
+      "/arcade/galileo/",
       "/arcade/ice-fall/",
       "/arcade/iss-docking/",
       "/arcade/meteor-dodge/",

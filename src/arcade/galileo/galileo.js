@@ -1,19 +1,24 @@
-/* FLYBY — a trajectory game. Jupiter is a gameplay object, not a backdrop.
+/* GALILEO — minesweeper over Jupiter, named for the probe that surveyed
+ * the system and was deliberately flown into the planet at end of mission
+ * so it could never contaminate Europa.
  *
- * Drag to aim and set power, release to launch. Jupiter pulls hard, the
- * four Galilean moons pull a little, and the moons are moving — the same
- * launch never gives the same result twice. Rings score, close passes by
- * moons multiply, and the radiation belt doubles points while it eats the
- * shield. Three probes per run.
+ * The setting is the retired trajectory game's, reused unchanged: banded
+ * Jupiter with the Great
+ * Red Spot, four moons on elliptical paths, the belt
+ * arcs, the aurorae, the starfield. The gameplay layer is new: a translucent survey grid
+ * over the centre of the field, radiation pockets hidden in it, and a
+ * radiation meter instead of instant death — first pocket 33%, second
+ * 66% (clock runs 20% faster), third loses the probe. Radiation resets
+ * each board. Boards cascade 9x9 → 16x16 against a carried clock.
  *
- * Not a dodging game, not a falling-block game, not a paddle game.
+ * First click is always safe and always opens a cascade (the layout is
+ * generated after it), and every board is verified solvable by deduction
+ * alone before it is dealt — no 50/50s.
  *
- * Canvas contract: the iss-docking/ice-fall variant — the world is the
- * viewport at DESIGN_H scale, no letterbox. DPR cap, setTransform after
- * resize, clamped dt, screenToWorld pointer conversion.
+ * Canvas contract: viewport world at DESIGN_H scale, DPR cap, transform
+ * after resize, clamped dt, screenToWorld pointer conversion.
  *
- * Scoreboard: reads and writes through the existing interface only —
- * gameKey stays "comet-pong" because the route owns the key.
+ * Scoreboard: existing interface only, gameKey "galileo".
  */
 
 import { definePlanetField } from "../../shared/elements/planet-field.ts";
@@ -47,7 +52,6 @@ function resize() {
   viewScale = H / DESIGN_H;
   BASE_W = W / viewScale;
   BASE_H = H / viewScale;
-  layoutSystem();
 }
 addEventListener("resize", resize, { passive: true });
 
@@ -56,11 +60,7 @@ function screenToWorld(clientX, clientY) {
   return { x: (clientX - r.left) / viewScale, y: (clientY - r.top) / viewScale };
 }
 
-/* ── Jupiter ───────────────────────────────────────────────
-   The sphere itself is a banded PlanetBody in <st-planet-field>; the 2D
-   layer adds what the element cannot: band streaks at their own speeds
-   shearing where they meet, the Great Red Spot drifting along its band,
-   the sun-fixed terminator, and the polar aurorae. */
+/* ── The setting: Jupiter, inherited unchanged ───────────── */
 const backdrop = document.getElementById("bg");
 
 const jupiterSpec = {
@@ -84,7 +84,6 @@ if (backdrop) {
   backdrop.planets = [jupiterSpec];
 }
 
-/* Mirror of the element's placement maths, in world units. */
 function jupiterWorld() {
   const vmin = Math.min(W, H) / viewScale;
   const r = jupiterSpec.r * vmin;
@@ -96,420 +95,27 @@ function jupiterWorld() {
   };
 }
 
-/* ── The system: moons, belt, launch pad ─────────────────── */
-const SQUASH = 0.44; // orbital plane seen at an angle
-
-/* Each moon in the site's line style, each distinct: Io small and sulphur
-   yellow with its plume, Europa pale with fine cracks, Ganymede grey-brown
-   and largest, Callisto dark and cratered. Radii/speeds are factors of
-   Jupiter's apparent radius, laid out in layoutSystem. */
+const SQUASH = 0.44;
 const MOONS = [
-  { key: "io", label: "IO", f: 1.22, r: 9, speed: 0.42, phase: 1.1, hi: "#e8d06a", lo: "#a8862f" },
-  { key: "europa", label: "EUROPA", f: 1.48, r: 11, speed: 0.3, phase: 3.9, hi: "#f0f3f6", lo: "#b9c4cc" },
-  { key: "ganymede", label: "GANYMEDE", f: 1.78, r: 16, speed: 0.21, phase: 5.4, hi: "#c0a98b", lo: "#77685a" },
-  { key: "callisto", label: "CALLISTO", f: 2.12, r: 13, speed: 0.15, phase: 0.3, hi: "#8d7f72", lo: "#4a423b" },
+  { key: "io", f: 1.22, r: 9, speed: 0.42, phase: 1.1, hi: "#e8d06a", lo: "#a8862f" },
+  { key: "europa", f: 1.48, r: 11, speed: 0.3, phase: 3.9, hi: "#f0f3f6", lo: "#b9c4cc" },
+  { key: "ganymede", f: 1.78, r: 16, speed: 0.21, phase: 5.4, hi: "#c0a98b", lo: "#77685a" },
+  { key: "callisto", f: 2.12, r: 13, speed: 0.15, phase: 0.3, hi: "#8d7f72", lo: "#4a423b" },
 ];
-let orbitScale = 1; // shrinks the whole system so Callisto fits on phones
-let moonSpeedMul = 1; // difficulty
-let beltWide = 0; // difficulty: the belt widens
-
-const pad = { x: 30, y: 0 };
+let orbitScale = 1;
 
 function layoutSystem() {
   const j = jupiterWorld();
-  pad.x = 30;
-  pad.y = BASE_H * 0.42;
-  // Callisto's orbit must fit between Jupiter's centre and the left edge.
   orbitScale = Math.min(1, (j.x - 60) / (MOONS[3].f * j.r));
 }
 
 function moonAt(m, t) {
   const j = jupiterWorld();
-  const a = m.phase + t * m.speed * moonSpeedMul;
+  const a = m.phase + t * m.speed;
   const rx = m.f * j.r * orbitScale;
-  return { x: j.x + Math.cos(a) * rx, y: j.y + Math.sin(a) * rx * SQUASH, a, rx };
+  return { x: j.x + Math.cos(a) * rx, y: j.y + Math.sin(a) * rx * SQUASH };
 }
 
-/* Elliptical distance from Jupiter's centre, normalised so 1 = the limb. */
-function beltDist(x, y) {
-  const j = jupiterWorld();
-  return Math.hypot(x - j.x, (y - j.y) / SQUASH) / j.r;
-}
-function beltBands() {
-  return [
-    { in: 1.06, out: 1.13 + beltWide, drain: 24 },
-    { in: 1.22 + beltWide * 0.5, out: 1.3 + beltWide * 1.5, drain: 15 },
-  ];
-}
-function beltAt(x, y) {
-  const d = beltDist(x, y);
-  for (const b of beltBands()) if (d >= b.in && d <= b.out) return b;
-  return null;
-}
-
-/* ── Run state ─────────────────────────────────────────── */
-const el = {
-  score: document.getElementById("score"),
-  best: document.getElementById("best"),
-  ringVal: document.getElementById("ringVal"),
-  probesVal: document.getElementById("probesVal"),
-  shieldFill: document.getElementById("shieldFill"),
-  multVal: document.getElementById("multVal"),
-  status: document.getElementById("status"),
-  intro: document.getElementById("intro"),
-  introKeys: document.getElementById("introKeys"),
-  introTouch: document.getElementById("introTouch"),
-  pause: document.getElementById("pause"),
-  resumeBtn: document.getElementById("resumeBtn"),
-  over: document.getElementById("gameOver"),
-  overTitle: document.getElementById("gameOverTitle"),
-  overRestart: document.getElementById("gameOverRestart"),
-  finalScore: document.getElementById("finalScore"),
-  finalRings: document.getElementById("finalRings"),
-  finalBest: document.getElementById("finalBest"),
-  bestMarker: document.getElementById("bestMarker"),
-};
-
-let score = 0,
-  best = 0,
-  gameOver = false,
-  scoreSubmitted = false,
-  paused = false;
-let probes = 3;
-let ringIdx = 1;
-let ringsPassed = 0;
-let mult = 1;
-let shield = 100;
-let simT = 0; // simulation clock, drives the moons; frozen while paused
-
-let probe = null; // { x, y, vx, vy, flightT, minPass: Map }
-let trail = [];
-let ring = null; // { x, y, r, flare }
-let aim = null; // { sx, sy, cx, cy } pointer drag, slingshot style
-let rearmAt = 0;
-let auroraFlashUntil = 0;
-const fragments = [];
-const floats = []; // floating multiplier texts
-const ringFx = []; // scored rings collapsing inward
-
-const GM_J = 2.6e7;
-const GM_MOON = 260000;
-const PROBE_R = 4;
-
-fetchGlobalBest("comet-pong").then((b) => {
-  best = Math.max(best, b);
-  el.best.textContent = best;
-});
-
-function updateHud() {
-  el.ringVal.textContent = ringIdx;
-  el.probesVal.textContent = probes;
-  el.multVal.textContent = "x" + mult.toFixed(1).replace(/\.0$/, "");
-  el.shieldFill.style.width = Math.max(0, shield) + "%";
-}
-
-/* Ring spawns on the playfield side of the system, and every third ring
-   the whole system tightens: moons speed up, the ring sits deeper in the
-   gravity well, the belt widens. */
-function spawnRing() {
-  const j = jupiterWorld();
-  const depthSteps = Math.floor((ringIdx - 1) / 3);
-  moonSpeedMul = 1 + depthSteps * 0.07;
-  beltWide = Math.min(0.1, depthSteps * 0.014);
-  const minF = Math.max(1.12, 2.3 - depthSteps * 0.18);
-  const maxF = Math.max(minF + 0.25, 2.6 - depthSteps * 0.12);
-  for (let tries = 0; tries < 40; tries++) {
-    const a = Math.PI * (0.72 + Math.random() * 0.56); // the open side
-    const f = minF + Math.random() * (maxF - minF);
-    const x = j.x + Math.cos(a) * f * j.r * orbitScale;
-    const y = j.y + Math.sin(a) * f * j.r * orbitScale * (0.6 + Math.random() * 0.8);
-    if (x < 60 || x > BASE_W - 30 || y < 90 || y > BASE_H - 60) continue;
-    if (Math.hypot(x - pad.x, y - pad.y) < 140) continue;
-    ring = { x, y, r: 30, flare: 0 };
-    return;
-  }
-  ring = { x: BASE_W * 0.4, y: BASE_H * 0.3, r: 30, flare: 0 };
-}
-
-function reset() {
-  score = 0;
-  probes = 3;
-  ringIdx = 1;
-  ringsPassed = 0;
-  mult = 1;
-  shield = 100;
-  moonSpeedMul = 1;
-  beltWide = 0;
-  gameOver = false;
-  scoreSubmitted = false;
-  probe = null;
-  trail = [];
-  aim = null;
-  fragments.length = 0;
-  floats.length = 0;
-  ringFx.length = 0;
-  el.score.textContent = "0";
-  el.over.classList.remove("show");
-  spawnRing();
-  updateHud();
-}
-
-function endGame() {
-  gameOver = true;
-  if (score > best) {
-    best = score;
-    el.best.textContent = best;
-  }
-  el.finalScore.textContent = score;
-  el.finalRings.textContent = ringsPassed;
-  el.finalBest.textContent = best;
-  el.bestMarker.classList.toggle("show", score >= best && score > 0);
-  el.over.classList.add("show");
-  if (!scoreSubmitted) {
-    scoreSubmitted = true;
-    setTimeout(() => {
-      submitScoreOnGameOver({
-        gameKey: "comet-pong",
-        gameLabel: "Flyby",
-        score,
-        ask: true,
-      });
-    }, 60);
-  }
-}
-
-/* ── Launch, flight, loss ───────────────────────────────── */
-function launchVelocity() {
-  if (!aim) return null;
-  const dx = aim.sx - aim.cx;
-  const dy = aim.sy - aim.cy;
-  const len = Math.hypot(dx, dy);
-  if (len < 14) return null; // too small a pull to mean it
-  const power = Math.min(240, len);
-  const speed = 150 + power * 2.0;
-  return { vx: (dx / len) * speed, vy: (dy / len) * speed, power };
-}
-
-function gravityAt(x, y, t) {
-  const j = jupiterWorld();
-  let ax = 0,
-    ay = 0;
-  {
-    const dx = j.x - x,
-      dy = j.y - y;
-    const d2 = Math.max(dx * dx + dy * dy, 900);
-    const d = Math.sqrt(d2);
-    const a = GM_J / d2;
-    ax += (dx / d) * a;
-    ay += (dy / d) * a;
-  }
-  for (const m of MOONS) {
-    const p = moonAt(m, t);
-    const dx = p.x - x,
-      dy = p.y - y;
-    const d2 = Math.max(dx * dx + dy * dy, 400);
-    const d = Math.sqrt(d2);
-    const a = GM_MOON / d2;
-    ax += (dx / d) * a;
-    ay += (dy / d) * a;
-  }
-  return { ax, ay };
-}
-
-function launch() {
-  const v = launchVelocity();
-  aim = null;
-  if (!v || probe || gameOver || paused) return;
-  probe = { x: pad.x, y: pad.y, vx: v.vx, vy: v.vy, flightT: 0, minPass: new Map() };
-  trail = [];
-}
-
-function loseProbe(kind) {
-  if (!probe) return;
-  if (!reduced && kind !== "void") {
-    for (let i = 0; i < 14; i++) {
-      const a = Math.random() * Math.PI * 2;
-      const sp = 40 + Math.random() * 160;
-      fragments.push({
-        x: probe.x,
-        y: probe.y,
-        vx: Math.cos(a) * sp + probe.vx * 0.2,
-        vy: Math.sin(a) * sp + probe.vy * 0.2,
-        rot: Math.random() * 6.3,
-        rv: (Math.random() - 0.5) * 12,
-        life: 0.7 + Math.random() * 0.5,
-        t: 0,
-      });
-    }
-    auroraFlashUntil = simT + 0.45;
-  }
-  probe = null;
-  trail = [];
-  if (kind !== "void") {
-    probes -= 1;
-    updateHud();
-    if (probes <= 0) {
-      setTimeout(endGame, reduced ? 300 : 800);
-      return;
-    }
-  }
-  shield = 100;
-  updateHud();
-  rearmAt = performance.now() + 700;
-}
-
-function scoreRing() {
-  const inBelt = beltAt(probe.x, probe.y);
-  const base = 100 + (ringIdx - 1) * 20;
-  const pts = Math.round(base * mult * (inBelt ? 2 : 1));
-  score += pts;
-  el.score.textContent = score;
-  ringsPassed = ringIdx;
-  floats.push({
-    x: ring.x,
-    y: ring.y - 34,
-    text: "+" + pts + (inBelt ? " BELT x2" : ""),
-    t: 0,
-  });
-  // the ring flares and collapses inward
-  ringFx.push({ x: ring.x, y: ring.y, r: ring.r, t: 0 });
-  ringIdx += 1;
-  mult = 1;
-  shield = 100; // shield refills fully on each new ring
-  spawnRing();
-  updateHud();
-}
-
-function stepProbe(dt) {
-  if (!probe) return;
-  probe.flightT += dt;
-  const SUB = 3;
-  const h = dt / SUB;
-  for (let s = 0; s < SUB; s++) {
-    const { ax, ay } = gravityAt(probe.x, probe.y, simT);
-    probe.vx += ax * h;
-    probe.vy += ay * h;
-    probe.x += probe.vx * h;
-    probe.y += probe.vy * h;
-
-    const j = jupiterWorld();
-    if (Math.hypot(probe.x - j.x, probe.y - j.y) < j.r * 0.99) return loseProbe("jupiter");
-    for (const m of MOONS) {
-      const p = moonAt(m, simT);
-      const d = Math.hypot(probe.x - p.x, probe.y - p.y);
-      if (d < m.r + PROBE_R - 1) return loseProbe("moon");
-      // Close pass: near miss multiplies the next ring. Closer is more.
-      const gap = d - m.r;
-      if (gap > 0 && gap < 36) {
-        const prev = probe.minPass.get(m.key) ?? Infinity;
-        if (gap < prev) {
-          probe.minPass.set(m.key, gap);
-          const passMult = 1 + ((36 - gap) / 36) * 3; // up to x4
-          if (passMult > mult + 0.05) {
-            mult = Math.round(passMult * 10) / 10;
-            floats.push({ x: p.x, y: p.y - m.r - 14, text: "x" + mult.toFixed(1), t: 0 });
-            m.flare = 1;
-            updateHud();
-          }
-        }
-      }
-    }
-    if (ring && Math.hypot(probe.x - ring.x, probe.y - ring.y) < ring.r) {
-      scoreRing();
-    }
-  }
-
-  // The belt drains the shield while the probe is inside it.
-  const band = beltAt(probe.x, probe.y);
-  el.status.classList.toggle("draining", !!band);
-  if (band) {
-    shield -= band.drain * dt;
-    updateHud();
-    if (shield <= 0) return loseProbe("radiation");
-  }
-
-  // Off into the void, or twenty-five seconds of stable orbit: the probe
-  // is retrieved quietly. It costs nothing but the time it took.
-  if (
-    probe.x < -BASE_W * 0.3 ||
-    probe.x > BASE_W * 1.35 ||
-    probe.y < -300 ||
-    probe.y > BASE_H + 300 ||
-    probe.flightT > 25
-  ) {
-    loseProbe("void");
-    el.status.classList.remove("draining");
-    return;
-  }
-
-  if (!reduced || trail.length === 0) {
-    trail.push({ x: probe.x, y: probe.y, belt: !!band });
-    if (trail.length > 130) trail.shift();
-  }
-}
-
-/* ── Input ─────────────────────────────────────────────── */
-let introHidden = false;
-function hideIntro() {
-  if (introHidden) return;
-  introHidden = true;
-  el.intro.style.opacity = "0";
-  el.intro.style.transform = "translateY(-10px)";
-  el.intro.style.pointerEvents = "none";
-  el.status.classList.add("show");
-  updateHud();
-}
-const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-if (canHover) el.introKeys.classList.add("show");
-else el.introTouch.classList.add("show");
-
-canvas.addEventListener("pointerdown", (e) => {
-  hideIntro();
-  if (gameOver || paused || probe) return;
-  const w = screenToWorld(e.clientX, e.clientY);
-  aim = { sx: w.x, sy: w.y, cx: w.x, cy: w.y };
-  canvas.setPointerCapture(e.pointerId);
-});
-canvas.addEventListener("pointermove", (e) => {
-  if (!aim) return;
-  const w = screenToWorld(e.clientX, e.clientY);
-  aim.cx = w.x;
-  aim.cy = w.y;
-});
-canvas.addEventListener("pointerup", () => {
-  if (aim) launch();
-});
-canvas.addEventListener("pointercancel", () => {
-  aim = null;
-});
-
-function togglePause(force) {
-  if (gameOver) return;
-  paused = force ?? !paused;
-  document.body.classList.toggle("is-paused", paused);
-  el.pause.classList.toggle("show", paused);
-}
-el.resumeBtn.addEventListener("click", () => togglePause(false));
-
-addEventListener("keydown", (e) => {
-  if (e.code === "KeyP" || e.code === "Escape") togglePause();
-  if (e.code === "KeyR") {
-    if (gameOver) reset();
-    else aim = null; // reset the aim before launching
-  }
-});
-
-el.overRestart.addEventListener("click", reset);
-el.overRestart.addEventListener(
-  "touchstart",
-  (e) => {
-    e.preventDefault();
-    reset();
-  },
-  { passive: false },
-);
-
-/* ── Drawing ───────────────────────────────────────────── */
 const LIT_ANGLE = Math.PI * 1.25;
 
 function drawJupiterShadow() {
@@ -530,8 +136,6 @@ function drawJupiterShadow() {
   ctx.restore();
 }
 
-/* Band streaks at their own speeds, shearing where they meet. Each lives
-   at a latitude, scrolls in longitude, and projects like a sphere. */
 const STREAKS = [
   { lat: -0.55, w: 0.05, speed: 0.09, len: 0.5, a: 0.14, colour: "244,236,214" },
   { lat: -0.28, w: 0.07, speed: -0.055, len: 0.62, a: 0.16, colour: "196,141,88" },
@@ -566,8 +170,6 @@ function drawBands(t) {
   ctx.restore();
 }
 
-/* The Great Red Spot: drifts along its southern band and slowly turns on
-   itself. Projected like everything else on the sphere. */
 function drawGRS(t) {
   const j = jupiterWorld();
   const lat = 0.38;
@@ -600,15 +202,14 @@ function drawGRS(t) {
   ctx.restore();
 }
 
-/* Faint aurorae at both poles, pulsing slowly; they flicker once when a
-   probe is lost. */
+/* The aurorae react to the player: at 66% radiation they pulse faster. */
 function drawAurorae(t) {
   const j = jupiterWorld();
-  const flash = simT < auroraFlashUntil ? 0.35 : 0;
-  const pulse = reduced ? 0.5 : 0.5 + 0.35 * Math.sin(t * 0.8);
+  const rate = !reduced && radLevel >= 2 ? 2.2 : 0.8;
+  const pulse = reduced ? 0.5 : 0.5 + 0.35 * Math.sin(t * rate);
   for (const pole of [-1, 1]) {
     const py = j.y + pole * j.r * 0.93;
-    ctx.strokeStyle = `rgba(150,200,255,${(0.1 + 0.1 * pulse + flash).toFixed(3)})`;
+    ctx.strokeStyle = `rgba(150,200,255,${(0.1 + 0.1 * pulse).toFixed(3)})`;
     ctx.lineWidth = j.r * 0.02;
     ctx.beginPath();
     ctx.ellipse(j.x, py, j.r * 0.34, j.r * 0.09, 0, 0, Math.PI * 2);
@@ -616,13 +217,11 @@ function drawAurorae(t) {
   }
 }
 
-function drawBelt() {
+function drawBeltArcs() {
   const j = jupiterWorld();
-  for (const [i, b] of beltBands().entries()) {
-    const mid = (b.in + b.out) / 2;
-    const w = (b.out - b.in) * j.r;
+  for (const [i, mid] of [1.1, 1.27].entries()) {
     ctx.strokeStyle = `rgba(232,162,75,${i === 0 ? 0.1 : 0.07})`;
-    ctx.lineWidth = w;
+    ctx.lineWidth = j.r * 0.055;
     ctx.setLineDash([14, 10]);
     ctx.beginPath();
     ctx.ellipse(j.x, j.y, mid * j.r, mid * j.r * SQUASH, 0, 0, Math.PI * 2);
@@ -643,7 +242,6 @@ function drawOrbitsAndMoons(t) {
   }
   for (const m of MOONS) {
     const p = moonAt(m, t);
-    // sphere with the weak-light treatment, in the site's line style
     const g = ctx.createRadialGradient(
       p.x - m.r * 0.35,
       p.y - m.r * 0.35,
@@ -661,9 +259,7 @@ function drawOrbitsAndMoons(t) {
     ctx.strokeStyle = "rgba(255,255,255,0.35)";
     ctx.lineWidth = 1;
     ctx.stroke();
-
     if (m.key === "io") {
-      // the tiny plume
       ctx.strokeStyle = "rgba(232,208,106,0.5)";
       ctx.lineWidth = 1.2;
       ctx.beginPath();
@@ -700,52 +296,758 @@ function drawOrbitsAndMoons(t) {
         ctx.fill();
       }
     }
+  }
+}
 
-    if (m.flare > 0) {
-      ctx.strokeStyle = `rgba(232,162,75,${(m.flare * 0.9).toFixed(2)})`;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, m.r + 3 + (1 - m.flare) * 10, 0, Math.PI * 2);
-      ctx.stroke();
-      m.flare = Math.max(0, m.flare - 0.03);
+/* ── Board data ─────────────────────────────────────────── */
+const TIERS = [
+  { upTo: 3, n: 9, mines: 10, time: 120 },
+  { upTo: 7, n: 12, mines: 22, time: 150 },
+  { upTo: 12, n: 14, mines: 34, time: 165 },
+  { upTo: Infinity, n: 16, mines: 48, time: 180 },
+];
+const tierFor = (b) => TIERS.find((t) => b <= t.upTo);
+
+let boardNum = 1;
+let N = 9;
+let mineCount = 10;
+let cells = []; // { mine, revealed, flagged, count, revealAt, dissolveAt, pocketHit }
+let minesPlaced = false;
+let radLevel = 0; // 0, 1 (33%), 2 (66%); third hit ends the run
+let timeLeft = 120;
+let roundTotal = 120;
+let flags = 0;
+let revealedSafe = 0;
+let boardHadHit = false;
+let phase = "intro"; // intro | play | clearing | beat | over
+let score = 0,
+  best = 0,
+  gameOver = false,
+  scoreSubmitted = false,
+  paused = false;
+let simT = 0;
+let boardsCleared = 0;
+const shocks = []; // interference shockwaves
+let probeFall = null; // { t } — the probe falling into Jupiter on game over
+let boardDrawnAt = 0;
+
+// touch pan/zoom state, so the 16x16 board stays tappable at 375px
+let gridZoom = 1;
+let gridPanX = 0;
+let gridPanY = 0;
+
+const el = {
+  score: document.getElementById("score"),
+  best: document.getElementById("best"),
+  boardVal: document.getElementById("boardVal"),
+  pocketsVal: document.getElementById("pocketsVal"),
+  radFill: document.getElementById("radFill"),
+  timeVal: document.getElementById("timeVal"),
+  status: document.getElementById("status"),
+  intro: document.getElementById("intro"),
+  introKeys: document.getElementById("introKeys"),
+  introTouch: document.getElementById("introTouch"),
+  pause: document.getElementById("pause"),
+  resumeBtn: document.getElementById("resumeBtn"),
+  over: document.getElementById("gameOver"),
+  overTitle: document.getElementById("gameOverTitle"),
+  overRestart: document.getElementById("gameOverRestart"),
+  finalScore: document.getElementById("finalScore"),
+  finalBoards: document.getElementById("finalBoards"),
+  finalBest: document.getElementById("finalBest"),
+  bestMarker: document.getElementById("bestMarker"),
+};
+
+fetchGlobalBest("galileo").then((b) => {
+  best = Math.max(best, b);
+  el.best.textContent = best;
+});
+
+function gridGeom() {
+  const availW = BASE_W - 36;
+  const availH = BASE_H - 200;
+  const size = Math.min(availW, availH);
+  return { size, cell: size / N, x0: (BASE_W - size) / 2, y0: 92 + (availH - size) / 2 };
+}
+
+const idx = (c, r) => r * N + c;
+function neighbours(i) {
+  const c = i % N;
+  const r = (i / N) | 0;
+  const out = [];
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue;
+      const nc = c + dc;
+      const nr = r + dr;
+      if (nc >= 0 && nc < N && nr >= 0 && nr < N) out.push(idx(nc, nr));
+    }
+  return out;
+}
+
+/* ── Generation: safe first click, no-guess boards ───────────
+   The layout is created after the first click, with the clicked cell and
+   its whole neighbourhood mine-free so it always cascades. Candidate
+   layouts are then played by a deduction solver (the two classic rules
+   plus constraint subtraction); only a layout the solver can finish
+   without guessing is dealt. */
+function candidateLayout(firstI) {
+  const banned = new Set([firstI, ...neighbours(firstI)]);
+  const spots = [];
+  for (let i = 0; i < N * N; i++) if (!banned.has(i)) spots.push(i);
+  for (let i = spots.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [spots[i], spots[j]] = [spots[j], spots[i]];
+  }
+  return new Set(spots.slice(0, mineCount));
+}
+
+function countsFor(mineSet) {
+  const counts = new Array(N * N).fill(0);
+  for (let i = 0; i < N * N; i++) {
+    if (mineSet.has(i)) continue;
+    counts[i] = neighbours(i).filter((n) => mineSet.has(n)).length;
+  }
+  return counts;
+}
+
+function solvableByDeduction(mineSet, firstI) {
+  const counts = countsFor(mineSet);
+  const revealed = new Set();
+  const flagged = new Set();
+  const openCascade = (start) => {
+    const stack = [start];
+    while (stack.length) {
+      const i = stack.pop();
+      if (revealed.has(i) || mineSet.has(i)) continue;
+      revealed.add(i);
+      if (counts[i] === 0) for (const n of neighbours(i)) if (!revealed.has(n)) stack.push(n);
+    }
+  };
+  openCascade(firstI);
+
+  let changed = true;
+  while (changed) {
+    changed = false;
+    const constraints = [];
+    for (const i of revealed) {
+      if (counts[i] === 0) continue;
+      const hid = neighbours(i).filter((n) => !revealed.has(n) && !flagged.has(n));
+      const m = counts[i] - neighbours(i).filter((n) => flagged.has(n)).length;
+      if (hid.length) constraints.push({ hid, m });
+    }
+    for (const c of constraints) {
+      if (c.m === c.hid.length) {
+        for (const n of c.hid)
+          if (!flagged.has(n)) {
+            flagged.add(n);
+            changed = true;
+          }
+      } else if (c.m === 0) {
+        for (const n of c.hid)
+          if (!revealed.has(n)) {
+            openCascade(n);
+            changed = true;
+          }
+      }
+    }
+    if (changed) continue;
+    // subset rule: A ⊂ B lets B − A be decided
+    for (let a = 0; a < constraints.length && !changed; a++) {
+      for (let b = 0; b < constraints.length && !changed; b++) {
+        if (a === b) continue;
+        const A = constraints[a];
+        const B = constraints[b];
+        if (A.hid.length >= B.hid.length) continue;
+        if (!A.hid.every((x) => B.hid.includes(x))) continue;
+        const rest = B.hid.filter((x) => !A.hid.includes(x));
+        const m = B.m - A.m;
+        if (!rest.length) continue;
+        if (m === 0) {
+          for (const n of rest) openCascade(n);
+          changed = true;
+        } else if (m === rest.length) {
+          for (const n of rest) flagged.add(n);
+          changed = true;
+        }
+      }
     }
   }
+  return revealed.size === N * N - mineSet.size;
 }
 
-function drawRing() {
-  if (!ring) return;
-  const pulse = reduced ? 0 : Math.sin(simT * 3) * 2;
-  ctx.strokeStyle = "rgba(232,162,75,0.9)";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(ring.x, ring.y, ring.r + pulse, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.strokeStyle = "rgba(232,162,75,0.3)";
-  ctx.beginPath();
-  ctx.arc(ring.x, ring.y, ring.r * 0.6, 0, Math.PI * 2);
-  ctx.stroke();
+function placeMines(firstI) {
+  const t0 = performance.now();
+  let layout = null;
+  let attempts = 0;
+  // Attempt budget bounded by wall-clock so the first click never hitches;
+  // in practice a solvable layout lands within a handful of tries.
+  while (performance.now() - t0 < 450 && attempts < 220) {
+    attempts++;
+    const cand = candidateLayout(firstI);
+    if (solvableByDeduction(cand, firstI)) {
+      layout = cand;
+      break;
+    }
+    if (!layout) layout = cand;
+  }
+  const counts = countsFor(layout);
+  cells.forEach((c, i) => {
+    c.mine = layout.has(i);
+    c.count = counts[i];
+  });
+  minesPlaced = true;
 }
 
-function drawTrail() {
-  if (trail.length < 2) return;
-  for (let i = 1; i < trail.length; i++) {
-    const a = reduced ? 0.35 : (i / trail.length) * 0.5;
-    const p0 = trail[i - 1];
-    const p1 = trail[i];
-    ctx.strokeStyle = p1.belt ? `rgba(232,162,75,${a})` : `rgba(190,214,235,${a})`;
-    ctx.lineWidth = 1.4;
+function buildBoard() {
+  const t = tierFor(boardNum);
+  N = t.n;
+  mineCount = t.mines;
+  cells = Array.from({ length: N * N }, () => ({
+    mine: false,
+    revealed: false,
+    flagged: false,
+    count: 0,
+    revealAt: 0,
+    dissolveAt: 0,
+    pocketHit: false,
+  }));
+  minesPlaced = false;
+  radLevel = 0;
+  boardHadHit = false;
+  flags = 0;
+  revealedSafe = 0;
+  gridZoom = 1;
+  gridPanX = 0;
+  gridPanY = 0;
+  boardDrawnAt = performance.now();
+  updateHud();
+}
+
+function updateHud() {
+  el.boardVal.textContent = boardNum;
+  el.pocketsVal.textContent = Math.max(0, mineCount - flags);
+  el.timeVal.textContent = Math.max(0, Math.ceil(timeLeft));
+  const pct = radLevel === 0 ? 0 : radLevel === 1 ? 33 : 66;
+  el.radFill.style.width = pct + "%";
+  el.radFill.style.background = radLevel === 0 ? "#e8a24b" : radLevel === 1 ? "#e8896a" : "#e05545";
+  el.status.classList.toggle("critical", radLevel >= 2);
+}
+
+function reset() {
+  score = 0;
+  boardNum = 1;
+  boardsCleared = 0;
+  gameOver = false;
+  scoreSubmitted = false;
+  probeFall = null;
+  shocks.length = 0;
+  roundTotal = tierFor(1).time;
+  timeLeft = roundTotal;
+  el.score.textContent = "0";
+  el.over.classList.remove("show");
+  buildBoard();
+  phase = introHidden ? "play" : "intro";
+}
+
+function endGame(title) {
+  gameOver = true;
+  phase = "over";
+  // every remaining pocket shows itself
+  for (const c of cells) if (c.mine) c.revealed = true;
+  if (score > best) {
+    best = score;
+    el.best.textContent = best;
+  }
+  el.overTitle.textContent = title;
+  el.finalScore.textContent = score;
+  el.finalBoards.textContent = boardsCleared;
+  el.finalBest.textContent = best;
+  el.bestMarker.classList.toggle("show", score >= best && score > 0);
+  const delay = probeFall && !reduced ? 1500 : 500;
+  setTimeout(() => {
+    el.over.classList.add("show");
+    if (!scoreSubmitted) {
+      scoreSubmitted = true;
+      setTimeout(() => {
+        submitScoreOnGameOver({ gameKey: "galileo", gameLabel: "Galileo", score, ask: true });
+      }, 60);
+    }
+  }, delay);
+}
+
+/* ── Reveal mechanics ───────────────────────────────────── */
+function cascadeFrom(i, now) {
+  // BFS so the ripple opens outward from the click over ~250ms.
+  const queue = [[i, 0]];
+  const seen = new Set([i]);
+  let maxD = 0;
+  while (queue.length) {
+    const [ci, d] = queue.shift();
+    const c = cells[ci];
+    if (c.revealed || c.flagged || c.mine) continue;
+    c.revealed = true;
+    c.revealAt = reduced ? now : now + d * 34;
+    maxD = Math.max(maxD, d);
+    revealedSafe++;
+    score += 10;
+    if (c.count === 0) {
+      for (const n of neighbours(ci))
+        if (!seen.has(n)) {
+          seen.add(n);
+          queue.push([n, d + 1]);
+        }
+    }
+  }
+  el.score.textContent = score;
+  return maxD;
+}
+
+function hitPocket(i, now) {
+  const c = cells[i];
+  c.revealed = true; // permanently — the information is not lost
+  c.pocketHit = true;
+  c.revealAt = now;
+  boardHadHit = true;
+  radLevel++;
+  if (!reduced) {
+    const g = gridGeom();
+    shocks.push({ x: g.x0 + ((i % N) + 0.5) * g.cell, y: g.y0 + (((i / N) | 0) + 0.5) * g.cell, t: 0 });
+  }
+  if (radLevel >= 3) {
+    probeFall = reduced ? null : { t: 0 };
+    endGame("PROBE LOST");
+  }
+  updateHud();
+}
+
+function revealCell(i) {
+  if (phase !== "play") return;
+  const now = performance.now();
+  const c = cells[i];
+  if (c.revealed || c.flagged) return;
+  if (!minesPlaced) placeMines(i);
+  if (c.mine) {
+    hitPocket(i, now);
+    return;
+  }
+  cascadeFrom(i, now);
+  checkBoardClear();
+}
+
+function toggleFlag(i) {
+  if (phase !== "play") return;
+  const c = cells[i];
+  if (c.revealed) return;
+  c.flagged = !c.flagged;
+  flags += c.flagged ? 1 : -1;
+  updateHud();
+}
+
+function chord(i) {
+  if (phase !== "play" || !minesPlaced) return;
+  const c = cells[i];
+  if (!c.revealed || c.count === 0) return;
+  const ns = neighbours(i);
+  const flaggedN = ns.filter((n) => cells[n].flagged).length;
+  if (flaggedN !== c.count) return;
+  const now = performance.now();
+  for (const n of ns) {
+    const nc = cells[n];
+    if (nc.revealed || nc.flagged) continue;
+    if (nc.mine) {
+      hitPocket(n, now);
+      if (gameOver) return;
+    } else {
+      cascadeFrom(n, now);
+    }
+  }
+  checkBoardClear();
+}
+
+function checkBoardClear() {
+  if (gameOver) return;
+  if (revealedSafe < N * N - mineCount) return;
+  // board cleared
+  let bonus = 200 + boardNum * 50;
+  if (!boardHadHit) bonus *= 2; // clean sweeps are where the points are
+  score += bonus + Math.floor(Math.max(0, timeLeft)) * 5;
+  el.score.textContent = score;
+  boardsCleared = boardNum;
+  phase = "clearing";
+  const now = performance.now();
+  const g = gridGeom();
+  const cx = g.x0 + g.size / 2;
+  const cy = g.y0 + g.size / 2;
+  for (let i = 0; i < cells.length; i++) {
+    const x = g.x0 + ((i % N) + 0.5) * g.cell;
+    const y = g.y0 + (((i / N) | 0) + 0.5) * g.cell;
+    cells[i].dissolveAt = reduced ? now : now + (Math.hypot(x - cx, y - cy) / g.size) * 420;
+  }
+  const carry = Math.min(30, Math.max(0, timeLeft));
+  setTimeout(
+    () => {
+      phase = "beat"; // Jupiter, fully visible, for a moment
+      setTimeout(
+        () => {
+          boardNum++;
+          roundTotal = tierFor(boardNum).time + carry;
+          timeLeft = roundTotal;
+          buildBoard();
+          phase = "play";
+        },
+        reduced ? 150 : 600,
+      );
+    },
+    reduced ? 200 : 700,
+  );
+  updateHud();
+}
+
+/* ── Input: click/flag/chord, tap/long-press/double-tap ────── */
+let introHidden = false;
+function hideIntro() {
+  if (introHidden) return;
+  introHidden = true;
+  el.intro.style.opacity = "0";
+  el.intro.style.transform = "translateY(-10px)";
+  el.intro.style.pointerEvents = "none";
+  el.status.classList.add("show");
+  if (phase === "intro") phase = "play";
+  updateHud();
+}
+const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+if (canHover) el.introKeys.classList.add("show");
+else el.introTouch.classList.add("show");
+
+function cellAt(clientX, clientY) {
+  const w = screenToWorld(clientX, clientY);
+  const g = gridGeom();
+  const cx = g.x0 + g.size / 2;
+  const cy = g.y0 + g.size / 2;
+  // invert the zoom/pan transform
+  const gx = (w.x - cx - gridPanX) / gridZoom + cx;
+  const gy = (w.y - cy - gridPanY) / gridZoom + cy;
+  const c = Math.floor((gx - g.x0) / g.cell);
+  const r = Math.floor((gy - g.y0) / g.cell);
+  if (c < 0 || c >= N || r < 0 || r >= N) return -1;
+  return idx(c, r);
+}
+
+canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+
+if (canHover) {
+  canvas.addEventListener("mousedown", (e) => {
+    hideIntro();
+    if (paused || gameOver) return;
+    const i = cellAt(e.clientX, e.clientY);
+    if (i < 0) return;
+    // both buttons or middle: chord
+    if (e.buttons === 3 || e.button === 1) {
+      e.preventDefault();
+      chord(i);
+      return;
+    }
+    if (e.button === 2) toggleFlag(i);
+    else if (e.button === 0) revealCell(i);
+  });
+} else {
+  /* Touch: tap reveals, a long press flags (and never counts as a tap),
+     double tap on a number chords, pinch zooms, drag pans when zoomed. */
+  const LONG_MS = 450;
+  const MOVE_TOL = 12;
+  let touchState = null; // { x, y, i, timer, longFired, moved }
+  let lastTap = { i: -1, at: 0 };
+  let pinch = null;
+
+  canvas.addEventListener(
+    "touchstart",
+    (e) => {
+      hideIntro();
+      if (paused || gameOver) return;
+      if (e.touches.length === 2) {
+        const [a, b] = e.touches;
+        pinch = {
+          d: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY),
+          zoom: gridZoom,
+        };
+        if (touchState) {
+          clearTimeout(touchState.timer);
+          touchState = null;
+        }
+        return;
+      }
+      const t = e.touches[0];
+      const i = cellAt(t.clientX, t.clientY);
+      touchState = {
+        x: t.clientX,
+        y: t.clientY,
+        i,
+        longFired: false,
+        moved: false,
+        panStartX: gridPanX,
+        panStartY: gridPanY,
+        timer: setTimeout(() => {
+          if (touchState && !touchState.moved && touchState.i >= 0) {
+            touchState.longFired = true;
+            toggleFlag(touchState.i);
+          }
+        }, LONG_MS),
+      };
+    },
+    { passive: true },
+  );
+
+  canvas.addEventListener(
+    "touchmove",
+    (e) => {
+      if (pinch && e.touches.length === 2) {
+        e.preventDefault();
+        const [a, b] = e.touches;
+        const d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+        gridZoom = Math.max(1, Math.min(2.6, (pinch.zoom * d) / pinch.d));
+        clampPan();
+        return;
+      }
+      if (!touchState) return;
+      const t = e.touches[0];
+      const dx = t.clientX - touchState.x;
+      const dy = t.clientY - touchState.y;
+      if (!touchState.moved && Math.hypot(dx, dy) > MOVE_TOL) {
+        touchState.moved = true;
+        clearTimeout(touchState.timer);
+      }
+      if (touchState.moved && gridZoom > 1) {
+        e.preventDefault();
+        gridPanX = touchState.panStartX + dx / viewScale;
+        gridPanY = touchState.panStartY + dy / viewScale;
+        clampPan();
+      }
+    },
+    { passive: false },
+  );
+
+  const endTouch = () => {
+    if (pinch) pinch = null;
+    if (!touchState) return;
+    clearTimeout(touchState.timer);
+    const { i, longFired, moved } = touchState;
+    touchState = null;
+    if (longFired || moved || i < 0) return; // a long press is never a tap
+    const now = performance.now();
+    if (lastTap.i === i && now - lastTap.at < 320 && cells[i]?.revealed) {
+      chord(i);
+      lastTap = { i: -1, at: 0 };
+      return;
+    }
+    lastTap = { i, at: now };
+    revealCell(i);
+  };
+  canvas.addEventListener("touchend", endTouch);
+  canvas.addEventListener("touchcancel", () => {
+    if (touchState) clearTimeout(touchState.timer);
+    touchState = null;
+    pinch = null;
+  });
+}
+
+function clampPan() {
+  const g = gridGeom();
+  const over = (g.size * (gridZoom - 1)) / 2;
+  gridPanX = Math.max(-over, Math.min(over, gridPanX));
+  gridPanY = Math.max(-over, Math.min(over, gridPanY));
+}
+
+/* ── Auto-pause: tab switch or window blur pauses; nothing resumes on
+   its own. There is no manual pause. ── */
+function autoPause() {
+  if (paused || gameOver || phase === "intro") return;
+  paused = true;
+  document.body.classList.add("is-paused");
+  el.pause.classList.add("show");
+}
+addEventListener("blur", autoPause);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) autoPause();
+});
+el.resumeBtn.addEventListener("click", () => {
+  paused = false;
+  document.body.classList.remove("is-paused");
+  el.pause.classList.remove("show");
+});
+
+addEventListener("keydown", (e) => {
+  if (gameOver && e.code === "KeyR") reset();
+});
+el.overRestart.addEventListener("click", reset);
+el.overRestart.addEventListener(
+  "touchstart",
+  (e) => {
+    e.preventDefault();
+    reset();
+  },
+  { passive: false },
+);
+
+/* ── Drawing the survey grid ────────────────────────────── */
+const ACCENT = "232,162,75";
+
+function drawGrid(now) {
+  if (phase === "beat" || phase === "over" || phase === "intro") {
+    if (phase !== "over") return;
+  }
+  const g = gridGeom();
+  const cx = g.x0 + g.size / 2;
+  const cy = g.y0 + g.size / 2;
+
+  ctx.save();
+  ctx.translate(cx + gridPanX, cy + gridPanY);
+  ctx.scale(gridZoom, gridZoom);
+  ctx.translate(-cx, -cy);
+
+  // radiation tint over the survey area
+  if (radLevel > 0 && phase === "play") {
+    ctx.fillStyle = `rgba(224,85,69,${radLevel === 1 ? 0.05 : 0.11})`;
+    ctx.fillRect(g.x0 - 8, g.y0 - 8, g.size + 16, g.size + 16);
+  }
+
+  const boardAge = now - boardDrawnAt;
+  for (let i = 0; i < cells.length; i++) {
+    const c = cells[i];
+    const col = i % N;
+    const row = (i / N) | 0;
+    const x = g.x0 + col * g.cell;
+    const y = g.y0 + row * g.cell;
+    const pad = Math.max(1, g.cell * 0.045);
+
+    // the next grid draws itself in with a small stagger
+    let drawIn = 1;
+    if (!reduced && boardAge < 500) drawIn = Math.max(0, Math.min(1, (boardAge - (col + row) * 9) / 160));
+    if (drawIn <= 0) continue;
+
+    // board-clear dissolve, outward from the centre
+    let dissolve = 1;
+    if (c.dissolveAt) {
+      dissolve = 1 - Math.max(0, Math.min(1, (now - c.dissolveAt) / 260));
+      if (dissolve <= 0) continue;
+    }
+
+    let alpha = drawIn * dissolve;
+    let stroke = 0.3;
+    let fill = 0;
+    if (c.revealed) {
+      const p = reduced ? 1 : Math.max(0, Math.min(1, (now - c.revealAt) / 160));
+      if (p <= 0) {
+        stroke = 0.3;
+      } else {
+        // revealed cells step back so Jupiter shows through
+        stroke = 0.3 - 0.22 * p;
+        fill = 0;
+      }
+    } else {
+      fill = 0.1; // hidden cells carry a faint pane
+    }
+
+    if (radLevel >= 2 && !reduced && phase === "play") {
+      // the grid edges flicker at 66%
+      stroke += 0.1 * Math.max(0, Math.sin(now * 0.02 + i * 1.7));
+    }
+
+    if (fill > 0) {
+      ctx.fillStyle = `rgba(16,22,38,${(fill * alpha).toFixed(3)})`;
+      ctx.fillRect(x + pad, y + pad, g.cell - pad * 2, g.cell - pad * 2);
+    }
+    ctx.strokeStyle = `rgba(255,255,255,${(stroke * alpha).toFixed(3)})`;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + pad, y + pad, g.cell - pad * 2, g.cell - pad * 2);
+
+    if (c.flagged) {
+      const s = g.cell * 0.16;
+      ctx.fillStyle = `rgba(${ACCENT},${(0.9 * alpha).toFixed(2)})`;
+      ctx.beginPath();
+      ctx.moveTo(x + g.cell / 2, y + g.cell / 2 - s);
+      ctx.lineTo(x + g.cell / 2 + s, y + g.cell / 2);
+      ctx.lineTo(x + g.cell / 2, y + g.cell / 2 + s);
+      ctx.lineTo(x + g.cell / 2 - s, y + g.cell / 2);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    if (c.revealed && c.pocketHit) {
+      const p = reduced ? 1 : Math.max(0, Math.min(1, (now - c.revealAt) / 300));
+      const flare = 1 - p;
+      ctx.fillStyle = `rgba(224,85,69,${(0.25 + flare * 0.55) * alpha})`;
+      ctx.fillRect(x + pad, y + pad, g.cell - pad * 2, g.cell - pad * 2);
+      ctx.strokeStyle = `rgba(224,85,69,${(0.9 * alpha).toFixed(2)})`;
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(x + g.cell / 2, y + g.cell / 2, g.cell * 0.2, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(x + g.cell / 2, y + g.cell / 2, g.cell * 0.07, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(224,85,69,${(0.95 * alpha).toFixed(2)})`;
+      ctx.fill();
+    } else if (c.revealed && c.count > 0) {
+      const p = reduced ? 1 : Math.max(0, Math.min(1, (now - c.revealAt) / 160));
+      // brightness rises with the count: a 1 murmurs, an 8 alarms
+      const bright = 0.4 + (c.count / 8) * 0.6;
+      ctx.fillStyle = `rgba(${ACCENT},${(bright * p * alpha).toFixed(3)})`;
+      ctx.font = `${Math.round(g.cell * 0.42)}px monospace`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(String(c.count), x + g.cell / 2, y + g.cell / 2 + 1);
+    }
+
+    if (gameOver && c.mine && !c.pocketHit) {
+      // every remaining pocket, revealed on the darkened grid
+      ctx.strokeStyle = `rgba(224,85,69,${(0.7 * alpha).toFixed(2)})`;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(x + g.cell / 2, y + g.cell / 2, g.cell * 0.17, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
+  // interference shockwaves from revealed pockets
+  for (let s = shocks.length - 1; s >= 0; s--) {
+    const sh = shocks[s];
+    sh.t += 0.016;
+    if (sh.t > 0.8) {
+      shocks.splice(s, 1);
+      continue;
+    }
+    const rr = sh.t * g.size * 1.1;
+    ctx.strokeStyle = `rgba(224,85,69,${(0.5 * (1 - sh.t / 0.8)).toFixed(2)})`;
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(p0.x, p0.y);
-    ctx.lineTo(p1.x, p1.y);
+    ctx.arc(sh.x, sh.y, rr, 0, Math.PI * 2);
     ctx.stroke();
   }
+
+  if (gameOver) {
+    ctx.fillStyle = "rgba(4,7,14,0.45)";
+    ctx.fillRect(g.x0 - 8, g.y0 - 8, g.size + 16, g.size + 16);
+  }
+
+  ctx.restore();
 }
 
-function drawProbeShape(x, y, ang, tint) {
+function drawProbeFall(dt) {
+  if (!probeFall) return;
+  probeFall.t += dt;
+  const p = Math.min(1, probeFall.t / 1.4);
+  const j = jupiterWorld();
+  const g = gridGeom();
+  const sx = g.x0 + g.size / 2;
+  const sy = g.y0 + g.size / 2;
+  const x = sx + (j.x - sx) * p;
+  const y = sy + (j.y - sy) * p + Math.sin(p * Math.PI) * -60;
+  const scale = 1 - p * 0.75;
   ctx.save();
   ctx.translate(x, y);
-  ctx.rotate(ang);
-  ctx.strokeStyle = tint || "#e6eef8";
+  ctx.rotate(p * 5);
+  ctx.scale(scale, scale);
+  ctx.strokeStyle = "#e6eef8";
   ctx.fillStyle = "rgba(20,28,44,0.9)";
   ctx.lineWidth = 1.4;
   ctx.beginPath();
@@ -755,120 +1057,8 @@ function drawProbeShape(x, y, ang, tint) {
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(-1, 0, 2, 0, Math.PI * 2);
-  ctx.stroke();
   ctx.restore();
-}
-
-function drawProbe() {
-  if (!probe) return;
-  const band = beltAt(probe.x, probe.y);
-  drawProbeShape(probe.x, probe.y, Math.atan2(probe.vy, probe.vx), band ? "#e8a24b" : null);
-}
-
-/* The launcher: pad, pulled-back probe compressing with power, aim arrow
-   and the first portion of the predicted arc — the rest is read, not
-   solved. */
-function drawAim() {
-  const armed = !probe && !gameOver && performance.now() >= rearmAt;
-  if (!armed) return;
-  // the pad
-  ctx.strokeStyle = "rgba(255,255,255,0.35)";
-  ctx.lineWidth = 1.2;
-  ctx.beginPath();
-  ctx.arc(pad.x, pad.y, 12, 0, Math.PI * 2);
-  ctx.stroke();
-
-  const v = launchVelocity();
-  if (!aim || !v) {
-    drawProbeShape(pad.x, pad.y, 0, null);
-    return;
-  }
-  const ang = Math.atan2(v.vy, v.vx);
-  const squeeze = 1 - (v.power / 240) * 0.25; // compresses before release
-  ctx.save();
-  ctx.translate(pad.x, pad.y);
-  ctx.rotate(ang);
-  ctx.scale(squeeze, 1);
-  ctx.translate(-(v.power / 240) * 10, 0); // visibly pulled back
-  drawProbeShape(0, 0, 0, "#e8a24b");
-  ctx.restore();
-
-  // aim arrow
-  ctx.strokeStyle = "rgba(232,162,75,0.8)";
-  ctx.lineWidth = 1.6;
-  ctx.beginPath();
-  ctx.moveTo(pad.x, pad.y);
-  ctx.lineTo(pad.x + Math.cos(ang) * (20 + v.power * 0.25), pad.y + Math.sin(ang) * (20 + v.power * 0.25));
-  ctx.stroke();
-
-  // predicted arc: only the first portion
-  let px = pad.x,
-    py = pad.y,
-    vx = v.vx,
-    vy = v.vy;
-  ctx.fillStyle = "rgba(232,162,75,0.55)";
-  const h = 1 / 60;
-  for (let i = 0; i < 48; i++) {
-    const { ax, ay } = gravityAt(px, py, simT);
-    vx += ax * h;
-    vy += ay * h;
-    px += vx * h;
-    py += vy * h;
-    if (i % 4 === 3 && i < 44) {
-      ctx.beginPath();
-      ctx.arc(px, py, 1.6, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-}
-
-function drawFx(dt) {
-  for (let i = fragments.length - 1; i >= 0; i--) {
-    const f = fragments[i];
-    f.t += dt;
-    if (f.t >= f.life) {
-      fragments.splice(i, 1);
-      continue;
-    }
-    f.x += f.vx * dt;
-    f.y += f.vy * dt;
-    f.rot += f.rv * dt;
-    const a = 1 - f.t / f.life;
-    ctx.save();
-    ctx.translate(f.x, f.y);
-    ctx.rotate(f.rot);
-    ctx.strokeStyle = `rgba(230,238,248,${(a * 0.8).toFixed(2)})`;
-    ctx.lineWidth = 1;
-    ctx.strokeRect(-2, -1, 4, 2);
-    ctx.restore();
-  }
-  for (let i = floats.length - 1; i >= 0; i--) {
-    const f = floats[i];
-    f.t += dt;
-    if (f.t > 1.3) {
-      floats.splice(i, 1);
-      continue;
-    }
-    ctx.fillStyle = `rgba(232,162,75,${(1 - f.t / 1.3).toFixed(2)})`;
-    ctx.font = "12px monospace";
-    ctx.textAlign = "center";
-    ctx.fillText(f.text, f.x, f.y - f.t * 22);
-  }
-  for (let i = ringFx.length - 1; i >= 0; i--) {
-    const f = ringFx[i];
-    f.t += reduced ? 1 : dt * 2.4;
-    if (f.t >= 1) {
-      ringFx.splice(i, 1);
-      continue;
-    }
-    ctx.strokeStyle = `rgba(232,162,75,${(0.9 * (1 - f.t)).toFixed(2)})`;
-    ctx.lineWidth = 2 + f.t * 2;
-    ctx.beginPath();
-    ctx.arc(f.x, f.y, f.r * (1 - f.t * 0.9), 0, Math.PI * 2);
-    ctx.stroke();
-  }
+  if (p >= 1) probeFall = null;
 }
 
 /* ── The loop ──────────────────────────────────────────── */
@@ -882,19 +1072,30 @@ function step(ts) {
 
   if (!paused && !gameOver) {
     simT += dt;
-    stepProbe(dt);
+    if (phase === "play" && minesPlacedOrRunning()) {
+      // at 66% radiation the clock runs 20% faster for the rest of the board
+      timeLeft -= dt * (radLevel >= 2 ? 1.2 : 1);
+      el.timeVal.textContent = Math.max(0, Math.ceil(timeLeft));
+      if (timeLeft <= 0) endGame("OUT OF TIME");
+    }
   }
 
   if (backdrop && (!reduced || !backdropPainted)) {
     backdrop.tick(ts);
     backdropPainted = true;
   }
-
-  draw(dt);
+  draw(dt, performance.now());
   requestAnimationFrame(step);
 }
 
-function draw(dt) {
+/* The clock only runs once the board is live — after the intro, and it
+   keeps running between the first click and the layout (placeMines is
+   synchronous, so there is no gap). */
+function minesPlacedOrRunning() {
+  return introHidden;
+}
+
+function draw(dt, now) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, W, H);
   ctx.save();
@@ -904,17 +1105,16 @@ function draw(dt) {
   drawGRS(simT);
   drawJupiterShadow();
   drawAurorae(simT);
-  drawBelt();
+  drawBeltArcs();
   drawOrbitsAndMoons(simT);
-  drawRing();
-  drawTrail();
-  drawProbe();
-  drawAim();
-  drawFx(paused ? 0 : dt);
+  drawGrid(now);
+  drawProbeFall(paused ? 0 : dt);
 
   ctx.restore();
 }
 
 resize();
+layoutSystem();
+addEventListener("resize", layoutSystem, { passive: true });
 reset();
 requestAnimationFrame(step);

@@ -36,8 +36,8 @@ body {
   --game-accent-dim: rgba(232, 162, 75, 0.6);
 }
 
-/* Jupiter and its sky behind the play space. Luminance capped so the
-   probe, rings and moons stay legible over the lit face. */
+/* Jupiter and its sky behind the survey grid. Luminance capped so the
+   grid, counts and moons stay legible over the lit face. */
 st-planet-field#bg {
   @apply pointer-events-none fixed inset-0 z-0 block;
   opacity: 0.8;
@@ -112,7 +112,7 @@ body.is-paused st-planet-field#bg {
   background: var(--game-accent);
   transition: background 0.15s linear;
 }
-@keyframes flybyShieldFlash {
+@keyframes galRadFlash {
   0%,
   100% {
     opacity: 1;
@@ -121,13 +121,13 @@ body.is-paused st-planet-field#bg {
     opacity: 0.3;
   }
 }
-.approach.draining .bar-fill {
+.approach.critical .bar-fill {
   background: #e8896a;
-  animation: flybyShieldFlash 0.45s ease-in-out infinite;
+  animation: galRadFlash 0.45s ease-in-out infinite;
 }
 
 /* ---- Intro card ---- */
-@keyframes flybyFadeIn {
+@keyframes galFadeIn {
   0% {
     opacity: 0;
   }
@@ -157,7 +157,7 @@ body.is-paused st-planet-field#bg {
   transition:
     opacity 0.45s ease-out,
     transform 0.45s ease-out;
-  animation: flybyFadeIn 1s ease-in-out;
+  animation: galFadeIn 1s ease-in-out;
   max-width: min(420px, 100%);
 }
 .intro-title {
