@@ -1,0 +1,36 @@
+name: Auto-assign PR Reviewer
+
+# The stage -> main hop is the one place branch protection requires an
+# approval GitHub won't let the PR's own author give (CLAUDE.md section 1).
+# With exactly two maintainers, "who reviews" has exactly one answer each
+# time -- whichever of the two didn't open the PR.
+
+on:
+  pull_request:
+    types: [opened]
+    branches: [main]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  assign-reviewer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Request review from the other maintainer
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pair = { Spiegelberg: "stoeier87", stoeier87: "Spiegelberg" };
+            const author = context.payload.pull_request.user.login;
+            const reviewer = pair[author];
+            if (!reviewer) {
+              core.info(`No reviewer mapping for PR author "${author}", skipping.`);
+              return;
+            }
+            await github.rest.pulls.requestReviewers({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              reviewers: [reviewer],
+            });

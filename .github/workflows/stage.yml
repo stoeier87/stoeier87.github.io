@@ -60,12 +60,34 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      deployments: write
     steps:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
           name: site-dist
           path: dist
+
+      # peaceiris/actions-gh-pages pushes straight to gh-pages, which never
+      # records a Deployment against the `stage` branch itself -- so a PR
+      # with `stage` as its head shows "This branch has not been deployed".
+      # This is purely an additional record for that widget; it changes
+      # nothing about how the site actually publishes.
+      - name: Record deployment
+        id: deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deployment = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.sha,
+              environment: "stage",
+              auto_merge: false,
+              required_contexts: [],
+              production_environment: false,
+            });
+            core.setOutput("id", deployment.data.id);
 
       - name: Deploy stage
         uses: peaceiris/actions-gh-pages@v4
@@ -75,6 +97,19 @@ jobs:
           destination_dir: stage
           keep_files: true
           commit_message: "Deploy stage: ${{ github.sha }}"
+
+      - name: Mark deployment success
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: ${{ steps.deployment.outputs.id }},
+              state: "success",
+              environment_url: "https://stoeier87.github.io/stage/",
+              description: "Deployed to stage",
+            });
 
       - name: Summary
         run: |
