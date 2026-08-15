@@ -135,3 +135,39 @@ html, body {
   font-size: 16px;
   line-height: 1;
 }
+
+/* Mobile chrome: one row — back arrow, title pill, SCORE, BEST — never
+   wrapping. Local override of the shared topbar's stacked mobile layout,
+   identical in every game. Fit ladder: tighter stat padding, 8px gaps,
+   one type step down on the title, then ellipsis. The back arrow never
+   drops below its 44px tap target. */
+@media (max-width: 767px) {
+  /* div.topbar outguns the shared .topbar rule, which loads last. */
+  div.topbar {
+    flex-wrap: nowrap;
+    gap: 8px;
+    justify-content: flex-start;
+  }
+  .topbar .topbar-group {
+    display: contents;
+  }
+  .topbar .pill.stat {
+    flex: none;
+    padding: 0.75rem 0.8rem;
+  }
+  .topbar .pill.back-circle {
+    flex: none;
+  }
+  .topbar .pill.badge {
+    flex: 0 1 auto;
+    min-width: 0;
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
+    font-size: 11px;
+  }
+  .topbar .badge-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
