@@ -276,20 +276,6 @@ const CSS = `
 #stageName .ltr { transition: filter 0.25s ease; }
 #stageName .ltr.egg-ltr-dim { filter: brightness(0.55); }
 
-/* DO NOT SHOOT, directly below the O. Dropped on small screens rather than
-   shrunk below readable size. */
-.egg-label {
-  position: absolute;
-  top: calc(100% + var(--egg-label-dy, 10px));
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 9px;
-  letter-spacing: 0.22em;
-  white-space: nowrap;
-  color: rgba(255, 255, 255, 0.55);
-  text-transform: uppercase;
-}
-
 @keyframes eggStationSpin { to { transform: rotate(360deg); } }
 @keyframes eggStationSpinUneven {
   0% { transform: rotate(0deg); }
@@ -451,7 +437,6 @@ const CSS = `
 
 /* ── Small screens ─────────────────────────────────────── */
 @media (max-width: 500px) {
-  .egg-label { display: none; }
   .egg-surface-seams > *:nth-child(n+4) { display: none; }
 }
 
@@ -486,7 +471,7 @@ function buildLayer() {
       </div>
     </div>
     </div>
-    <div class="egg-label" aria-hidden="true">Do not shoot</div>`;
+`;
   const { svg, crackEls } = buildStationSvg();
   layer.querySelector(".egg-station-btn").appendChild(svg);
   return { layer, crackEls };
@@ -528,8 +513,6 @@ function initEasterEgg() {
     /* Stray just outside the letter at each extreme: centre travels far
        enough that the station's inner edge clears the letter's edge. */
     layer.style.setProperty("--egg-orbit-x", (r.width * 0.72).toFixed(0) + "px");
-    /* Label clears the glyph below the station box. */
-    layer.style.setProperty("--egg-label-dy", ((r.height - size) / 2 + 6).toFixed(0) + "px");
     layer.style.left = (r.left + r.width / 2 - size / 2).toFixed(0) + "px";
     layer.style.top = (r.top + r.height / 2 - size / 2).toFixed(0) + "px";
   }
