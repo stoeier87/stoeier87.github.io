@@ -6,19 +6,79 @@
     <title>Star Memory</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <script type="module" crossorigin src="../../assets/arcade/star-memory/index-gFmbS5SH.js"></script>
+    <script type="module" crossorigin src="../../assets/arcade/star-memory/index-2-R8FVGe.js"></script>
     <link rel="modulepreload" crossorigin href="../../assets/tailwind-PzvKiVMJ.js">
+    <link rel="modulepreload" crossorigin href="../../assets/tokens-DZhOMBh-.js">
     <link rel="modulepreload" crossorigin href="../../assets/firebase-config-CLc0baU0.js">
     <link rel="modulepreload" crossorigin href="../../assets/score-submit-Bewzh5NB.js">
     <link rel="stylesheet" crossorigin href="../../assets/tailwind-DNjuwYgt.css">
-    <link rel="stylesheet" crossorigin href="../../assets/index-oouXMu9m.css">
+    <link rel="stylesheet" crossorigin href="../../assets/index-CYdk4qHe.css">
   </head>
   <body>
-    <canvas id="game"></canvas>
-    <div class="hud">
-      <a href="../../arcade/" class="pill link">← Arcade</a>
-      <div>Score: <span id="score">0</span></div>
-      <div>Best: <span id="best">0</span></div>
+    <!-- Neptune, Triton and the starfield. `driven`: the game owns the single
+         rAF loop and calls tick() on the backdrop each frame. -->
+    <st-planet-field id="bg" driven aria-hidden="true"></st-planet-field>
+    <canvas id="game" aria-hidden="true"></canvas>
+
+    <!-- Top bar: back link + title badge (left), score + best (right) -->
+    <div class="topbar">
+      <div class="topbar-group">
+        <a href="../../arcade/" class="pill link">← Arcade</a>
+        <div class="pill badge">
+          <span class="beacon"></span>
+          STAR MEMORY
+        </div>
+      </div>
+      <div class="topbar-group">
+        <div class="pill stat">SCORE <strong id="score">0</strong></div>
+        <a class="pill stat" href="../../scoreboard/"
+          >BEST <strong id="best" class="best-val">0</strong></a
+        >
+      </div>
     </div>
+
+    <!-- Status panel, same shape as ISS Docking's APPROACH panel -->
+    <div class="approach" id="status">
+      <div class="approach-title">BOARD</div>
+      <div class="approach-row">
+        <span class="approach-label">PAIRS</span>
+        <strong class="approach-value" id="pairsVal">0 / 8</strong>
+      </div>
+    </div>
+
+    <!-- Intro card, dismissed on first input -->
+    <div class="intro-container">
+      <div class="intro" id="intro">
+        <div class="intro-title">STAR MEMORY</div>
+        <div class="intro-body">
+          Match the pairs. Saturn has been keeping time for a while and is in no hurry.
+        </div>
+        <div class="intro-keys" id="introKeys">
+          <span><b>Click</b> turn a card</span><span><b>R</b> restart after a match-out</span>
+        </div>
+        <div class="intro-keys" id="introTouch">
+          <span><b>Tap</b> turn a card</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game over sign -->
+    <div id="gameOver" class="gameover">
+      <div class="gameover-card">
+        <div id="gameOverTitle" class="gameover-title">CONSTELLATION COMPLETE</div>
+        <div class="final-rows">
+          <div class="final-row">
+            <span>SCORE</span><strong id="finalScore">0</strong>
+          </div>
+          <div class="final-row final-best">
+            <span>BEST</span><strong id="finalBest">0</strong>
+            <span class="best-marker" id="bestMarker">NEW</span>
+          </div>
+        </div>
+        <div class="gameover-sub">Press R or Tap</div>
+        <button id="gameOverRestart" class="restart-btn" type="button">Play again</button>
+      </div>
+    </div>
+
   </body>
 </html>
