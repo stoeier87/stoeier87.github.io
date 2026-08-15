@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ice Fall</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="ice-fall.css" />
+    <link rel="stylesheet" href="../../tailwind.css" />
+  </head>
+  <body>
+    <!-- Pluto, Charon, the sun and the starfield. `driven`: ice-fall.js owns
+         the single rAF loop and calls tick() on the backdrop each frame. -->
+    <st-planet-field id="bg" driven aria-hidden="true"></st-planet-field>
+    <canvas id="game" aria-hidden="true"></canvas>
+
+    <!-- Top bar: back link + title badge (left), score + best (right) -->
+    <div class="topbar">
+      <div class="topbar-group">
+        <a href="../../arcade/" class="pill link">← Arcade</a>
+        <div class="pill badge">
+          <span class="beacon"></span>
+          ICE FALL
+        </div>
+      </div>
+      <div class="topbar-group">
+        <div class="pill stat">SCORE <strong id="score">0</strong></div>
+        <a class="pill stat" href="../../scoreboard/"
+          >BEST <strong id="best" class="best-val">0</strong></a
+        >
+      </div>
+    </div>
+
+    <!-- Hold slot, under the title pills -->
+    <div class="slot slot-hold" id="holdSlot">
+      <div class="slot-label">HOLD</div>
+      <canvas id="holdCanvas" aria-hidden="true"></canvas>
+    </div>
+
+    <!-- Next queue, under the score pills -->
+    <div class="slot slot-next" id="nextSlot">
+      <div class="slot-label">NEXT</div>
+      <canvas id="nextCanvas" aria-hidden="true"></canvas>
+    </div>
+
+    <!-- Status panel, same shape as ISS Docking's APPROACH panel -->
+    <div class="approach" id="status">
+      <div class="approach-title">STATUS</div>
+      <div class="approach-row">
+        <span class="approach-label">LEVEL</span>
+        <strong class="approach-value" id="levelVal">1</strong>
+      </div>
+      <div class="approach-row">
+        <span class="approach-label">LINES</span>
+        <strong class="approach-value" id="linesVal">0</strong>
+      </div>
+      <div class="approach-row">
+        <span class="approach-label">PRESSURE</span>
+        <div class="bar"><div class="bar-fill" id="pressureFill"></div></div>
+      </div>
+    </div>
+
+    <!-- Intro card, dismissed on first input -->
+    <div class="intro-container">
+      <div class="intro" id="intro">
+        <div class="intro-title">ICE FALL</div>
+        <div class="intro-body">
+          Stack the ice. Clear the lines. Pluto is patient and you are not.
+        </div>
+        <div class="intro-keys" id="introKeys">
+          <span><b>← →</b> move</span><span><b>↓</b> soft drop</span
+          ><span><b>↑ / X</b> rotate</span><span><b>Z</b> rotate back</span
+          ><span><b>Space</b> hard drop</span><span><b>Shift / C</b> hold</span
+          ><span><b>P / Esc</b> pause</span>
+        </div>
+        <div class="intro-keys" id="introTouch">
+          <span><b>Swipe</b> move</span><span><b>Tap</b> rotate</span
+          ><span><b>Two-finger tap</b> rotate back</span
+          ><span><b>Swipe down</b> soft drop</span
+          ><span><b>Swipe up</b> hard drop</span
+          ><span><b>Long press</b> hold</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pause overlay -->
+    <div id="pause" class="gameover">
+      <div class="gameover-card">
+        <div class="gameover-title">PAUSED</div>
+        <div class="pause-sub">Press P to resume</div>
+        <button id="resumeBtn" class="restart-btn" type="button">Resume</button>
+      </div>
+    </div>
+
+    <!-- Game over sign -->
+    <div id="gameOver" class="gameover">
+      <div class="gameover-card">
+        <div id="gameOverTitle" class="gameover-title">ICE FALL</div>
+        <div class="final-rows">
+          <div class="final-row">
+            <span>SCORE</span><strong id="finalScore">0</strong>
+          </div>
+          <div class="final-row"><span>LINES</span><strong id="finalLines">0</strong></div>
+          <div class="final-row"><span>LEVEL</span><strong id="finalLevel">1</strong></div>
+          <div class="final-row final-best">
+            <span>BEST</span><strong id="finalBest">0</strong>
+            <span class="best-marker" id="bestMarker">NEW</span>
+          </div>
+        </div>
+        <div class="gameover-sub">Press R or Tap</div>
+        <button id="gameOverRestart" class="restart-btn" type="button">Play again</button>
+      </div>
+    </div>
+
+    <script type="module" src="./ice-fall.js"></script>
+  </body>
+</html>
