@@ -1,0 +1,241 @@
+@import "tailwindcss";
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-bg-deep);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#game {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  display: block;
+  touch-action: none;
+}
+
+@supports not (height: 100dvh) {
+  #game {
+    height: 100vh;
+  }
+}
+
+:root {
+  --game-accent: #e8a24b;
+  --game-accent-dim: rgba(232, 162, 75, 0.6);
+}
+
+/* Jupiter and its sky behind the play space. Luminance capped so the
+   probe, rings and moons stay legible over the lit face. */
+st-planet-field#bg {
+  @apply pointer-events-none fixed inset-0 z-0 block;
+  opacity: 0.8;
+  transition: filter 0.35s ease;
+}
+body.is-paused st-planet-field#bg {
+  filter: blur(3px);
+}
+
+/* The site's circular back arrow: a circle, an arrow, no text. */
+.pill.back-circle {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* ---- Status panel: the ISS Docking APPROACH panel, same shape ---- */
+.approach {
+  position: fixed;
+  @apply left-3 bottom-3 right-3 md:right-auto;
+  z-index: 15;
+  background: rgba(10, 14, 24, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  padding: 11px 13px;
+  @apply flex flex-col w-auto md:w-44 gap-2;
+  @apply pointer-events-none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.approach.show {
+  opacity: 1;
+}
+.approach-title {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 2px;
+}
+.approach-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.approach-label {
+  width: 60px;
+  flex: none;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.55);
+}
+.approach-value {
+  font-size: 12px;
+  color: var(--color-ink);
+}
+.bar {
+  flex: 1;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--game-accent);
+  transition: background 0.15s linear;
+}
+@keyframes flybyShieldFlash {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+.approach.draining .bar-fill {
+  background: #e8896a;
+  animation: flybyShieldFlash 0.45s ease-in-out infinite;
+}
+
+/* ---- Intro card ---- */
+@keyframes flybyFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+.intro-container {
+  position: fixed;
+  inset: 0;
+  z-index: 16;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  padding: 16px;
+}
+.intro {
+  pointer-events: auto;
+  text-align: center;
+  background: rgba(10, 14, 24, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  padding: 20px 24px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition:
+    opacity 0.45s ease-out,
+    transform 0.45s ease-out;
+  animation: flybyFadeIn 1s ease-in-out;
+  max-width: min(420px, 100%);
+}
+.intro-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  margin-bottom: 6px;
+}
+.intro-body {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.65);
+}
+.intro-keys {
+  display: none;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 12px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+}
+.intro-keys b {
+  color: var(--game-accent);
+  font-weight: 700;
+}
+.intro-keys.show {
+  display: flex;
+}
+
+/* ---- Pause ---- */
+.pause-sub {
+  @apply hidden md:block;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 6px;
+}
+
+/* ---- Game over ---- */
+.final-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  margin: 4px 0 2px;
+}
+.final-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.55);
+}
+.final-row strong {
+  font-size: 15px;
+  color: var(--color-ink);
+}
+.final-best strong {
+  color: var(--game-accent);
+}
+.best-marker {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: #0b1018;
+  background: var(--game-accent);
+  border-radius: 100px;
+  padding: 2px 7px;
+  display: none;
+}
+.best-marker.show {
+  display: inline-block;
+}
+
+.restart-btn:focus-visible {
+  outline: 2px solid var(--game-accent);
+  outline-offset: 3px;
+}
