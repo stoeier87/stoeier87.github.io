@@ -30,10 +30,17 @@ jobs:
   # stage are all just push events here), but only ever pushes a new
   # commit when the computed target actually differs from what's already
   # committed -- so a chatty release cycle with five pushes doesn't
-  # produce five bumps. The `if` guard stops the bump commit's own push
-  # from re-triggering this whole workflow a second time.
+  # produce five bumps. The commit's own push does re-trigger this
+  # workflow, but that second run is a harmless no-op: LAST_TAG hasn't
+  # moved (tagging happens on merge to main, not here), so NEXT recomputes
+  # to the same value already sitting in package.json and the `if [ "$NEXT"
+  # != "$CURRENT" ]` guard below skips the commit. No job-level `if` guard
+  # needed -- and there must not be one, because a job-level skip cascades
+  # to every `needs: bump` job after it, leaving the release commit with
+  # zero check runs. That commit is exactly what ends up as a PR's head
+  # SHA, so a skipped run there means the PR can never satisfy required
+  # checks. Same reason the commit itself carries no `[skip ci]`.
   bump:
-    if: "!startsWith(github.event.head_commit.message || '', 'chore(release):')"
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -85,7 +92,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git add package.json
-            git commit -m "chore(release): v$NEXT [skip ci]"
+            git commit -m "chore(release): v$NEXT"
             git push origin HEAD:stage
             echo "Bumped $CURRENT -> $NEXT ($BUMP)"
           else
