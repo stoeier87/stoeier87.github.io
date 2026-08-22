@@ -1,0 +1,16 @@
+import"../tailwind-D3cAdbGj.js";import"../version-badge-BHV0Er36.js";import{t as e}from"../firebase-config-CE95sHti.js";import{initializeApp as t}from"https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";import{ReCaptchaV3Provider as n,initializeAppCheck as r}from"https://www.gstatic.com/firebasejs/10.12.4/firebase-app-check.js";import{getDatabase as i,limitToLast as a,onValue as o,orderByChild as s,query as c,ref as l}from"https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";var u=t(e,`arcade-scoreboard`);(location.hostname===`localhost`||location.hostname===`127.0.0.1`)&&(self.FIREBASE_APPCHECK_DEBUG_TOKEN=!0),window.process??={env:{}},r(u,{provider:new n(e.appCheckSiteKey),isTokenAutoRefreshEnabled:!0});var d=i(u),f=[{key:`orbit-runner`,label:`Orbit Runner`},{key:`meteor-dodge`,label:`Meteor Dodge`},{key:`iss-docking`,label:`ISS Docking`},{key:`phobos-lander`,label:`Phobos Lander`},{key:`comet-pong`,label:`Comet Pong`},{key:`star-memory`,label:`Star Memory`},{key:`nebula-trail`,label:`Nebula Trail`},{key:`asteroid-breaker`,label:`Asteroid Breaker`}],p=5;function m(e){return String(e).replaceAll(`&`,`&amp;`).replaceAll(`<`,`&lt;`).replaceAll(`>`,`&gt;`).replaceAll(`"`,`&quot;`).replaceAll(`'`,`&#039;`)}function h(e,t){return(t?e:e.slice(0,p)).map((e,t)=>`
+    <tr data-rank="${t+1}">
+      <td class="rank">${t+1}</td>
+      <td>${m(e.name??`Unknown`)}</td>
+      <td class="col-score">${Number(e.score??0).toLocaleString()}</td>
+    </tr>`).join(``)}function g(e){let t=document.createElement(`div`);t.className=`board-card is-loading`,t.innerHTML=`
+    <div class="board-card-header">
+      <h2>${m(e.label)}</h2>
+      <span class="top-score">—</span>
+    </div>
+    <div class="board-card-body">
+      <table>
+        <thead><tr><th class="rank">#</th><th>Name</th><th class="col-score">Score</th></tr></thead>
+        <tbody class="board-tbody"><tr class="loading-row"><td colspan="3">Loading…</td></tr></tbody>
+      </table>
+    </div>`;let n=!1,r=[],i=t.querySelector(`.top-score`),u=t.querySelector(`.board-tbody`),f=l(d,`arcade/scores/${e.key}`),g=c(f,s(`score`),a(50));o(g,a=>{if(r=[],a.forEach(e=>{r.push(e.val())}),r.sort((e,t)=>t.score-e.score||e.createdAt-t.createdAt),console.log(`[${e.key}] exists:${a.exists()} size:${a.size} rows:${r.length}`,a.val()),t.classList.remove(`is-loading`),!r.length){t.style.display=`none`;return}t.style.display=``,i.textContent=Number(r[0].score).toLocaleString(),_();let o=h(r,n);console.log(`[${e.key}] rendering ${r.length} rows, html length: ${o.length}, preview rows in html: ${(o.match(/<tr/g)||[]).length}`),u.innerHTML=o},e=>{t.classList.remove(`is-loading`),u.innerHTML=`<tr class="empty-row"><td colspan="3">Error: ${m(e.message)}</td></tr>`});function _(){let e=t.querySelector(`.board-card-header`),i=e.querySelector(`.expand-btn`);if(r.length<=p){i&&i.remove();return}i||(i=document.createElement(`button`),i.className=`expand-btn`,e.appendChild(i),i.addEventListener(`click`,()=>{n=!n,u.innerHTML=h(r,n),i.textContent=n?`▲ Top ${p}`:`▼ All ${r.length}`})),i.textContent=n?`▲ Top ${p}`:`▼ All ${r.length}`}return t}var _=document.getElementById(`boards`);for(let e of f)_.appendChild(g(e));
