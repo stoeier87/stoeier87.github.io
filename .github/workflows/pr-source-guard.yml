@@ -1,18 +1,67 @@
 name: Guard PR Source Branch
 
+# Normally fires on pull_request events. workflow_dispatch is a manual
+# fallback for when pull_request webhook delivery is stuck on GitHub's side
+# (happened 2026-08-15/16 -- push events recovered on their own within days,
+# pull_request events for an already-open PR did not, even after closing and
+# reopening it). This isn't a bypass of the check: the dispatch path still
+# looks up the real PR via the API and enforces the identical rule, it just
+# doesn't depend on GitHub delivering the pull_request webhook to do so.
+
 on:
   pull_request:
     branches: ["main"]
     types: [opened, synchronize, reopened, edited]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to verify (manual fallback only -- pull_request events cover this normally)"
+        required: true
+        type: number
+
+permissions:
+  pull-requests: read
 
 jobs:
   require-stage-source:
     runs-on: ubuntu-latest
     steps:
+      - name: Resolve PR head branch and SHA
+        id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            HEAD_REF="${{ github.head_ref }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            PR_JSON=$(gh pr view "${{ inputs.pr_number }}" --repo "${{ github.repository }}" --json headRefName,headRefOid,baseRefName)
+            HEAD_REF=$(echo "$PR_JSON" | jq -r .headRefName)
+            HEAD_SHA=$(echo "$PR_JSON" | jq -r .headRefOid)
+            BASE_REF=$(echo "$PR_JSON" | jq -r .baseRefName)
+            if [ "$BASE_REF" != "main" ]; then
+              echo "::error::PR #${{ inputs.pr_number }} does not target main (base is '$BASE_REF')."
+              exit 1
+            fi
+          fi
+          echo "head_ref=$HEAD_REF" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+
+      # Only meaningful for the dispatch path -- a pull_request event's SHA
+      # and head ref come from the same webhook payload already, so they
+      # can't disagree the way a hand-picked --ref could.
+      - name: Confirm this run's commit matches the PR head
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [ "${{ github.sha }}" != "${{ steps.resolve.outputs.head_sha }}" ]; then
+            echo "::error::This run's commit (${{ github.sha }}) does not match PR #${{ inputs.pr_number }}'s head (${{ steps.resolve.outputs.head_sha }}). Dispatch this workflow with --ref pointed at the PR's actual head branch."
+            exit 1
+          fi
+
       - name: PRs into main must come from stage
         run: |
-          if [ "${{ github.head_ref }}" != "stage" ]; then
-            echo "::error::PRs into main must come from the stage branch. This PR is from '${{ github.head_ref }}'."
+          if [ "${{ steps.resolve.outputs.head_ref }}" != "stage" ]; then
+            echo "::error::PRs into main must come from the stage branch. This PR is from '${{ steps.resolve.outputs.head_ref }}'."
             exit 1
           fi
           echo "OK: PR source is stage"
