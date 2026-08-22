@@ -7,14 +7,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="../css/all.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./scoreboard.css" />
     <link rel="stylesheet" href="../tailwind.css" />
   </head>
   <body>
-    <canvas id="bg" aria-hidden="true"></canvas>
-
-    <nav class="board-nav" aria-label="Scoreboard navigation">
-      <a class="pill back" href="../arcade/" aria-label="Back to arcade" title="Back to arcade">
+    <!-- <canvas id="bg" aria-hidden="true"></canvas> -->
+    <st-planet-field id="bg" driven cursor-motion="translate" aria-hidden="true"></st-planet-field>
+    <nav class="hall-nav" aria-label="Arcade navigation">
+      <a class="pill back" href="../" aria-label="Back to homepage" title="Back to homepage">
         <span class="arrow"><i class="fa-solid fa-arrow-left-long"></i></span>
         <span class="alien" aria-hidden="true">
           <svg viewBox="0 0 26 26" width="17" height="17">
@@ -27,6 +27,12 @@
                   stroke="#7eb08a" stroke-width="2.3" stroke-linecap="round" fill="none" />
           </svg>
         </span>
+      </a>
+      <a class="pill" href="/arcade">
+        <span class="arrow">
+          <i class="fa-solid fa-gamepad" style="color: #e03a2f"></i>
+        </span>
+        Arcade Games
       </a>
     </nav>
 

@@ -31,15 +31,15 @@ initializeAppCheck(app, {
 const db = getDatabase(app);
 
 const GAMES = [
-  { key: "mercury", label: "Orbit Runner — Mercury" },
-  { key: "venus", label: "Meteor Dodge — Venus" },
-  { key: "earth", label: "ISS Docking — Earth" },
-  { key: "mars", label: "Phobos Lander — Mars" },
-  { key: "jupiter", label: "Galileo — Jupiter" },
-  { key: "saturn", label: "Star Memory — Saturn" },
-  { key: "uranus", label: "Nebula Trail — Uranus" },
-  { key: "neptune", label: "Diamond Rain — Neptune" },
-  { key: "pluto", label: "Ice Fall — Pluto" },
+  { key: "mercury", label: "Merkur", gamekey: "orbit-runner", gameLabel: "Orbit Runner" },
+  { key: "venus", label: "Venus", gamekey: "meteor-dodge", gameLabel: "Meteor Dodge" },
+  { key: "earth", label: "Jorden", gamekey: "iss-docking", gameLabel: "ISS Docking" },
+  { key: "mars", label: "Mars", gamekey: "phobos-lander", gameLabel: "Phobos Lander" },
+  { key: "jupiter", label: "Jupiter", gamekey: "galileo", gameLabel: "Galileo" },
+  { key: "saturn", label: "Saturn", gamekey: "star-memory", gameLabel: "Star Memory" },
+  { key: "uranus", label: "Uranus", gamekey: "nebula-trail", gameLabel: "Nebula Trail" },
+  { key: "neptune", label: "Neptun", gamekey: "diamond-rain", gameLabel: "Diamond Rain" },
+  { key: "pluto", label: "Pluto", gamekey: "ice-fall", gameLabel: "Ice Fall" },
 ];
 
 const PREVIEW = 5;
@@ -55,11 +55,19 @@ function escapeHtml(str) {
 
 function renderRows(rows, expanded) {
   const visible = expanded ? rows : rows.slice(0, PREVIEW);
+  const colors = [
+    "#FFD700", 
+    "#C0C0C0", 
+    "#CD7F32"
+  ];
   return visible
     .map(
       (r, i) => `
     <tr data-rank="${i + 1}">
-      <td class="rank">${i + 1}</td>
+      <td class="rank">
+        <i class="fa-solid fa-crown ${i > 0 ? "hidden" : ""}" style="color: ${colors[i] ?? "#FFD700"}"></i>
+        <span class="rank-number ${i > 0 ? "" : "hidden"}">${i + 1}.</span>  
+      </td>
       <td>${escapeHtml(r.name ?? "Unknown")}</td>
       <td class="col-score">${Number(r.score ?? 0).toLocaleString()}</td>
     </tr>`,
@@ -72,13 +80,20 @@ function createCard(game) {
   card.className = "board-card is-loading";
   card.innerHTML = `
     <div class="board-card-header">
-      <h2>${escapeHtml(game.label)}</h2>
+      <div class="game-labels">
+        <h2>${escapeHtml(game.label)}</h2>
+        <a href="/arcade/${escapeHtml(game.gamekey)}" class="game-key">(${escapeHtml(game.gameLabel)})</a>
+      </div>
       <span class="top-score">—</span>
     </div>
     <div class="board-card-body">
       <table>
-        <thead><tr><th class="rank">#</th><th>Name</th><th class="col-score">Score</th></tr></thead>
-        <tbody class="board-tbody"><tr class="loading-row"><td colspan="3">Loading…</td></tr></tbody>
+        <thead>
+          <!-- <tr><th class="rank">#</th><th>Name</th><th class="col-score">Score</th></tr> -->
+        </thead>
+        <tbody class="board-tbody">
+          <tr class="loading-row"><td colspan="3">Loading…</td></tr>
+        </tbody>
       </table>
     </div>`;
 
@@ -107,7 +122,7 @@ function createCard(game) {
       card.classList.remove("is-loading");
 
       if (!allRows.length) {
-        card.style.display = "none";
+        // card.style.display = "none";
         return;
       }
 
