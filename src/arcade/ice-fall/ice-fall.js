@@ -1553,7 +1553,7 @@ function tickFreeze(now) {
   el.over.classList.add("show");
   submitScoreOnGameOver({
     gameKey: "ice-fall",
-    gameLabel: "Ice Fall",
+    gameLabel: "Pluto",
     score: Math.floor(score),
     ask: true,
   });
