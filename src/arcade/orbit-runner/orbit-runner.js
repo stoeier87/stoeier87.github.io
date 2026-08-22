@@ -44,7 +44,7 @@ import {
 
   let best = 0;
   bestEl.textContent = best;
-  fetchGlobalBest("orbit-runner").then((b) => {
+  fetchGlobalBest("mercury").then((b) => {
     best = Math.max(best, b);
     bestEl.textContent = best;
   });
@@ -508,8 +508,8 @@ import {
             scoreSubmissionStarted = true;
             setTimeout(async () => {
               const result = await submitScoreOnGameOver({
-                gameKey: "orbit-runner",
-                gameLabel: "Orbit Runner",
+                gameKey: "mercury",
+                gameLabel: "Mercury",
                 score: Math.floor(score),
                 ask: true,
               });

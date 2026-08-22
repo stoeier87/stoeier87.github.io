@@ -358,7 +358,7 @@ const el = {
   bestMarker: document.getElementById("bestMarker"),
 };
 
-fetchGlobalBest("galileo").then((b) => {
+fetchGlobalBest("jupiter").then((b) => {
   best = Math.max(best, b);
   el.best.textContent = best;
 });
@@ -570,7 +570,7 @@ function endGame(title) {
     if (!scoreSubmitted) {
       scoreSubmitted = true;
       setTimeout(() => {
-        submitScoreOnGameOver({ gameKey: "galileo", gameLabel: "Galileo", score, ask: true });
+        submitScoreOnGameOver({ gameKey: "jupiter", gameLabel: "Jupiter", score, ask: true });
       }, 60);
     }
   }, delay);

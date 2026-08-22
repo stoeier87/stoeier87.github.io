@@ -39,7 +39,7 @@ import {
   let pads = [];
   let bgCanvas = null;
 
-  fetchGlobalBest("phobos-lander").then((b) => {
+  fetchGlobalBest("mars").then((b) => {
     best = Math.max(best, b);
     bestEl.textContent = best;
   });
@@ -403,8 +403,8 @@ import {
       scoreSubmitted = true;
       setTimeout(() => {
         submitScoreOnGameOver({
-          gameKey: "phobos-lander",
-          gameLabel: "Phobos Lander",
+          gameKey: "mars",
+          gameLabel: "Mars",
           score: Math.floor(score),
           ask: true,
         });

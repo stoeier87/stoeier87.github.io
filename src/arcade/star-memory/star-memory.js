@@ -433,7 +433,7 @@ let streak = 0;
 let mult = 1;
 let prevKeys = [];
 
-fetchGlobalBest("star-memory").then((b) => {
+fetchGlobalBest("saturn").then((b) => {
   best = Math.max(best, b);
   bestEl.textContent = best;
 });
@@ -587,8 +587,8 @@ function showFinal() {
     scoreSubmitted = true;
     setTimeout(() => {
       submitScoreOnGameOver({
-        gameKey: "star-memory",
-        gameLabel: "Star Memory",
+        gameKey: "saturn",
+        gameLabel: "Saturn",
         score,
         ask: true,
       });

@@ -375,7 +375,7 @@ const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches
 if (canHover) el.introKeys.classList.add("show");
 else el.introTouch.classList.add("show");
 
-fetchGlobalBest("asteroid-breaker").then((b) => {
+fetchGlobalBest("neptune").then((b) => {
   best = Math.max(best, b);
   el.best.textContent = best;
 });
@@ -913,8 +913,8 @@ function finishGameOver() {
     scoreSubmitted = true;
     setTimeout(() => {
       submitScoreOnGameOver({
-        gameKey: "asteroid-breaker",
-        gameLabel: "Diamond Rain",
+        gameKey: "neptune",
+        gameLabel: "Neptune",
         score: Math.floor(score),
         ask: true,
       });

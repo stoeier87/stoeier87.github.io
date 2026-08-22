@@ -125,7 +125,7 @@ import {
   let ship = { x: BASE_W / 2, y: BASE_H - 140, w: 44, h: 52, vx: 0, vy: 0 };
   let keys = { left: false, right: false, up: false, down: false };
 
-  fetchGlobalBest("meteor-dodge").then((b) => {
+  fetchGlobalBest("venus").then((b) => {
     best = Math.max(best, b);
     bestEl.textContent = best;
   });
@@ -379,8 +379,8 @@ import {
       scoreSubmitted = true;
       setTimeout(() => {
         submitScoreOnGameOver({
-          gameKey: "meteor-dodge",
-          gameLabel: "Meteor Dodge",
+          gameKey: "venus",
+          gameLabel: "Venus",
           score: Math.floor(score),
           ask: true,
         });

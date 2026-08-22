@@ -56,7 +56,7 @@ import { PLANETS, drawPlanet } from "../shared/starfield.js";
   let ripples = []; // { x, y, t, dur, color }
   let moveT = 0;
 
-  fetchGlobalBest("nebula-trail").then((b) => {
+  fetchGlobalBest("uranus").then((b) => {
     best = Math.max(best, b);
     bestEl.textContent = best;
   });
@@ -228,8 +228,8 @@ import { PLANETS, drawPlanet } from "../shared/starfield.js";
       scoreSubmitted = true;
       setTimeout(() => {
         submitScoreOnGameOver({
-          gameKey: "nebula-trail",
-          gameLabel: "Nebula Trail",
+          gameKey: "uranus",
+          gameLabel: "Uranus",
           score: score,
           ask: true,
         });

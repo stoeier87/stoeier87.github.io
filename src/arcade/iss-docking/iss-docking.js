@@ -65,7 +65,7 @@ import {
   const isTouchDevice =
     matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
 
-  fetchGlobalBest("iss-docking").then((b) => {
+  fetchGlobalBest("earth").then((b) => {
     best = Math.max(best, b);
     bestEl.textContent = best;
   });
@@ -501,8 +501,8 @@ import {
       scoreSubmitted = true;
       setTimeout(() => {
         submitScoreOnGameOver({
-          gameKey: "iss-docking",
-          gameLabel: "ISS Docking",
+          gameKey: "earth",
+          gameLabel: "Earth",
           score: Math.floor(score),
           ask: true,
         });
