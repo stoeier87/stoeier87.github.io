@@ -914,7 +914,7 @@ function finishGameOver() {
     setTimeout(() => {
       submitScoreOnGameOver({
         gameKey: "neptune",
-        gameLabel: "Neptune",
+        gameLabel: "Diamond Rain — Neptune",
         score: Math.floor(score),
         ask: true,
       });

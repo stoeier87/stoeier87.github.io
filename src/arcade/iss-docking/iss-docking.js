@@ -502,7 +502,7 @@ import {
       setTimeout(() => {
         submitScoreOnGameOver({
           gameKey: "earth",
-          gameLabel: "Earth",
+          gameLabel: "ISS Docking — Earth",
           score: Math.floor(score),
           ask: true,
         });

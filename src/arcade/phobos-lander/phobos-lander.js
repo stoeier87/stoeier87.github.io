@@ -404,7 +404,7 @@ import {
       setTimeout(() => {
         submitScoreOnGameOver({
           gameKey: "mars",
-          gameLabel: "Mars",
+          gameLabel: "Phobos Lander — Mars",
           score: Math.floor(score),
           ask: true,
         });

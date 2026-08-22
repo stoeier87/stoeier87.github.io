@@ -31,15 +31,15 @@ initializeAppCheck(app, {
 const db = getDatabase(app);
 
 const GAMES = [
-  { key: "mercury", label: "Mercury" },
-  { key: "venus", label: "Venus" },
-  { key: "earth", label: "Earth" },
-  { key: "mars", label: "Mars" },
-  { key: "jupiter", label: "Jupiter" },
-  { key: "saturn", label: "Saturn" },
-  { key: "uranus", label: "Uranus" },
-  { key: "neptune", label: "Neptune" },
-  { key: "pluto", label: "Pluto" },
+  { key: "mercury", label: "Orbit Runner — Mercury" },
+  { key: "venus", label: "Meteor Dodge — Venus" },
+  { key: "earth", label: "ISS Docking — Earth" },
+  { key: "mars", label: "Phobos Lander — Mars" },
+  { key: "jupiter", label: "Galileo — Jupiter" },
+  { key: "saturn", label: "Star Memory — Saturn" },
+  { key: "uranus", label: "Nebula Trail — Uranus" },
+  { key: "neptune", label: "Diamond Rain — Neptune" },
+  { key: "pluto", label: "Ice Fall — Pluto" },
 ];
 
 const PREVIEW = 5;

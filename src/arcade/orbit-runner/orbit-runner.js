@@ -509,7 +509,7 @@ import {
             setTimeout(async () => {
               const result = await submitScoreOnGameOver({
                 gameKey: "mercury",
-                gameLabel: "Mercury",
+                gameLabel: "Orbit Runner — Mercury",
                 score: Math.floor(score),
                 ask: true,
               });

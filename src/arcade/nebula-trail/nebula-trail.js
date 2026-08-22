@@ -229,7 +229,7 @@ import { PLANETS, drawPlanet } from "../shared/starfield.js";
       setTimeout(() => {
         submitScoreOnGameOver({
           gameKey: "uranus",
-          gameLabel: "Uranus",
+          gameLabel: "Nebula Trail — Uranus",
           score: score,
           ask: true,
         });

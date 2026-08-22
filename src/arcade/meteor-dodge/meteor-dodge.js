@@ -380,7 +380,7 @@ import {
       setTimeout(() => {
         submitScoreOnGameOver({
           gameKey: "venus",
-          gameLabel: "Venus",
+          gameLabel: "Meteor Dodge — Venus",
           score: Math.floor(score),
           ask: true,
         });

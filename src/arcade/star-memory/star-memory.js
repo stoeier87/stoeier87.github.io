@@ -588,7 +588,7 @@ function showFinal() {
     setTimeout(() => {
       submitScoreOnGameOver({
         gameKey: "saturn",
-        gameLabel: "Saturn",
+        gameLabel: "Star Memory — Saturn",
         score,
         ask: true,
       });
