@@ -22,12 +22,31 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      deployments: write
     steps:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
           name: site-dist
           path: dist
+
+      # See the matching step in stage.yml -- peaceiris/actions-gh-pages
+      # never records a Deployment against the branch/PR that triggered it.
+      - name: Record deployment
+        id: deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deployment = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: "${{ github.event.pull_request.merge_commit_sha || github.sha }}",
+              environment: "production",
+              auto_merge: false,
+              required_contexts: [],
+              production_environment: true,
+            });
+            core.setOutput("id", deployment.data.id);
 
       - name: Deploy to GitHub Pages (production)
         uses: peaceiris/actions-gh-pages@v4
@@ -37,3 +56,43 @@ jobs:
           destination_dir: .
           keep_files: true
           commit_message: "Deploy production: ${{ github.event.pull_request.merge_commit_sha || github.sha }}"
+
+      - name: Mark deployment success
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: ${{ steps.deployment.outputs.id }},
+              state: "success",
+              environment_url: "https://stoeier.dk/",
+              description: "Deployed to production",
+            });
+
+      # The version bump itself already landed via the merged PR's diff
+      # (docs/CLAUDE.md's Versioning section) -- this just reads whatever's
+      # in package.json at the merge commit and tags it, so there's a
+      # permanent "what's actually live" marker. Tags aren't covered by
+      # main's ruleset, so this needs no bypass unlike a direct push would.
+      - name: Checkout merge commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
+
+      - name: Tag release
+        id: tag
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if git ls-remote --tags origin "refs/tags/v$VERSION" | grep -q .; then
+            echo "v$VERSION already tagged (likely a workflow_dispatch re-run), skipping."
+          else
+            git tag "v$VERSION"
+            git push origin "v$VERSION"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Summary
+        run: |
+          echo "### Production deployed :rocket: v${{ steps.tag.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "https://stoeier.dk/" >> "$GITHUB_STEP_SUMMARY"
