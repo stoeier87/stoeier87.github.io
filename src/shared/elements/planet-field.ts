@@ -50,6 +50,7 @@ import {
   Group,
   Line,
   LineBasicMaterial,
+  LineSegments,
   Mesh,
   MeshBasicMaterial,
   MeshLambertMaterial,
@@ -128,6 +129,30 @@ export interface PlanetEventDetail {
   planet: PlanetSpec;
 }
 
+/**
+ * A star-sign figure — points plus the edges connecting them into its shape.
+ * Star coordinates are local unit space, roughly -1..1; `scale`/`px`/`py`
+ * position and size the figure on screen (px/py normalized 0..1).
+ */
+export interface ConstellationSpec {
+  name: string;
+  dateRange?: string;
+  stars: Array<{ x: number; y: number }>;
+  edges: Array<[number, number]>;
+  px: number;
+  py: number;
+  scale: number;
+  alpha: number;
+  /** Parallax factor, same convention as StarLayer.parallax. */
+  pf: number;
+  seed: number;
+}
+
+export interface ConstellationEventDetail {
+  index: number;
+  constellation: ConstellationSpec;
+}
+
 /* ============ Star shader ============ */
 
 /**
@@ -199,6 +224,9 @@ export class PlanetFieldElement extends HTMLElement {
   #camera: OrthographicCamera | null = null;
   #starGroups: Group[] = [];
   #starMaterials: ShaderMaterial[] = [];
+  #constellations: ConstellationSpec[] = [];
+  #constellationGroups: Group[] = [];
+  #hoveredConstellation = -1;
   #bodies: PlanetBody[] = [];
   #traffic: SkyTraffic | null = null;
   #glow: CanvasTexture | null = null;
@@ -256,6 +284,16 @@ export class PlanetFieldElement extends HTMLElement {
   set starLayers(value: StarLayer[]) {
     this.#starLayers = Array.isArray(value) && value.length ? value : DEFAULT_STAR_LAYERS;
     if (this.#scene) this.#buildStars();
+    this.#requestStaticFrame();
+  }
+
+  /** Zodiac-sign-style figures drawn over the star field, hoverable like planets. */
+  get constellations(): ConstellationSpec[] {
+    return this.#constellations;
+  }
+  set constellations(value: ConstellationSpec[]) {
+    this.#constellations = Array.isArray(value) ? value : [];
+    if (this.#scene) this.#buildConstellations();
     this.#requestStaticFrame();
   }
 
@@ -354,7 +392,7 @@ export class PlanetFieldElement extends HTMLElement {
   }
 
   static get observedAttributes(): string[] {
-    return ["planets", "star-layers", "drift"];
+    return ["planets", "star-layers", "constellations", "drift"];
   }
 
   attributeChangedCallback(name: string, _old: string | null, value: string | null): void {
@@ -362,6 +400,8 @@ export class PlanetFieldElement extends HTMLElement {
     try {
       if (name === "planets") this.planets = JSON.parse(value) as PlanetSpec[];
       else if (name === "star-layers") this.starLayers = JSON.parse(value) as StarLayer[];
+      else if (name === "constellations")
+        this.constellations = JSON.parse(value) as ConstellationSpec[];
       else if (name === "drift") this.drift = Number.parseFloat(value);
     } catch {
       // A malformed attribute must not take the page down with it. The element
@@ -425,6 +465,7 @@ export class PlanetFieldElement extends HTMLElement {
     this.#measure();
     this.#buildStars();
     this.#buildPlanets();
+    this.#buildConstellations();
     this.#traffic?.resize(this.#w, this.#h, performance.now());
 
     window.addEventListener("resize", this.#onResize, { passive: true });
@@ -451,6 +492,7 @@ export class PlanetFieldElement extends HTMLElement {
 
     this.#disposeStars();
     this.#disposePlanets();
+    this.#disposeConstellations();
     this.#featured?.dispose();
     this.#featured = null;
     this.#traffic?.dispose();
@@ -486,6 +528,7 @@ export class PlanetFieldElement extends HTMLElement {
 
     const scroll = this.#scroll + this.#drift * this.#elapsed;
     this.#updateStars(scroll);
+    this.#updateConstellations(dt);
     this.#updatePlanets(scroll, dt);
     this.#updateFeatured(dt);
     if (!this.#reduced) this.#traffic?.update(dt, this.#elapsed, time);
@@ -547,6 +590,7 @@ export class PlanetFieldElement extends HTMLElement {
   resize(): void {
     this.#measure();
     this.#buildStars();
+    this.#buildConstellations();
     this.#traffic?.resize(this.#w, this.#h, performance.now());
     this.#requestStaticFrame();
   }
@@ -625,6 +669,7 @@ export class PlanetFieldElement extends HTMLElement {
   #onPointerLeave = (): void => {
     this.#pointerInside = false;
     this.#setHovered(-1);
+    this.#setHoveredConstellation(-1);
   };
 
   #onClick = (): void => {
@@ -733,6 +778,127 @@ export class PlanetFieldElement extends HTMLElement {
     }
   }
 
+  /* ---------- constellations ---------- */
+
+  #disposeConstellations(): void {
+    for (const group of this.#constellationGroups) {
+      group.removeFromParent();
+      for (const child of group.children) {
+        if (child instanceof Points) {
+          child.geometry.dispose();
+          (child.material as ShaderMaterial).dispose();
+        } else if (child instanceof LineSegments) {
+          child.geometry.dispose();
+          (child.material as LineBasicMaterial).dispose();
+        }
+      }
+    }
+    this.#constellationGroups = [];
+    this.#hoveredConstellation = -1;
+  }
+
+  #buildConstellations(): void {
+    if (!this.#scene) return;
+    this.#disposeConstellations();
+
+    this.#constellations.forEach((c, ci) => {
+      const n = c.stars.length;
+      const positions = new Float32Array(n * 3);
+      const size = new Float32Array(n);
+      const phase = new Float32Array(n);
+      const speed = new Float32Array(n);
+      c.stars.forEach((s, i) => {
+        positions[i * 3] = s.x * c.scale * this.#w;
+        positions[i * 3 + 1] = s.y * c.scale * this.#w;
+        positions[i * 3 + 2] = -10;
+        size[i] = 1.6 + rand(c.seed + i) * 0.8;
+        phase[i] = rand(c.seed + i + 50) * Math.PI * 2;
+        speed[i] = 0.6 + rand(c.seed + i + 90) * 0.8;
+      });
+
+      const pointGeometry = new BufferGeometry();
+      pointGeometry.setAttribute("position", new BufferAttribute(positions, 3));
+      pointGeometry.setAttribute("aSize", new BufferAttribute(size, 1));
+      pointGeometry.setAttribute("aPhase", new BufferAttribute(phase, 1));
+      pointGeometry.setAttribute("aSpeed", new BufferAttribute(speed, 1));
+      const pointMaterial = new ShaderMaterial({
+        uniforms: {
+          uTime: { value: 0 },
+          uDpr: { value: this.#dpr },
+          uAlpha: { value: c.alpha },
+          uTwinkle: { value: this.#reduced ? 0 : 1 },
+        },
+        vertexShader: STAR_VERT,
+        fragmentShader: STAR_FRAG,
+        transparent: true,
+        depthWrite: false,
+      });
+      const points = new Points(pointGeometry, pointMaterial);
+      points.frustumCulled = false;
+
+      const linePositions = new Float32Array(c.edges.length * 6);
+      c.edges.forEach(([a, b], i) => {
+        const sa = c.stars[a];
+        const sb = c.stars[b];
+        if (!sa || !sb) return;
+        linePositions[i * 6] = sa.x * c.scale * this.#w;
+        linePositions[i * 6 + 1] = sa.y * c.scale * this.#w;
+        linePositions[i * 6 + 2] = -10;
+        linePositions[i * 6 + 3] = sb.x * c.scale * this.#w;
+        linePositions[i * 6 + 4] = sb.y * c.scale * this.#w;
+        linePositions[i * 6 + 5] = -10;
+      });
+      const lineGeometry = new BufferGeometry();
+      lineGeometry.setAttribute("position", new BufferAttribute(linePositions, 3));
+      const lineMaterial = new LineBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: c.alpha * 0.35,
+      });
+      const lines = new LineSegments(lineGeometry, lineMaterial);
+      lines.frustumCulled = false;
+
+      const group = new Group();
+      group.add(points);
+      group.add(lines);
+      const baseX = c.px * this.#w;
+      const baseY = -c.py * this.#h;
+      group.position.set(baseX, baseY, 0);
+      group.userData.base = { x: baseX, y: baseY };
+      group.userData.pf = c.pf;
+      group.userData.boost = 0;
+      group.userData.pointMaterial = pointMaterial;
+      group.userData.lineMaterial = lineMaterial;
+      group.userData.baseAlpha = c.alpha;
+      this.#scene?.add(group);
+      this.#constellationGroups[ci] = group;
+    });
+  }
+
+  #updateConstellations(dt: number): void {
+    for (let i = 0; i < this.#constellationGroups.length; i++) {
+      const group = this.#constellationGroups[i];
+      if (!group) continue;
+      const base = group.userData.base as { x: number; y: number };
+      const pf = group.userData.pf as number;
+      group.position.x = base.x + this.#panX * pf;
+      group.position.y = base.y + this.#panY * pf;
+
+      const target = i === this.#hoveredConstellation ? 1 : 0;
+      const boost =
+        (group.userData.boost as number) +
+        (target - (group.userData.boost as number)) * Math.min(1, dt * 5);
+      group.userData.boost = boost;
+
+      const baseAlpha = group.userData.baseAlpha as number;
+      const pointMaterial = group.userData.pointMaterial as ShaderMaterial;
+      const lineMaterial = group.userData.lineMaterial as LineBasicMaterial;
+      pointMaterial.uniforms.uTime!.value = this.#elapsed;
+      pointMaterial.uniforms.uAlpha!.value = baseAlpha * (1 + boost * 0.6);
+      lineMaterial.opacity = baseAlpha * 0.35 * (1 + boost * 1.6);
+    }
+  }
+
   /* ---------- planets ---------- */
 
   #disposePlanets(): void {
@@ -832,6 +998,7 @@ export class PlanetFieldElement extends HTMLElement {
   #updateHover(): void {
     if (!this.#camera || !this.#pointerInside) {
       this.#setHovered(-1);
+      this.#setHoveredConstellation(-1);
       return;
     }
     this.#raycaster.setFromCamera(this.#pointer, this.#camera);
@@ -841,6 +1008,19 @@ export class PlanetFieldElement extends HTMLElement {
     const first = hits[0]?.object;
     const index = first ? this.#bodies.findIndex((b) => b.surface === first) : -1;
     this.#setHovered(index);
+
+    // Generous pick radius -- a constellation's stars are a few pixels each,
+    // and "hover the shape" should not require pixel-perfect aim.
+    this.#raycaster.params.Points = { threshold: 10 };
+    const constellationTargets = this.#constellationGroups
+      .map((g) => g.children.find((child) => child instanceof Points))
+      .filter((p): p is Points => !!p);
+    const chits = this.#raycaster.intersectObjects(constellationTargets, false);
+    const cfirst = chits[0]?.object;
+    const cindex = cfirst
+      ? this.#constellationGroups.findIndex((g) => g.children.includes(cfirst))
+      : -1;
+    this.#setHoveredConstellation(cindex);
   }
 
   /**
@@ -897,6 +1077,35 @@ export class PlanetFieldElement extends HTMLElement {
           new CustomEvent<PlanetEventDetail>("planet-enter", {
             bubbles: true,
             detail: { index, planet },
+          }),
+        );
+      }
+    }
+  }
+
+  #setHoveredConstellation(index: number): void {
+    if (index === this.#hoveredConstellation) return;
+    const previous = this.#hoveredConstellation;
+    this.#hoveredConstellation = index;
+
+    if (previous >= 0) {
+      const constellation = this.#constellations[previous];
+      if (constellation) {
+        this.dispatchEvent(
+          new CustomEvent<ConstellationEventDetail>("constellation-leave", {
+            bubbles: true,
+            detail: { index: previous, constellation },
+          }),
+        );
+      }
+    }
+    if (index >= 0) {
+      const constellation = this.#constellations[index];
+      if (constellation) {
+        this.dispatchEvent(
+          new CustomEvent<ConstellationEventDetail>("constellation-enter", {
+            bubbles: true,
+            detail: { index, constellation },
           }),
         );
       }

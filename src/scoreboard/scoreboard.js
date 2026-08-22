@@ -12,6 +12,8 @@ import {
   onValue,
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
 import { ARCADE_FIREBASE_CONFIG } from "../arcade/shared/firebase-config.js";
+import { definePlanetField } from "../shared/elements/planet-field.ts";
+import { ZODIAC_SIGNS } from "../shared/elements/zodiac-data.ts";
 
 const app = initializeApp(ARCADE_FIREBASE_CONFIG, "arcade-scoreboard");
 
@@ -29,6 +31,35 @@ initializeAppCheck(app, {
 });
 
 const db = getDatabase(app);
+
+/* Background — <st-planet-field> with the 12 zodiac signs instead of
+   planets. `driven` because this page owns the one rAF loop below;
+   `interactive` (set on the element in index.html) turns on hover, which
+   brightens the sign under the pointer and fires constellation-enter/leave
+   — picked up below to show its name and date range. `cursor-motion="rotate"`
+   rocks the whole sky a few degrees toward the pointer. */
+definePlanetField();
+const sky = document.getElementById("bg");
+const zodiacLabel = document.getElementById("zodiac-label");
+if (sky) {
+  sky.constellations = ZODIAC_SIGNS;
+  addEventListener("resize", () => sky.resize(), { passive: true });
+  requestAnimationFrame(function loop(t) {
+    sky.tick(t);
+    requestAnimationFrame(loop);
+  });
+
+  if (zodiacLabel) {
+    sky.addEventListener("constellation-enter", (e) => {
+      const { name, dateRange } = e.detail.constellation;
+      zodiacLabel.textContent = dateRange ? `${name} · ${dateRange}` : name;
+      zodiacLabel.classList.remove("hidden");
+    });
+    sky.addEventListener("constellation-leave", () => {
+      zodiacLabel.classList.add("hidden");
+    });
+  }
+}
 
 const GAMES = [
   { key: "mercury", label: "Merkur", gamekey: "orbit-runner", gameLabel: "Orbit Runner" },
