@@ -170,6 +170,11 @@ const STAR_FRAG = /* glsl */ `
 
 const DEG = Math.PI / 180;
 
+// Ambient cursor-motion magnitude caps, either axis. Kept small on purpose --
+// this is a background rocking or drifting a little, not a 3D toy.
+const TILT_MAX = 3.5 * DEG; // radians, for cursor-motion="rotate"
+const SHIFT_MAX = 18; // world units (~= CSS px at z=0), for cursor-motion="translate"
+
 /**
  * Focal depth: the Z distance at which one world unit equals one screen pixel.
  * The camera sits at z = ZF; objects at z = 0 are pixel-exact. Positive depth
@@ -209,6 +214,15 @@ export class PlanetFieldElement extends HTMLElement {
   #panYTarget = 0;
   #travelIndex = -1;
   #raycaster = new Raycaster();
+  // Ambient cursor-motion (cursorMotion): rocks or shifts the whole scene
+  // toward the pointer, independent of #panX/#panY (which only move when
+  // something is hovered/travelled-to via #travelIndex). Both pairs ease
+  // like panX/panY does, and relax back to 0 the moment the pointer leaves,
+  // cursorMotion is off/switched to the other mode, or reduced-motion is on.
+  #tiltX = 0;
+  #tiltY = 0;
+  #shiftX = 0;
+  #shiftY = 0;
   #pointer = new Vector2(-10, -10);
   #pointerInside = false;
   #hovered = -1;
@@ -311,6 +325,19 @@ export class PlanetFieldElement extends HTMLElement {
   }
 
   /**
+   * Ambient pointer-following motion, independent of `interactive` (which is
+   * about hover/click on planets, not this). `"rotate"` rocks the whole scene
+   * a few degrees toward the cursor; `"translate"` shifts it a few pixels
+   * instead. Anything else, including the attribute being absent, is off.
+   * Not `drift` -- that name is already taken by the pixels/second
+   * auto-scroll rate below.
+   */
+  get cursorMotion(): "rotate" | "translate" | "" {
+    const value = this.getAttribute("cursor-motion");
+    return value === "rotate" || value === "translate" ? value : "";
+  }
+
+  /**
    * How many drifting satellites to fly, and whether shooting stars appear.
    * `0` disables both. The homepage's five is the default when the attribute
    * is present without a value.
@@ -401,9 +428,11 @@ export class PlanetFieldElement extends HTMLElement {
     this.#traffic?.resize(this.#w, this.#h, performance.now());
 
     window.addEventListener("resize", this.#onResize, { passive: true });
-    if (this.interactive) {
+    if (this.interactive || this.cursorMotion) {
       document.addEventListener("pointermove", this.#onPointerMove, { passive: true });
       document.addEventListener("pointerleave", this.#onPointerLeave, { passive: true });
+    }
+    if (this.interactive) {
       document.addEventListener("click", this.#onClick);
     }
 
@@ -461,6 +490,7 @@ export class PlanetFieldElement extends HTMLElement {
     this.#updateFeatured(dt);
     if (!this.#reduced) this.#traffic?.update(dt, this.#elapsed, time);
     if (this.interactive) this.#updateHover();
+    if (!this.#reduced) this.#updatePointerMotion(dt);
 
     this.#renderer.render(this.#scene, this.#camera);
   }
@@ -811,6 +841,35 @@ export class PlanetFieldElement extends HTMLElement {
     const first = hits[0]?.object;
     const index = first ? this.#bodies.findIndex((b) => b.surface === first) : -1;
     this.#setHovered(index);
+  }
+
+  /**
+   * Eases scene.rotation or scene.position toward the pointer depending on
+   * cursorMotion, and back to 0 once the pointer leaves, cursorMotion is off,
+   * or the mode has switched to the other one. Independent of #panX/#panY --
+   * those only move for a specific hovered/travelled-to planet.
+   */
+  #updatePointerMotion(dt: number): void {
+    if (!this.#scene) return;
+    const mode = this.cursorMotion;
+    const active = mode !== "" && this.#pointerInside;
+    const ease = Math.min(1, dt * 1.5);
+
+    const rotateActive = active && mode === "rotate";
+    const tiltXTarget = rotateActive ? -this.#pointer.y * TILT_MAX : 0;
+    const tiltYTarget = rotateActive ? this.#pointer.x * TILT_MAX : 0;
+    this.#tiltX += (tiltXTarget - this.#tiltX) * ease;
+    this.#tiltY += (tiltYTarget - this.#tiltY) * ease;
+    this.#scene.rotation.x = this.#tiltX;
+    this.#scene.rotation.y = this.#tiltY;
+
+    const translateActive = active && mode === "translate";
+    const shiftXTarget = translateActive ? this.#pointer.x * SHIFT_MAX : 0;
+    const shiftYTarget = translateActive ? this.#pointer.y * SHIFT_MAX : 0;
+    this.#shiftX += (shiftXTarget - this.#shiftX) * ease;
+    this.#shiftY += (shiftYTarget - this.#shiftY) * ease;
+    this.#scene.position.x = this.#shiftX;
+    this.#scene.position.y = this.#shiftY;
   }
 
   #setHovered(index: number): void {
