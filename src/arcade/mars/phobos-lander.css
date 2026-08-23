@@ -9,38 +9,10 @@
 
 /* Phobos uses a full-height column topbar for mobile layout */
 
-/* Intro card */
-@keyframes phobosFadeIn {
-  0%   { opacity: 0; }
-  100% { opacity: 1; }
-}
-
-.intro-container {
-  display: flex;
-  width: 100%;
-  justify-content: center;
-  align-items: center;
-  @apply px-4 md:px-0 md:pt-3;
-  @apply items-end md:items-center;
-  @apply h-screen md:h-auto;
-}
-
-.intro {
-  position: relative;
-  z-index: 16;
-  text-align: center;
-  background: rgba(10, 14, 24, .62);
-  border: 1px solid rgba(255, 255, 255, .16);
-  border-radius: 12px;
-  padding: 14px 20px;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  transition: opacity .45s ease-out, transform .45s ease-out;
-  animation: phobosFadeIn 1s ease-in-out;
-  max-width: max(100%, 420px);
-  @apply h-fit;
-  @apply bottom-4 md:top-3 block;
-}
+/* Intro card: .intro-container/.intro now come from tailwind.css's shared
+   @layer components rule, same shape every other game uses. This used to
+   be a different flow-based (non-fixed-overlay) layout, deliberately kept
+   here for genuine per-game variance -- standardized away since. */
 
 /* Game-state overrides for the gameover card */
 .gameover-card.landed {

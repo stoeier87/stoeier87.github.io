@@ -4,9 +4,12 @@
    unlike game-hud.css; mercury/venus don't import this file at all).
    Extracted where the rule body was identical (post whitespace AND numeric-
    literal normalization, e.g. ".14em" == "0.14em") across every game that
-   had it. `.approach-label`, `.bar-fill`, `.intro-container` have genuine
-   per-game variance and were deliberately left where they were — don't fold
-   those in without re-checking they're still actually identical.
+   had it. `.approach-label`, `.bar-fill` have genuine per-game variance and
+   were deliberately left where they were — don't fold those in without
+   re-checking they're still actually identical. `.intro-container`/`.intro`
+   used to be here too (earth/mars had a different flow-based layout) but
+   are now standardized in tailwind.css's shared `@layer components` for
+   all 9 games instead — not here, since they're not just arcade-scoped.
 
    IMPORTANT — `.approach` and `.bar` below are only identical across a
    SUBSET of the games that import this file:

@@ -24,6 +24,6 @@
       "@shared/*": ["./src/shared/*"]
     }
   },
-  "include": ["src/tokens.ts", "src/shared/**/*.ts", "src/proto/**/*.ts"],
+  "include": ["src/tokens.ts", "src/shared/**/*.ts", "src/proto/**/*.ts", "src/arcade/shared/game-intro.ts"],
   "exclude": ["node_modules", "dist", "src/public"]
 }

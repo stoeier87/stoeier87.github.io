@@ -7,37 +7,6 @@
   --game-accent-dim: rgba(157, 227, 230, .6);
 }
 
-/* Intro card */
-@keyframes nebulaFadeIn {
-  0%   { opacity: 0; }
-  100% { opacity: 1; }
-}
-
-.intro-container {
-  position: fixed;
-  inset: 0;
-  z-index: 16;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  padding: 16px;
-}
-
-.intro {
-  pointer-events: auto;
-  text-align: center;
-  background: rgba(10, 14, 24, .72);
-  border: 1px solid rgba(255, 255, 255, .16);
-  border-radius: 12px;
-  padding: 20px 24px;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  transition: opacity .45s ease-out, transform .45s ease-out;
-  animation: nebulaFadeIn 1s ease-in-out;
-  max-width: min(420px, 100%);
-}
-
 /* Touch controls */
 .controls {
   position: fixed;

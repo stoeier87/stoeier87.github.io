@@ -5,9 +5,19 @@ import {
 import { PLANETS, drawPlanet } from "../shared/starfield.js";
 import { defineGameTopbar } from "../../shared/elements/game-topbar.ts";
 import { defineGameOver } from "../../shared/elements/game-over.ts";
+import { defineGameIntro } from "../shared/game-intro.ts";
 
 defineGameTopbar();
 defineGameOver();
+defineGameIntro();
+
+// .intro-keys defaults to display:none; only the list matching the
+// player's input method gets .show (same pattern as pluto/ice-fall.js).
+{
+  const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  if (canHover) document.getElementById("introKeys")?.classList.add("show");
+  else document.getElementById("introTouch")?.classList.add("show");
+}
 
 (() => {
   const canvas = document.getElementById("game");

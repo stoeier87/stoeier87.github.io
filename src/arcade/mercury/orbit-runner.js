@@ -4,9 +4,29 @@ import {
 } from "../shared/score-submit.js";
 import { defineGameTopbar } from "../../shared/elements/game-topbar.ts";
 import { defineGameOver } from "../../shared/elements/game-over.ts";
+import { defineGameIntro } from "../shared/game-intro.ts";
 
 defineGameTopbar();
 defineGameOver();
+defineGameIntro();
+
+// .intro-keys defaults to display:none; only the list matching the
+// player's input method gets .show (same pattern as pluto/ice-fall.js).
+{
+  const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  if (canHover) document.getElementById("introKeys")?.classList.add("show");
+  else document.getElementById("introTouch")?.classList.add("show");
+}
+
+function hideIntro() {
+  const el = document.getElementById("intro");
+  if (!el) return;
+  el.style.opacity = "0";
+  el.style.transform = "translateY(-10px)";
+  el.style.pointerEvents = "none";
+}
+addEventListener("pointerdown", hideIntro, { once: true });
+addEventListener("keydown", hideIntro, { once: true });
 
 (() => {
   const canvas = document.getElementById("game");

@@ -20,6 +20,7 @@
 import { definePlanetField } from "../../shared/elements/planet-field.ts";
 import { defineGameTopbar } from "../../shared/elements/game-topbar.ts";
 import { defineGameOver } from "../../shared/elements/game-over.ts";
+import { defineGameIntro } from "../shared/game-intro.ts";
 import { color } from "../../tokens.ts";
 import { submitScoreOnGameOver, fetchGlobalBest } from "../shared/score-submit.js";
 import { DIAGRAMS, TOOLS, mulberry32 } from "../../tools/shared/tools-data.js";
@@ -28,6 +29,7 @@ import { extractConstellation } from "../../tools/shared/constellation-source.js
 definePlanetField();
 defineGameTopbar();
 defineGameOver();
+defineGameIntro();
 
 const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 

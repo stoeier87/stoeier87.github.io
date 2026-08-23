@@ -35,41 +35,6 @@
   animation: galRadFlash 0.45s ease-in-out infinite;
 }
 
-/* ---- Intro card ---- */
-@keyframes galFadeIn {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-.intro-container {
-  position: fixed;
-  inset: 0;
-  z-index: 16;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  padding: 16px;
-}
-.intro {
-  pointer-events: auto;
-  text-align: center;
-  background: rgba(10, 14, 24, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 12px;
-  padding: 20px 24px;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  transition:
-    opacity 0.45s ease-out,
-    transform 0.45s ease-out;
-  animation: galFadeIn 1s ease-in-out;
-  max-width: min(420px, 100%);
-}
-
 /* ---- Pause ---- */
 
 /* ---- Game over ---- */
