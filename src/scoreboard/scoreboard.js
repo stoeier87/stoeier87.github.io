@@ -41,12 +41,13 @@ const db = getDatabase(app);
 /* Background — <st-planet-field> with the 12 zodiac signs instead of
    planets. `driven` because this page owns the one rAF loop below;
    `interactive` (set on the element in index.html) turns on hover, which
-   brightens the sign under the pointer and fires constellation-enter/leave
-   — picked up below to show its name and date range. `cursor-motion="rotate"`
-   rocks the whole sky a few degrees toward the pointer. */
+   brightens the sign under the pointer. The name/date tooltip that used to
+   follow the cursor is gone on purpose — the Hall of Stars page names every
+   sign properly, so the hover here is purely the glow.
+   `cursor-motion="rotate"` rocks the whole sky a few degrees toward the
+   pointer. */
 definePlanetField();
 const sky = document.getElementById("bg");
-const zodiacLabel = document.getElementById("zodiac-label");
 // Touch/narrow viewports (<640px) get a scattered, non-grid layout with
 // hover interactivity switched off entirely -- ambient background art, not
 // a UI element. Desktop is unchanged. Checked once at load rather than on
@@ -61,7 +62,7 @@ if (sky) {
     // actually matters -- tick() reads `this.interactive` fresh every frame
     // via hasAttribute, so this alone is what stops #updateHover() from
     // ever running: no grow-on-hover, no colour bloom past the 10% resting
-    // tint, no zodiac-label tooltip, no cursor:none.
+    // tint.
     sky.removeAttribute("interactive");
   }
   // Sparser and dimmer than the homepage default -- the 12 constellation
@@ -112,33 +113,6 @@ if (sky) {
     sky.tick(t);
     requestAnimationFrame(loop);
   });
-
-  if (zodiacLabel) {
-    // translate3d rather than left/top so this doesn't force layout on every
-    // pointermove -- it's the same technique the label was already using via
-    // Tailwind's -translate-x-1/2 before it switched to following the cursor.
-    addEventListener(
-      "pointermove",
-      (e) => {
-        zodiacLabel.style.transform = `translate3d(${e.clientX + 5}px, ${e.clientY - 5}px, 0)`;
-      },
-      { passive: true },
-    );
-    sky.addEventListener("constellation-enter", (e) => {
-      const { name, dateRange, symbol } = e.detail.constellation;
-      const label = symbol ? `${symbol} ${name}` : name;
-      zodiacLabel.textContent = dateRange ? `${label} · ${dateRange}` : label;
-      zodiacLabel.classList.remove("hidden");
-      // The floating label already names what's under the pointer, so the
-      // system arrow is just noise sitting on top of the growing/glowing
-      // shape -- hide it for the duration of the hover.
-      document.body.classList.add("zodiac-hover");
-    });
-    sky.addEventListener("constellation-leave", () => {
-      zodiacLabel.classList.add("hidden");
-      document.body.classList.remove("zodiac-hover");
-    });
-  }
 }
 
 const PREVIEW = 5;
