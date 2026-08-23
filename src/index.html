@@ -43,8 +43,46 @@
       shooting-stars
       aria-hidden="true"
     ></st-planet-field>
-    <div class="dotgrid" aria-hidden="true"></div>
-
+    <!-- <div class="dotgrid" aria-hidden="true"></div> -->
+<header class="topbar">
+      <ul class="pills" id="">
+        <li class="pill">
+              <a href="./about-me/">
+                <span class="arrow">
+                  <i class="fa-solid fa-user" style="color: #e03a2f"></i>
+                </span>
+                About Me
+              </a>
+            </li>
+            <li class="pill">
+              <a href="./tools/" >
+                <span class="arrow">
+                  <i class="fa-solid fa-diagram-project" style="color: #e03a2f"></i>
+                </span>
+                Tools
+              </a>
+            </li>
+            <li class="pill">
+              <a href="./arcade/" >
+              <span class="arrow">
+                  <i class="fa-solid fa-gamepad" style="color: #e03a2f"></i>
+                </span>
+                Arcade Games
+              </a>
+              </li>
+            <li class="pill">
+            <a href="./space-bar/" >
+                <span class="arrow">
+                  <i
+                    class="fa-solid fa-martini-glass-citrus"
+                    style="color: #e03a2f"
+                  ></i>
+                </span>
+                Space Bar
+              </a>
+            </li>
+          </ul>
+    </header>
     <div class="ufo" id="ufo" aria-hidden="true">
       <div class="beam"></div>
       <svg width="48" height="34" viewBox="0 0 48 34" fill="none">
@@ -67,45 +105,7 @@
       </svg>
     </div>
 
-    <header class="topbar">
-      <ul class="pills" id="">
-            <li>
-              <a class="pill" href="./about-me/">
-                <span class="arrow">
-                  <i class="fa-solid fa-user" style="color: #e03a2f"></i>
-                </span>
-                About Me
-              </a>
-            </li>
-            <li>
-              <a class="pill" href="./tools/">
-                <span class="arrow">
-                  <i class="fa-solid fa-diagram-project" style="color: #e03a2f"></i>
-                </span>
-                Tools
-              </a>
-            </li>
-            <li>
-              <a class="pill" href="./arcade/">
-                <span class="arrow">
-                  <i class="fa-solid fa-gamepad" style="color: #e03a2f"></i>
-                </span>
-                Arcade Games
-              </a>
-            </li>
-            <li>
-              <a class="pill" href="./space-bar/">
-                <span class="arrow">
-                  <i
-                    class="fa-solid fa-martini-glass-citrus"
-                    style="color: #e03a2f"
-                  ></i>
-                </span>
-                Space Bar
-              </a>
-            </li>
-          </ul>
-    </header>
+    
 
     <main>
       <!-- Scroll-rejsen: bogstaverne flyver ind og samler navnet,
@@ -117,66 +117,6 @@
             <span class="word red" data-word="1">FULLERTON</span>
             <span class="word" data-word="2">STØIER</span>
           </h1>
-          <nav class="contact prevent-select" id="contact" aria-label="Kontakt">
-            <ul class="pills">
-              <li>
-                <a class="pill" href="mailto:tobias@stoeier.dk">
-                  <span class="arrow"
-                    ><i
-                      class="fa-regular fa-envelope"
-                      style="color: #e03a2f"
-                    ></i
-                  ></span>
-                  Email
-                </a>
-              </li>
-              <li>
-                <a
-                  class="pill"
-                  href="https://dk.linkedin.com/in/stoeier"
-                  target="_blank"
-                  rel="noopener"
-                >
-                  <span class="arrow"
-                    ><i
-                      class="fa-brands fa-linkedin-in"
-                      style="color: #e03a2f"
-                    ></i
-                  ></span>
-                  LinkedIn
-                </a>
-              </li>
-              <li>
-                <a
-                  class="pill"
-                  href="https://instagram.com/stoeier"
-                  target="_blank"
-                  rel="noopener"
-                >
-                  <span class="arrow"
-                    ><i
-                      class="fa-brands fa-instagram"
-                      style="color: #e03a2f"
-                    ></i
-                  ></span>
-                  Instagram
-                </a>
-              </li>
-              <li>
-                <a
-                  class="pill"
-                  href="https://open.spotify.com/artist/1OrUsE9Nua3bqJKM6lPnDW"
-                  target="_blank"
-                  rel="noopener"
-                >
-                  <span class="arrow"
-                    ><i class="fa-brands fa-spotify" style="color: #e03a2f"></i
-                  ></span>
-                  Spotify
-                </a>
-              </li>
-            </ul>
-          </nav>
           <p class="hint" id="hint">
             <span class="arrow"
               ><i class="fa-solid fa-arrow-down-long"></i
@@ -187,12 +127,7 @@
       </div>
     </main>
 
-    <footer>
-      <a href="https://servicedesign.dk" target="_blank" rel="noopener"
-        >servicedesign.dk</a
-      >
-      <script type="module" src="./shared/version-badge.js"></script>
-    </footer>
+    <st-footer></st-footer>
 
     <script type="module" src="./script.js"></script>
     <script type="module" src="./easteregg.js"></script>

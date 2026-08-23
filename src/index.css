@@ -1,3 +1,4 @@
+@import "tailwindcss";
 /* Home page (index.html) styles — component layer.
    Design tokens (--color-*, --font-*) come from tailwind.css's @theme. */
 
@@ -25,6 +26,28 @@ a {
   text-decoration: none;
 }
 
+nav.contact {
+  @apply p-0 md:p-0;
+  .pills {
+    @apply flex justify-center gap-4 max-w-5xl z-4 fixed md:relative w-full m-4 mx-auto;
+    @apply flex-row md:flex-col md:flex-nowrap md:justify-center md:gap-6;
+    @apply bottom-1 md:bottom-auto md:top-auto;
+    .pill {
+      @apply w-auto md:w-full text-center p-4;
+      @apply bg-[rgba(2255,255,255,0.0)] md:bg-[rgba(13,20,36,0.52)] border-[1.5px] border-[rgba(255,255,255,0.0)] md:border-[rgba(255,255,255,0.4)] rounded-full;
+      @apply backdrop-blur-none md:backdrop-blur-sm;
+      & .arrow {
+        @apply mr-0 md:mr-2;
+        @apply text-lg md:text-sm;
+
+      }
+      .pill-label {
+        @apply hidden md:inline-block;
+      }
+    }
+  }
+}
+
 .ufo {
   position: fixed;
   left: 0;
@@ -37,6 +60,8 @@ a {
 html.ufo-on .ufo.live {
   opacity: 1;
 }
+
+
 
 .ufo .beam {
   position: absolute;
@@ -283,18 +308,10 @@ html.js-anim #stageName .word {
   }
 }
 
-.pills {
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1rem;
-  max-width: 60rem;
-  z-index: 4;
-  position: relative;
-  width: 100%;
-  margin: 10px auto;
-}
+/* .pills {
+  @apply flex-row justify-center gap-4 max-w-5xl z-4 relative w-full m-4 mx-auto;
+  @apply md:flex-col md:flex-nowrap md:justify-center md:gap-6;
+} */
 
 .pill {
   display: inline-block;
@@ -398,18 +415,6 @@ footer a:focus-visible {
 @media (max-width: 600px) {
   .name {
     letter-spacing: -0.01em;
-  }
-  /* Equal-width, single centred column of pill buttons on narrow screens.
-     Applies regardless of motion/parallax state — keep this. */
-  .pills {
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-    margin: 0 auto;
-  }
-  .pill {
-    width: min(300px, 78vw);
-    text-align: center;
   }
 }
 

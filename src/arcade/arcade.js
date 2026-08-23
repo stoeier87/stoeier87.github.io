@@ -1,6 +1,7 @@
 import { definePlanetField } from "../shared/elements/planet-field.ts";
 import { definePageHeader } from "../shared/elements/page-header.ts";
 import { defineHallNav } from "../shared/elements/hall-nav.ts";
+import { defineFooter } from "../shared/elements/footer.ts";
 import { CardPlanetRenderer } from "../shared/elements/card-planet-renderer.ts";
 import { color } from "../tokens.ts";
 import { GAMES } from "./shared/games-data.js";
@@ -8,6 +9,7 @@ import { GAMES } from "./shared/games-data.js";
 definePlanetField();
 definePageHeader();
 defineHallNav();
+defineFooter();
 
 /* The solar-system grid: one .planet-card per GAMES entry, in source order.
    Was 9 hand-copied blocks in index.html; only the copy differed between

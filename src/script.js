@@ -1,4 +1,5 @@
 import { definePlanetField } from "./shared/elements/planet-field.ts";
+import { defineFooter } from "./shared/elements/footer.ts";
 import { color } from "./tokens.ts";
 
 (function () {
@@ -6,6 +7,7 @@ import { color } from "./tokens.ts";
 
   document.documentElement.classList.add("js-anim");
   definePlanetField();
+  defineFooter();
 
   /**
    * The hash PRNG the letter scatter is seeded from. It used to live at the top

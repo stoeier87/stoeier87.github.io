@@ -268,7 +268,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ["@shared/elements/page-header.ts", "@shared/elements/hall-nav.ts"],
+    include: ["@shared/elements/page-header.ts", "@shared/elements/hall-nav.ts", "@shared/elements/footer.ts"],
   },
   server: {
     port: 3000,

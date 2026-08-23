@@ -16,10 +16,12 @@ import { GAMES } from "../arcade/shared/games-data.js";
 import { definePlanetField } from "../shared/elements/planet-field.ts";
 import { definePageHeader } from "../shared/elements/page-header.ts";
 import { defineHallNav } from "../shared/elements/hall-nav.ts";
+import { defineFooter } from "../shared/elements/footer.ts";
 import { ZODIAC_SIGNS, ZODIAC_SIGNS_SCATTERED } from "../shared/elements/zodiac-data.ts";
 
 definePageHeader();
 defineHallNav();
+defineFooter();
 
 const app = initializeApp(ARCADE_FIREBASE_CONFIG, "arcade-scoreboard");
 
