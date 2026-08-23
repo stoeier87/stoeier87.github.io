@@ -6,13 +6,11 @@ import {
 import {
   getDatabase,
   ref,
-  query,
-  orderByChild,
-  limitToLast,
   onValue,
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
 import { ARCADE_FIREBASE_CONFIG } from "../arcade/shared/firebase-config.js";
 import { GAMES } from "../arcade/shared/games-data.js";
+import { currentPeriod } from "../shared/zodiac-periods.js";
 import { definePlanetField } from "../shared/elements/planet-field.ts";
 import { definePageHeader } from "../shared/elements/page-header.ts";
 import { defineHallNav } from "../shared/elements/hall-nav.ts";
@@ -117,6 +115,42 @@ if (sky) {
 
 const PREVIEW = 5;
 
+/* ── The running zodiac period ─────────────────────────────────────────
+   The board shows only scores set during the period running right now,
+   computed in Europe/Copenhagen (zodiac-periods.js — never a fixed UTC
+   offset) at load, and re-checked on visibilitychange so a tab left open
+   overnight flips to the new empty period on its own. This is a display
+   filter and nothing else: no score is ever deleted or rewritten to make
+   the board reset, so the Hall of Stars can always recompute any past
+   period from the raw rows. */
+let period = currentPeriod();
+
+const periodLine = document.getElementById("period-line");
+const rerenderers = [];
+
+function renderPeriodLine() {
+  if (periodLine) periodLine.textContent = period.label;
+}
+renderPeriodLine();
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) return;
+  const now = currentPeriod();
+  if (now.startUtcMs !== period.startUtcMs) {
+    period = now;
+    renderPeriodLine();
+    for (const rerender of rerenderers) rerender();
+  }
+});
+
+/* A row counts only if its createdAt is a real timestamp inside the
+   running period. Rows without a usable timestamp are excluded from all
+   period logic — never guessed at, never deleted, simply not shown. */
+function inCurrentPeriod(row) {
+  const t = Number(row?.createdAt);
+  return Number.isFinite(t) && t >= period.startUtcMs && t < period.endUtcMsExclusive;
+}
+
 function escapeHtml(str) {
   return String(str)
     .replaceAll("&", "&amp;")
@@ -170,76 +204,55 @@ function createCard(game) {
       </table>
     </div>`;
 
-  let expanded = false;
-  let allRows = [];
-
   const topScoreEl = card.querySelector(".top-score");
   const tbody = card.querySelector(".board-tbody");
 
-  const scoresRef = ref(db, `arcade/scores/${game.key}`);
-  const topQuery = query(scoresRef, orderByChild("score"), limitToLast(50));
+  /* Two live sources per game: the planet key every game submits under
+     since the planet-URL rename, plus the game's older `gamekey` path
+     where pre-rename rows (and any straggler submit) still live. The
+     merge is read-side only — rows are combined for display, never moved
+     between paths.
 
-  onValue(
-    topQuery,
-    (snapshot) => {
-      allRows = [];
-      snapshot.forEach((child) => {
-        allRows.push(child.val());
-      });
-      allRows.sort((a, b) => b.score - a.score || a.createdAt - b.createdAt);
+     No orderByChild/limitToLast any more: an all-time top-50 by score can
+     miss every row of a young period, and the filter below needs the
+     period's rows regardless of their all-time rank. Row counts here are
+     small enough that reading the path whole is the correct simple thing. */
+  const paths = game.gamekey === game.key ? [game.key] : [game.key, game.gamekey];
+  const rowsByPath = paths.map(() => []);
 
-      console.log(
-        `[${game.key}] exists:${snapshot.exists()} size:${snapshot.size} rows:${allRows.length}`,
-        snapshot.val(),
-      );
-      card.classList.remove("is-loading");
-
-      if (!allRows.length) {
-        // card.style.display = "none";
-        return;
-      }
-
-      card.style.display = "";
-      topScoreEl.textContent = Number(allRows[0].score).toLocaleString();
-
-      // Update expand button if needed
-      // updateExpandBtn();
-      const html = renderRows(allRows, expanded);
-      console.log(
-        `[${game.key}] rendering ${allRows.length} rows, html length: ${html.length}, preview rows in html: ${(html.match(/<tr/g) || []).length}`,
-      );
-      tbody.innerHTML = html;
-    },
-    (err) => {
-      card.classList.remove("is-loading");
-      tbody.innerHTML = `<tr class="empty-row"><td colspan="3">Error: ${escapeHtml(err.message)}</td></tr>`;
-    },
-  );
-
-  function updateExpandBtn() {
-    const header = card.querySelector(".board-card-header");
-    let btn = header.querySelector(".expand-btn");
-
-    if (allRows.length <= PREVIEW) {
-      if (btn) btn.remove();
+  const render = () => {
+    const rows = rowsByPath
+      .flat()
+      .filter(inCurrentPeriod)
+      .sort((a, b) => b.score - a.score || a.createdAt - b.createdAt);
+    if (!rows.length) {
+      topScoreEl.textContent = "—";
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="3">unclaimed</td></tr>`;
       return;
     }
+    topScoreEl.textContent = Number(rows[0].score).toLocaleString();
+    tbody.innerHTML = renderRows(rows, false);
+  };
+  rerenderers.push(render);
 
-    if (!btn) {
-      btn = document.createElement("button");
-      btn.className = "expand-btn";
-      header.appendChild(btn);
-      btn.addEventListener("click", () => {
-        expanded = !expanded;
-        tbody.innerHTML = renderRows(allRows, expanded);
-        btn.textContent = expanded
-          ? `▲ Top ${PREVIEW}`
-          : `▼ All ${allRows.length}`;
-      });
-    }
-
-    btn.textContent = expanded ? `▲ Top ${PREVIEW}` : `▼ All ${allRows.length}`;
-  }
+  paths.forEach((path, i) => {
+    onValue(
+      ref(db, `arcade/scores/${path}`),
+      (snapshot) => {
+        const rows = [];
+        snapshot.forEach((child) => {
+          rows.push(child.val());
+        });
+        rowsByPath[i] = rows;
+        card.classList.remove("is-loading");
+        render();
+      },
+      (err) => {
+        card.classList.remove("is-loading");
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="3">Error: ${escapeHtml(err.message)}</td></tr>`;
+      },
+    );
+  });
 
   return card;
 }
