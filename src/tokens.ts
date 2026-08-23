@@ -111,6 +111,26 @@ export const color = {
     accent: "#6e8fff",
     line: "rgba(60,75,130,0.35)",
   },
+
+  /**
+   * Hall of Stars scene. Canvas-only — consumed from JS via this file, the
+   * same route the planet palette takes into <st-planet-field>. Lives inside
+   * the scoreboard subsystem's darker drift, not the base palette.
+   */
+  hall: {
+    ocean: "#123a63",
+    oceanDeep: "#0b2544",
+    land: "#4f9d69",
+    landShade: "#35754d",
+    ice: "#dcebf5",
+    night: "#04080f",
+    cityLight: "#ffcf7a",
+    atmosphere: "#9fc8ff",
+    cloud: "#e8f2fb",
+    nebulaBlue: "#24386e",
+    nebulaRed: "#58203a",
+    starLine: "#cfd8ff",
+  },
 } as const;
 
 /* ── Type ───────────────────────────────────────────────────────────── */
@@ -277,6 +297,19 @@ export const THEME_MIRROR: Record<string, string> = {
   "color-scoreboard-muted": color.scoreboard.muted,
   "color-scoreboard-accent": color.scoreboard.accent,
   "color-scoreboard-line": color.scoreboard.line,
+
+  "color-hall-ocean": color.hall.ocean,
+  "color-hall-ocean-deep": color.hall.oceanDeep,
+  "color-hall-land": color.hall.land,
+  "color-hall-land-shade": color.hall.landShade,
+  "color-hall-ice": color.hall.ice,
+  "color-hall-night": color.hall.night,
+  "color-hall-city-light": color.hall.cityLight,
+  "color-hall-atmosphere": color.hall.atmosphere,
+  "color-hall-cloud": color.hall.cloud,
+  "color-hall-nebula-blue": color.hall.nebulaBlue,
+  "color-hall-nebula-red": color.hall.nebulaRed,
+  "color-hall-star-line": color.hall.starLine,
 
   "font-display": font.display,
   "font-mono": font.mono,

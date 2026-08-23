@@ -36,7 +36,13 @@ export const ZODIAC_PERIODS = [
   { name: "Virgo", constellation: "Virgo", symbol: "♍", start: [8, 23], end: [9, 22] },
   { name: "Libra", constellation: "Libra", symbol: "♎", start: [9, 23], end: [10, 22] },
   { name: "Scorpio", constellation: "Scorpius", symbol: "♏", start: [10, 23], end: [11, 22] },
-  { name: "Sagittarius", constellation: "Sagittarius", symbol: "♐", start: [11, 23], end: [12, 21] },
+  {
+    name: "Sagittarius",
+    constellation: "Sagittarius",
+    symbol: "♐",
+    start: [11, 23],
+    end: [12, 21],
+  },
   { name: "Capricorn", constellation: "Capricornus", symbol: "♑", start: [12, 22], end: [1, 20] },
   { name: "Aquarius", constellation: "Aquarius", symbol: "♒", start: [1, 21], end: [2, 19] },
   { name: "Pisces", constellation: "Pisces", symbol: "♓", start: [2, 20], end: [3, 20] },
@@ -45,8 +51,18 @@ export const ZODIAC_PERIODS = [
 const CAPRICORN = ZODIAC_PERIODS.findIndex((p) => p.name === "Capricorn");
 
 const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 /**

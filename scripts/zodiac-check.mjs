@@ -101,7 +101,10 @@ for (let i = 0; i < ZODIAC_PERIODS.length; i++) {
   assert(inStart.index === i, `${nameOf(i)} window start must resolve to ${nameOf(i)}`);
   assert(inEnd.index === i, `${nameOf(i)} window last ms must resolve to ${nameOf(i)}`);
   const outEnd = periodOfTimestamp(w.endUtcMsExclusive);
-  assert(outEnd.index === (i + 1) % 12, `${nameOf(i)} window end must open ${nameOf((i + 1) % 12)}`);
+  assert(
+    outEnd.index === (i + 1) % 12,
+    `${nameOf(i)} window end must open ${nameOf((i + 1) % 12)}`,
+  );
 }
 /* The Capricorn window crosses the year: 2026's runs 22 Dec 2026 → 21 Jan 2027. */
 const cap = periodWindowUtc(9, 2026);
