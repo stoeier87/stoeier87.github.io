@@ -189,7 +189,7 @@ function createCard(game) {
     <div class="board-card-header">
       <div class="game-labels">
         <h2>${escapeHtml(game.label)}</h2>
-        <a href="/arcade/${escapeHtml(game.key)}" class="game-key">(${escapeHtml(game.gameLabel)})</a>
+        <a href="../arcade/${escapeHtml(game.key)}/" class="game-key">(${escapeHtml(game.gameLabel)})</a>
       </div>
       <span class="top-score">—</span>
     </div>

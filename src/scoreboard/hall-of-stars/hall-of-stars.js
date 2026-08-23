@@ -83,7 +83,10 @@ function normalizePattern({ name, stars, edges }) {
 
 /* ── State ─────────────────────────────────────────────────────────── */
 
-const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+/* `reduced` is live, not a load-time snapshot — see the change listener
+   below the rAF loop, which parks or restarts the scene mid-session. */
+const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+let reduced = motionQuery.matches;
 const SLOT = (Math.PI * 2) / 12;
 
 const now = currentPeriod();
@@ -95,7 +98,11 @@ let ringAngle = -activeIndex * SLOT; // slot k is front when ringAngle ≡ -k·S
 let angVel = 0;
 let dragging = false;
 let forcedSlot = null; // tap-to-rotate / arrow target
-let lastInteraction = -Infinity;
+/* sceneT starts at 0, so 0 here gives the visitor the same ten quiet
+   seconds on the running period at load that any touch buys later —
+   with -Infinity the auto-turn started immediately and had drifted the
+   hall off the current sign before anyone had read it. */
+let lastInteraction = 0;
 let lineDraw = reduced ? 1 : 0; // active constellation line-draw progress
 let sceneT = 0;
 
@@ -899,6 +906,26 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
+/* Flipping the OS motion setting mid-session takes effect immediately:
+   into reduced, the ring settles on the active slot and holds one static
+   finished frame; out of it, the loop simply resumes. */
+motionQuery.addEventListener("change", () => {
+  reduced = motionQuery.matches;
+  if (reduced) {
+    cancelAnimationFrame(rafId);
+    rafId = 0;
+    last = 0;
+    dragging = false;
+    angVel = 0;
+    forcedSlot = null;
+    lineDraw = 1;
+    ringAngle = -activeIndex * SLOT;
+    renderScene();
+  } else if (!document.hidden && !rafId) {
+    rafId = requestAnimationFrame(frame);
+  }
+});
+
 /* ── Pointer interaction — inside the globe area only ──────────────── */
 
 let downX = 0;
@@ -907,19 +934,22 @@ let downT = 0;
 let lastX = 0;
 let moveV = 0;
 
-if (!reduced) {
-  el.scene.addEventListener("pointerdown", (e) => {
-    dragging = true;
-    lastInteraction = sceneT;
-    downX = lastX = e.clientX;
-    downY = e.clientY;
-    downT = sceneT;
-    moveV = 0;
-    angVel = 0;
-    forcedSlot = null;
-    el.scene.setPointerCapture(e.pointerId);
-  });
-  el.scene.addEventListener("pointermove", (e) => {
+/* Handlers are attached unconditionally and gated on the live `reduced`
+   flag — under reduced motion the arrows are the only navigation, so the
+   pointerdown guard is what turns dragging off. */
+el.scene.addEventListener("pointerdown", (e) => {
+  if (reduced) return;
+  dragging = true;
+  lastInteraction = sceneT;
+  downX = lastX = e.clientX;
+  downY = e.clientY;
+  downT = sceneT;
+  moveV = 0;
+  angVel = 0;
+  forcedSlot = null;
+  el.scene.setPointerCapture(e.pointerId);
+});
+el.scene.addEventListener("pointermove", (e) => {
     if (!dragging) return;
     lastInteraction = sceneT;
     const dx = e.clientX - lastX;
@@ -928,8 +958,8 @@ if (!reduced) {
     const dTheta = dx / (RING_R * 1.15);
     ringAngle += dTheta;
     moveV = moveV * 0.6 + (dTheta / Math.max(0.001, 1 / 60)) * 0.4;
-  });
-  const release = (e) => {
+});
+const release = (e) => {
     if (!dragging) return;
     dragging = false;
     lastInteraction = sceneT;
@@ -950,22 +980,21 @@ if (!reduced) {
       moveV = 0;
     }
     angVel = Math.max(-6, Math.min(6, moveV));
-  };
-  el.scene.addEventListener("pointerup", release);
-  el.scene.addEventListener("pointercancel", () => {
-    dragging = false;
-    lastInteraction = sceneT;
-  });
-  /* touch-action:none handles it in every modern browser; the explicit
-     preventDefault is the belt to those braces (3F) */
-  el.scene.addEventListener(
-    "touchmove",
-    (e) => {
-      if (dragging) e.preventDefault();
-    },
-    { passive: false },
-  );
-}
+};
+el.scene.addEventListener("pointerup", release);
+el.scene.addEventListener("pointercancel", () => {
+  dragging = false;
+  lastInteraction = sceneT;
+});
+/* touch-action:none handles it in every modern browser; the explicit
+   preventDefault is the belt to those braces (3F) */
+el.scene.addEventListener(
+  "touchmove",
+  (e) => {
+    if (dragging) e.preventDefault();
+  },
+  { passive: false },
+);
 
 /* ── Boot ──────────────────────────────────────────────────────────── */
 
