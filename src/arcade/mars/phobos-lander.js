@@ -2,6 +2,11 @@ import {
   submitScoreOnGameOver,
   fetchGlobalBest,
 } from "../shared/score-submit.js";
+import { defineGameTopbar } from "../../shared/elements/game-topbar.ts";
+import { defineGameOver } from "../../shared/elements/game-over.ts";
+
+defineGameTopbar();
+defineGameOver();
 
 (() => {
   const canvas = document.getElementById("game");

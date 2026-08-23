@@ -3,6 +3,11 @@ import {
   fetchGlobalBest,
 } from "../shared/score-submit.js";
 import { PLANETS, drawPlanet } from "../shared/starfield.js";
+import { defineGameTopbar } from "../../shared/elements/game-topbar.ts";
+import { defineGameOver } from "../../shared/elements/game-over.ts";
+
+defineGameTopbar();
+defineGameOver();
 
 (() => {
   const canvas = document.getElementById("game");

@@ -12,10 +12,14 @@
  */
 
 import { definePlanetField } from "../../shared/elements/planet-field.ts";
+import { defineGameTopbar } from "../../shared/elements/game-topbar.ts";
+import { defineGameOver } from "../../shared/elements/game-over.ts";
 import { color } from "../../tokens.ts";
 import { submitScoreOnGameOver, fetchGlobalBest } from "../shared/score-submit.js";
 
 definePlanetField();
+defineGameTopbar();
+defineGameOver();
 
 const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
