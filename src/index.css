@@ -116,7 +116,7 @@ header.topbar {
 
 .topbar {
   position: fixed;
-  top: 0;
+  top: 2rem;
   left: 0;
   right: 0;
   z-index: 20;
@@ -125,7 +125,7 @@ header.topbar {
   justify-content: center;
   gap: 0.6em;
   flex-wrap: wrap;
-  padding: 1.1rem 1.25rem;
+  /* padding: 1.1rem 1.25rem; */
   text-align: center;
   background: linear-gradient(to bottom, var(--color-bg) 20%, transparent);
 }
@@ -288,7 +288,7 @@ html.js-anim #stageName .word {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0.75rem;
+  gap: 1rem;
   max-width: 60rem;
   z-index: 4;
   position: relative;

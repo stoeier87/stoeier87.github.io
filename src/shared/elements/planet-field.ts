@@ -50,6 +50,7 @@ import {
   Group,
   Line,
   LineBasicMaterial,
+  LineSegments,
   Mesh,
   MeshBasicMaterial,
   MeshLambertMaterial,
@@ -71,6 +72,7 @@ import {
   glowTexture,
   rand,
   ringTexture,
+  satelliteTexture,
   streakTexture,
   surfaceTexture,
 } from "./planet-textures.ts";
@@ -123,9 +125,111 @@ export const DEFAULT_STAR_LAYERS: StarLayer[] = [
   { density: 26000, sizeMin: 1.7, sizeMax: 2.5, parallax: 0.55, alpha: 0.9 },
 ];
 
+/**
+ * The scene's three.js lights, exposed as data instead of the three hardcoded
+ * numbers a `DirectionalLight`/`AmbientLight` pair used to be. Every field is
+ * optional and merges onto `DEFAULT_LIGHTING` — the homepage's original
+ * upper-left key light plus a flat ambient fill, unlit rim — so a page that
+ * never touches `lighting` looks exactly as it did. A page that does gets a
+ * different mood for free: `Vector3`-shaped positions and hex colours are the
+ * only two knobs a three.js light has, so that's the whole surface.
+ */
+export interface LightingSpec {
+  keyColor?: string | number;
+  keyIntensity?: number;
+  keyPosition?: { x: number; y: number; z: number };
+  ambientColor?: string | number;
+  ambientIntensity?: number;
+  /**
+   * A second directional light, off by default (intensity 0). Real skies
+   * read as flat under one light plus flat ambient -- a rim light from the
+   * opposite side is the cheap trick that makes a sphere look like it is
+   * sitting in a lit volume rather than a flat disc with a gradient painted
+   * on it. Give it a cool tint against a warm key (or vice versa) for the
+   * clearest "two light sources in this universe" read.
+   */
+  rimColor?: string | number;
+  rimIntensity?: number;
+  rimPosition?: { x: number; y: number; z: number };
+  /**
+   * Radians/second the rim light revolves around `rimPosition`'s own
+   * distance from origin, z held fixed. 0 (default) keeps it parked at
+   * `rimPosition`. A second static corner still reads as "two lights", but a
+   * slowly moving one reads as a second star actually orbiting the scene --
+   * the corners themselves become the diversity instead of one fixed pick.
+   * Off entirely under prefers-reduced-motion, same as every other motion
+   * in this element.
+   */
+  rimOrbitSpeed?: number;
+  /**
+   * Radians the rim light swings off `rimPosition`'s angle at full pointer
+   * deflection (pointer at the viewport edge), added on top of any orbit.
+   * 0 (default) leaves the light indifferent to the pointer. Reuses the same
+   * pointer tracking `interactive`/`cursor-motion` already set up -- no
+   * pointer listener of its own -- and eases in/out and relaxes to 0 when
+   * the pointer leaves, exactly like `cursorMotion`. Off under
+   * prefers-reduced-motion, same as every other motion in this element.
+   */
+  rimFollowPointer?: number;
+}
+
+const DEFAULT_LIGHTING: Required<LightingSpec> = {
+  keyColor: 0xffffff,
+  keyIntensity: 2.4,
+  // Upper left, reproducing the highlight the 2D gradient faked by
+  // offsetting its centre to (x - 0.35r, y - 0.35r).
+  keyPosition: { x: -0.55, y: 0.5, z: 1 },
+  ambientColor: 0xffffff,
+  ambientIntensity: 0.35,
+  rimColor: 0xffffff,
+  rimIntensity: 0,
+  rimPosition: { x: 0.6, y: -0.35, z: 0.5 },
+  rimOrbitSpeed: 0,
+  rimFollowPointer: 0,
+};
+
 export interface PlanetEventDetail {
   index: number;
   planet: PlanetSpec;
+}
+
+/**
+ * A star-sign figure — points plus the edges connecting them into its shape.
+ * Star coordinates are local unit space, roughly -1..1; `scale`/`px`/`py`
+ * position and size the figure on screen (px/py normalized 0..1).
+ */
+export interface ConstellationSpec {
+  name: string;
+  dateRange?: string;
+  /** Unicode glyph, e.g. "♈" for Aries. Purely decorative -- optional. */
+  symbol?: string;
+  /** Star/line tint, `#rrggbb`. Defaults to white when omitted. */
+  color?: string;
+  stars: Array<{ x: number; y: number }>;
+  edges: Array<[number, number]>;
+  px: number;
+  py: number;
+  scale: number;
+  alpha: number;
+  /** Parallax factor, same convention as StarLayer.parallax. */
+  pf: number;
+  seed: number;
+  /**
+   * Same convention as `PlanetSpec.depth`: pixels of fake-perspective depth,
+   * positive = closer (bigger), negative = farther (smaller), applied each
+   * frame as `ZF / (ZF - depth)` on top of the baked-in `scale`. Optional,
+   * defaults to 0 (no extra depth scaling) -- the orthographic camera never
+   * changes apparent size from a raw z position the way a perspective camera
+   * would, so this fake-perspective factor is how planets get real depth and
+   * constellations can too, rather than a group.position.z that would do
+   * nothing visually on its own.
+   */
+  depth?: number;
+}
+
+export interface ConstellationEventDetail {
+  index: number;
+  constellation: ConstellationSpec;
 }
 
 /* ============ Star shader ============ */
@@ -155,6 +259,7 @@ const STAR_VERT = /* glsl */ `
 `;
 
 const STAR_FRAG = /* glsl */ `
+  uniform vec3 uColor;
   varying float vAlpha;
   void main() {
     vec2 d = gl_PointCoord - vec2(0.5);
@@ -162,7 +267,7 @@ const STAR_FRAG = /* glsl */ `
     if (dist > 0.25) discard;
     // Soften the rim so a 1px star does not read as a square.
     float edge = smoothstep(0.25, 0.10, dist);
-    gl_FragColor = vec4(1.0, 1.0, 1.0, vAlpha * edge);
+    gl_FragColor = vec4(uColor, vAlpha * edge);
   }
 `;
 
@@ -170,12 +275,17 @@ const STAR_FRAG = /* glsl */ `
 
 const DEG = Math.PI / 180;
 
+// Ambient cursor-motion magnitude caps, either axis. Kept small on purpose --
+// this is a background rocking or drifting a little, not a 3D toy.
+const TILT_MAX = 3.5 * DEG; // radians, for cursor-motion="rotate"
+const SHIFT_MAX = 18; // world units (~= CSS px at z=0), for cursor-motion="translate"
+
 /**
  * Focal depth: the Z distance at which one world unit equals one screen pixel.
  * The camera sits at z = ZF; objects at z = 0 are pixel-exact. Positive depth
  * values (closer) scale up; negative values (farther) scale down.
  */
-const ZF = 1000;
+const ZF = 2000;
 
 export class PlanetFieldElement extends HTMLElement {
   /* --- host-facing state --- */
@@ -186,18 +296,27 @@ export class PlanetFieldElement extends HTMLElement {
   #journeyEnd = 0;
   #drift = 0;
   #focusY = 0.5;
+  #lighting: Required<LightingSpec> = { ...DEFAULT_LIGHTING };
 
   /* --- three.js --- */
   #canvas: HTMLCanvasElement | null = null;
   #renderer: WebGLRenderer | null = null;
   #scene: Scene | null = null;
   #camera: OrthographicCamera | null = null;
+  #keyLight: DirectionalLight | null = null;
+  #ambientLight: AmbientLight | null = null;
+  #rimLight: DirectionalLight | null = null;
+  #rimPointerAngle = 0;
   #starGroups: Group[] = [];
   #starMaterials: ShaderMaterial[] = [];
+  #constellations: ConstellationSpec[] = [];
+  #constellationGroups: Group[] = [];
+  #hoveredConstellation = -1;
   #bodies: PlanetBody[] = [];
   #traffic: SkyTraffic | null = null;
   #glow: CanvasTexture | null = null;
   #streak: CanvasTexture | null = null;
+  #satelliteGlow: CanvasTexture | null = null;
   /** A single extra planet body shown large and centred on card hover. */
   #featured: PlanetBody | null = null;
   #featuredAlpha = 0;
@@ -209,6 +328,15 @@ export class PlanetFieldElement extends HTMLElement {
   #panYTarget = 0;
   #travelIndex = -1;
   #raycaster = new Raycaster();
+  // Ambient cursor-motion (cursorMotion): rocks or shifts the whole scene
+  // toward the pointer, independent of #panX/#panY (which only move when
+  // something is hovered/travelled-to via #travelIndex). Both pairs ease
+  // like panX/panY does, and relax back to 0 the moment the pointer leaves,
+  // cursorMotion is off/switched to the other mode, or reduced-motion is on.
+  #tiltX = 0;
+  #tiltY = 0;
+  #shiftX = 0;
+  #shiftY = 0;
   #pointer = new Vector2(-10, -10);
   #pointerInside = false;
   #hovered = -1;
@@ -242,6 +370,16 @@ export class PlanetFieldElement extends HTMLElement {
   set starLayers(value: StarLayer[]) {
     this.#starLayers = Array.isArray(value) && value.length ? value : DEFAULT_STAR_LAYERS;
     if (this.#scene) this.#buildStars();
+    this.#requestStaticFrame();
+  }
+
+  /** Zodiac-sign-style figures drawn over the star field, hoverable like planets. */
+  get constellations(): ConstellationSpec[] {
+    return this.#constellations;
+  }
+  set constellations(value: ConstellationSpec[]) {
+    this.#constellations = Array.isArray(value) ? value : [];
+    if (this.#scene) this.#buildConstellations();
     this.#requestStaticFrame();
   }
 
@@ -300,6 +438,58 @@ export class PlanetFieldElement extends HTMLElement {
     this.#focusY = Number.isFinite(value) ? value : 0.5;
   }
 
+  /**
+   * The scene's key/ambient/rim lights. Assigning merges onto the current
+   * values (so `sky.lighting = { rimIntensity: 1.1 }` touches only the rim)
+   * and applies immediately if the scene already exists.
+   */
+  get lighting(): Required<LightingSpec> {
+    return this.#lighting;
+  }
+  set lighting(value: LightingSpec) {
+    this.#lighting = { ...this.#lighting, ...value };
+    this.#applyLighting();
+    this.#requestStaticFrame();
+  }
+
+  #applyLighting(): void {
+    const l = this.#lighting;
+    if (this.#keyLight) {
+      this.#keyLight.color.set(l.keyColor);
+      this.#keyLight.intensity = l.keyIntensity;
+      this.#keyLight.position.set(l.keyPosition.x, l.keyPosition.y, l.keyPosition.z);
+    }
+    if (this.#ambientLight) {
+      this.#ambientLight.color.set(l.ambientColor);
+      this.#ambientLight.intensity = l.ambientIntensity;
+    }
+    if (this.#rimLight) {
+      this.#rimLight.color.set(l.rimColor);
+      this.#rimLight.intensity = l.rimIntensity;
+      this.#rimLight.position.set(l.rimPosition.x, l.rimPosition.y, l.rimPosition.z);
+    }
+  }
+
+  /**
+   * Sweeps the rim light around its own radius: `rimOrbitSpeed` for the
+   * ambient drift, `rimFollowPointer` layered on top for a pointer-driven
+   * swing that eases toward the pointer's x position and relaxes back to 0
+   * once it leaves, exactly like `#updatePointerMotion`'s tilt/shift.
+   */
+  #updateRimOrbit(dt: number): void {
+    const l = this.#lighting;
+    if (!this.#rimLight || (!l.rimOrbitSpeed && !l.rimFollowPointer)) return;
+    const { x, y, z } = l.rimPosition;
+    const radius = Math.hypot(x, y);
+    if (radius === 0) return;
+
+    const target = l.rimFollowPointer && this.#pointerInside ? this.#pointer.x * l.rimFollowPointer : 0;
+    this.#rimPointerAngle += (target - this.#rimPointerAngle) * Math.min(1, dt * 2);
+
+    const angle = Math.atan2(y, x) + this.#elapsed * l.rimOrbitSpeed + this.#rimPointerAngle;
+    this.#rimLight.position.set(Math.cos(angle) * radius, Math.sin(angle) * radius, z);
+  }
+
   /** True when the host page drives the loop and calls tick() itself. */
   get driven(): boolean {
     return this.hasAttribute("driven");
@@ -308,6 +498,19 @@ export class PlanetFieldElement extends HTMLElement {
   /** True when planets respond to hover and click. */
   get interactive(): boolean {
     return this.hasAttribute("interactive");
+  }
+
+  /**
+   * Ambient pointer-following motion, independent of `interactive` (which is
+   * about hover/click on planets, not this). `"rotate"` rocks the whole scene
+   * a few degrees toward the cursor; `"translate"` shifts it a few pixels
+   * instead. Anything else, including the attribute being absent, is off.
+   * Not `drift` -- that name is already taken by the pixels/second
+   * auto-scroll rate below.
+   */
+  get cursorMotion(): "rotate" | "translate" | "" {
+    const value = this.getAttribute("cursor-motion");
+    return value === "rotate" || value === "translate" ? value : "";
   }
 
   /**
@@ -327,7 +530,7 @@ export class PlanetFieldElement extends HTMLElement {
   }
 
   static get observedAttributes(): string[] {
-    return ["planets", "star-layers", "drift"];
+    return ["planets", "star-layers", "constellations", "drift"];
   }
 
   attributeChangedCallback(name: string, _old: string | null, value: string | null): void {
@@ -335,6 +538,8 @@ export class PlanetFieldElement extends HTMLElement {
     try {
       if (name === "planets") this.planets = JSON.parse(value) as PlanetSpec[];
       else if (name === "star-layers") this.starLayers = JSON.parse(value) as StarLayer[];
+      else if (name === "constellations")
+        this.constellations = JSON.parse(value) as ConstellationSpec[];
       else if (name === "drift") this.drift = Number.parseFloat(value);
     } catch {
       // A malformed attribute must not take the page down with it. The element
@@ -378,12 +583,14 @@ export class PlanetFieldElement extends HTMLElement {
     this.#camera.position.z = ZF;
     this.#glow = glowTexture();
 
-    // Light from the upper left, reproducing the highlight the 2D gradient
-    // faked by offsetting its centre to (x - 0.35r, y - 0.35r).
-    const key = new DirectionalLight(0xffffff, 2.4);
-    key.position.set(-0.55, 0.5, 1);
-    this.#scene.add(key);
-    this.#scene.add(new AmbientLight(0xffffff, 0.35));
+    this.#keyLight = new DirectionalLight();
+    this.#scene.add(this.#keyLight);
+    this.#ambientLight = new AmbientLight();
+    this.#scene.add(this.#ambientLight);
+    // Off by default (rimIntensity 0) -- see LightingSpec.rimIntensity.
+    this.#rimLight = new DirectionalLight();
+    this.#scene.add(this.#rimLight);
+    this.#applyLighting();
 
     this.#motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     this.#reduced = this.#motionQuery.matches;
@@ -391,19 +598,23 @@ export class PlanetFieldElement extends HTMLElement {
 
     if (this.satellites > 0 || this.hasAttribute("shooting-stars")) {
       this.#streak = streakTexture();
-      this.#traffic = new SkyTraffic(this.#streak, this.#glow, this.satellites);
+      this.#satelliteGlow = satelliteTexture();
+      this.#traffic = new SkyTraffic(this.#streak, this.#satelliteGlow, this.satellites);
       this.#traffic.addTo(this.#scene);
     }
 
     this.#measure();
     this.#buildStars();
     this.#buildPlanets();
+    this.#buildConstellations();
     this.#traffic?.resize(this.#w, this.#h, performance.now());
 
     window.addEventListener("resize", this.#onResize, { passive: true });
-    if (this.interactive) {
+    if (this.interactive || this.cursorMotion) {
       document.addEventListener("pointermove", this.#onPointerMove, { passive: true });
       document.addEventListener("pointerleave", this.#onPointerLeave, { passive: true });
+    }
+    if (this.interactive) {
       document.addEventListener("click", this.#onClick);
     }
 
@@ -422,6 +633,7 @@ export class PlanetFieldElement extends HTMLElement {
 
     this.#disposeStars();
     this.#disposePlanets();
+    this.#disposeConstellations();
     this.#featured?.dispose();
     this.#featured = null;
     this.#traffic?.dispose();
@@ -430,10 +642,15 @@ export class PlanetFieldElement extends HTMLElement {
     this.#glow = null;
     this.#streak?.dispose();
     this.#streak = null;
+    this.#satelliteGlow?.dispose();
+    this.#satelliteGlow = null;
     this.#renderer?.dispose();
     this.#renderer = null;
     this.#scene = null;
     this.#camera = null;
+    this.#keyLight = null;
+    this.#ambientLight = null;
+    this.#rimLight = null;
     this.#canvas?.remove();
     this.#canvas = null;
   }
@@ -457,10 +674,13 @@ export class PlanetFieldElement extends HTMLElement {
 
     const scroll = this.#scroll + this.#drift * this.#elapsed;
     this.#updateStars(scroll);
+    this.#updateConstellations(dt);
     this.#updatePlanets(scroll, dt);
     this.#updateFeatured(dt);
     if (!this.#reduced) this.#traffic?.update(dt, this.#elapsed, time);
     if (this.interactive) this.#updateHover();
+    if (!this.#reduced) this.#updatePointerMotion(dt);
+    if (!this.#reduced) this.#updateRimOrbit(dt);
 
     this.#renderer.render(this.#scene, this.#camera);
   }
@@ -517,6 +737,7 @@ export class PlanetFieldElement extends HTMLElement {
   resize(): void {
     this.#measure();
     this.#buildStars();
+    this.#buildConstellations();
     this.#traffic?.resize(this.#w, this.#h, performance.now());
     this.#requestStaticFrame();
   }
@@ -595,6 +816,7 @@ export class PlanetFieldElement extends HTMLElement {
   #onPointerLeave = (): void => {
     this.#pointerInside = false;
     this.#setHovered(-1);
+    this.#setHoveredConstellation(-1);
   };
 
   #onClick = (): void => {
@@ -655,6 +877,7 @@ export class PlanetFieldElement extends HTMLElement {
           uDpr: { value: this.#dpr },
           uAlpha: { value: def.alpha },
           uTwinkle: { value: this.#reduced ? 0 : 1 },
+          uColor: { value: new Color(0xffffff) },
         },
         vertexShader: STAR_VERT,
         fragmentShader: STAR_FRAG,
@@ -700,6 +923,148 @@ export class PlanetFieldElement extends HTMLElement {
       group.position.x = this.#panX * parallax;
       material.uniforms.uTime!.value = this.#elapsed;
       material.uniforms.uTwinkle!.value = this.#reduced ? 0 : 1;
+    }
+  }
+
+  /* ---------- constellations ---------- */
+
+  #disposeConstellations(): void {
+    for (const group of this.#constellationGroups) {
+      group.removeFromParent();
+      for (const child of group.children) {
+        if (child instanceof Points) {
+          child.geometry.dispose();
+          (child.material as ShaderMaterial).dispose();
+        } else if (child instanceof LineSegments) {
+          child.geometry.dispose();
+          (child.material as LineBasicMaterial).dispose();
+        }
+      }
+    }
+    this.#constellationGroups = [];
+    this.#hoveredConstellation = -1;
+  }
+
+  #buildConstellations(): void {
+    if (!this.#scene) return;
+    this.#disposeConstellations();
+
+    this.#constellations.forEach((c, ci) => {
+      const n = c.stars.length;
+      const positions = new Float32Array(n * 3);
+      const size = new Float32Array(n);
+      const phase = new Float32Array(n);
+      const speed = new Float32Array(n);
+      c.stars.forEach((s, i) => {
+        positions[i * 3] = s.x * c.scale * this.#w;
+        positions[i * 3 + 1] = s.y * c.scale * this.#w;
+        positions[i * 3 + 2] = -10;
+        size[i] = 1.6 + rand(c.seed + i) * 0.8;
+        phase[i] = rand(c.seed + i + 50) * Math.PI * 2;
+        speed[i] = 0.6 + rand(c.seed + i + 90) * 0.8;
+      });
+
+      const pointGeometry = new BufferGeometry();
+      pointGeometry.setAttribute("position", new BufferAttribute(positions, 3));
+      pointGeometry.setAttribute("aSize", new BufferAttribute(size, 1));
+      pointGeometry.setAttribute("aPhase", new BufferAttribute(phase, 1));
+      pointGeometry.setAttribute("aSpeed", new BufferAttribute(speed, 1));
+      // The element tint is barely-there at rest (10%, almost white) and
+      // blooms to full saturation on hover -- see #updateConstellations --
+      // rather than sitting at full strength all the time, which read as too
+      // strong against the muted star field.
+      const baseColor = new Color(c.color ?? 0xffffff);
+      const pointMaterial = new ShaderMaterial({
+        uniforms: {
+          uTime: { value: 0 },
+          uDpr: { value: this.#dpr },
+          uAlpha: { value: c.alpha },
+          uTwinkle: { value: this.#reduced ? 0 : 1 },
+          uColor: { value: new Color(0xffffff).lerp(baseColor, 0.1) },
+        },
+        vertexShader: STAR_VERT,
+        fragmentShader: STAR_FRAG,
+        transparent: true,
+        depthWrite: false,
+      });
+      const points = new Points(pointGeometry, pointMaterial);
+      points.frustumCulled = false;
+
+      const linePositions = new Float32Array(c.edges.length * 6);
+      c.edges.forEach(([a, b], i) => {
+        const sa = c.stars[a];
+        const sb = c.stars[b];
+        if (!sa || !sb) return;
+        linePositions[i * 6] = sa.x * c.scale * this.#w;
+        linePositions[i * 6 + 1] = sa.y * c.scale * this.#w;
+        linePositions[i * 6 + 2] = -10;
+        linePositions[i * 6 + 3] = sb.x * c.scale * this.#w;
+        linePositions[i * 6 + 4] = sb.y * c.scale * this.#w;
+        linePositions[i * 6 + 5] = -10;
+      });
+      const lineGeometry = new BufferGeometry();
+      lineGeometry.setAttribute("position", new BufferAttribute(linePositions, 3));
+      const lineMaterial = new LineBasicMaterial({
+        color: new Color(0xffffff).lerp(baseColor, 0.1),
+        transparent: true,
+        opacity: c.alpha * 0.35,
+      });
+      const lines = new LineSegments(lineGeometry, lineMaterial);
+      lines.frustumCulled = false;
+
+      const group = new Group();
+      group.add(points);
+      group.add(lines);
+      const baseX = c.px * this.#w;
+      const baseY = -c.py * this.#h;
+      group.position.set(baseX, baseY, 0);
+      group.userData.base = { x: baseX, y: baseY };
+      group.userData.pf = c.pf;
+      group.userData.boost = 0;
+      group.userData.baseColor = baseColor;
+      group.userData.pointMaterial = pointMaterial;
+      group.userData.lineMaterial = lineMaterial;
+      group.userData.baseAlpha = c.alpha;
+      group.userData.depth = c.depth ?? 0;
+      this.#scene?.add(group);
+      this.#constellationGroups[ci] = group;
+    });
+  }
+
+  #updateConstellations(dt: number): void {
+    for (let i = 0; i < this.#constellationGroups.length; i++) {
+      const group = this.#constellationGroups[i];
+      if (!group) continue;
+      const base = group.userData.base as { x: number; y: number };
+      const pf = group.userData.pf as number;
+      group.position.x = base.x + this.#panX * pf;
+      group.position.y = base.y + this.#panY * pf;
+
+      const target = i === this.#hoveredConstellation ? 1 : 0;
+      const boost =
+        (group.userData.boost as number) +
+        (target - (group.userData.boost as number)) * Math.min(1, dt * 5);
+      group.userData.boost = boost;
+
+      const baseAlpha = group.userData.baseAlpha as number;
+      const baseColor = group.userData.baseColor as Color;
+      const pointMaterial = group.userData.pointMaterial as ShaderMaterial;
+      const lineMaterial = group.userData.lineMaterial as LineBasicMaterial;
+      pointMaterial.uniforms.uTime!.value = this.#elapsed;
+      pointMaterial.uniforms.uAlpha!.value = baseAlpha * (1 + boost * 0.6);
+      lineMaterial.opacity = baseAlpha * 0.35 * (1 + boost * 1.6);
+      // 10% tint at rest, full element colour at full hover.
+      const mix = 0.1 + boost * 0.9;
+      (pointMaterial.uniforms.uColor!.value as Color).set(0xffffff).lerp(baseColor, mix);
+      lineMaterial.color.set(0xffffff).lerp(baseColor, mix);
+      // Stars sit roughly centred on the group's own origin (unit space,
+      // ~-1..1), so scaling the group grows the shape from its own centre
+      // rather than dragging it toward a corner. depthScale is the same
+      // fake-perspective factor PlanetBody uses for apparentR -- see
+      // ConstellationSpec.depth.
+      const depth = group.userData.depth as number;
+      const depthScale = ZF / (ZF - depth);
+      group.scale.setScalar(depthScale * (1 + boost * 0.18));
     }
   }
 
@@ -802,6 +1167,7 @@ export class PlanetFieldElement extends HTMLElement {
   #updateHover(): void {
     if (!this.#camera || !this.#pointerInside) {
       this.#setHovered(-1);
+      this.#setHoveredConstellation(-1);
       return;
     }
     this.#raycaster.setFromCamera(this.#pointer, this.#camera);
@@ -811,6 +1177,52 @@ export class PlanetFieldElement extends HTMLElement {
     const first = hits[0]?.object;
     const index = first ? this.#bodies.findIndex((b) => b.surface === first) : -1;
     this.#setHovered(index);
+
+    // Generous pick radius -- a constellation's stars are a few pixels each,
+    // and "hover the shape" should not require pixel-perfect aim. Also
+    // raycast the connecting lines, not just the star points: without this,
+    // the gap between two stars along an edge -- most of what actually reads
+    // as "the shape" on screen -- had zero hover area at all.
+    this.#raycaster.params.Points = { threshold: 22 };
+    this.#raycaster.params.Line = { threshold: 14 };
+    const constellationTargets = this.#constellationGroups
+      .flatMap((g) => g.children)
+      .filter((child): child is Points | LineSegments => child instanceof Points || child instanceof LineSegments);
+    const chits = this.#raycaster.intersectObjects(constellationTargets, false);
+    const cfirst = chits[0]?.object;
+    const cindex = cfirst
+      ? this.#constellationGroups.findIndex((g) => g.children.includes(cfirst))
+      : -1;
+    this.#setHoveredConstellation(cindex);
+  }
+
+  /**
+   * Eases scene.rotation or scene.position toward the pointer depending on
+   * cursorMotion, and back to 0 once the pointer leaves, cursorMotion is off,
+   * or the mode has switched to the other one. Independent of #panX/#panY --
+   * those only move for a specific hovered/travelled-to planet.
+   */
+  #updatePointerMotion(dt: number): void {
+    if (!this.#scene) return;
+    const mode = this.cursorMotion;
+    const active = mode !== "" && this.#pointerInside;
+    const ease = Math.min(1, dt * 1.5);
+
+    const rotateActive = active && mode === "rotate";
+    const tiltXTarget = rotateActive ? -this.#pointer.y * TILT_MAX : 0;
+    const tiltYTarget = rotateActive ? this.#pointer.x * TILT_MAX : 0;
+    this.#tiltX += (tiltXTarget - this.#tiltX) * ease;
+    this.#tiltY += (tiltYTarget - this.#tiltY) * ease;
+    this.#scene.rotation.x = this.#tiltX;
+    this.#scene.rotation.y = this.#tiltY;
+
+    const translateActive = active && mode === "translate";
+    const shiftXTarget = translateActive ? this.#pointer.x * SHIFT_MAX : 0;
+    const shiftYTarget = translateActive ? this.#pointer.y * SHIFT_MAX : 0;
+    this.#shiftX += (shiftXTarget - this.#shiftX) * ease;
+    this.#shiftY += (shiftYTarget - this.#shiftY) * ease;
+    this.#scene.position.x = this.#shiftX;
+    this.#scene.position.y = this.#shiftY;
   }
 
   #setHovered(index: number): void {
@@ -838,6 +1250,35 @@ export class PlanetFieldElement extends HTMLElement {
           new CustomEvent<PlanetEventDetail>("planet-enter", {
             bubbles: true,
             detail: { index, planet },
+          }),
+        );
+      }
+    }
+  }
+
+  #setHoveredConstellation(index: number): void {
+    if (index === this.#hoveredConstellation) return;
+    const previous = this.#hoveredConstellation;
+    this.#hoveredConstellation = index;
+
+    if (previous >= 0) {
+      const constellation = this.#constellations[previous];
+      if (constellation) {
+        this.dispatchEvent(
+          new CustomEvent<ConstellationEventDetail>("constellation-leave", {
+            bubbles: true,
+            detail: { index: previous, constellation },
+          }),
+        );
+      }
+    }
+    if (index >= 0) {
+      const constellation = this.#constellations[index];
+      if (constellation) {
+        this.dispatchEvent(
+          new CustomEvent<ConstellationEventDetail>("constellation-enter", {
+            bubbles: true,
+            detail: { index, constellation },
           }),
         );
       }

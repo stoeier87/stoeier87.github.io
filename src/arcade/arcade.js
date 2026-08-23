@@ -1,8 +1,10 @@
 import { definePlanetField } from "../shared/elements/planet-field.ts";
+import { definePageHeader } from "../shared/elements/page-header.ts";
 import { CardPlanetRenderer } from "../shared/elements/card-planet-renderer.ts";
 import { color } from "../tokens.ts";
 
 definePlanetField();
+definePageHeader();
 
 /* Planet specs — visual props only. r/s0/px/pf are overridden per usage:
    - card renderer: places each planet at origin, unit radius (r=0 placeholder)

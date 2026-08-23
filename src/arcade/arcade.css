@@ -1,10 +1,6 @@
 @import "tailwindcss";
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+
 body {
   font-family: var(--font-mono);
   background: var(--color-bg);
@@ -17,38 +13,7 @@ body {
 st-planet-field {
   @apply pointer-events-none fixed inset-0 z-0 block;
 }
-.hall {
-  @apply relative z-1 min-h-screen;
-  @apply flex flex-col items-center;
-  @apply justify-evenly;
-  @apply gap-y-20 px-4 py-4;
-}
-header {
-  @apply text-center pt-[clamp(4.5rem,12vw,5.5rem)] md:pt-0;
-  /* Clears the fixed .hall-nav so the title never sits under/behind it */
-  /* padding-top: clamp(4.5rem, 12vw, 5.5rem); */
-  transition: padding-top 0.5s ease;
-}
-/* Moves up on card hover, opening room below it — arcade.js aims the
-   backdrop's travel-target pan (focusY) at the gap this leaves above the
-   card grid. */
-.hall.card-hovered header {
-  padding-top: 0;
-}
-h1 {
-  font-family: var(--font-display);
-  text-transform: uppercase;
-  /* Same size as about-me's .name, on both desktop and mobile */
-  font-size: clamp(2.6rem, 9.5vw, 5.8rem);
-  line-height: 0.93;
-  letter-spacing: -0.01em;
-  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6);
-}
-h1 .red { color: var(--color-red); }
-header p {
-  color: var(--color-ink-muted);
-  @apply mt-[0.35rem];
-}
+
 .solar-system {
   @apply max-w-screen-xl mx-auto grid w-full;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -61,11 +26,11 @@ header p {
    toward an edge, so individual card hover states (.planet-card:hover)
    underneath are untouched. */
 .hall.card-hovered .solar-system {
-  transform: scale(0.92);
+  /* transform: scale(0.92); */
 }
 
 .solar-system:hover {
-  @apply lg:scale-[0.92];
+  /* @apply lg:scale-[0.92]; */
 }
 st-planet-field#bg {
   @apply opacity-10 md:opacity-100 pointer-events-none fixed inset-0 z-0 block;
@@ -73,7 +38,8 @@ st-planet-field#bg {
 .planet-card {
   @apply border-2 border-white/[0.28] rounded-[18px];
   @apply p-6 pl-2;
-  background: rgba(13, 20, 36, 0.72);
+  @apply bg-[rgba(13,20,36,0.72)] md:bg-[rgba(13,20,36,.2)] ;
+  @apply backdrop-blur-none md:backdrop-blur-3xl;
   @apply no-underline text-inherit;
   @apply flex items-center gap-[0.8rem];
   @apply min-h-[auto] md:min-h-[120px] transition-[transform,border-color,background] duration-200;
@@ -141,7 +107,8 @@ st-planet-field#bg {
   gap: 0.75rem;
   /* Same gutter as about-me's bio-panel, so the back pill sits on the
      same grid across pages instead of hugging the raw viewport edge. */
-  padding: 1rem clamp(1.25rem, 6vw, 4rem);
+  /* padding: 1rem clamp(1.25rem, 6vw, 4rem); */
+  
 }
 
 .pill {
@@ -197,11 +164,11 @@ st-planet-field#bg {
   50% { transform: translateY(-7px); }
 }
 
-@media (max-width: 520px) {
+/* @media (max-width: 520px) {
   .hall-nav {
     flex-wrap: wrap;
   }
-}
+} */
 @media (max-width: 520px) {
   .planet-card {
     @apply min-h-[auto];

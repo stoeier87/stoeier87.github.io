@@ -63,12 +63,12 @@ export class SkyTraffic {
   // ESLint's no-unused-vars does not understand that syntax and reports every
   // one of them as an unused argument, and the strict block makes that an error.
   #streak: CanvasTexture;
-  #glow: CanvasTexture;
+  #satelliteGlow: CanvasTexture;
   #satelliteCount: number;
 
-  constructor(streak: CanvasTexture, glow: CanvasTexture, satelliteCount: number) {
+  constructor(streak: CanvasTexture, satelliteGlow: CanvasTexture, satelliteCount: number) {
     this.#streak = streak;
-    this.#glow = glow;
+    this.#satelliteGlow = satelliteGlow;
     this.#satelliteCount = satelliteCount;
   }
 
@@ -127,7 +127,7 @@ export class SkyTraffic {
     this.#satellites = [];
     for (let i = 0; i < this.#satelliteCount; i++) {
       const material = new SpriteMaterial({
-        map: this.#glow,
+        map: this.#satelliteGlow,
         transparent: true,
         depthWrite: false,
         blending: AdditiveBlending,
@@ -221,7 +221,11 @@ export class SkyTraffic {
       }
       const blink = 0.55 + 0.45 * Math.sin(elapsed * 1000 * s.blinkSpeed + s.blinkPhase);
       s.sprite.position.set(s.x, -s.y, -5);
-      s.sprite.scale.setScalar(s.size * 12);
+      // Half the old scale -- satelliteTexture() is bright and crisp where
+      // the reused planet-glow texture was faint and diffuse, so the same
+      // sprite size used to read as a small smudge and now reads as a
+      // plausible glinting point instead of an oversized blob.
+      s.sprite.scale.setScalar(s.size * 6);
       s.material.opacity = s.glow * blink;
     }
   }
