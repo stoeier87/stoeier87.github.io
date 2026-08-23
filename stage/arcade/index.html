@@ -7,43 +7,41 @@
     <meta name="description" content="Solar System Arcade on stoeier.dk" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap"
+    />
     <link href="../css/all.min.css" rel="stylesheet" />
-    <script type="module" crossorigin src="../assets/arcade/index-D9T4zLkj.js"></script>
-    <link rel="modulepreload" crossorigin href="../assets/tailwind-CY0LiQKE.js">
-    <link rel="modulepreload" crossorigin href="../assets/version-badge-DtvEOukf.js">
-    <link rel="modulepreload" crossorigin href="../assets/planet-field-C4vmJH_F.js">
+    <script type="module" crossorigin src="../assets/arcade/index-DiUCttuC.js"></script>
+    <link rel="modulepreload" crossorigin href="../assets/tailwind-Dwk_5HgX.js">
+    <link rel="modulepreload" crossorigin href="../assets/version-badge-CEWJ0P2R.js">
+    <link rel="modulepreload" crossorigin href="../assets/planet-field-BEfbmbZz.js">
     <link rel="modulepreload" crossorigin href="../assets/tokens-2vCtBpfR.js">
     <link rel="modulepreload" crossorigin href="../assets/page-header-BXTlxPh2.js">
-    <link rel="stylesheet" crossorigin href="../assets/tailwind-Db0jzKIx.css">
-    <link rel="stylesheet" crossorigin href="../assets/index-chYbfCnZ.css">
+    <link rel="modulepreload" crossorigin href="../assets/hall-nav-BSiOhpg2.js">
+    <link rel="modulepreload" crossorigin href="../assets/games-data-DPRE8LZ4.js">
+    <link rel="stylesheet" crossorigin href="../assets/tailwind-Ajm5ETRw.css">
+    <link rel="stylesheet" crossorigin href="../assets/index-DQUViDS9.css">
   </head>
   <body>
     <!-- `driven`: arcade.js owns the single rAF loop and calls tick() on the
-         backdrop each frame. No drift (auto-scroll rate): the travel pan on
-         card hover is the motion. cursor-motion="translate" is a separate,
-         smaller ambient shift toward the pointer -- ADR-025's homepage sky
-         uses "rotate" instead; see planet-field.ts's cursorMotion doc. -->
-    <st-planet-field id="bg" driven cursor-motion="translate" aria-hidden="true"></st-planet-field>
-    <nav class="hall-nav" aria-label="Arcade navigation">
-      <a class="pill back" href="../" aria-label="Back to homepage" title="Back to homepage">
-        <span class="arrow"><i class="fa-solid fa-arrow-left-long"></i></span>
-        <span class="alien" aria-hidden="true">
-          <svg viewBox="0 0 26 26" width="17" height="17">
-            <ellipse cx="13" cy="15" rx="8.5" ry="10" fill="#7eb08a" />
-            <ellipse cx="9.6" cy="13.4" rx="2.1" ry="3" fill="#0a1018"
-                     transform="rotate(-18 9.6 13.4)" />
-            <ellipse cx="16.4" cy="13.4" rx="2.1" ry="3" fill="#0a1018"
-                     transform="rotate(18 16.4 13.4)" />
-            <path class="alien-arm" d="M20.5 16.5 L25 11"
-                  stroke="#7eb08a" stroke-width="2.3" stroke-linecap="round" fill="none" />
-          </svg>
-        </span>
-      </a>
-      <a class="pill" href="../scoreboard/">
-        <span class="arrow"><i class="fa-solid fa-ranking-star red"></i></span>
-        View scoreboard
-      </a>
-    </nav>
+         backdrop each frame. No drift (auto-scroll rate) and no travel pan on
+         card hover (see arcade.js) -- cursor-motion="pan" is the motion: a
+         continuous sweep across the whole planet field, driven by pointer x.
+         Left edge centres the rightmost planet, right edge centres the
+         leftmost, dead centre is this layout's own rest state, unchanged --
+         see planet-field.ts's cursorMotion doc. ADR-025's homepage sky uses
+         "rotate" instead, a much smaller ambient tilt. -->
+    <st-planet-field id="bg" driven cursor-motion="pan" aria-hidden="true"></st-planet-field>
+    <st-hall-nav
+      nav-label="Arcade navigation"
+      back-href="../"
+      back-label="Back to homepage"
+      second-href="../scoreboard/"
+      second-icon="fa-ranking-star"
+      second-label="View scoreboard"
+    ></st-hall-nav>
     <main class="wrap">
       <st-page-header
         heading="ARCADE"
@@ -51,205 +49,7 @@
         subtitle="Pick a planet. Start your mission. Only real pilots make the scoreboard."
       ></st-page-header>
       <section class="flex flex-col justify-between grow h-max" aria-label="Arcade games">
-            <section class="solar-system" id="solarSystem">
-              <a
-                class="planet-card live"
-                href="mercury/"
-                data-planet="merkur"
-              >
-                <span class="planet merkur" aria-hidden="true"></span>
-                <div class="info">
-                  <h2>Orbit Runner</h2>
-                  <p class="game">Merkur</p>
-                  <p class="tagline">Dodge debris, bend gravity, fire beam.</p>
-                </div>
-                <span class="badge">
-                  <img
-                    src="../svg/gamepad.svg"
-                    class="arcade-icon"
-                    alt=""
-                    aria-hidden="true"
-                  />
-                  Play</span
-                >
-              </a>
-
-              <a
-                class="planet-card live"
-                href="venus/"
-                data-planet="venus"
-              >
-                <span class="planet venus" aria-hidden="true"></span>
-                <div class="info">
-                  <h2>Meteor Dodge</h2>
-                  <p class="game">Venus</p>
-                  <p class="tagline">Weave through a burning meteor shower.</p>
-                </div>
-                <span class="badge">
-                  <img
-                    src="../svg/gamepad.svg"
-                    class="arcade-icon"
-                    alt=""
-                    aria-hidden="true"
-                  />
-                  Play</span
-                >
-              </a>
-
-              <a
-                class="planet-card live"
-                href="earth/"
-                data-planet="jorden"
-              >
-                <span class="planet jorden" aria-hidden="true"></span>
-                <div class="info">
-                  <h2>ISS Docking</h2>
-                  <p class="game">Jorden</p>
-                  <p class="tagline">Match rotation and dock with the station.</p>
-                </div>
-                <span class="badge">
-                  <img
-                    src="../svg/gamepad.svg"
-                    class="arcade-icon"
-                    alt=""
-                    aria-hidden="true"
-                  />
-                  Play</span
-                >
-              </a>
-
-              <a
-                class="planet-card live"
-                href="mars/"
-                data-planet="mars"
-              >
-                <span class="planet mars" aria-hidden="true"></span>
-                <div class="info">
-                  <h2>Phobos Lander</h2>
-                  <p class="game">Mars</p>
-                  <p class="tagline">Land softly on Phobos with limited fuel.</p>
-                </div>
-                <span class="badge">
-                  <img
-                    src="../svg/gamepad.svg"
-                    class="arcade-icon"
-                    alt=""
-                    aria-hidden="true"
-                  />
-                  Play</span
-                >
-              </a>
-
-              <a
-                class="planet-card live"
-                href="jupiter/"
-                data-planet="jupiter"
-              >
-                <span class="planet jupiter" aria-hidden="true"></span>
-                <div class="info">
-                  <h2>Galileo</h2>
-                  <p class="game">Jupiter</p>
-                  <p class="tagline">Map the field. The radiation is patient.</p>
-                </div>
-                <span class="badge">
-                  <img
-                    src="../svg/gamepad.svg"
-                    class="arcade-icon"
-                    alt=""
-                    aria-hidden="true"
-                  />
-                  Play</span
-                >
-              </a>
-
-              <a
-                class="planet-card live"
-                href="saturn/"
-                data-planet="saturn"
-              >
-                <span class="planet saturn" aria-hidden="true"></span>
-                <div class="info">
-                  <h2>Star Memory</h2>
-                  <p class="game">Saturn</p>
-                  <p class="tagline">Match constellations around the rings.</p>
-                </div>
-                <span class="badge">
-                  <img
-                    src="../svg/gamepad.svg"
-                    class="arcade-icon"
-                    alt=""
-                    aria-hidden="true"
-                  />
-                  Play</span
-                >
-              </a>
-
-              <a
-                class="planet-card live"
-                href="uranus/"
-                data-planet="uranus"
-              >
-                <span class="planet uranus" aria-hidden="true"></span>
-                <div class="info">
-                  <h2>Nebula Trail</h2>
-                  <p class="game">Uranus</p>
-                  <p class="tagline">A tilted Snake through an icy nebula.</p>
-                </div>
-                <span class="badge">
-                  <img
-                    src="../svg/gamepad.svg"
-                    class="arcade-icon"
-                    alt=""
-                    aria-hidden="true"
-                  />
-                  Play</span
-                >
-              </a>
-
-              <a
-                class="planet-card live"
-                href="neptune/"
-                data-planet="neptun"
-              >
-                <span class="planet neptun" aria-hidden="true"></span>
-                <div class="info">
-                  <h2>Diamond Rain</h2>
-                  <p class="game">Neptune</p>
-                  <p class="tagline">Carbon falls and the ice keeps coming down.</p>
-                </div>
-                <span class="badge">
-                  <img
-                    src="../svg/gamepad.svg"
-                    class="arcade-icon"
-                    alt=""
-                    aria-hidden="true"
-                  />
-                  Play</span
-                >
-              </a>
-
-              <a
-                class="planet-card live"
-                href="pluto/"
-                data-planet="pluto"
-              >
-                <span class="planet pluto" aria-hidden="true"></span>
-                <div class="info">
-                  <h2>Ice Fall</h2>
-                  <p class="game">Pluto</p>
-                  <p class="tagline">Stack the ice before it stacks you.</p>
-                </div>
-                <span class="badge">
-                  <img
-                    src="../svg/gamepad.svg"
-                    class="arcade-icon"
-                    alt=""
-                    aria-hidden="true"
-                  />
-                  Play</span
-                >
-              </a>
-            </section>
+            <section class="solar-system" id="solarSystem"></section>
             <footer>
               <a href="https://servicedesign.dk" target="_blank" rel="noopener"
                 >servicedesign.dk</a

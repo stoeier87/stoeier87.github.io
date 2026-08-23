@@ -4,14 +4,31 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Meteor Dodge</title>
+    <meta name="description" content="Weave through a burning meteor shower." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="stoeier.dk" />
+    <meta property="og:url" content="https://stoeier.dk/arcade/venus/" />
+    <meta property="og:locale" content="en_GB" />
+    <meta property="og:title" content="Meteor Dodge" />
+    <meta property="og:description" content="Weave through a burning meteor shower." />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Meteor Dodge" />
+    <meta name="twitter:description" content="Weave through a burning meteor shower." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <script type="module" crossorigin src="../../assets/arcade/venus/index-D9Ni_95j.js"></script>
-    <link rel="modulepreload" crossorigin href="../../assets/tailwind-CY0LiQKE.js">
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap"
+    />
+    <link href="../../css/all.min.css" rel="stylesheet" />
+    <script type="module" crossorigin src="../../assets/arcade/venus/index-B2qG0III.js"></script>
+    <link rel="modulepreload" crossorigin href="../../assets/tailwind-Dwk_5HgX.js">
     <link rel="modulepreload" crossorigin href="../../assets/firebase-config-CE95sHti.js">
-    <link rel="modulepreload" crossorigin href="../../assets/score-submit-A1NVq5mj.js">
-    <link rel="stylesheet" crossorigin href="../../assets/tailwind-Db0jzKIx.css">
-    <link rel="stylesheet" crossorigin href="../../assets/index-BDfchz3x.css">
+    <link rel="modulepreload" crossorigin href="../../assets/games-data-DPRE8LZ4.js">
+    <link rel="modulepreload" crossorigin href="../../assets/game-intro-Dt_BICbi.js">
+    <link rel="stylesheet" crossorigin href="../../assets/tailwind-Ajm5ETRw.css">
+    <link rel="stylesheet" crossorigin href="../../assets/index-Du9jRO91.css">
   </head>
   <body>
     <canvas id="game" aria-hidden="true"></canvas>
@@ -19,19 +36,7 @@
     <!-- Top bar: back link + title badge (left), best score (right). Live
          stats (LVL, HP, RATE/GUNS/DMG/MAG/AURA, SCORE, shield) are drawn as
          plain text inside the canvas play-field border instead. -->
-    <div class="topbar">
-      <div class="topbar-group">
-        <a href="../../arcade/" class="pill back-circle" aria-label="Back to arcade" title="Back to arcade">←</a>
-        <div class="pill badge">
-          <span class="beacon"></span>
-          <span class="badge-name">METEOR DODGE</span>
-        </div>
-      </div>
-      <div class="topbar-group">
-        <div class="pill stat">SCORE <strong id="score">0</strong></div>
-        <a class="pill stat" href="../../scoreboard/">BEST <strong id="best" class="best-val">0</strong></a>
-      </div>
-    </div>
+    <st-game-topbar game-title="METEOR DODGE"></st-game-topbar>
 
     <!-- Auto-pause overlay -->
     <div id="pause" class="gameover">
@@ -40,7 +45,9 @@
         <button id="resumeBtn" class="restart-btn" type="button">Resume</button>
       </div>
     </div>
-
+    <!-- Intro card, dismissed on first input -->
+    <st-game-intro game-key="venus"></st-game-intro>
+    
     <!-- Upgrade choice: pauses play, offers up to two of the four permanent power-ups -->
     <div id="upgradeChoice" class="gameover">
       <div class="gameover-card upgrade-card">
@@ -59,13 +66,7 @@
     </div>
 
     <!-- Game over sign -->
-    <div id="gameOver" class="gameover">
-      <div class="gameover-card">
-        <div id="gameOverTitle" class="gameover-title">BURNED UP</div>
-        <div class="gameover-sub">Press R or Tap</div>
-        <button id="gameOverRestart" class="restart-btn" type="button">Restart</button>
-      </div>
-    </div>
+    <st-game-over id="gameOver" class="gameover" game-title="BURNED UP"></st-game-over>
 
     <div class="controls" id="controls">
       <div class="dpad">
