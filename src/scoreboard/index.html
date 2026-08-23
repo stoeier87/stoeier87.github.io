@@ -7,14 +7,28 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="../css/all.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./scoreboard.css" />
     <link rel="stylesheet" href="../tailwind.css" />
   </head>
   <body>
-    <canvas id="bg" aria-hidden="true"></canvas>
-
-    <nav class="board-nav" aria-label="Scoreboard navigation">
-      <a class="pill back" href="../arcade/" aria-label="Back to arcade" title="Back to arcade">
+    <!-- <canvas id="bg" aria-hidden="true"></canvas> -->
+    <st-planet-field
+      id="bg"
+      driven
+      ambient-motion="rotate"
+      interactive
+      satellites="0"
+      cursor-motion="translate"
+      shooting-stars
+      aria-hidden="true"
+    ></st-planet-field>
+    <div
+      id="zodiac-label"
+      class="pointer-events-none fixed top-0 left-0 z-10 hidden rounded-full border border-white/20 bg-black/60 px-4 py-2 font-mono text-xs tracking-widest text-white/90 backdrop-blur"
+      aria-hidden="true"
+    ></div>
+    <nav class="hall-nav" aria-label="Scoreboard navigation">
+      <a class="pill back" href="/arcade/" aria-label="Back to arcade" title="Back to arcade">
         <span class="arrow"><i class="fa-solid fa-arrow-left-long"></i></span>
         <span class="alien" aria-hidden="true">
           <svg viewBox="0 0 26 26" width="17" height="17">
@@ -28,67 +42,35 @@
           </svg>
         </span>
       </a>
+      <a class="pill" href="/arcade">
+        <span class="arrow">
+          <i class="fa-solid fa-gamepad" style="color: #e03a2f"></i>
+        </span>
+        Arcade Games
+      </a>
     </nav>
 
     <main class="wrap">
-      <header>
-        <h1><i class="fa-solid fa-ranking-star"></i> Score<span class="red">board</span></h1>
-        <p class="sub">Top scores across the solar arcade</p>
-      </header>
+      <st-page-header
+        icon="fa-ranking-star"
+        icon-hidden
+        heading="Score"
+        accent="board"
+        subtitle="Top scores across the solar arcade"
+      ></st-page-header>
+      <section class="flex flex-col justify-between grow h-max" aria-label="Scoreboard">
 
-      <div id="boards" class="boards"></div>
+        <div id="boards" class="boards"></div>
+        <footer>
+          <a href="https://servicedesign.dk" target="_blank" rel="noopener"
+          >servicedesign.dk</a
+          >
+          <script type="module" src="../shared/version-badge.js"></script>
+        </footer>
+      </section>
     </main>
 
-    <footer>
-      <a href="https://servicedesign.dk" target="_blank" rel="noopener"
-        >servicedesign.dk</a
-      >
-      <script type="module" src="../shared/version-badge.js"></script>
-    </footer>
 
     <script type="module" src="./scoreboard.js"></script>
-    <script>
-      (() => {
-        const c = document.getElementById("bg");
-        const x = c.getContext("2d");
-        let w = 0,
-          h = 0,
-          dpr = 1,
-          stars = [];
-        function rs() {
-          dpr = Math.min(devicePixelRatio || 1, 2);
-          w = innerWidth;
-          h = innerHeight;
-          c.width = w * dpr;
-          c.height = h * dpr;
-          x.setTransform(dpr, 0, 0, dpr, 0, 0);
-          stars = [...Array(Math.max(80, Math.round((w * h) / 14000)))].map(
-            () => ({
-              x: Math.random() * w,
-              y: Math.random() * h,
-              r: Math.random() * 1.6 + 0.4,
-              s: Math.random() * 0.5 + 0.1,
-            }),
-          );
-        }
-        addEventListener("resize", rs, { passive: true });
-        rs();
-        function f(t) {
-          x.clearRect(0, 0, w, h);
-          for (const s of stars) {
-            s.y += s.s;
-            if (s.y > h) s.y = -2;
-            x.globalAlpha = 0.4 + Math.sin(t * 0.0008 + s.x) * 0.4;
-            x.beginPath();
-            x.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-            x.fillStyle = "#fff";
-            x.fill();
-          }
-          x.globalAlpha = 1;
-          requestAnimationFrame(f);
-        }
-        requestAnimationFrame(f);
-      })();
-    </script>
   </body>
 </html>

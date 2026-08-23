@@ -128,22 +128,75 @@
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+header {
+  @apply text-center pt-[clamp(1rem,12vw,5.5rem)] md:pt-0 text-center;
+}
+header h1 {
+    font-family: var(--font-display);
+  text-transform: uppercase;
+  /* Same size as about-me's .name, on both desktop and mobile */
+  font-size: clamp(2.6rem, 9.5vw, 5.8rem);
+  line-height: 0.93;
+  letter-spacing: -0.01em;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6);
+  color: #fff;
+}
+
+header h1 .red { color: var(--color-red); }
+.red { color: var(--color-red); }
+
+header h1 i {
+  color: var(--gold);
+  /* Icons inherit font-size by default — without this it scaled up with
+     the headline's much bigger size and forced a wrap on narrow screens */
+  font-size: 0.5em;
+  vertical-align: 0.12em;
+  margin-right: 0.15em;
+}
+
+header p.sub {
+  color: var(--color-ink-muted);
+  @apply mt-2;
+  /* font-size: 0.5em; */
+}
+
+
+.wrap {
+  position: relative;
+  z-index: 1;
+  /* max-width: 960px; */
+  margin: 0 auto;
+  @apply max-w-5xl mx-auto lg:max-w-[var(--container-6xl)];
+  /* Extra top padding clears the fixed .board-nav back pill */
+  /* padding: 88px 20px 60px; */
+  @apply pt-12 lg:pt-18 px-6 lg:px-0 pb-15 lg:pb-0;
+  @apply flex flex-col gap-8 md:gap-12;
+  @apply h-screen;
+}
+
+
 .pill {
   display: inline-flex; align-items: center; justify-content: center;
   font-family: var(--mono); font-size: clamp(0.7rem, 1.8vw, 0.85rem);
   letter-spacing: 0.08em; color: var(--ink);
-  padding: 0.85rem 1.4rem;
-  border: 1.5px solid rgba(255, 255, 255, 0.4); border-radius: 100px;
-  background: rgba(13, 20, 36, 0.72);
+  padding: 0.8rem 1rem;
+  /* border: 1.5px solid rgba(255, 255, 255, 0.4); border-radius: 100px;
+  background: rgba(13, 20, 36, 0.72); */
+  @apply bg-[rgba(13,20,36,0.52)] border-[1.5px] border-[rgba(255,255,255,0.4)] rounded-full;
   cursor: pointer;
+  backdrop-filter: blur(3px);
   transition: border-color 0.25s ease, background 0.25s ease, color 0.25s ease;
   &.back {
+    animation: pillFloat 5s ease-in-out infinite;
+    @apply bg-[rgba(13,20,36,0.40)];
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    padding: 0.8rem 1rem;
+    overflow: hidden;
   }
 }
+
 .hall-nav {
   position: fixed;
   top: 0;
@@ -154,21 +207,19 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0;
-  max-width: var(--breakpoint-xl);
+  @apply max-w-5xl mx-auto lg:max-w-[var(--container-6xl)];
   /* Same gutter as about-me's bio-panel, so the back pill sits on the
      same grid across pages instead of hugging the raw viewport edge. */
-  /* padding: 1rem clamp(1.25rem, 6vw, 4rem); */
+     padding: 1rem clamp(1rem, 2rem, 4rem);
+     @apply px-8 lg:px-0;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   margin: 22px auto;
 }
 
 .topbar {
   position: fixed;
-  top: 0;
-  padding-top: 12px;
-  left: 12px;
-  right: 12px;
+  @apply top-0 md:top-8;
+  @apply left-3 right-3;
   z-index: 25;
   display: flex;
   align-items: center;
@@ -277,6 +328,9 @@ a.stat:hover {
 .gameover-sub {
   @apply hidden md:visible text-small text-white/65 mb-3.5;
 }
+.hidden {
+  display: none !important;
+}
 
 .restart-btn {
   padding: 12px 22px;
@@ -295,3 +349,4 @@ a.stat:hover {
 .restart-btn:hover {
   border-color: rgba(255, 255, 255, .55);
 }
+
