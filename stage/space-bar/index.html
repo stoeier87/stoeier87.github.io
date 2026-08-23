@@ -10,7 +10,7 @@
     />
 
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="servicedesign.dk" />
+    <meta property="og:site_name" content="stoeier.dk" />
     <meta property="og:url" content="https://stoeier.dk/space-bar/" />
     <meta property="og:locale" content="en_GB" />
     <meta property="og:title" content="The Space Bar" />
@@ -27,23 +27,46 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap"
+    />
     <link href="../css/all.min.css" rel="stylesheet" />
-    <script type="module" crossorigin src="../assets/space-bar/index-t4xTnQtA.js"></script>
-    <link rel="modulepreload" crossorigin href="../assets/tailwind-CY0LiQKE.js">
-    <link rel="stylesheet" crossorigin href="../assets/tailwind-Db0jzKIx.css">
-    <link rel="stylesheet" crossorigin href="../assets/index-CqsPp965.css">
+    <script type="module" crossorigin src="../assets/space-bar/index-Dj5SieAB.js"></script>
+    <link rel="modulepreload" crossorigin href="../assets/tailwind-Dwk_5HgX.js">
+    <link rel="modulepreload" crossorigin href="../assets/page-header-BXTlxPh2.js">
+    <link rel="modulepreload" crossorigin href="../assets/hall-nav-BSiOhpg2.js">
+    <link rel="stylesheet" crossorigin href="../assets/tailwind-Ajm5ETRw.css">
+    <link rel="stylesheet" crossorigin href="../assets/index-CliuQFnJ.css">
   </head>
   <body>
     <!-- Far background: drifting starfield and the occasional UFO -->
     <canvas id="backdrop" aria-hidden="true"></canvas>
-
-    <!-- ── Bar ───────────────────────────────────────────────── -->
-    <div class="bar" id="bar">
-      <header class="bar-nav">
+    <st-hall-nav
+      nav-label="Space Bar navigation"
+      back-href="../"
+      back-label="Back to homepage"
+      second-href="../tools/"
+      second-icon="fa-tools"
+      second-label="Tools"
+      max-width="screen"
+    ></st-hall-nav>
+        <div class="wrap">
+          <div class="bar" id="bar">
+            <st-page-header
+            icon-hidden="false"
+            heading="SPACE"
+            accent="BAR"
+            subtitle="Pick a planet. Start your mission. Only real pilots make the scoreboard."
+            ></st-page-header>
+          </div>
+      
+      <!-- <header class="bar-nav">
         <a class="pill back" href="../" aria-label="Back to homepage" title="Back to homepage">
           <span class="arrow"><i class="fa-solid fa-arrow-left-long"></i></span>
         </a>
-      </header>
+      </header> -->
 
       <!-- The pannable field. Stars are injected here. -->
       <div class="viewport" id="viewport">
