@@ -25,9 +25,7 @@ class PageHeaderElement extends HTMLElement {
     const icon = this.getAttribute("icon");
     const iconHidden = this.hasAttribute("icon-hidden");
 
-    const iconHtml = icon
-      ? `<i class="fa-solid ${icon}${iconHidden ? " hidden" : ""}"></i> `
-      : "";
+    const iconHtml = icon ? `<i class="fa-solid ${icon}${iconHidden ? " hidden" : ""}"></i> ` : "";
     const accentHtml = accent ? ` <span class="red">${accent}</span>` : "";
 
     this.innerHTML = `

@@ -483,7 +483,8 @@ export class PlanetFieldElement extends HTMLElement {
     const radius = Math.hypot(x, y);
     if (radius === 0) return;
 
-    const target = l.rimFollowPointer && this.#pointerInside ? this.#pointer.x * l.rimFollowPointer : 0;
+    const target =
+      l.rimFollowPointer && this.#pointerInside ? this.#pointer.x * l.rimFollowPointer : 0;
     this.#rimPointerAngle += (target - this.#rimPointerAngle) * Math.min(1, dt * 2);
 
     const angle = Math.atan2(y, x) + this.#elapsed * l.rimOrbitSpeed + this.#rimPointerAngle;
@@ -1187,7 +1188,10 @@ export class PlanetFieldElement extends HTMLElement {
     this.#raycaster.params.Line = { threshold: 14 };
     const constellationTargets = this.#constellationGroups
       .flatMap((g) => g.children)
-      .filter((child): child is Points | LineSegments => child instanceof Points || child instanceof LineSegments);
+      .filter(
+        (child): child is Points | LineSegments =>
+          child instanceof Points || child instanceof LineSegments,
+      );
     const chits = this.#raycaster.intersectObjects(constellationTargets, false);
     const cfirst = chits[0]?.object;
     const cindex = cfirst
