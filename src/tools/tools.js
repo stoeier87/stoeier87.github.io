@@ -1,5 +1,9 @@
 import { DIAGRAMS, TOOLS, reduced, isMobile, mulberry32 } from "./shared/tools-data.js";
 import { extractConstellation, polylineLength } from "./shared/constellation-source.js";
+import { definePageHeader } from "@shared/elements/page-header";
+import { defineHallNav } from "@shared/elements/hall-nav";
+definePageHeader();
+defineHallNav();
 
 const $ = (id) => document.getElementById(id);
 const SVG_NS = "http://www.w3.org/2000/svg";

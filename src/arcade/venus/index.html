@@ -4,10 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Meteor Dodge</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <meta name="st:game-head" />
+    <meta name="st:common-head" />
     <link rel="stylesheet" href="meteor-dodge.css" />
-    <link rel="stylesheet" href="../../tailwind.css" />
+    <meta name="st:common-foot" />
   </head>
   <body>
     <canvas id="game" aria-hidden="true"></canvas>
@@ -15,19 +15,7 @@
     <!-- Top bar: back link + title badge (left), best score (right). Live
          stats (LVL, HP, RATE/GUNS/DMG/MAG/AURA, SCORE, shield) are drawn as
          plain text inside the canvas play-field border instead. -->
-    <div class="topbar">
-      <div class="topbar-group">
-        <a href="../../arcade/" class="pill back-circle" aria-label="Back to arcade" title="Back to arcade">←</a>
-        <div class="pill badge">
-          <span class="beacon"></span>
-          <span class="badge-name">METEOR DODGE</span>
-        </div>
-      </div>
-      <div class="topbar-group">
-        <div class="pill stat">SCORE <strong id="score">0</strong></div>
-        <a class="pill stat" href="../../scoreboard/">BEST <strong id="best" class="best-val">0</strong></a>
-      </div>
-    </div>
+    <st-game-topbar game-title="METEOR DODGE"></st-game-topbar>
 
     <!-- Auto-pause overlay -->
     <div id="pause" class="gameover">
@@ -36,7 +24,9 @@
         <button id="resumeBtn" class="restart-btn" type="button">Resume</button>
       </div>
     </div>
-
+    <!-- Intro card, dismissed on first input -->
+    <st-game-intro game-key="venus"></st-game-intro>
+    
     <!-- Upgrade choice: pauses play, offers up to two of the four permanent power-ups -->
     <div id="upgradeChoice" class="gameover">
       <div class="gameover-card upgrade-card">
@@ -55,13 +45,7 @@
     </div>
 
     <!-- Game over sign -->
-    <div id="gameOver" class="gameover">
-      <div class="gameover-card">
-        <div id="gameOverTitle" class="gameover-title">BURNED UP</div>
-        <div class="gameover-sub">Press R or Tap</div>
-        <button id="gameOverRestart" class="restart-btn" type="button">Restart</button>
-      </div>
-    </div>
+    <st-game-over id="gameOver" class="gameover" game-title="BURNED UP"></st-game-over>
 
     <div class="controls" id="controls">
       <div class="dpad">

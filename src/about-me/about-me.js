@@ -1,3 +1,9 @@
+import { definePageHeader } from "@shared/elements/page-header";
+import { defineHallNav } from "@shared/elements/hall-nav";
+
+definePageHeader();
+defineHallNav();
+
 (function () {
   "use strict";
 

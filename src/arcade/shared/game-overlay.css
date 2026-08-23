@@ -1,0 +1,174 @@
+/* The shared "approach panel / intro card / pause / final-score" overlay UI
+   used by games that have a pausable status HUD (currently earth, jupiter,
+   mars, neptune, pluto, saturn, uranus — not every game uses this template,
+   unlike game-hud.css; mercury/venus don't import this file at all).
+   Extracted where the rule body was identical (post whitespace AND numeric-
+   literal normalization, e.g. ".14em" == "0.14em") across every game that
+   had it. `.approach-label`, `.bar-fill` have genuine per-game variance and
+   were deliberately left where they were — don't fold those in without
+   re-checking they're still actually identical. `.intro-container`/`.intro`
+   used to be here too (earth/mars had a different flow-based layout) but
+   are now standardized in tailwind.css's shared `@layer components` for
+   all 9 games instead — not here, since they're not just arcade-scoped.
+
+   IMPORTANT — `.approach` and `.bar` below are only identical across a
+   SUBSET of the games that import this file:
+   - `.approach`: shared here for jupiter/neptune/pluto/saturn only. `earth`
+     and `mars` both still carry their own local `.approach` (genuinely
+     different layout/opacity handling) further down in their own CSS,
+     which — because it's the same selector, same specificity, and loads
+     after this @import — overrides per-property, not per-rule. `mars`'s
+     local override explicitly re-sets `opacity: 1; transition: none;` to
+     cancel this file's `opacity: 0` fade-in default, because mars's lander
+     HUD has no fade-in JS and never gains a `.show` class — omitting that
+     override would make the panel permanently invisible.
+   - `.bar`: shared here for earth/jupiter/neptune/saturn. `pluto` has its
+     own local `.bar` that fully redeclares every property this rule sets
+     (plus its own opacity/transition), so it's a safe, complete override
+     with no leakage. `mars`/`uranus` don't use `.bar` at all — dead but
+     harmless CSS for them.
+
+   Relies on each importing game's own `:root` still defining --game-accent
+   / --game-accent-dim — custom properties resolve from the cascade, not
+   from import order, so this works regardless of where the @import sits. */
+
+st-planet-field#bg {
+  @apply pointer-events-none fixed inset-0 z-0 block;
+  opacity: 0.68;
+  transition: filter 0.35s ease;
+}
+
+body.is-paused st-planet-field#bg {
+  filter: blur(3px);
+}
+
+.approach {
+  position: fixed;
+  @apply left-3 bottom-3 right-3 md:right-auto;
+  z-index: 15;
+  background: rgba(10, 14, 24, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  padding: 11px 13px;
+  @apply flex flex-col w-auto md:w-44 gap-2;
+  @apply pointer-events-none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.approach.show {
+  opacity: 1;
+}
+
+.approach-title {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 2px;
+}
+
+.approach-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.approach-value {
+  font-size: 12px;
+  color: var(--color-ink);
+}
+
+.bar {
+  flex: 1;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.intro-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  margin-bottom: 6px;
+}
+
+.intro-body {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.intro-keys {
+  display: none;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 12px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.intro-keys b {
+  color: var(--game-accent);
+  font-weight: 700;
+}
+
+.intro-keys.show {
+  display: flex;
+}
+
+.pause-sub {
+  @apply hidden md:block;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 6px;
+}
+
+.final-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  margin: 4px 0 2px;
+}
+
+.final-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.final-row strong {
+  font-size: 15px;
+  color: var(--color-ink);
+}
+
+.final-best strong {
+  color: var(--game-accent);
+}
+
+.best-marker {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: #0b1018;
+  background: var(--game-accent);
+  border-radius: 100px;
+  padding: 2px 7px;
+  display: none;
+}
+
+.best-marker.show {
+  display: inline-block;
+}
+
+.restart-btn:focus-visible {
+  outline: 2px solid var(--game-accent);
+  outline-offset: 3px;
+}

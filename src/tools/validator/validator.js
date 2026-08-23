@@ -1,3 +1,6 @@
+import { defineHallNav } from "@shared/elements/hall-nav.ts";
+
+defineHallNav();
 /*
  * Prioritisation model, question set, scoring logic and quadrant
  * definitions are the intellectual property of Tobias Fullerton Støier.

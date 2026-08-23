@@ -4,10 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ice Fall</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <meta name="st:game-head" />
+    <meta name="st:common-head" />
     <link rel="stylesheet" href="ice-fall.css" />
-    <link rel="stylesheet" href="../../tailwind.css" />
+    <meta name="st:common-foot" />
   </head>
   <body>
     <!-- Pluto, Charon, the sun and the starfield. `driven`: ice-fall.js owns
@@ -16,21 +16,7 @@
     <canvas id="game" aria-hidden="true"></canvas>
 
     <!-- Top bar: back link + title badge (left), score + best (right) -->
-    <div class="topbar">
-      <div class="topbar-group">
-        <a href="../../arcade/" class="pill back-circle" aria-label="Back to arcade" title="Back to arcade">←</a>
-        <div class="pill badge">
-          <span class="beacon"></span>
-          <span class="badge-name">ICE FALL</span>
-        </div>
-      </div>
-      <div class="topbar-group">
-        <div class="pill stat">SCORE <strong id="score">0</strong></div>
-        <a class="pill stat" href="../../scoreboard/"
-          >BEST <strong id="best" class="best-val">0</strong></a
-        >
-      </div>
-    </div>
+    <st-game-topbar game-title="ICE FALL"></st-game-topbar>
 
     <!-- Next queue, under the score pills -->
     <div class="slot slot-next" id="nextSlot">
@@ -56,26 +42,7 @@
     </div>
 
     <!-- Intro card, dismissed on first input -->
-    <div class="intro-container">
-      <div class="intro" id="intro">
-        <div class="intro-title">ICE FALL</div>
-        <div class="intro-body">
-          Stack the ice. Clear the lines. Pluto is patient and you are not.
-        </div>
-        <div class="intro-keys" id="introKeys">
-          <span><b>← →</b> move</span><span><b>↓</b> soft drop</span
-          ><span><b>↑ / X</b> rotate</span><span><b>Z</b> rotate back</span
-          ><span><b>Space</b> hard drop</span><span><b>P / Esc</b> pause</span>
-        </div>
-        <div class="intro-keys" id="introTouch">
-          <span><b>Swipe</b> move</span><span><b>Tap</b> rotate</span
-          ><span><b>Two-finger tap</b> rotate back</span
-          ><span><b>Swipe down</b> soft drop</span
-          ><span><b>Swipe up</b> hard drop</span
-          >
-        </div>
-      </div>
-    </div>
+    <st-game-intro game-key="pluto"></st-game-intro>
 
     <!-- Pause overlay -->
     <div id="pause" class="gameover">
@@ -87,10 +54,8 @@
     </div>
 
     <!-- Game over sign -->
-    <div id="gameOver" class="gameover">
-      <div class="gameover-card">
-        <div id="gameOverTitle" class="gameover-title">ICE FALL</div>
-        <div class="final-rows">
+    <st-game-over id="gameOver" class="gameover" game-title="ICE FALL" restart-label="Play again">
+      <div class="final-rows">
           <div class="final-row">
             <span>SCORE</span><strong id="finalScore">0</strong>
           </div>
@@ -101,10 +66,7 @@
             <span class="best-marker" id="bestMarker">NEW</span>
           </div>
         </div>
-        <div class="gameover-sub">Press R or Tap</div>
-        <button id="gameOverRestart" class="restart-btn" type="button">Play again</button>
-      </div>
-    </div>
+    </st-game-over>
 
     <script type="module" src="./ice-fall.js"></script>
   </body>

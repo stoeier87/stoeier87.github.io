@@ -4,28 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ISS Docking</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="../../tailwind.css" />
+    <meta name="st:game-head" />
+    <meta name="st:common-head" />
     <link rel="stylesheet" href="iss-docking.css" />
+    <meta name="st:common-foot" />
   </head>
   <body>
     <canvas id="game" aria-hidden="true"></canvas>
 
     <!-- Top bar: back link + title badge (left), score + best (right) -->
-    <div class="topbar">
-      <div class="topbar-group">
-        <a href="../../arcade/" class="pill back-circle" aria-label="Back to arcade" title="Back to arcade">←</a>
-        <div class="pill badge">
-          <span class="beacon"></span>
-          <span class="badge-name">ISS DOCKING</span>
-        </div>
-      </div>
-      <div class="topbar-group">
-        <div class="pill stat">SCORE <strong id="score">60</strong></div>
-        <a class="pill stat" href="../../scoreboard/">BEST <strong id="best" class="best-val">0</strong></a>
-      </div>
-    </div>
+    <st-game-topbar game-title="ISS DOCKING"></st-game-topbar>
 
     <!-- Approach telemetry -->
     <div class="approach" id="approach">
@@ -53,24 +41,10 @@
     </div>
 
     <!-- Intro card --> 
-    <div class="intro-container">
-      <div class="intro" id="intro">
-        <div class="intro-title">MATCH &amp; DOCK</div>
-        <div class="intro-body">
-          Line up with the red port, match the station's
-          spin, and drift in slow.
-        </div>
-      </div>
-    </div>
+    <st-game-intro game-key="earth"></st-game-intro>
 
     <!-- Game over sign (restart lives inside it) -->
-    <div id="gameOver" class="gameover">
-      <div class="gameover-card">
-        <div id="gameOverTitle" class="gameover-title">DOCKED</div>
-        <div class="gameover-sub">Press R or Tap</div>
-        <button id="gameOverRestart" class="restart-btn" type="button">Restart</button>
-      </div>
-    </div>
+    <st-game-over id="gameOver" class="gameover" game-title="DOCKED"></st-game-over>
 
 
     <!-- Invisible N/S/E/W thrust zones (touch devices only; glows injected here) -->
