@@ -8,17 +8,22 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="../css/all.min.css" rel="stylesheet" />
-    <script type="module" crossorigin src="../assets/arcade/index-DZ-vxK6k.js"></script>
-    <link rel="modulepreload" crossorigin href="../assets/tailwind-D3cAdbGj.js">
-    <link rel="modulepreload" crossorigin href="../assets/version-badge-BHV0Er36.js">
-    <link rel="modulepreload" crossorigin href="../assets/tokens-DZhOMBh-.js">
-    <link rel="stylesheet" crossorigin href="../assets/tailwind-DPbJPjfp.css">
-    <link rel="stylesheet" crossorigin href="../assets/index-D0MsSqnf.css">
+    <script type="module" crossorigin src="../assets/arcade/index-BJaFt9k7.js"></script>
+    <link rel="modulepreload" crossorigin href="../assets/tailwind-CY0LiQKE.js">
+    <link rel="modulepreload" crossorigin href="../assets/version-badge-DHWUHpGA.js">
+    <link rel="modulepreload" crossorigin href="../assets/planet-field-C4vmJH_F.js">
+    <link rel="modulepreload" crossorigin href="../assets/tokens-2vCtBpfR.js">
+    <link rel="modulepreload" crossorigin href="../assets/page-header-BXTlxPh2.js">
+    <link rel="stylesheet" crossorigin href="../assets/tailwind-Db0jzKIx.css">
+    <link rel="stylesheet" crossorigin href="../assets/index-chYbfCnZ.css">
   </head>
   <body>
     <!-- `driven`: arcade.js owns the single rAF loop and calls tick() on the
-         backdrop each frame. No drift: the travel pan is the motion. -->
-    <st-planet-field id="bg" driven aria-hidden="true"></st-planet-field>
+         backdrop each frame. No drift (auto-scroll rate): the travel pan on
+         card hover is the motion. cursor-motion="translate" is a separate,
+         smaller ambient shift toward the pointer -- ADR-025's homepage sky
+         uses "rotate" instead; see planet-field.ts's cursorMotion doc. -->
+    <st-planet-field id="bg" driven cursor-motion="translate" aria-hidden="true"></st-planet-field>
     <nav class="hall-nav" aria-label="Arcade navigation">
       <a class="pill back" href="../" aria-label="Back to homepage" title="Back to homepage">
         <span class="arrow"><i class="fa-solid fa-arrow-left-long"></i></span>
@@ -35,222 +40,224 @@
         </span>
       </a>
       <a class="pill" href="../scoreboard/">
-        <span class="arrow"><i class="fa-solid fa-ranking-star"></i></span>
+        <span class="arrow"><i class="fa-solid fa-ranking-star red"></i></span>
         View scoreboard
       </a>
     </nav>
-    <main class="hall">
-      <header>
-        <h1>ARCADE <span class="red">GAMES</span></h1>
-        <p>Pick a planet. Start your mission. Only real pilots make the scoreboard.</p>
-      </header>
+    <main class="wrap">
+      <st-page-header
+        heading="ARCADE"
+        accent="GAMES"
+        subtitle="Pick a planet. Start your mission. Only real pilots make the scoreboard."
+      ></st-page-header>
+      <section class="flex flex-col justify-between grow h-max" aria-label="Arcade games">
+            <section class="solar-system" id="solarSystem">
+              <a
+                class="planet-card live"
+                href="mercury/"
+                data-planet="merkur"
+              >
+                <span class="planet merkur" aria-hidden="true"></span>
+                <div class="info">
+                  <h2>Orbit Runner</h2>
+                  <p class="game">Merkur</p>
+                  <p class="tagline">Dodge debris, bend gravity, fire beam.</p>
+                </div>
+                <span class="badge">
+                  <img
+                    src="../svg/gamepad.svg"
+                    class="arcade-icon"
+                    alt=""
+                    aria-hidden="true"
+                  />
+                  Play</span
+                >
+              </a>
 
-      <section class="solar-system" id="solarSystem">
-        <a
-          class="planet-card live"
-          href="orbit-runner/"
-          data-planet="merkur"
-        >
-          <span class="planet merkur" aria-hidden="true"></span>
-          <div class="info">
-            <h2>Orbit Runner</h2>
-            <p class="game">Merkur</p>
-            <p class="tagline">Dodge debris, bend gravity, fire beam.</p>
-          </div>
-          <span class="badge">
-            <img
-              src="../svg/gamepad.svg"
-              class="arcade-icon"
-              alt=""
-              aria-hidden="true"
-            />
-            Play</span
-          >
-        </a>
+              <a
+                class="planet-card live"
+                href="venus/"
+                data-planet="venus"
+              >
+                <span class="planet venus" aria-hidden="true"></span>
+                <div class="info">
+                  <h2>Meteor Dodge</h2>
+                  <p class="game">Venus</p>
+                  <p class="tagline">Weave through a burning meteor shower.</p>
+                </div>
+                <span class="badge">
+                  <img
+                    src="../svg/gamepad.svg"
+                    class="arcade-icon"
+                    alt=""
+                    aria-hidden="true"
+                  />
+                  Play</span
+                >
+              </a>
 
-        <a
-          class="planet-card live"
-          href="meteor-dodge/"
-          data-planet="venus"
-        >
-          <span class="planet venus" aria-hidden="true"></span>
-          <div class="info">
-            <h2>Meteor Dodge</h2>
-            <p class="game">Venus</p>
-            <p class="tagline">Weave through a burning meteor shower.</p>
-          </div>
-          <span class="badge">
-            <img
-              src="../svg/gamepad.svg"
-              class="arcade-icon"
-              alt=""
-              aria-hidden="true"
-            />
-            Play</span
-          >
-        </a>
+              <a
+                class="planet-card live"
+                href="earth/"
+                data-planet="jorden"
+              >
+                <span class="planet jorden" aria-hidden="true"></span>
+                <div class="info">
+                  <h2>ISS Docking</h2>
+                  <p class="game">Jorden</p>
+                  <p class="tagline">Match rotation and dock with the station.</p>
+                </div>
+                <span class="badge">
+                  <img
+                    src="../svg/gamepad.svg"
+                    class="arcade-icon"
+                    alt=""
+                    aria-hidden="true"
+                  />
+                  Play</span
+                >
+              </a>
 
-        <a
-          class="planet-card live"
-          href="iss-docking/"
-          data-planet="jorden"
-        >
-          <span class="planet jorden" aria-hidden="true"></span>
-          <div class="info">
-            <h2>ISS Docking</h2>
-            <p class="game">Jorden</p>
-            <p class="tagline">Match rotation and dock with the station.</p>
-          </div>
-          <span class="badge">
-            <img
-              src="../svg/gamepad.svg"
-              class="arcade-icon"
-              alt=""
-              aria-hidden="true"
-            />
-            Play</span
-          >
-        </a>
+              <a
+                class="planet-card live"
+                href="mars/"
+                data-planet="mars"
+              >
+                <span class="planet mars" aria-hidden="true"></span>
+                <div class="info">
+                  <h2>Phobos Lander</h2>
+                  <p class="game">Mars</p>
+                  <p class="tagline">Land softly on Phobos with limited fuel.</p>
+                </div>
+                <span class="badge">
+                  <img
+                    src="../svg/gamepad.svg"
+                    class="arcade-icon"
+                    alt=""
+                    aria-hidden="true"
+                  />
+                  Play</span
+                >
+              </a>
 
-        <a
-          class="planet-card live"
-          href="phobos-lander/"
-          data-planet="mars"
-        >
-          <span class="planet mars" aria-hidden="true"></span>
-          <div class="info">
-            <h2>Phobos Lander</h2>
-            <p class="game">Mars</p>
-            <p class="tagline">Land softly on Phobos with limited fuel.</p>
-          </div>
-          <span class="badge">
-            <img
-              src="../svg/gamepad.svg"
-              class="arcade-icon"
-              alt=""
-              aria-hidden="true"
-            />
-            Play</span
-          >
-        </a>
+              <a
+                class="planet-card live"
+                href="jupiter/"
+                data-planet="jupiter"
+              >
+                <span class="planet jupiter" aria-hidden="true"></span>
+                <div class="info">
+                  <h2>Galileo</h2>
+                  <p class="game">Jupiter</p>
+                  <p class="tagline">Map the field. The radiation is patient.</p>
+                </div>
+                <span class="badge">
+                  <img
+                    src="../svg/gamepad.svg"
+                    class="arcade-icon"
+                    alt=""
+                    aria-hidden="true"
+                  />
+                  Play</span
+                >
+              </a>
 
-        <a
-          class="planet-card live"
-          href="galileo/"
-          data-planet="jupiter"
-        >
-          <span class="planet jupiter" aria-hidden="true"></span>
-          <div class="info">
-            <h2>Galileo</h2>
-            <p class="game">Jupiter</p>
-            <p class="tagline">Map the field. The radiation is patient.</p>
-          </div>
-          <span class="badge">
-            <img
-              src="../svg/gamepad.svg"
-              class="arcade-icon"
-              alt=""
-              aria-hidden="true"
-            />
-            Play</span
-          >
-        </a>
+              <a
+                class="planet-card live"
+                href="saturn/"
+                data-planet="saturn"
+              >
+                <span class="planet saturn" aria-hidden="true"></span>
+                <div class="info">
+                  <h2>Star Memory</h2>
+                  <p class="game">Saturn</p>
+                  <p class="tagline">Match constellations around the rings.</p>
+                </div>
+                <span class="badge">
+                  <img
+                    src="../svg/gamepad.svg"
+                    class="arcade-icon"
+                    alt=""
+                    aria-hidden="true"
+                  />
+                  Play</span
+                >
+              </a>
 
-        <a
-          class="planet-card live"
-          href="star-memory/"
-          data-planet="saturn"
-        >
-          <span class="planet saturn" aria-hidden="true"></span>
-          <div class="info">
-            <h2>Star Memory</h2>
-            <p class="game">Saturn</p>
-            <p class="tagline">Match constellations around the rings.</p>
-          </div>
-          <span class="badge">
-            <img
-              src="../svg/gamepad.svg"
-              class="arcade-icon"
-              alt=""
-              aria-hidden="true"
-            />
-            Play</span
-          >
-        </a>
+              <a
+                class="planet-card live"
+                href="uranus/"
+                data-planet="uranus"
+              >
+                <span class="planet uranus" aria-hidden="true"></span>
+                <div class="info">
+                  <h2>Nebula Trail</h2>
+                  <p class="game">Uranus</p>
+                  <p class="tagline">A tilted Snake through an icy nebula.</p>
+                </div>
+                <span class="badge">
+                  <img
+                    src="../svg/gamepad.svg"
+                    class="arcade-icon"
+                    alt=""
+                    aria-hidden="true"
+                  />
+                  Play</span
+                >
+              </a>
 
-        <a
-          class="planet-card live"
-          href="nebula-trail/"
-          data-planet="uranus"
-        >
-          <span class="planet uranus" aria-hidden="true"></span>
-          <div class="info">
-            <h2>Nebula Trail</h2>
-            <p class="game">Uranus</p>
-            <p class="tagline">A tilted Snake through an icy nebula.</p>
-          </div>
-          <span class="badge">
-            <img
-              src="../svg/gamepad.svg"
-              class="arcade-icon"
-              alt=""
-              aria-hidden="true"
-            />
-            Play</span
-          >
-        </a>
+              <a
+                class="planet-card live"
+                href="neptune/"
+                data-planet="neptun"
+              >
+                <span class="planet neptun" aria-hidden="true"></span>
+                <div class="info">
+                  <h2>Diamond Rain</h2>
+                  <p class="game">Neptune</p>
+                  <p class="tagline">Carbon falls and the ice keeps coming down.</p>
+                </div>
+                <span class="badge">
+                  <img
+                    src="../svg/gamepad.svg"
+                    class="arcade-icon"
+                    alt=""
+                    aria-hidden="true"
+                  />
+                  Play</span
+                >
+              </a>
 
-        <a
-          class="planet-card live"
-          href="asteroid-breaker/"
-          data-planet="neptun"
-        >
-          <span class="planet neptun" aria-hidden="true"></span>
-          <div class="info">
-            <h2>Diamond Rain</h2>
-            <p class="game">Neptune</p>
-            <p class="tagline">Carbon falls and the ice keeps coming down.</p>
-          </div>
-          <span class="badge">
-            <img
-              src="../svg/gamepad.svg"
-              class="arcade-icon"
-              alt=""
-              aria-hidden="true"
-            />
-            Play</span
-          >
-        </a>
-
-        <a
-          class="planet-card live"
-          href="ice-fall/"
-          data-planet="pluto"
-        >
-          <span class="planet pluto" aria-hidden="true"></span>
-          <div class="info">
-            <h2>Ice Fall</h2>
-            <p class="game">Pluto</p>
-            <p class="tagline">Stack the ice before it stacks you.</p>
-          </div>
-          <span class="badge">
-            <img
-              src="../svg/gamepad.svg"
-              class="arcade-icon"
-              alt=""
-              aria-hidden="true"
-            />
-            Play</span
-          >
-        </a>
+              <a
+                class="planet-card live"
+                href="pluto/"
+                data-planet="pluto"
+              >
+                <span class="planet pluto" aria-hidden="true"></span>
+                <div class="info">
+                  <h2>Ice Fall</h2>
+                  <p class="game">Pluto</p>
+                  <p class="tagline">Stack the ice before it stacks you.</p>
+                </div>
+                <span class="badge">
+                  <img
+                    src="../svg/gamepad.svg"
+                    class="arcade-icon"
+                    alt=""
+                    aria-hidden="true"
+                  />
+                  Play</span
+                >
+              </a>
+            </section>
+            <footer>
+              <a href="https://servicedesign.dk" target="_blank" rel="noopener"
+                >servicedesign.dk</a
+              >
+          </footer>
       </section>
+    </section>
     </main>
-
-    <footer>
-      <a href="https://servicedesign.dk" target="_blank" rel="noopener"
-        >servicedesign.dk</a
-      >
-    </footer>
 
   </body>
 </html>
