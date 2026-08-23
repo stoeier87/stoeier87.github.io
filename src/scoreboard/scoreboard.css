@@ -2,7 +2,7 @@
 
 :root {
   --bg: #080b14;
-  --card: rgba(18, 22, 42, 0.82);
+  --card: rgba(18, 22, 42, 0.37);
   --card-border: rgba(90, 110, 200, 0.2);
   --text: #eef0ff;
   --muted: #8892b8;
@@ -15,13 +15,18 @@
   --radius: 14px;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
 body {
   font-family: 'Space Mono', monospace;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
+}
+
+/* Toggled from scoreboard.js on constellation-enter/leave -- the floating
+   #zodiac-label already names what's under the pointer while a sign is
+   hovered, so the system arrow just sits on top of the growing shape. */
+body.zodiac-hover {
+  cursor: none;
 }
 
 #bg {
@@ -32,60 +37,21 @@ body {
   z-index: 0;
 }
 
-.wrap {
-  position: relative;
-  z-index: 1;
-  max-width: 960px;
-  margin: 0 auto;
-  /* Extra top padding clears the fixed .board-nav back pill */
-  padding: 88px 20px 60px;
-}
-
-header {
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-header h1 {
-  font-family: 'Archivo Black', sans-serif;
-  text-transform: uppercase;
-  /* Same size as about-me's .name, on both desktop and mobile */
-  font-size: clamp(2.6rem, 9.5vw, 5.8rem);
-  line-height: 0.93;
-  letter-spacing: -0.01em;
-  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6);
-  color: #fff;
-}
-
-header h1 .red { color: var(--red); }
-.red { color: var(--red); }
-
-header h1 i {
-  color: var(--gold);
-  /* Icons inherit font-size by default — without this it scaled up with
-     the headline's much bigger size and forced a wrap on narrow screens */
-  font-size: 0.5em;
-  vertical-align: 0.12em;
-  margin-right: 0.15em;
-}
-
-.sub {
-  color: var(--muted);
-  font-size: 0.9rem;
-  margin-top: 6px;
-}
 
 .boards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
+  gap: 2rem;
 }
 
 .board-card {
   background: var(--card);
   border: 1px solid var(--card-border);
   border-radius: var(--radius);
-  backdrop-filter: blur(12px);
+  /* 12px smeared the star map/constellations behind every card into a
+     formless haze even though --card's alpha is only 0.12 -- the blur, not
+     the tint, was what made the sky unreadable through the grid. */
+  /* backdrop-filter: blur(0px); */
   overflow: hidden;
   transition: border-color 0.2s;
 }
@@ -233,15 +199,21 @@ tr .rank td { text-align: center; }
    ride on hover — same easter egg as about-me's back pill. */
 .pill.back {
   animation: pillFloat 5s ease-in-out infinite;
-  padding: 0.8rem 1rem;
+  padding: 0.8rem 1rem 0.8rem 1.5rem;
   overflow: hidden;
+  /* tailwind.css's shared .pill sets background: rgba(13,20,36,0.72) and
+     loads last, so it always wins over this file's plain .pill rule -- the
+     star map behind it was getting buried under that navy. .pill.back is
+     two classes, which outranks tailwind's one-class .pill on specificity
+     regardless of load order, so it's the sanctioned way to override without
+     touching the shared rule (see CLAUDE.md's Tailwind collision note). */
 }
 .pill.back .arrow { margin-right: 0; transition: transform 0.25s ease; }
 .pill.back:hover .arrow { transform: translateX(-3px); }
 
 .pill.back .alien {
   display: flex;
-  position: absolute;
+  /* position: absolute; */
   width: 0;
   margin-left: 0;
   opacity: 0;
@@ -288,6 +260,10 @@ footer {
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.35);
+      height: 100%;
+    justify-content: center;
+    display: flex;
+    align-items: end;
 }
 footer a {
   color: inherit;
