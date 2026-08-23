@@ -402,3 +402,27 @@ export function glowTexture(): CanvasTexture {
   tex.colorSpace = SRGBColorSpace;
   return tex;
 }
+
+/**
+ * A satellite's point of light -- a bright, near-opaque core with a fast
+ * falloff, not the planet halo's soft translucent gradient. glowTexture()
+ * peaks at 0.30 alpha, designed to sit *behind* a bright planet body sprite;
+ * reused alone for a satellite (no body sprite on top) it read as a faint,
+ * blurry smudge rather than a glinting point of light.
+ */
+export function satelliteTexture(): CanvasTexture {
+  const S = 32;
+  const canvas = makeCanvas(S, S);
+  const ctx = context2d(canvas);
+  const g = ctx.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+  g.addColorStop(0, "rgba(255,255,255,1)");
+  g.addColorStop(0.18, "rgba(255,255,255,0.9)");
+  g.addColorStop(0.45, "rgba(255,255,255,0.2)");
+  g.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, S, S);
+
+  const tex = new CanvasTexture(canvas);
+  tex.colorSpace = SRGBColorSpace;
+  return tex;
+}

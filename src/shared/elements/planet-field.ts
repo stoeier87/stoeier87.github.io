@@ -71,6 +71,7 @@ import {
   glowTexture,
   rand,
   ringTexture,
+  satelliteTexture,
   streakTexture,
   surfaceTexture,
 } from "./planet-textures.ts";
@@ -198,6 +199,7 @@ export class PlanetFieldElement extends HTMLElement {
   #traffic: SkyTraffic | null = null;
   #glow: CanvasTexture | null = null;
   #streak: CanvasTexture | null = null;
+  #satelliteGlow: CanvasTexture | null = null;
   /** A single extra planet body shown large and centred on card hover. */
   #featured: PlanetBody | null = null;
   #featuredAlpha = 0;
@@ -391,7 +393,8 @@ export class PlanetFieldElement extends HTMLElement {
 
     if (this.satellites > 0 || this.hasAttribute("shooting-stars")) {
       this.#streak = streakTexture();
-      this.#traffic = new SkyTraffic(this.#streak, this.#glow, this.satellites);
+      this.#satelliteGlow = satelliteTexture();
+      this.#traffic = new SkyTraffic(this.#streak, this.#satelliteGlow, this.satellites);
       this.#traffic.addTo(this.#scene);
     }
 
@@ -430,6 +433,8 @@ export class PlanetFieldElement extends HTMLElement {
     this.#glow = null;
     this.#streak?.dispose();
     this.#streak = null;
+    this.#satelliteGlow?.dispose();
+    this.#satelliteGlow = null;
     this.#renderer?.dispose();
     this.#renderer = null;
     this.#scene = null;
