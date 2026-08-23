@@ -7,10 +7,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="../css/all.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./scoreboard.css" />
     <link rel="stylesheet" href="../tailwind.css" />
   </head>
   <body>
+    <!-- <canvas id="bg" aria-hidden="true"></canvas> -->
     <st-planet-field
       id="bg"
       driven
@@ -23,9 +24,8 @@
       class="pointer-events-none fixed bottom-6 left-1/2 z-10 hidden -translate-x-1/2 rounded-full border border-white/20 bg-black/60 px-4 py-2 font-mono text-xs tracking-widest text-white/90 backdrop-blur"
       aria-hidden="true"
     ></div>
-
-    <nav class="board-nav" aria-label="Scoreboard navigation">
-      <a class="pill back" href="../arcade/" aria-label="Back to arcade" title="Back to arcade">
+    <nav class="hall-nav" aria-label="Scoreboard navigation">
+      <a class="pill back" href="/arcade/" aria-label="Back to arcade" title="Back to arcade">
         <span class="arrow"><i class="fa-solid fa-arrow-left-long"></i></span>
         <span class="alien" aria-hidden="true">
           <svg viewBox="0 0 26 26" width="17" height="17">
@@ -38,6 +38,12 @@
                   stroke="#7eb08a" stroke-width="2.3" stroke-linecap="round" fill="none" />
           </svg>
         </span>
+      </a>
+      <a class="pill" href="/arcade">
+        <span class="arrow">
+          <i class="fa-solid fa-gamepad" style="color: #e03a2f"></i>
+        </span>
+        Arcade Games
       </a>
     </nav>
 

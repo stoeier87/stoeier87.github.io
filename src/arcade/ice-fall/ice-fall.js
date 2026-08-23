@@ -730,10 +730,9 @@ if (canHover) el.introKeys.classList.add("show");
 else el.introTouch.classList.add("show");
 
 /* ── Scoreboard ─────────────────────────────────────────────
-   gameKey is the planet, "pluto": it is the Firebase path segment the
-   scoreboard reads, shared with every other arcade game's planet-keyed
-   scores. */
-fetchGlobalBest("pluto").then((b) => {
+   gameKey stays "ice-fall": it is the Firebase path segment the scoreboard
+   reads. */
+fetchGlobalBest("ice-fall").then((b) => {
   best = Math.max(best, b);
   el.best.textContent = best;
 });
@@ -1553,8 +1552,8 @@ function tickFreeze(now) {
   cardShown = true;
   el.over.classList.add("show");
   submitScoreOnGameOver({
-    gameKey: "pluto",
-    gameLabel: "Ice Fall — Pluto",
+    gameKey: "ice-fall",
+    gameLabel: "Ice Fall",
     score: Math.floor(score),
     ask: true,
   });

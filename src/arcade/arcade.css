@@ -45,6 +45,8 @@ h1 {
   text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6);
 }
 h1 .red { color: var(--color-red); }
+.red { color: #e03a2f; }
+
 header p {
   color: var(--color-ink-muted);
   @apply mt-[0.35rem];
@@ -61,11 +63,11 @@ header p {
    toward an edge, so individual card hover states (.planet-card:hover)
    underneath are untouched. */
 .hall.card-hovered .solar-system {
-  transform: scale(0.92);
+  /* transform: scale(0.92); */
 }
 
 .solar-system:hover {
-  @apply lg:scale-[0.92];
+  /* @apply lg:scale-[0.92]; */
 }
 st-planet-field#bg {
   @apply opacity-10 md:opacity-100 pointer-events-none fixed inset-0 z-0 block;
