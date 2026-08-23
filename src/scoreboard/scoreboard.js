@@ -43,6 +43,13 @@ const sky = document.getElementById("bg");
 const zodiacLabel = document.getElementById("zodiac-label");
 if (sky) {
   sky.constellations = ZODIAC_SIGNS;
+  // Sparser and dimmer than the homepage default -- the 12 constellation
+  // figures are the focal decoration here, and a busy background star field
+  // competes with them instead of framing them.
+  sky.starLayers = [
+    { density: 32000, sizeMin: 0.4, sizeMax: 0.9, parallax: 0.08, alpha: 0.35 },
+    { density: 20000, sizeMin: 0.8, sizeMax: 1.4, parallax: 0.22, alpha: 0.55 },
+  ];
   addEventListener("resize", () => sky.resize(), { passive: true });
   requestAnimationFrame(function loop(t) {
     sky.tick(t);
