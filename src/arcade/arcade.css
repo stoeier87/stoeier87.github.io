@@ -10,6 +10,11 @@ body {
   overflow-y: auto;
 }
 
+/* Was #bg, a 2D starfield canvas. Same box, same layer — see arcade.js. */
+st-planet-field {
+  @apply blur-[0px] md:blur-[3px] ;
+}
+
 .solar-system {
   @apply max-w-screen-xl mx-auto grid w-full;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
