@@ -39,7 +39,7 @@ export const GAMES = [
   {
     key: "mercury", label: "Merkur", gamekey: "orbit-runner", gameLabel: "Orbit Runner",
     tagline: "Dodge debris, bend gravity, fire beam.",
-    introBody: "Debris falls under Mercury's pull. Dodge what you can, burn what you can't.",
+    introBody: "Your beam only fires toward the far half of the screen — below center it shoots up, above it, down. Dodge what you can, burn what you can't.",
     introKeys: {
       kb: [["Mouse / drag", "move"], ["Space", "fire beam"]],
       touch: [["Drag", "move"], ["Tap", "fire beam"]],
@@ -48,7 +48,7 @@ export const GAMES = [
   {
     key: "venus", label: "Venus", gamekey: "meteor-dodge", gameLabel: "Meteor Dodge",
     tagline: "Weave through a burning meteor shower.",
-    introBody: "Rock, ice, and metal all fall the same way — fast. Move to live, fire to clear a path.",
+    introBody: "Venus's sky doesn't care what's falling through it — rock, ice, or metal, it's all fast and it's all lethal. Move to live, fire to clear a path.",
     introKeys: {
       kb: [["Arrows / WASD", "move"], ["Space", "fire"]],
       touch: [["D-pad", "move"], ["⚡ button", "fire"]],
@@ -67,7 +67,7 @@ export const GAMES = [
   {
     key: "mars", label: "Mars", gamekey: "phobos-lander", gameLabel: "Phobos Lander",
     tagline: "Land softly on Phobos with limited fuel.",
-    introBody: "Fuel is limited. Land gently, or don't land at all.",
+    introBody: "Phobos won't forgive a hard landing, and fuel won't wait for you to get it right. Land gently, or don't land at all.",
     introKeys: {
       kb: [["Space / W / ↑", "thrust"], ["A / ←", "rotate left"], ["D / →", "rotate right"]],
       touch: [["THRUST", "thrust"], ["◀ / ▶", "rotate"]],
@@ -76,7 +76,7 @@ export const GAMES = [
   {
     key: "jupiter", label: "Jupiter", gamekey: "galileo", gameLabel: "Galileo",
     tagline: "Map the field. The radiation is patient.",
-    introBody: "Map the field. Radiation builds. Three hits and the probe is gone.",
+    introBody: "Radiation pockets hide in Jupiter's field, and each one you hit speeds up the clock. Three, and the probe falls.",
     introKeys: {
       kb: [["Click", "reveal"], ["Right click", "flag"], ["Middle / both buttons", "chord"]],
       touch: [["Tap", "reveal"], ["Long press", "flag"], ["Double tap", "chord"], ["Pinch", "zoom"]],
@@ -85,7 +85,7 @@ export const GAMES = [
   {
     key: "saturn", label: "Saturn", gamekey: "star-memory", gameLabel: "Star Memory",
     tagline: "Match constellations around the rings.",
-    introBody: "Match the constellations before the clock runs out. Saturn has been keeping time longer than you have.",
+    introBody: "Match the constellations before the clock runs out — one mismatch and your streak resets. Saturn has been keeping time longer than you have.",
     introKeys: {
       kb: [["Click", "turn a card"], ["R", "restart when time is out"]],
       touch: [["Tap", "turn a card"]],
@@ -94,18 +94,18 @@ export const GAMES = [
   {
     key: "uranus", label: "Uranus", gamekey: "nebula-trail", gameLabel: "Nebula Trail",
     tagline: "A tilted Snake through an icy nebula.",
-    introBody: "Eat pellets to grow — the bigger the trail, the bigger the pellets. Grab the rare comet before it fades!",
+    introBody: "Uranus spins on its side, and so does your trail. Grow on pellets, chase the rare comet before it fades, and don't run into yourself.",
     introKeys: {
-      kb: [["↑ ↓ ← → / WASD", "steer"]],
-      touch: [["Swipe", "steer"]],
+      kb: [["↑ ↓ ← → / WASD", "steer"], ["Q / E", "diagonal turn"]],
+      touch: [["Swipe", "steer"], ["↺ / ↻", "diagonal turn"]],
     },
   },
   {
     key: "neptune", label: "Neptun", gamekey: "diamond-rain", gameLabel: "Diamond Rain",
     tagline: "Carbon falls and the ice keeps coming down.", cardPlanetLabel: "Neptune",
-    introBody: "Carbon falls, the wind splits it, and the ice keeps coming down.",
+    introBody: "The wind splits the carbon rain, and Neptune keeps making more. Smash it before it lands — three misses and you're done.",
     introKeys: {
-      kb: [["← → / A D", "move"], ["Mouse", "move"], ["Space", "launch"], ["P / Esc", "pause"]],
+      kb: [["← → / A D", "move"], ["Mouse", "move"], ["Space", "launch"]],
       touch: [["Drag low on the screen", "move"], ["Tap", "launch"]],
     },
   },
@@ -114,7 +114,7 @@ export const GAMES = [
     tagline: "Stack the ice before it stacks you.",
     introBody: "Stack the ice. Clear the lines. Pluto is patient and you are not.",
     introKeys: {
-      kb: [["← →", "move"], ["↓", "soft drop"], ["↑ / X", "rotate"], ["Z", "rotate back"], ["Space", "hard drop"], ["P / Esc", "pause"]],
+      kb: [["← →", "move"], ["↓", "soft drop"], ["↑ / X", "rotate"], ["Z", "rotate back"], ["Space", "hard drop"]],
       touch: [["Swipe", "move"], ["Tap", "rotate"], ["Two-finger tap", "rotate back"], ["Swipe down", "soft drop"], ["Swipe up", "hard drop"]],
     },
   },
