@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 :root {
   --bg: #080b14;
   --card: rgba(18, 22, 42, 0.82);
@@ -5,6 +7,7 @@
   --text: #eef0ff;
   --muted: #8892b8;
   --accent: #6e8fff;
+  --red: #e03a2f;
   --gold: #ffd166;
   --silver: #b0bcd8;
   --bronze: #cd8b5a;
@@ -54,7 +57,8 @@ header h1 {
   color: #fff;
 }
 
-header h1 .red { color: #e03a2f; }
+header h1 .red { color: var(--red); }
+.red { color: var(--red); }
 
 header h1 i {
   color: var(--gold);
@@ -92,9 +96,9 @@ header h1 i {
 
 .board-card-header {
   display: flex;
-  align-items: center;
+  align-items: start;
   justify-content: space-between;
-  padding: 14px 16px;
+  padding: 1rem 1rem 0.75rem;
   border-bottom: 1px solid var(--line);
   gap: 10px;
 }
@@ -104,13 +108,32 @@ header h1 i {
   font-size: 0.95rem;
   letter-spacing: 0.5px;
   color: #d4dbff;
-  flex: 1;
+  flex: 10;
 }
 
 .board-card-header .top-score {
   font-size: 0.8rem;
   color: var(--gold);
   white-space: nowrap;
+}
+
+.board-card-header .game-labels {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.board-card-header .game-labels h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.board-card-header .game-key {
+  font-size: 0.5rem;
+  line-height: 19.95px;
+  letter-spacing: 0.5px;
+  color: var(--gold);
 }
 
 .expand-btn {
@@ -132,7 +155,7 @@ header h1 i {
 }
 
 .board-card-body {
-  padding: 0 16px 14px;
+  padding: 0 1rem 0.875rem;
 }
 
 table {
@@ -143,7 +166,7 @@ table {
 
 th, td {
   text-align: left;
-  padding: 7px 6px;
+  /* padding: 7px 6px; */
   font-size: 0.82rem;
   border-bottom: 1px solid var(--line);
 }
@@ -168,6 +191,8 @@ tr[data-rank='1'] .rank { color: var(--gold); }
 tr[data-rank='2'] .rank { color: var(--silver); }
 tr[data-rank='3'] .rank { color: var(--bronze); }
 
+tr .rank td { text-align: center; }
+.rank-number { padding-left: 1.2px; }
 .col-score {
   text-align: right;
   font-weight: 700;
@@ -200,8 +225,8 @@ tr[data-rank='3'] .rank { color: var(--bronze); }
   background: rgba(13, 20, 36, 0.6);
   transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
 }
-.pill:hover { border-color: #e03a2f; background: rgba(224, 58, 47, 0.12); }
-.pill:focus-visible { outline: 2px solid #e03a2f; outline-offset: 4px; border-color: #e03a2f; }
+.pill:hover { border-color: var(--red); background: rgba(224, 58, 47, 0.12); }
+.pill:focus-visible { outline: 2px solid var(--red); outline-offset: 4px; border-color: var(--red); }
 .pill .arrow { margin-right: 0.5em; }
 
 /* Icon only, so the pill collapses toward a circle. An alien hitches a
@@ -216,6 +241,7 @@ tr[data-rank='3'] .rank { color: var(--bronze); }
 
 .pill.back .alien {
   display: flex;
+  position: absolute;
   width: 0;
   margin-left: 0;
   opacity: 0;
@@ -225,6 +251,8 @@ tr[data-rank='3'] .rank { color: var(--bronze); }
 }
 .pill.back:hover .alien,
 .pill.back:focus-visible .alien {
+  display: flex;
+  position: relative;
   width: 17px;
   margin-left: 0.5em;
   opacity: 1;
@@ -269,6 +297,6 @@ footer a:hover {
   color: rgba(255, 255, 255, 0.6);
 }
 footer a:focus-visible {
-  outline: 2px solid #e03a2f;
+  outline: 2px solid var(--red);
   outline-offset: 4px;
 }

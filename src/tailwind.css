@@ -277,6 +277,9 @@ a.stat:hover {
 .gameover-sub {
   @apply hidden md:visible text-small text-white/65 mb-3.5;
 }
+.hidden {
+  display: none !important;
+}
 
 .restart-btn {
   padding: 12px 22px;
