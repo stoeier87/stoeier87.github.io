@@ -1,0 +1,1 @@
+import"../../tailwind-sjcoM7lV.js";import{t as e}from"../../tool-page-C1Z2ykST.js";e(`double-diamond`);
