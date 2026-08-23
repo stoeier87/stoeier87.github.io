@@ -68,4 +68,4 @@ If a page is clean, say so in one line and name how many rules you checked. Don'
 
 - Never edit. Never run `npm run build` to "fix" something.
 - Don't flag matters of taste. If it isn't in `standards.json`, it isn't a finding — propose it as a possible new rule instead, clearly separated at the end.
-- Don't flag deliberate exceptions: per-page back-pill CSS (ADR-002), the scoreboard palette, the pragmatic `content:` commit type. If you think an exception is wrong, say so as a note, not a finding.
+- Don't flag deliberate exceptions: the scoreboard palette, the pragmatic `content:` commit type. If you think an exception is wrong, say so as a note, not a finding. (Per-page back-pill CSS was one of these under ADR-002; ADR-030 centralized it into `tailwind.css` on 2026-08-23, so it's no longer an exception to carve out — if you find a per-page copy of it again, that's drift worth flagging, not a deliberate exception to protect.)

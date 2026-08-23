@@ -15,9 +15,9 @@ You find duplication in `stoeier87.github.io` and report it. **You never edit an
 
 But the inverse error is worse. **Some duplication here is correct, and reporting it as a defect wastes a human's time and erodes trust in your reports.**
 
-## Duplication that must be marked `keep`
+## Duplication that must be marked `keep` — or was, until the markup itself stopped being duplicated
 
-**Per-page back-pill CSS** — `src/index.css`, `src/about-me/about-me.css`, `src/space-bar/space-bar.css`, `src/arcade/arcade.css`. ADR-002. The shared `.pill` in `tailwind.css` is load-bearing for every in-game canvas HUD, `tailwind.css` loads last so it wins on equal specificity, and `.topbar { pointer-events: none }` already made the About-me back arrow unclickable once. PR #53 confirmed this duplication as intentional. Mark `keep`, cite the reason.
+**Per-page back-pill CSS was `keep` under ADR-002 for years** — the shared `.pill` in `tailwind.css` is load-bearing for every in-game canvas HUD, `tailwind.css` loads last so it wins on equal specificity, and `.topbar { pointer-events: none }` already made the About-me back arrow unclickable once (PR #53 confirmed the duplication as intentional at the time). **As of ADR-030 (2026-08-23) it no longer applies**: `<st-hall-nav>` now renders that markup from one shared template instead of five hand-copied `<nav>` blocks, and the CSS was centralized into `tailwind.css` to match. If you find this cluster again, it should already be resolved — report it as such, don't re-recommend `keep`. The underlying lesson still holds for the _next_ case like it: a `keep` verdict is conditional on the markup staying independently duplicated, not a permanent property of the CSS.
 
 **The scoreboard palette** — `--color-scoreboard-*` is a deliberate documented drift, not a copy to merge.
 
@@ -41,7 +41,7 @@ priority ≈ (occurrences × likelihood the copies must stay in sync) ÷ extract
 
 Three copies of a pure drawing routine that will never need to differ is a strong candidate. Three copies each with hand-tuned visual differences are three components that merely resemble each other — merging them yields a function with five boolean flags, which is worse than the duplication. Say which case you're looking at, explicitly.
 
-**Extraction risk is highest** where the shared code touches `tailwind.css`'s component layer (eight game HUDs), seeded randomness (skies are deterministic on purpose — different generators produce different skies from the same seed), or the scroll pipeline.
+**Extraction risk is highest** where the shared code touches `tailwind.css`'s component layer (nine game HUDs), seeded randomness (skies are deterministic on purpose — different generators produce different skies from the same seed), or the scroll pipeline.
 
 ## Report
 
@@ -65,10 +65,17 @@ redundancy-scout — 6 clusters
                  Zero runtime cost — nothing ships to the browser.
    risk          low, but head ORDER is load-bearing: tailwind.css must stay last.
 
-4. back-pill CSS — 4 copies — KEEP
-   reason        ADR-002. The shared .pill is load-bearing for 8 game HUDs and
-                 tailwind.css loads last. PR #53 confirmed this as intentional.
+4. backdrop starfield IIFE — 3 copies — AMBIGUOUS
+   src/tools/tools.js, src/tools/validator/validator.js, src/space-bar/space-bar.js
+   differences   identical DPR/seeded-star-array/resize/rAF skeleton, but each
+                 paints a different background (flat fill vs. gradient vs.
+                 gradient+UFO easter egg)
+   verdict       don't force one function over genuinely different payloads —
+                 that's the five-boolean-flags trap. Present the trade-off,
+                 don't pick for the human.
 ```
+
+Note on precedent, not a fact to trust blindly: back-pill CSS was a real `KEEP` under ADR-002 for years (the shared `.pill` was load-bearing for every game HUD, and a shared rule had already broken About-me's back arrow once). ADR-030 (2026-08-23) centralized it into `tailwind.css` anyway, once `<st-hall-nav>` meant every page rendered that markup from one template instead of five hand-copied blocks. **A `KEEP` verdict is conditional on the markup staying independently duplicated — recheck it, don't cite this file's old example as if it's still current.**
 
 Every cluster gets: copies with `file:line`, **how they differ**, a verdict (`EXTRACT` / `KEEP` / `WATCH`), a proposed target, and a risk note. `WATCH` is for two copies that are drifting and will hit three soon.
 

@@ -70,7 +70,7 @@ Use the shared arcade component layer from `tailwind.css` — `.pill`, `.topbar`
 }
 ```
 
-Do not restyle the shared classes. Eight games depend on them.
+Do not restyle the shared classes. Nine games depend on them.
 
 ## Input
 
