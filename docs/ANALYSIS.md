@@ -18,7 +18,7 @@ about-me/  space-bar/  scoreboard/    standalone pages
 arcade/
   index.html arcade.js arcade.css     lobby / planet picker
   shared/ starfield.js score-submit.js backgrounds-iss.js firebase-config.js
-  <8 games>/ index.html <game>.js <game>.css
+  <9 games>/ index.html <game>.js <game>.css
 public/                               FontAwesome CSS + webfonts, gamepad.svg
 ```
 
@@ -121,7 +121,7 @@ Added by issue #61, after the rest of this document was written — the homepage
 | `planet-textures.ts`      | `surfaceTexture`, `cloudTexture`, `ringTexture`, `streakTexture`, `glowTexture`, `rand`                    | The only place a planet or star texture is generated. `rand(seed)` is a hash PRNG — same trick as the old starfield's deterministic sky, carried forward so every `<st-planet-field>` sky is identical on every visit.                                                                          |
 | `sky-traffic.ts`          | `SkyTraffic`                                                                                               | Drifting satellites and shooting stars, independent of the planets.                                                                                                                                                                                                                             |
 
-**The prop surface is the whole point.** A `PlanetSpec` varies position (`s0` along the journey, `px` horizontal fraction), `pf` (parallax factor — how strongly it responds to scroll/pan), `depth` (z-axis pixels, for perspective-correct size scaling on the hover zoom), `spin`, and feature flags (`ring`, `earth`, `bands`). A `StarLayer` varies `density`, `sizeMin`/`sizeMax`, `parallax`, `alpha`. `<st-planet-field>` itself varies `planets[]`, `starLayers[]`, `drift`, `focusY`, and the `driven`/`interactive`/`satellites` attributes. Two very different-looking results — the homepage's vertical scroll journey through 9 planets, and the arcade lobby's horizontal hover-pan through 8 — are the same three classes with different prop values, not two implementations. `standards.json`'s `reuse-threejs-universe` rule is what's meant to keep it that way: play with the props before adding a file.
+**The prop surface is the whole point.** A `PlanetSpec` varies position (`s0` along the journey, `px` horizontal fraction), `pf` (parallax factor — how strongly it responds to scroll/pan), `depth` (z-axis pixels, for perspective-correct size scaling on the hover zoom), `spin`, and feature flags (`ring`, `earth`, `bands`). A `StarLayer` varies `density`, `sizeMin`/`sizeMax`, `parallax`, `alpha`. `<st-planet-field>` itself varies `planets[]`, `starLayers[]`, `drift`, `focusY`, and the `driven`/`interactive`/`satellites`/`cursor-motion` attributes (`cursor-motion` is `"rotate"`, `"translate"`, or `"pan"` — a continuous pointer-x sweep across the whole field plus a mouse-x zoom, ADR-028). Two very different-looking results — the homepage's vertical scroll journey through 9 planets, and the arcade lobby's horizontal pointer-driven sweep through 9 — are the same three classes with different prop values, not two implementations. `standards.json`'s `reuse-threejs-universe` rule is what's meant to keep it that way: play with the props before adding a file.
 
 ---
 

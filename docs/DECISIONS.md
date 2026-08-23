@@ -24,7 +24,7 @@ Statuses: `active` · `deferred` · `superseded by ADR-nnn` · `reversed`.
 ## ADR-002 — `tailwind.css` loads last, and the shared component layer is untouchable
 
 **Decided:** 2026-08-12 (retroactive)
-**Status:** active
+**Status:** superseded by ADR-030 for the back-pill specifically; the load-order rule and the sidestep-don't-edit principle stay active for everything else
 
 `tailwind.css` is the final stylesheet in every `<head>`, and carries both the `@theme` tokens and a shared component layer (`.pill`, `.topbar`, `.badge`, `.stat`, `.gameover`).
 
@@ -108,7 +108,7 @@ Two copies are fine when the variants genuinely differ. A third means stop and p
 
 **Why:** the old brief canonised triplicated `drawPlanet` as a ship-oriented virtue. At 14 pages it stopped being one. But blanket "extract everything" is worse — the per-page `.pill.back` duplication is _correct_, because the shared `.pill` is load-bearing for eight game HUDs (ADR-002).
 
-**Consequences:** `redundancy-scout` reports clusters and never edits. `/dedupe` is two-phase and stops after reporting. Extraction is its own PR, approved cluster by cluster. Standing clusters: `drawPlanet` ×3 (`script.js:197`, `arcade/arcade.js:83`, `arcade/shared/starfield.js:55`), back-pill CSS ×4, starfield init ×5 including one inlined in `scoreboard/index.html:43-87`.
+**Consequences:** `redundancy-scout` reports clusters and never edits. `/dedupe` is two-phase and stops after reporting. Extraction is its own PR, approved cluster by cluster. Standing clusters at the time: `drawPlanet` ×3 (`script.js:197`, `arcade/arcade.js:83`, `arcade/shared/starfield.js:55`), back-pill CSS ×4, starfield init ×5 including one inlined in `scoreboard/index.html:43-87`. **All three counts are historical — see ADR-023 (`drawPlanet` resolved by reuse), ADR-026 (the game-HUD topbar/game-over clusters this list didn't yet include), and ADR-030 (back-pill centralized, superseding this entry's `keep` framing). `docs/CLAUDE.md` rule 8 and `standards.json`'s `rule-of-three.knownClusters` carry whatever's actually still open.**
 
 ---
 
@@ -436,6 +436,16 @@ pass: two of the five copies diverge in real behaviour (space-bar's UFO event, s
 unseeded `Math.random()` against the other four's seeded `mulberry32`), so extraction now risks
 silently normalising that divergence in a way a screenshot diff won't catch.
 
+**Update, 2026-08-23 — the first element shipped differently than planned.** No
+`src/shared/elements/back-pill.ts` was written. Instead `<st-hall-nav>` shipped first (the
+back-pill plus the second-pill nav block together, since that's the unit every page actually
+repeated), still rendering the plain global `.pill`/`.pill.back` classes rather than a new
+element-owned one — and once every page's nav markup came from the same template, the CSS
+underneath it followed and was centralized into `tailwind.css` too (ADR-030), the exact move
+this ADR's "Fixed the ADR-002-sidestep way" line said not to make. See ADR-030 for the
+reasoning and the open question about whether it needs re-verifying against the original
+About-me incident.
+
 ---
 
 ## ADR-024 — `tokens.ts` becomes the theme source; `@theme` in `tailwind.css` is generated
@@ -540,3 +550,214 @@ runtime fetch from every page load.
 `generate-theme.mjs` groundwork PR before the first custom element. This work lands the first
 element first. `scripts/tokens-check.mjs` and `npm run tokens` are untouched, so ADR-024 remains
 open exactly as written — the order slipped, the decision did not.
+
+---
+
+## ADR-026 — Game HUD unification: `<st-game-topbar>`, `<st-game-over>`, shared HUD/overlay CSS
+
+**Decided:** 2026-08-23
+**Status:** active
+
+The back-circle/badge/SCORE/BEST topbar and the `#gameOver` title+score-breakdown+restart
+overlay, hand-copied across all 9 game pages, are now `<st-game-topbar game-title="...">` and
+`<st-game-over game-title="..." restart-label="...">` — native custom elements, light DOM, no
+shadow root, same pattern as `<st-planet-field>`. The CSS underneath (the circular back-arrow
+pill, the mobile topbar override, the full-viewport lockdown, and the pausable-HUD
+approach/intro/final-rows/best-marker template) was extracted first, into
+`src/arcade/shared/game-hud.css` and `game-overlay.css`, each imported only by the games that
+use that shape.
+
+**Why.** Same story both times: nine byte-identical (or identical modulo `".14em"` vs.
+`"0.14em"`-style literal formatting) copies is well past rule-of-three, and the markup/CSS were
+duplicated independently of each other, so both needed their own pass.
+
+**Consequences:**
+
+- `<st-game-over>` passes each game's `.final-rows` block through as light-DOM children rather
+  than a prop — there's no `<slot>` without a shadow root, so it's captured via `innerHTML`
+  before the component overwrites itself. Every existing
+  `getElementById("finalScore"/"finalBest"/"bestMarker"/...)` call keeps working unchanged.
+- Two real bugs surfaced and were fixed in the same pass, not deferred: `mars/phobos-lander.css`
+  imported `game-overlay.css` but its own `.approach` rule never set `opacity`, relying on the
+  CSS default — once the shared `.approach` (`opacity:0`, fade-in) landed in the same cascade,
+  Mars's lander HUD (no fade-in JS, never gains a `.show` class) would have rendered permanently
+  invisible. Fixed with an explicit `opacity:1`/`transition:none` override, documented inline.
+  Separately, `mercury/orbit-runner` was the one outlier before this: "MISSION FAILED" was drawn
+  directly on the canvas instead of using the shared `#gameOver` overlay, its restart button was
+  created dynamically via JS and appended to `document.body`, and it never defined
+  `--game-accent`/`--game-accent-dim` at all — `game-overlay.css`'s `.best-marker` and
+  `.restart-btn:focus-visible` would have rendered with a transparent badge. All three fixed
+  while wiring mercury up to match every other game, using `tokens.ts`'s `merkurHi`.
+- Net effect on the 9 game stylesheets from the CSS extraction alone: −1004 lines, +35.
+- This resolves the "in-game HUD topbar" and "game-over overlay" clusters `docs/CLAUDE.md` rule
+  8 and `standards.json`'s `rule-of-three.knownClusters` previously flagged as open (×9 each,
+  found in the 2026-08-23 `/dedupe` sweep this same session ran) — both docs updated to point
+  here instead of re-describing them as open.
+
+---
+
+## ADR-027 — `GAMES` data centralized; the arcade lobby renders its cards dynamically
+
+**Decided:** 2026-08-23
+**Status:** active
+
+`GAMES` (key/label/gamekey/gameLabel/tagline) was hand-copied in both `arcade.js` and
+`scoreboard.js`, and `arcade/index.html`'s 9 `.planet-card` blocks were a third, larger copy of
+the same per-game facts — with the card copy text itself never existing anywhere reusable before
+this. All three now read from one module, `src/arcade/shared/games-data.js`.
+
+**Why.** Same rule-of-three shape as ADR-026, one level up: the data those components render
+was tripled, not just the markup.
+
+**Consequences:**
+
+- `arcade.js` renders the solar-system grid from `GAMES` at runtime; `#solarSystem` ships empty
+  in the HTML. `data-planet` and the `.planet` CSS class are derived as `label.toLowerCase()`
+  rather than stored a second time.
+- `tagline` is now reused verbatim as each game's meta description
+  (`vite.config.js`'s `arcadeGameHeadPlugin`, ADR-029) and as the lobby card copy, instead of
+  being invented twice.
+- Neptune's card shows the English "Neptune" in `<p class="game">` while everywhere else
+  (`data-planet`, the CSS class, the scoreboard header) uses the Danish "Neptun" — kept via an
+  explicit `cardPlanetLabel` override rather than silently normalized. Flag it if it turns out
+  to have been a typo rather than a deliberate choice; nobody has confirmed which.
+
+---
+
+## ADR-028 — `<st-hall-nav>`, and `<st-planet-field>` gains `cursor-motion="pan"`
+
+**Decided:** 2026-08-23
+**Status:** active
+
+`<st-hall-nav>` (light DOM, no shadow root) replaces the back-pill-plus-second-pill nav block
+—alien-hover easter egg included — that arcade, scoreboard, about-me and tools each hand-copied
+as a nearly-identical `<nav>`. It needed the `@shared` path alias (`tsconfig.json`'s `paths`,
+mirroring `vite.config.js`'s `resolve.alias`) since about-me and tools import it as
+`"@shared/elements/hall-nav"` rather than by relative path.
+
+Separately, `<st-planet-field>` gained a third `cursor-motion` mode, `"pan"`, replacing
+`"translate"` on the arcade lobby backdrop now that hovering a card no longer drives a travel-pan
+itself (that behaviour was removed when the lobby's hover response became "the header padding
+collapses," full stop — see `arcade.js`'s own comment on `canHover`). `"pan"` is a continuous
+sweep driven by pointer x alone: left edge brings the field's rightmost planet in to 10% from the
+right edge, right edge brings the leftmost planet in to 10% from the left, and dead centre
+reproduces the field's own designed rest layout exactly, unchanged. It reuses the same
+per-planet-`pf`-scaled centring math `setTravelTarget()` already used for the (now-removed)
+hover-travel feature, so the sweep still reads as real depth-parallax rather than one rigid
+slab, and an eased (`t²`) mapping from pointer position means the same pointer movement barely
+pans anything near dead centre but covers real ground near either edge.
+
+Two refinements landed the same day, in response to trying it: leaving the viewport while
+mid-sweep used to snap the pan back to centre, which read as a jump precisely because the eased
+curve is steepest at the edges — fixed by freezing the pan wherever it was instead of resetting
+it, since pointer motion stopping is not the same event as wanting to go home. And a second,
+independent mouse-x response was added alongside the (now 25%-scaled-down) pan: every planet
+zooms in/out by up to 150 depth units through the same fake-perspective math
+`PlanetBody.depthBoost` already used for the hover-zoom, left edge in and right edge out, so the
+zoom reads as the primary response to pointer x and the pan reads as drift alongside it rather
+than competing with it.
+
+Selecting a game also now runs a short transition before navigating rather than an instant page
+change: cards fade/scale out, the page recedes 3%, the backdrop's desktop blur clears, and
+`setTravelTarget()` flies the camera to the clicked planet — 1.3s total, tuned against
+`setTravelTarget`'s own glide/zoom easing rates so the fly is actually visible before the
+browser navigates away, on the site's one established ease-out curve
+(`.pill.back .alien`'s `cubic-bezier(0.2, 0.8, 0.3, 1)`) rather than the default `ease`.
+Modifier/middle-clicks and `prefers-reduced-motion` both bypass it entirely.
+
+**Why light DOM, why this element shape.** Same reasoning as every element under ADR-023 —
+`tailwind.css`'s shared layer has to keep reaching it, and the shape needs no rework if it ever
+becomes something else.
+
+**Consequences:**
+
+- `standards.json`'s `reuse-threejs-universe.primitives` entry for `PlanetFieldElement` now
+  mentions `cursor-motion` (`"rotate"` / `"translate"` / `"pan"`) alongside `driven`/`interactive`/
+  `satellites`, and `docs/ANALYSIS.md` §2b's prop-surface paragraph does too.
+- No visual verification happened for any of this beyond build/typecheck/lint passing and the
+  underlying math being traced by hand — no browser tool was available in the session that built
+  it. Direction (which edge zooms in vs. out), the 1.3s transition timing, and the 150-depth-unit
+  zoom cap are first-guess numbers, not eyeballed ones.
+
+---
+
+## ADR-029 — `<head>` boilerplate and arcade meta generated via build-time `transformIndexHtml` plugins
+
+**Decided:** 2026-08-23
+**Status:** active
+
+Four plugins, all the same trick (a `<meta name="st:...">` marker, expanded by a
+`transformIndexHtml` plugin at build/dev time — zero runtime cost, nothing extra ships to the
+browser):
+
+- `toolPageHeadPlugin` — the description/canonical/OG/twitter/JSON-LD block shared by the 24
+  `tools/<slug>/` pages, marker `st:tool-head`. Shipped first, migrated one page (`tools/kano`)
+  as proof before the other three plugins generalized the idea.
+- `commonHeadPlugin` — the two font preconnects plus a `<link rel="preload" as="style">` for the
+  Google Fonts CSS, shared by all 39 pages, marker `st:common-head`, sourced from
+  `src/shared/common-head.partial` (a `.partial`, not `.html` — `HTML_FILES` globs `**/*.html`
+  into real page inputs, and this fragment has no `<html>`/`<body>`, so the wrong extension would
+  silently become a 40th route).
+- `commonFootPlugin` — the icon-CSS + `tailwind.css` `<link>` pair, marker `st:common-foot`, with
+  the `./` / `../` / `../../` prefix computed from each page's actual file depth
+  (`ctx.filename`) rather than hand-kept per page.
+- `arcadeGameHeadPlugin` — description/OG/twitter meta for the 9 arcade games, marker
+  `st:game-head`, which previously had none at all. Pulls from `GAMES` (ADR-027) rather than
+  hardcoding copy in the plugin.
+
+**Why.** The two font preconnects were byte-identical hand-copies across all 39 pages, loaded via
+a CSS `@import` inside `tailwind.css` — a serial waterfall (parse `tailwind.css`, discover the
+`@import`, fetch, discover the actual font files) invisible to the browser's HTML preload
+scanner. Rule 4's required head order (page CSS → icon CSS → `tailwind.css` last) had already
+drifted on two pages caught in the same pass: scoreboard had icon-CSS before its own page CSS,
+and every arcade game had `tailwind.css` before its page CSS with no icon-CSS link at all.
+Generating the pair by construction from file depth fixes both, and can't drift the same way
+again.
+
+**Consequences:**
+
+- `docs/CLAUDE.md` §2's page/game counts needed a rewrite regardless of this ADR — `tools/` had
+  grown from 11 to 24 pages since ADR-019, taking the total from 25 to 39. `envs.json`'s
+  `expectedHtmlCount` (40) and its `routes` array (still listing 8 arcade games by their old
+  `gamekey` slug, e.g. `/arcade/galileo/`, instead of the actual `key` folder, e.g.
+  `/arcade/jupiter/`) were also stale independent of this work, and fixed in the same pass —
+  drift the `/dedupe`/`/drift-check` sweep this session ran happened to surface, not something
+  this ADR's own change caused.
+- This resolves `docs/CLAUDE.md` rule 8's "head block ×14, extract" cluster (grown to ×39 by the
+  time it landed) — updated to point here instead of re-describing it as open.
+
+---
+
+## ADR-030 — Back-pill and `.planet-card` centralized into `tailwind.css`; supersedes ADR-002
+
+**Decided:** 2026-08-23
+**Status:** active — supersedes ADR-002 for the back-pill specifically
+
+`.pill`, `.pill.back` (with the alien-hover easter egg and its keyframes), and `.planet-card`
+moved into `tailwind.css`'s shared `@layer components`, and were deleted from their per-page
+copies in `about-me.css`, `arcade.css`, `scoreboard.css` and `tools/shared/tool-page.css`.
+
+**Why.** Recorded here from the diff and the surrounding session's work, not from a stated
+rationale — this landed as a direct edit (`edbfdaa`, "minor update 1.2.0") without a commit body
+explaining the call. The plausible reasoning, worth confirming rather than treating as
+established: ADR-002's original argument for per-page duplication was independence — each page
+could retune its own alien-hover timing without touching a shared rule, and a shared rule had
+already broken About-me's back arrow once via the `.topbar { pointer-events: none }` collision.
+Once `<st-hall-nav>` (ADR-028) meant every page's nav markup came from the same template instead
+of five hand-copied `<nav>` blocks, the independence argument had less to protect — there's only
+one place generating that markup now, so a shared rule can't be un-synced from it the way five
+separate copies could drift from each other. **The specificity/pointer-events risk that actually
+caused the original incident is a different question from divergence risk, and unifying the
+markup doesn't automatically answer it.**
+
+**Consequences:**
+
+- `docs/CLAUDE.md` rule 8, `standards.json`'s `rule-of-three.knownClusters`, and
+  `.claude/skills/dedupe/SKILL.md`'s "Standing clusters" table all described back-pill CSS as a
+  deliberate ×4/×5 `keep` under ADR-002. All three are updated to point here instead.
+- **Open item, flagged rather than resolved:** re-verify the About-me back arrow specifically
+  (the exact page ADR-002's incident involved) still works under the shared rule before this
+  ships to `main` — this ADR does not constitute that verification, only the record that the
+  change happened and why it's plausible.
+
+---

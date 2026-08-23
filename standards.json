@@ -99,10 +99,11 @@
       "enforcement": "agent:redundancy-scout",
       "severity": "medium",
       "knownClusters": [
-        "back-pill CSS x4 -- src/index.css, src/about-me/about-me.css, src/space-bar/space-bar.css, src/arcade/arcade.css",
-        "starfield init x5 -- including one inlined in src/scoreboard/index.html:43-87"
+        "isMobile/reduced/mulberry32 trio -- private copies in src/space-bar/space-bar.js and src/tools/validator/validator.js, canonical export already in src/tools/shared/tools-data.js",
+        "canvas resize/DPR-cap prefix -- repeated across all 9 games' resize(), e.g. src/arcade/pluto/ice-fall.js:300-307",
+        "backdrop starfield IIFE x3 -- src/tools/tools.js, src/tools/validator/validator.js, src/space-bar/space-bar.js (space-bar's twinkle also ignores prefers-reduced-motion -- a rule-6 gap, not just duplication)"
       ],
-      "resolved": "drawPlanet was a x3 cluster (script.js, arcade/arcade.js, arcade/shared/starfield.js) -- resolved by #61's shared PlanetBody class (see the reuse-threejs-universe rule below), not by extraction. One isolated 2D-canvas copy remains in nebula-trail.js, which is a single usage, not a cluster."
+      "resolved": "drawPlanet was a x3 cluster (script.js, arcade/arcade.js, arcade/shared/starfield.js) -- resolved by #61's shared PlanetBody class (see the reuse-threejs-universe rule below), not by extraction. One isolated 2D-canvas copy remains in nebula-trail.js, which is a single usage, not a cluster. In-game HUD topbar and game-over overlay were x9 clusters each, resolved by <st-game-topbar>/<st-game-over> (ADR-026). Back-pill CSS was x5 under ADR-002's deliberate-keep stance; now centralized into tailwind.css's shared layer instead (ADR-030 supersedes ADR-002). Starfield init's scoreboard copy is gone, replaced by <st-planet-field> -- the cluster this rule originally described no longer exists in that shape; see knownClusters above for what's actually still duplicated as of 2026-08-23."
     },
     {
       "id": "tokens-sole-sourced",
@@ -147,7 +148,7 @@
       ],
       "primitives": {
         "PlanetBody / PlanetSpec -- planet-field.ts": "one planet: position (s0, px), parallax (pf), depth, spin, ring/earth/bands flags, per-planet colours",
-        "PlanetFieldElement / <st-planet-field> -- planet-field.ts": "a full backdrop: planets[], starLayers[], drift, focusY, driven/interactive/satellites attributes",
+        "PlanetFieldElement / <st-planet-field> -- planet-field.ts": "a full backdrop: planets[], starLayers[], drift, focusY, driven/interactive/satellites attributes, cursor-motion (\"rotate\"/\"translate\"/\"pan\" -- pan sweeps the whole field and zooms with pointer x, ADR-028)",
         "CardPlanetRenderer -- card-planet-renderer.ts": "many small planet icons sharing one WebGL context, same PlanetBody",
         "SkyTraffic -- sky-traffic.ts": "drifting satellites and shooting stars",
         "planet-textures.ts": "surfaceTexture/cloudTexture/ringTexture/streakTexture/glowTexture generate every planet or star texture in the repo; rand() is the seeded PRNG that keeps every sky deterministic -- never Math.random() here"
