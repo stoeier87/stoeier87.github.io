@@ -1,32 +1,6 @@
 @import "tailwindcss";
-
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: var(--color-bg-deep);
-  color: var(--color-ink);
-  font-family: var(--font-mono);
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-#game {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100dvh;
-  display: block;
-  touch-action: none;
-}
-
-@supports not (height: 100dvh) {
-  #game { height: 100vh; }
-}
+@import "../shared/game-hud.css";
+@import "../shared/game-overlay.css";
 
 :root {
   --game-accent: #9de3e6;
@@ -62,19 +36,6 @@ html, body {
   transition: opacity .45s ease-out, transform .45s ease-out;
   animation: nebulaFadeIn 1s ease-in-out;
   max-width: min(420px, 100%);
-}
-
-.intro-title {
-  font-family: var(--font-display);
-  font-size: 15px;
-  letter-spacing: .02em;
-  margin-bottom: 6px;
-}
-
-.intro-body {
-  font-size: 11.5px;
-  line-height: 1.5;
-  color: rgba(255, 255, 255, .65);
 }
 
 /* Touch controls */
@@ -123,51 +84,3 @@ html, body {
   .controls { display: none; }
 }
 
-/* The site's circular back arrow: a circle, an arrow, no text. */
-.pill.back-circle {
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  line-height: 1;
-}
-
-/* Mobile chrome: one row — back arrow, title pill, SCORE, BEST — never
-   wrapping. Local override of the shared topbar's stacked mobile layout,
-   identical in every game. Fit ladder: tighter stat padding, 8px gaps,
-   one type step down on the title, then ellipsis. The back arrow never
-   drops below its 44px tap target. */
-@media (max-width: 767px) {
-  /* div.topbar outguns the shared .topbar rule, which loads last. */
-  div.topbar {
-    flex-wrap: nowrap;
-    gap: 8px;
-    justify-content: flex-start;
-  }
-  .topbar .topbar-group {
-    display: contents;
-  }
-  .topbar .pill.stat {
-    flex: none;
-    padding: 0.75rem 0.8rem;
-  }
-  .topbar .pill.back-circle {
-    flex: none;
-  }
-  .topbar .pill.badge {
-    flex: 0 1 auto;
-    min-width: 0;
-    padding-left: 0.85rem;
-    padding-right: 0.85rem;
-    font-size: 11px;
-  }
-  .topbar .badge-name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-}

@@ -1,5 +1,6 @@
 @import "tailwindcss";
-
+@import "./shared/game-hud.css";
+@import "./shared/game-overlay.css";
 
 body {
   font-family: var(--font-mono);
@@ -7,11 +8,6 @@ body {
   color: var(--color-ink);
   @apply min-h-screen overflow-hidden md:overflow-y-scroll;
   overflow-y: auto;
-}
-
-/* Was #bg, a 2D starfield canvas. Same box, same layer — see arcade.js. */
-st-planet-field {
-  @apply pointer-events-none fixed inset-0 z-0 block;
 }
 
 .solar-system {
@@ -31,9 +27,6 @@ st-planet-field {
 
 .solar-system:hover {
   /* @apply lg:scale-[0.92]; */
-}
-st-planet-field#bg {
-  @apply opacity-10 md:opacity-100 pointer-events-none fixed inset-0 z-0 block;
 }
 .planet-card {
   @apply border-2 border-white/[0.28] rounded-[18px];
