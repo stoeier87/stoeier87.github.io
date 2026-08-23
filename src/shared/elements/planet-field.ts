@@ -279,6 +279,7 @@ const DEG = Math.PI / 180;
 // this is a background rocking or drifting a little, not a 3D toy.
 const TILT_MAX = 3.5 * DEG; // radians, for cursor-motion="rotate"
 const SHIFT_MAX = 18; // world units (~= CSS px at z=0), for cursor-motion="translate"
+const PAN_Y_MAX = 5; // world units, the subtle vertical wobble for cursor-motion="pan"
 
 /**
  * Focal depth: the Z distance at which one world unit equals one screen pixel.
@@ -327,6 +328,9 @@ export class PlanetFieldElement extends HTMLElement {
   #panXTarget = 0;
   #panYTarget = 0;
   #travelIndex = -1;
+  /** Leftmost/rightmost planet by px, cached for cursor-motion="pan"'s sweep. */
+  #panLeftmost: PlanetSpec | null = null;
+  #panRightmost: PlanetSpec | null = null;
   #raycaster = new Raycaster();
   // Ambient cursor-motion (cursorMotion): rocks or shifts the whole scene
   // toward the pointer, independent of #panX/#panY (which only move when
@@ -505,13 +509,17 @@ export class PlanetFieldElement extends HTMLElement {
    * Ambient pointer-following motion, independent of `interactive` (which is
    * about hover/click on planets, not this). `"rotate"` rocks the whole scene
    * a few degrees toward the cursor; `"translate"` shifts it a few pixels
-   * instead. Anything else, including the attribute being absent, is off.
-   * Not `drift` -- that name is already taken by the pixels/second
+   * instead; `"pan"` sweeps the camera across the full width of the planet
+   * field — pointer at the left edge centres the rightmost planet, the right
+   * edge centres the leftmost, and dead centre reproduces the field's own
+   * resting layout unchanged (see the cursorMotion === "pan" branch in
+   * #updatePlanets). Anything else, including the attribute being absent, is
+   * off. Not `drift` -- that name is already taken by the pixels/second
    * auto-scroll rate below.
    */
-  get cursorMotion(): "rotate" | "translate" | "" {
+  get cursorMotion(): "rotate" | "translate" | "pan" | "" {
     const value = this.getAttribute("cursor-motion");
-    return value === "rotate" || value === "translate" ? value : "";
+    return value === "rotate" || value === "translate" || value === "pan" ? value : "";
   }
 
   /**
@@ -1081,6 +1089,14 @@ export class PlanetFieldElement extends HTMLElement {
     this.#disposePlanets();
     this.#bodies = this.#planets.map((spec, i) => new PlanetBody(spec, i, this.#glow!));
     for (const body of this.#bodies) this.#scene.add(body.group);
+    this.#panLeftmost = this.#planets.reduce<PlanetSpec | null>(
+      (min, p) => (!min || p.px < min.px ? p : min),
+      null,
+    );
+    this.#panRightmost = this.#planets.reduce<PlanetSpec | null>(
+      (max, p) => (!max || p.px > max.px ? p : max),
+      null,
+    );
   }
 
   #updatePlanets(scroll: number, dt: number): void {
@@ -1100,6 +1116,31 @@ export class PlanetFieldElement extends HTMLElement {
       const targetPf = tp.pf || 1;
       this.#panXTarget = (this.#w / 2 - tX) / targetPf;
       this.#panYTarget = (tY - this.#h * this.#focusY) / targetPf;
+    } else if (
+      this.cursorMotion === "pan" &&
+      this.#pointerInside &&
+      this.#panLeftmost &&
+      this.#panRightmost
+    ) {
+      // Continuous panorama sweep, driven by pointer x alone. mx runs 0 (left
+      // edge) to 1 (right edge); at each edge the pan brings that side's
+      // outermost planet to screen centre, using the same "pre-divide by the
+      // target's own pf" trick as the travel-target branch above, so the
+      // near/far planets still read as real depth-parallax mid-sweep rather
+      // than one rigid slab. mx = 0.5 is exactly 0 — the pointer resting at
+      // centre must reproduce the field's own designed layout, unchanged.
+      // The sweep runs opposite the pointer on purpose, same direction
+      // convention as cursor-motion="translate": moving right reveals what's
+      // off to the left, like turning to look aside.
+      const mx = (this.#pointer.x + 1) / 2;
+      const rightPan =
+        (this.#w / 2 - this.#panRightmost.px * this.#w) / (this.#panRightmost.pf || 1);
+      const leftPan =
+        (this.#w / 2 - this.#panLeftmost.px * this.#w) / (this.#panLeftmost.pf || 1);
+      this.#panXTarget = mx <= 0.5 ? rightPan * (1 - mx / 0.5) : leftPan * ((mx - 0.5) / 0.5);
+      // Vertical is a small wobble, not a second sweep — capped at PAN_Y_MAX
+      // regardless of any planet's position.
+      this.#panYTarget = this.#pointer.y * PAN_Y_MAX;
     } else {
       this.#panXTarget = 0;
       this.#panYTarget = 0;
