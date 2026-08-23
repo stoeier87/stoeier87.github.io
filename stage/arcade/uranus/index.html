@@ -4,37 +4,32 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Nebula Trail</title>
-    <meta name="description" content="A tilted Snake through an icy nebula." />
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="stoeier.dk" />
-    <meta property="og:url" content="https://stoeier.dk/arcade/uranus/" />
-    <meta property="og:locale" content="en_GB" />
-    <meta property="og:title" content="Nebula Trail" />
-    <meta property="og:description" content="A tilted Snake through an icy nebula." />
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Nebula Trail" />
-    <meta name="twitter:description" content="A tilted Snake through an icy nebula." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="preload"
-      as="style"
-      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap"
-    />
-    <link href="../../css/all.min.css" rel="stylesheet" />
-    <script type="module" crossorigin src="../../assets/arcade/uranus/index-BYl-yybW.js"></script>
-    <link rel="modulepreload" crossorigin href="../../assets/tailwind-Dwk_5HgX.js">
+    <script type="module" crossorigin src="../../assets/arcade/uranus/index-twZRD3zW.js"></script>
+    <link rel="modulepreload" crossorigin href="../../assets/tailwind-CY0LiQKE.js">
     <link rel="modulepreload" crossorigin href="../../assets/firebase-config-CE95sHti.js">
-    <link rel="modulepreload" crossorigin href="../../assets/games-data-DPRE8LZ4.js">
-    <link rel="modulepreload" crossorigin href="../../assets/game-intro-Dt_BICbi.js">
-    <link rel="stylesheet" crossorigin href="../../assets/tailwind-Ajm5ETRw.css">
-    <link rel="stylesheet" crossorigin href="../../assets/index-oq1WRhmg.css">
+    <link rel="modulepreload" crossorigin href="../../assets/score-submit-A1NVq5mj.js">
+    <link rel="stylesheet" crossorigin href="../../assets/tailwind-Db0jzKIx.css">
+    <link rel="stylesheet" crossorigin href="../../assets/index-Dvobtmxw.css">
   </head>
   <body>
     <canvas id="game" aria-hidden="true"></canvas>
 
     <!-- Top bar: back link + title badge (left), score + best (right) -->
-    <st-game-topbar game-title="NEBULA TRAIL"></st-game-topbar>
+    <div class="topbar">
+      <div class="topbar-group">
+        <a href="../../arcade/" class="pill back-circle" aria-label="Back to arcade" title="Back to arcade">←</a>
+        <div class="pill badge">
+          <span class="beacon"></span>
+          <span class="badge-name">NEBULA TRAIL</span>
+        </div>
+      </div>
+      <div class="topbar-group">
+        <div class="pill stat">SCORE <strong id="score">0</strong></div>
+        <a class="pill stat" href="../../scoreboard/">BEST <strong id="best" class="best-val">0</strong></a>
+      </div>
+    </div>
 
     <!-- Auto-pause overlay -->
     <div id="pause" class="gameover">
@@ -45,10 +40,25 @@
     </div>
 
     <!-- Intro card -->
-    <st-game-intro game-key="uranus"></st-game-intro>
+    <div class="intro-container">
+      <div class="intro" id="intro">
+        <div class="intro-title">NEBULA TRAIL</div>
+        <div class="intro-body">
+          Eat pellets to grow — the
+          bigger the trail, the bigger the pellets. Grab the rare comet
+          before it fades!
+        </div>
+      </div>
+    </div>
 
     <!-- Game over sign -->
-    <st-game-over id="gameOver" class="gameover" game-title="TRAIL FADED"></st-game-over>
+    <div id="gameOver" class="gameover">
+      <div class="gameover-card">
+        <div id="gameOverTitle" class="gameover-title">TRAIL FADED</div>
+        <div class="gameover-sub">Press R or Tap</div>
+        <button id="gameOverRestart" class="restart-btn" type="button">Restart</button>
+      </div>
+    </div>
 
     <!-- Touch controls -->
     <div class="controls" id="controls">

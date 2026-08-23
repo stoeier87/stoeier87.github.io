@@ -4,33 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ice Fall</title>
-    <meta name="description" content="Stack the ice before it stacks you." />
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="stoeier.dk" />
-    <meta property="og:url" content="https://stoeier.dk/arcade/pluto/" />
-    <meta property="og:locale" content="en_GB" />
-    <meta property="og:title" content="Ice Fall" />
-    <meta property="og:description" content="Stack the ice before it stacks you." />
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Ice Fall" />
-    <meta name="twitter:description" content="Stack the ice before it stacks you." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="preload"
-      as="style"
-      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap"
-    />
-    <link href="../../css/all.min.css" rel="stylesheet" />
-    <script type="module" crossorigin src="../../assets/arcade/pluto/index-Dd2T7tLE.js"></script>
-    <link rel="modulepreload" crossorigin href="../../assets/tailwind-Dwk_5HgX.js">
-    <link rel="modulepreload" crossorigin href="../../assets/planet-field-BEfbmbZz.js">
+    <script type="module" crossorigin src="../../assets/arcade/pluto/index-Bnp1Ad9d.js"></script>
+    <link rel="modulepreload" crossorigin href="../../assets/tailwind-CY0LiQKE.js">
+    <link rel="modulepreload" crossorigin href="../../assets/planet-field-C4vmJH_F.js">
     <link rel="modulepreload" crossorigin href="../../assets/tokens-2vCtBpfR.js">
     <link rel="modulepreload" crossorigin href="../../assets/firebase-config-CE95sHti.js">
-    <link rel="modulepreload" crossorigin href="../../assets/games-data-DPRE8LZ4.js">
-    <link rel="modulepreload" crossorigin href="../../assets/game-intro-Dt_BICbi.js">
-    <link rel="stylesheet" crossorigin href="../../assets/tailwind-Ajm5ETRw.css">
-    <link rel="stylesheet" crossorigin href="../../assets/index-CVhdEAml.css">
+    <link rel="modulepreload" crossorigin href="../../assets/score-submit-A1NVq5mj.js">
+    <link rel="stylesheet" crossorigin href="../../assets/tailwind-Db0jzKIx.css">
+    <link rel="stylesheet" crossorigin href="../../assets/index-CiVjxoKp.css">
   </head>
   <body>
     <!-- Pluto, Charon, the sun and the starfield. `driven`: ice-fall.js owns
@@ -39,7 +22,21 @@
     <canvas id="game" aria-hidden="true"></canvas>
 
     <!-- Top bar: back link + title badge (left), score + best (right) -->
-    <st-game-topbar game-title="ICE FALL"></st-game-topbar>
+    <div class="topbar">
+      <div class="topbar-group">
+        <a href="../../arcade/" class="pill back-circle" aria-label="Back to arcade" title="Back to arcade">←</a>
+        <div class="pill badge">
+          <span class="beacon"></span>
+          <span class="badge-name">ICE FALL</span>
+        </div>
+      </div>
+      <div class="topbar-group">
+        <div class="pill stat">SCORE <strong id="score">0</strong></div>
+        <a class="pill stat" href="../../scoreboard/"
+          >BEST <strong id="best" class="best-val">0</strong></a
+        >
+      </div>
+    </div>
 
     <!-- Next queue, under the score pills -->
     <div class="slot slot-next" id="nextSlot">
@@ -65,7 +62,26 @@
     </div>
 
     <!-- Intro card, dismissed on first input -->
-    <st-game-intro game-key="pluto"></st-game-intro>
+    <div class="intro-container">
+      <div class="intro" id="intro">
+        <div class="intro-title">ICE FALL</div>
+        <div class="intro-body">
+          Stack the ice. Clear the lines. Pluto is patient and you are not.
+        </div>
+        <div class="intro-keys" id="introKeys">
+          <span><b>← →</b> move</span><span><b>↓</b> soft drop</span
+          ><span><b>↑ / X</b> rotate</span><span><b>Z</b> rotate back</span
+          ><span><b>Space</b> hard drop</span><span><b>P / Esc</b> pause</span>
+        </div>
+        <div class="intro-keys" id="introTouch">
+          <span><b>Swipe</b> move</span><span><b>Tap</b> rotate</span
+          ><span><b>Two-finger tap</b> rotate back</span
+          ><span><b>Swipe down</b> soft drop</span
+          ><span><b>Swipe up</b> hard drop</span
+          >
+        </div>
+      </div>
+    </div>
 
     <!-- Pause overlay -->
     <div id="pause" class="gameover">
@@ -77,8 +93,10 @@
     </div>
 
     <!-- Game over sign -->
-    <st-game-over id="gameOver" class="gameover" game-title="ICE FALL" restart-label="Play again">
-      <div class="final-rows">
+    <div id="gameOver" class="gameover">
+      <div class="gameover-card">
+        <div id="gameOverTitle" class="gameover-title">ICE FALL</div>
+        <div class="final-rows">
           <div class="final-row">
             <span>SCORE</span><strong id="finalScore">0</strong>
           </div>
@@ -89,7 +107,10 @@
             <span class="best-marker" id="bestMarker">NEW</span>
           </div>
         </div>
-    </st-game-over>
+        <div class="gameover-sub">Press R or Tap</div>
+        <button id="gameOverRestart" class="restart-btn" type="button">Play again</button>
+      </div>
+    </div>
 
   </body>
 </html>

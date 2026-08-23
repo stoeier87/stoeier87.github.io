@@ -4,33 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GALILEO</title>
-    <meta name="description" content="Map the field. The radiation is patient." />
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="stoeier.dk" />
-    <meta property="og:url" content="https://stoeier.dk/arcade/jupiter/" />
-    <meta property="og:locale" content="en_GB" />
-    <meta property="og:title" content="GALILEO" />
-    <meta property="og:description" content="Map the field. The radiation is patient." />
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="GALILEO" />
-    <meta name="twitter:description" content="Map the field. The radiation is patient." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="preload"
-      as="style"
-      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap"
-    />
-    <link href="../../css/all.min.css" rel="stylesheet" />
-    <script type="module" crossorigin src="../../assets/arcade/jupiter/index-BhzCE7iu.js"></script>
-    <link rel="modulepreload" crossorigin href="../../assets/tailwind-Dwk_5HgX.js">
-    <link rel="modulepreload" crossorigin href="../../assets/planet-field-BEfbmbZz.js">
+    <script type="module" crossorigin src="../../assets/arcade/jupiter/index-BohtgO6Q.js"></script>
+    <link rel="modulepreload" crossorigin href="../../assets/tailwind-CY0LiQKE.js">
+    <link rel="modulepreload" crossorigin href="../../assets/planet-field-C4vmJH_F.js">
     <link rel="modulepreload" crossorigin href="../../assets/tokens-2vCtBpfR.js">
     <link rel="modulepreload" crossorigin href="../../assets/firebase-config-CE95sHti.js">
-    <link rel="modulepreload" crossorigin href="../../assets/games-data-DPRE8LZ4.js">
-    <link rel="modulepreload" crossorigin href="../../assets/game-intro-Dt_BICbi.js">
-    <link rel="stylesheet" crossorigin href="../../assets/tailwind-Ajm5ETRw.css">
-    <link rel="stylesheet" crossorigin href="../../assets/index-DDOkGLET.css">
+    <link rel="modulepreload" crossorigin href="../../assets/score-submit-A1NVq5mj.js">
+    <link rel="stylesheet" crossorigin href="../../assets/tailwind-Db0jzKIx.css">
+    <link rel="stylesheet" crossorigin href="../../assets/index-DIuwLKoh.css">
   </head>
   <body>
     <!-- Jupiter and the starfield. `driven`: galileo.js owns the single
@@ -40,7 +23,21 @@
 
     <!-- Canonical chrome: circular back arrow + title pill top left,
          SCORE and BEST top right, status panel bottom left. -->
-    <st-game-topbar game-title="GALILEO"></st-game-topbar>
+    <div class="topbar">
+      <div class="topbar-group">
+        <a href="../../arcade/" class="pill back-circle" aria-label="Back to arcade" title="Back to arcade">←</a>
+        <div class="pill badge">
+          <span class="beacon"></span>
+          <span class="badge-name">GALILEO</span>
+        </div>
+      </div>
+      <div class="topbar-group">
+        <div class="pill stat">SCORE <strong id="score">0</strong></div>
+        <a class="pill stat" href="../../scoreboard/"
+          >BEST <strong id="best" class="best-val">0</strong></a
+        >
+      </div>
+    </div>
 
     <!-- Status panel, same shape as ISS Docking's APPROACH panel -->
     <div class="approach" id="status">
@@ -64,7 +61,20 @@
     </div>
 
     <!-- Briefing card, dismissed on first input -->
-    <st-game-intro game-key="jupiter"></st-game-intro>
+    <div class="intro-container">
+      <div class="intro" id="intro">
+        <div class="intro-title">GALILEO</div>
+        <div class="intro-body">Map the field. Radiation builds. Three hits and the probe is gone.</div>
+        <div class="intro-keys" id="introKeys">
+          <span><b>Click</b> reveal</span><span><b>Right click</b> flag</span
+          ><span><b>Middle / both buttons</b> chord</span>
+        </div>
+        <div class="intro-keys" id="introTouch">
+          <span><b>Tap</b> reveal</span><span><b>Long press</b> flag</span
+          ><span><b>Double tap</b> chord</span><span><b>Pinch</b> zoom</span>
+        </div>
+      </div>
+    </div>
 
     <!-- Auto-pause overlay: appears on tab switch or window blur, and the
          run resumes only when asked to. -->
@@ -77,8 +87,10 @@
     </div>
 
     <!-- Game over sign -->
-    <st-game-over id="gameOver" class="gameover" game-title="PROBE LOST" restart-label="Play again">
-      <div class="final-rows">
+    <div id="gameOver" class="gameover">
+      <div class="gameover-card">
+        <div id="gameOverTitle" class="gameover-title">PROBE LOST</div>
+        <div class="final-rows">
           <div class="final-row"><span>SCORE</span><strong id="finalScore">0</strong></div>
           <div class="final-row"><span>BOARDS</span><strong id="finalBoards">0</strong></div>
           <div class="final-row final-best">
@@ -86,7 +98,10 @@
             <span class="best-marker" id="bestMarker">NEW</span>
           </div>
         </div>
-    </st-game-over>
+        <div class="gameover-sub">Press R or Tap</div>
+        <button id="gameOverRestart" class="restart-btn" type="button">Play again</button>
+      </div>
+    </div>
 
   </body>
 </html>

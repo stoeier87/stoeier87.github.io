@@ -4,33 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Diamond Rain</title>
-    <meta name="description" content="Carbon falls and the ice keeps coming down." />
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="stoeier.dk" />
-    <meta property="og:url" content="https://stoeier.dk/arcade/neptune/" />
-    <meta property="og:locale" content="en_GB" />
-    <meta property="og:title" content="Diamond Rain" />
-    <meta property="og:description" content="Carbon falls and the ice keeps coming down." />
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Diamond Rain" />
-    <meta name="twitter:description" content="Carbon falls and the ice keeps coming down." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="preload"
-      as="style"
-      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap"
-    />
-    <link href="../../css/all.min.css" rel="stylesheet" />
-    <script type="module" crossorigin src="../../assets/arcade/neptune/index-C1805uKD.js"></script>
-    <link rel="modulepreload" crossorigin href="../../assets/tailwind-Dwk_5HgX.js">
-    <link rel="modulepreload" crossorigin href="../../assets/planet-field-BEfbmbZz.js">
+    <script type="module" crossorigin src="../../assets/arcade/neptune/index-bewtlSZJ.js"></script>
+    <link rel="modulepreload" crossorigin href="../../assets/tailwind-CY0LiQKE.js">
+    <link rel="modulepreload" crossorigin href="../../assets/planet-field-C4vmJH_F.js">
     <link rel="modulepreload" crossorigin href="../../assets/tokens-2vCtBpfR.js">
     <link rel="modulepreload" crossorigin href="../../assets/firebase-config-CE95sHti.js">
-    <link rel="modulepreload" crossorigin href="../../assets/games-data-DPRE8LZ4.js">
-    <link rel="modulepreload" crossorigin href="../../assets/game-intro-Dt_BICbi.js">
-    <link rel="stylesheet" crossorigin href="../../assets/tailwind-Ajm5ETRw.css">
-    <link rel="stylesheet" crossorigin href="../../assets/index-DINSObkZ.css">
+    <link rel="modulepreload" crossorigin href="../../assets/score-submit-A1NVq5mj.js">
+    <link rel="stylesheet" crossorigin href="../../assets/tailwind-Db0jzKIx.css">
+    <link rel="stylesheet" crossorigin href="../../assets/index-LDZSKJ28.css">
   </head>
   <body>
     <!-- Neptune, Triton and the starfield. `driven`: the game owns the single
@@ -39,7 +22,21 @@
     <canvas id="game" aria-hidden="true"></canvas>
 
     <!-- Top bar: back link + title badge (left), score + best (right) -->
-    <st-game-topbar game-title="DIAMOND RAIN"></st-game-topbar>
+    <div class="topbar">
+      <div class="topbar-group">
+        <a href="../../arcade/" class="pill back-circle" aria-label="Back to arcade" title="Back to arcade">←</a>
+        <div class="pill badge">
+          <span class="beacon"></span>
+          <span class="badge-name">DIAMOND RAIN</span>
+        </div>
+      </div>
+      <div class="topbar-group">
+        <div class="pill stat">SCORE <strong id="score">0</strong></div>
+        <a class="pill stat" href="../../scoreboard/"
+          >BEST <strong id="best" class="best-val">0</strong></a
+        >
+      </div>
+    </div>
 
     <!-- Status panel, same shape as ISS Docking's APPROACH panel -->
     <div class="approach" id="status">
@@ -63,7 +60,22 @@
     </div>
 
     <!-- Intro card, dismissed on first input -->
-    <st-game-intro game-key="neptune"></st-game-intro>
+    <div class="intro-container">
+      <div class="intro" id="intro">
+        <div class="intro-title">DIAMOND RAIN</div>
+        <div class="intro-body">
+          Carbon falls, the wind splits it, and the ice keeps coming down.
+        </div>
+        <div class="intro-keys" id="introKeys">
+          <span><b>← → / A D</b> move</span><span><b>Mouse</b> move</span
+          ><span><b>Space</b> launch</span><span><b>P / Esc</b> pause</span>
+        </div>
+        <div class="intro-keys" id="introTouch">
+          <span><b>Drag low on the screen</b> move</span
+          ><span><b>Tap</b> launch</span>
+        </div>
+      </div>
+    </div>
 
     <!-- Pause overlay -->
     <div id="pause" class="gameover">
@@ -75,8 +87,10 @@
     </div>
 
     <!-- Game over sign -->
-    <st-game-over id="gameOver" class="gameover" game-title="DIAMOND RAIN" restart-label="Play again">
-      <div class="final-rows">
+    <div id="gameOver" class="gameover">
+      <div class="gameover-card">
+        <div id="gameOverTitle" class="gameover-title">DIAMOND RAIN</div>
+        <div class="final-rows">
           <div class="final-row">
             <span>SCORE</span><strong id="finalScore">0</strong>
           </div>
@@ -86,7 +100,10 @@
             <span class="best-marker" id="bestMarker">NEW</span>
           </div>
         </div>
-    </st-game-over>
+        <div class="gameover-sub">Press R or Tap</div>
+        <button id="gameOverRestart" class="restart-btn" type="button">Play again</button>
+      </div>
+    </div>
 
   </body>
 </html>

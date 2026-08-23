@@ -6,22 +6,15 @@
     <title>Arcade Scoreboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="preload"
-      as="style"
-      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap"
-    />
     <link href="../css/all.min.css" rel="stylesheet" />
-    <script type="module" crossorigin src="../assets/scoreboard/index-_RG3UBCt.js"></script>
-    <link rel="modulepreload" crossorigin href="../assets/tailwind-Dwk_5HgX.js">
+    <script type="module" crossorigin src="../assets/scoreboard/index-B6ywXlJ3.js"></script>
+    <link rel="modulepreload" crossorigin href="../assets/tailwind-CY0LiQKE.js">
     <link rel="modulepreload" crossorigin href="../assets/version-badge-DtvEOukf.js">
-    <link rel="modulepreload" crossorigin href="../assets/planet-field-BEfbmbZz.js">
-    <link rel="modulepreload" crossorigin href="../assets/page-header-BXTlxPh2.js">
-    <link rel="modulepreload" crossorigin href="../assets/hall-nav-BSiOhpg2.js">
+    <link rel="modulepreload" crossorigin href="../assets/planet-field-C4vmJH_F.js">
     <link rel="modulepreload" crossorigin href="../assets/firebase-config-CE95sHti.js">
-    <link rel="modulepreload" crossorigin href="../assets/games-data-DPRE8LZ4.js">
-    <link rel="stylesheet" crossorigin href="../assets/tailwind-Ajm5ETRw.css">
-    <link rel="stylesheet" crossorigin href="../assets/index-C8AZfUSM.css">
+    <link rel="modulepreload" crossorigin href="../assets/page-header-BXTlxPh2.js">
+    <link rel="stylesheet" crossorigin href="../assets/tailwind-Db0jzKIx.css">
+    <link rel="stylesheet" crossorigin href="../assets/index-kyUTLaxC.css">
   </head>
   <body>
     <!-- <canvas id="bg" aria-hidden="true"></canvas> -->
@@ -40,14 +33,28 @@
       class="pointer-events-none fixed top-0 left-0 z-10 hidden rounded-full border border-white/20 bg-black/60 px-4 py-2 font-mono text-xs tracking-widest text-white/90 backdrop-blur"
       aria-hidden="true"
     ></div>
-    <st-hall-nav
-      nav-label="Scoreboard navigation"
-      back-href="../arcade/"
-      back-label="Back to arcade"
-      second-href="../arcade/"
-      second-icon="fa-gamepad"
-      second-label="Arcade Games"
-    ></st-hall-nav>
+    <nav class="hall-nav" aria-label="Scoreboard navigation">
+      <a class="pill back" href="/arcade/" aria-label="Back to arcade" title="Back to arcade">
+        <span class="arrow"><i class="fa-solid fa-arrow-left-long"></i></span>
+        <span class="alien" aria-hidden="true">
+          <svg viewBox="0 0 26 26" width="17" height="17">
+            <ellipse cx="13" cy="15" rx="8.5" ry="10" fill="#7eb08a" />
+            <ellipse cx="9.6" cy="13.4" rx="2.1" ry="3" fill="#0a1018"
+                     transform="rotate(-18 9.6 13.4)" />
+            <ellipse cx="16.4" cy="13.4" rx="2.1" ry="3" fill="#0a1018"
+                     transform="rotate(18 16.4 13.4)" />
+            <path class="alien-arm" d="M20.5 16.5 L25 11"
+                  stroke="#7eb08a" stroke-width="2.3" stroke-linecap="round" fill="none" />
+          </svg>
+        </span>
+      </a>
+      <a class="pill" href="/arcade">
+        <span class="arrow">
+          <i class="fa-solid fa-gamepad" style="color: #e03a2f"></i>
+        </span>
+        Arcade Games
+      </a>
+    </nav>
 
     <main class="wrap">
       <st-page-header
