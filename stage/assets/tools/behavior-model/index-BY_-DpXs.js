@@ -1,0 +1,1 @@
+import"../../tailwind-CY0LiQKE.js";import{t as e}from"../../tool-page-Cd9Wz52t.js";e(`behavior-model`);
