@@ -109,12 +109,69 @@
   --animate-hint-bounce: hintBounce 2s ease-in-out infinite;
   --animate-hint-pulse: hintPulse 2s ease-in-out infinite;
 }
+@layer components {
+  .planet-card {
+    @apply border-2 border-white/[0.28] hover:border-white/[0.58] rounded-2xl;
+    @apply p-6 pl-2;
+    @apply bg-[rgba(13,20,36,0.72)] md:bg-[rgba(13,20,36,.7)];
+    @apply backdrop-blur-none md:backdrop-blur-[3px];
+    @apply no-underline text-inherit;
+    @apply flex items-center gap-[0.8rem];
+    @apply min-h-[auto] md:min-h-[120px] transition-[transform,border-color,background] duration-200;
+    @apply relative overflow-hidden;
+    &.locked {
+      @apply opacity-[0.55] pointer-events-none;
+    }
+    &:hover > .planet-canvas {
+      @apply scale-[1.15];
+    }
+  }
+  /* ---- Intro card ---- */
 
+  .intro-container {
+    position: fixed;
+    inset: 0;
+    z-index: 16;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    padding: 16px;
+  }
+
+  .intro {
+    pointer-events: auto;
+    text-align: center;
+    background: rgba(10, 14, 24, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 12px;
+    padding: 20px 24px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    transition:
+      opacity 0.45s ease-out,
+      transform 0.45s ease-out;
+    animation: drFadeIn 1s ease-in-out;
+    max-width: min(420px, 100%);
+  }
+
+}
+@keyframes drFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
 @keyframes pulseDot { 0%,100% { opacity: 1; box-shadow: 0 0 8px var(--color-red); } 50% { opacity: .35; box-shadow: none; } }
 @keyframes floatY { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
 @keyframes hintBounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 @keyframes hintPulse { 0%,100% { opacity: .4; } 50% { opacity: 1; } }
-
+@keyframes alienWave {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-42deg); }
+}
 
 /* ─── Arcade shared UI components ──────────────────────── */
 
@@ -135,7 +192,7 @@ header h1 {
     font-family: var(--font-display);
   text-transform: uppercase;
   /* Same size as about-me's .name, on both desktop and mobile */
-  font-size: clamp(2.6rem, 9.5vw, 5.8rem);
+  font-size: clamp(2.6rem, 9.5vw, 5rem);
   line-height: 0.93;
   letter-spacing: -0.01em;
   text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6);
@@ -169,13 +226,13 @@ header p.sub {
   @apply max-w-5xl mx-auto lg:max-w-[var(--container-6xl)];
   /* Extra top padding clears the fixed .board-nav back pill */
   /* padding: 88px 20px 60px; */
-  @apply pt-12 lg:pt-18 px-6 lg:px-0 pb-15 lg:pb-0;
+  @apply pt-12 lg:pt-22 px-6 lg:px-0 pb-15 lg:pb-0;
   @apply flex flex-col gap-8 md:gap-12;
   @apply h-screen;
 }
 
-
 .pill {
+  animation: pillFloat 5s ease-in-out infinite;
   display: inline-flex; align-items: center; justify-content: center;
   font-family: var(--mono); font-size: clamp(0.7rem, 1.8vw, 0.85rem);
   letter-spacing: 0.08em; color: var(--ink);
@@ -186,6 +243,17 @@ header p.sub {
   cursor: pointer;
   backdrop-filter: blur(3px);
   transition: border-color 0.25s ease, background 0.25s ease, color 0.25s ease;
+  &:hover {
+    border-color: var(--red);
+    background: rgba(224, 58, 47, 0.12);
+    color: var(--red);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--red);
+    outline-offset: 4px;
+    border-color: var(--red);
+  }
+  & .arrow { margin-right: 0.5em; }
   &.back {
     animation: pillFloat 5s ease-in-out infinite;
     @apply bg-[rgba(13,20,36,0.40)];
@@ -194,6 +262,23 @@ header p.sub {
     justify-content: center;
     padding: 0.8rem 1rem;
     overflow: hidden;
+    .arrow { margin-right: 0; transition: transform 0.25s ease; }
+    &:hover .arrow { transform: translateX(-3px); }
+    .alien {
+      display: flex;
+      width: 0;
+      margin-left: 0;
+      opacity: 0;
+      transform: translateY(115%);
+      transition: transform 0.34s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.22s ease, width 0.34s ease, margin-left 0.34s ease;
+    }
+    &:hover .alien,
+    &:focus-visible .alien {
+      width: 17px;
+      margin-left: 0.5em;
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }
 

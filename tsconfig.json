@@ -18,8 +18,17 @@
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "@src/*": ["./src/*"],
+      "@shared/*": ["./src/shared/*"]
+    }
   },
-  "include": ["src/tokens.ts", "src/shared/**/*.ts", "src/proto/**/*.ts"],
+  "include": [
+    "src/tokens.ts",
+    "src/shared/**/*.ts",
+    "src/proto/**/*.ts",
+    "src/arcade/shared/game-intro.ts"
+  ],
   "exclude": ["node_modules", "dist", "src/public"]
 }

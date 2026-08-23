@@ -1,23 +1,6 @@
-
-
-html, body{
-  margin:0; padding:0; width:100%; height:100%;
-  overflow:hidden;
-  background:var(--color-bg-deep);
-  color:var(--color-ink);
-  font-family:var(--font-mono);
-  -webkit-user-select:none; user-select:none;
-  -webkit-touch-callout:none;
-}
-
-#game{
-  position:fixed; inset:0;
-  width:100vw; height:100dvh;
-  display:block; touch-action:none;
-}
-
-@supports not (height: 100dvh){ #game{ height:100vh; } }
-
+@import "tailwindcss";
+@import "../shared/game-hud.css";
+@import "../shared/game-overlay.css";
 :root{
   --game-accent: #f5d79a;
   --game-accent-dim: rgba(245,215,154,.6);
@@ -98,51 +81,3 @@ html, body{
   .controls{ display:none; }
 }
 
-/* The site's circular back arrow: a circle, an arrow, no text. */
-.pill.back-circle {
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  line-height: 1;
-}
-
-/* Mobile chrome: one row — back arrow, title pill, SCORE, BEST — never
-   wrapping. Local override of the shared topbar's stacked mobile layout,
-   identical in every game. Fit ladder: tighter stat padding, 8px gaps,
-   one type step down on the title, then ellipsis. The back arrow never
-   drops below its 44px tap target. */
-@media (max-width: 767px) {
-  /* div.topbar outguns the shared .topbar rule, which loads last. */
-  div.topbar {
-    flex-wrap: nowrap;
-    gap: 8px;
-    justify-content: flex-start;
-  }
-  .topbar .topbar-group {
-    display: contents;
-  }
-  .topbar .pill.stat {
-    flex: none;
-    padding: 0.75rem 0.8rem;
-  }
-  .topbar .pill.back-circle {
-    flex: none;
-  }
-  .topbar .pill.badge {
-    flex: 0 1 auto;
-    min-width: 0;
-    padding-left: 0.85rem;
-    padding-right: 0.85rem;
-    font-size: 11px;
-  }
-  .topbar .badge-name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-}

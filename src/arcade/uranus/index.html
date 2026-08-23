@@ -4,28 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Nebula Trail</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="../../tailwind.css" />
+    <meta name="st:game-head" />
+    <meta name="st:common-head" />
     <link rel="stylesheet" href="nebula-trail.css" />
+    <meta name="st:common-foot" />
   </head>
   <body>
     <canvas id="game" aria-hidden="true"></canvas>
 
     <!-- Top bar: back link + title badge (left), score + best (right) -->
-    <div class="topbar">
-      <div class="topbar-group">
-        <a href="../../arcade/" class="pill back-circle" aria-label="Back to arcade" title="Back to arcade">←</a>
-        <div class="pill badge">
-          <span class="beacon"></span>
-          <span class="badge-name">NEBULA TRAIL</span>
-        </div>
-      </div>
-      <div class="topbar-group">
-        <div class="pill stat">SCORE <strong id="score">0</strong></div>
-        <a class="pill stat" href="../../scoreboard/">BEST <strong id="best" class="best-val">0</strong></a>
-      </div>
-    </div>
+    <st-game-topbar game-title="NEBULA TRAIL"></st-game-topbar>
 
     <!-- Auto-pause overlay -->
     <div id="pause" class="gameover">
@@ -36,25 +24,10 @@
     </div>
 
     <!-- Intro card -->
-    <div class="intro-container">
-      <div class="intro" id="intro">
-        <div class="intro-title">NEBULA TRAIL</div>
-        <div class="intro-body">
-          Eat pellets to grow — the
-          bigger the trail, the bigger the pellets. Grab the rare comet
-          before it fades!
-        </div>
-      </div>
-    </div>
+    <st-game-intro game-key="uranus"></st-game-intro>
 
     <!-- Game over sign -->
-    <div id="gameOver" class="gameover">
-      <div class="gameover-card">
-        <div id="gameOverTitle" class="gameover-title">TRAIL FADED</div>
-        <div class="gameover-sub">Press R or Tap</div>
-        <button id="gameOverRestart" class="restart-btn" type="button">Restart</button>
-      </div>
-    </div>
+    <st-game-over id="gameOver" class="gameover" game-title="TRAIL FADED"></st-game-over>
 
     <!-- Touch controls -->
     <div class="controls" id="controls">

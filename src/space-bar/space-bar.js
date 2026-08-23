@@ -1,5 +1,9 @@
 import data from "./cocktails.json";
+import { definePageHeader } from "@shared/elements/page-header";
+import { defineHallNav } from "@shared/elements/hall-nav";
 
+definePageHeader();
+defineHallNav();
 const COCKTAILS = data.cocktails;
 
 /* ============================================================

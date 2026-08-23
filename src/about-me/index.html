@@ -25,11 +25,9 @@
       content="Digital strategist with 15+ years of experience. Agency work for Denmark's largest brands, NGOs and public institutions, executive advisory, talks, workshops and mentorship."
     />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <meta name="st:common-head" />
     <link rel="stylesheet" href="about-me.css" />
-    <link href="../css/all.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="../tailwind.css" />
+    <meta name="st:common-foot" />
   </head>
   <body data-scene="saturn">
     <canvas id="scene" aria-hidden="true"></canvas>
@@ -39,22 +37,11 @@
 
     <!-- Back: fixed top-left, same grid inset as arcade/scoreboard/space-bar.
          An alien hitches a ride on hover. -->
-    <nav class="bio-nav" aria-label="Back navigation">
-      <a class="pill back" href="../" aria-label="Back to homepage" title="Back to homepage">
-        <span class="arrow"><i class="fa-solid fa-arrow-left-long"></i></span>
-        <span class="alien" aria-hidden="true">
-          <svg viewBox="0 0 26 26" width="17" height="17">
-            <ellipse cx="13" cy="15" rx="8.5" ry="10" fill="#7eb08a" />
-            <ellipse cx="9.6" cy="13.4" rx="2.1" ry="3" fill="#0a1018"
-                     transform="rotate(-18 9.6 13.4)" />
-            <ellipse cx="16.4" cy="13.4" rx="2.1" ry="3" fill="#0a1018"
-                     transform="rotate(18 16.4 13.4)" />
-            <path class="alien-arm" d="M20.5 16.5 L25 11"
-                  stroke="#7eb08a" stroke-width="2.3" stroke-linecap="round" fill="none" />
-          </svg>
-        </span>
-      </a>
-    </nav>
+    <st-hall-nav
+      nav-label="About me navigation"
+      back-href="../"
+      back-label="Back to homepage"
+    ></st-hall-nav>
 
     <main>
       <section class="block bio-block">

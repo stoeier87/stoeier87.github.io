@@ -1,3 +1,5 @@
+/* @import "tailwindcss";
+ */
 :root {
   --bg: #05070f;
   --ink: #ffffff;
@@ -11,18 +13,13 @@
   --edge: rgba(255, 255, 255, 0.14);
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+st-page-header {
+ position: relative;
 
-html, body { height: 100%; }
-body {
-  font-family: var(--mono);
-  background: var(--bg);
-  color: var(--ink);
-  overflow: hidden;
-  -webkit-tap-highlight-color: transparent;
 }
-a { color: inherit; text-decoration: none; }
-
+.wrap {
+  max-width: 100%;
+}
 #backdrop {
   position: fixed; inset: 0; width: 100%; height: 100%;
   display: block; z-index: 0;

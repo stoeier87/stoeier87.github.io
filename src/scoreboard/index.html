@@ -4,11 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Arcade Scoreboard</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="../css/all.min.css" rel="stylesheet" />
+    <meta name="st:common-head" />
     <link rel="stylesheet" href="./scoreboard.css" />
-    <link rel="stylesheet" href="../tailwind.css" />
+    <meta name="st:common-foot" />
   </head>
   <body>
     <!-- <canvas id="bg" aria-hidden="true"></canvas> -->
@@ -27,28 +25,14 @@
       class="pointer-events-none fixed top-0 left-0 z-10 hidden rounded-full border border-white/20 bg-black/60 px-4 py-2 font-mono text-xs tracking-widest text-white/90 backdrop-blur"
       aria-hidden="true"
     ></div>
-    <nav class="hall-nav" aria-label="Scoreboard navigation">
-      <a class="pill back" href="/arcade/" aria-label="Back to arcade" title="Back to arcade">
-        <span class="arrow"><i class="fa-solid fa-arrow-left-long"></i></span>
-        <span class="alien" aria-hidden="true">
-          <svg viewBox="0 0 26 26" width="17" height="17">
-            <ellipse cx="13" cy="15" rx="8.5" ry="10" fill="#7eb08a" />
-            <ellipse cx="9.6" cy="13.4" rx="2.1" ry="3" fill="#0a1018"
-                     transform="rotate(-18 9.6 13.4)" />
-            <ellipse cx="16.4" cy="13.4" rx="2.1" ry="3" fill="#0a1018"
-                     transform="rotate(18 16.4 13.4)" />
-            <path class="alien-arm" d="M20.5 16.5 L25 11"
-                  stroke="#7eb08a" stroke-width="2.3" stroke-linecap="round" fill="none" />
-          </svg>
-        </span>
-      </a>
-      <a class="pill" href="/arcade">
-        <span class="arrow">
-          <i class="fa-solid fa-gamepad" style="color: #e03a2f"></i>
-        </span>
-        Arcade Games
-      </a>
-    </nav>
+    <st-hall-nav
+      nav-label="Scoreboard navigation"
+      back-href="../arcade/"
+      back-label="Back to arcade"
+      second-href="../arcade/"
+      second-icon="fa-gamepad"
+      second-label="Arcade Games"
+    ></st-hall-nav>
 
     <main class="wrap">
       <st-page-header

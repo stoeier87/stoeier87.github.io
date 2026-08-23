@@ -60,44 +60,6 @@ a { color: inherit; text-decoration: none; }
   padding: 1rem clamp(1.25rem, 6vw, 4rem);
 }
 
-/* Icon only, so the pill collapses toward a circle. */
-.pill.back {
-  animation: float 5s ease-in-out infinite;
-  align-items: center;
-  padding: 0.8rem 1rem;
-  overflow: hidden;
-}
-.pill.back .arrow { margin-right: 0; transition: transform 0.25s ease; }
-.pill.back:hover .arrow { transform: translateX(-3px); }
-
-/* An alien hitches a ride: ducked out of sight until the pill is hovered */
-.pill.back .alien {
-  display: flex;
-  width: 0;
-  margin-left: 0;
-  opacity: 0;
-  transform: translateY(115%);
-  transition: transform 0.34s cubic-bezier(0.2, 0.8, 0.3, 1),
-              opacity 0.22s ease, width 0.34s ease, margin-left 0.34s ease;
-}
-.pill.back:hover .alien,
-.pill.back:focus-visible .alien {
-  width: 17px;
-  margin-left: 0.5em;
-  opacity: 1;
-  transform: translateY(0);
-}
-.pill.back .alien-arm { transform-origin: 20.5px 16.5px; }
-.pill.back:hover .alien-arm,
-.pill.back:focus-visible .alien-arm {
-  animation: alienWave 0.55s ease-in-out 0.24s 3;
-}
-
-@keyframes alienWave {
-  0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(-42deg); }
-}
-
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-7px); }

@@ -2,6 +2,31 @@ import {
   submitScoreOnGameOver,
   fetchGlobalBest,
 } from "../shared/score-submit.js";
+import { defineGameTopbar } from "../../shared/elements/game-topbar.ts";
+import { defineGameOver } from "../../shared/elements/game-over.ts";
+import { defineGameIntro } from "../shared/game-intro.ts";
+
+defineGameTopbar();
+defineGameOver();
+defineGameIntro();
+
+// .intro-keys defaults to display:none; only the list matching the
+// player's input method gets .show (same pattern as pluto/ice-fall.js).
+{
+  const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  if (canHover) document.getElementById("introKeys")?.classList.add("show");
+  else document.getElementById("introTouch")?.classList.add("show");
+}
+
+function hideIntro() {
+  const el = document.getElementById("intro");
+  if (!el) return;
+  el.style.opacity = "0";
+  el.style.transform = "translateY(-10px)";
+  el.style.pointerEvents = "none";
+}
+addEventListener("pointerdown", hideIntro, { once: true });
+addEventListener("keydown", hideIntro, { once: true });
 
 (() => {
   const canvas = document.getElementById("game");
@@ -35,7 +60,11 @@ import {
     debris = [],
     beams = [];
   let pointer = { x: 0, y: 0, down: false, seen: false, id: null };
-  let restartBtn = null;
+  const gameOverEl = document.getElementById("gameOver");
+  const finalScoreEl = document.getElementById("finalScore");
+  const finalBestEl = document.getElementById("finalBest");
+  const bestMarkerEl = document.getElementById("bestMarker");
+  const gameOverRestart = document.getElementById("gameOverRestart");
   let scoreSubmissionStarted = false;
 
   let viewScale = 1;
@@ -73,11 +102,6 @@ import {
       BASE_W = W;
       BASE_H = H;
     }
-  }
-
-  function updateRestartBtn() {
-    if (!restartBtn) return;
-    restartBtn.style.display = gameOver ? "block" : "none";
   }
 
   function getViewportSize() {
@@ -380,7 +404,7 @@ import {
     campMs = 0;
     scoreSubmissionStarted = false;
     placeCoreObjects();
-    updateRestartBtn();
+    gameOverEl.classList.remove("show");
   }
 
   /* Auto-pause: tab switch or window blur pauses; the run resumes only
@@ -498,11 +522,14 @@ import {
           dy = d.y - ufo.y;
         if (dx * dx + dy * dy < (d.r + ufo.r) * (d.r + ufo.r)) {
           gameOver = true;
-          updateRestartBtn();
           if (score > best) {
             best = Math.floor(score);
             bestEl.textContent = best;
           }
+          finalScoreEl.textContent = Math.floor(score);
+          finalBestEl.textContent = best;
+          bestMarkerEl.classList.toggle("show", score >= best && score > 0);
+          gameOverEl.classList.add("show");
 
           if (!scoreSubmissionStarted) {
             scoreSubmissionStarted = true;
@@ -604,26 +631,11 @@ import {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    if (gameOver) {
-      ctx.fillStyle = "rgba(0,0,0,.45)";
-      ctx.fillRect(0, 0, WW, HH);
-      ctx.fillStyle = "#fff";
-      ctx.textAlign = "center";
-      ctx.font = '700 30px "Archivo Black", sans-serif';
-      ctx.fillText("MISSION FAILED", WW / 2, HH / 2 - 20);
-      ctx.font = '400 14px "Space Mono", monospace';
-      ctx.fillText("Tap Restart (or press R)", WW / 2, HH / 2 + 14);
-    }
-
     ctx.restore();
   }
 
-  restartBtn = document.createElement("button");
-  restartBtn.className = "restart-btn";
-  restartBtn.type = "button";
-  restartBtn.textContent = "Restart";
-  restartBtn.addEventListener("click", reset);
-  restartBtn.addEventListener(
+  gameOverRestart.addEventListener("click", reset);
+  gameOverRestart.addEventListener(
     "touchstart",
     (e) => {
       e.preventDefault();
@@ -631,7 +643,6 @@ import {
     },
     { passive: false },
   );
-  document.body.appendChild(restartBtn);
 
   /* Start from the same state Restart produces, so run one and run two are
      identical rather than the first game quietly opening on different values */

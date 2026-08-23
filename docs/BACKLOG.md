@@ -66,13 +66,11 @@ Do not fix this in one sweep — formatting `tools/` alone rewrites 2763 lines. 
 
 ### B9 — Duplication clusters need a recount
 
-ADR-008 recorded `drawPlanet` ×3, back-pill CSS ×4 (deliberate, keep), starfield init ×5, head block ×14. Then `/tools` landed with 12 more pages and their own canvas work, so every one of those numbers is stale.
+**Done, 2026-08-23** — `/dedupe` ran, reported, and one cluster (the `<head>` boilerplate block) went through Phase 2 for its first page (`tools/kano`), then was generalized further into build-time plugins for all 39 pages (ADR-029). Current standing: `drawPlanet` and the game HUD topbar/game-over clusters are resolved by reuse/extraction (see `docs/CLAUDE.md` rule 8); back-pill CSS is centralized (ADR-030, supersedes ADR-002). Still open: an `isMobile`/`reduced`/`mulberry32` trio (`space-bar.js`, `tools/validator/validator.js` vs. the canonical copy in `tools/shared/tools-data.js`), a canvas resize/DPR-cap prefix across 9 games' `resize()`, and a 3-copy backdrop-starfield IIFE (`tools.js`/`validator.js`/`space-bar.js`) — none in progress, one PR each.
 
-Run `/dedupe` — it reports and stops. Do not extract anything without approving a cluster first. **Half a day for the report; extraction is separate.**
+### B10 — 13 dead symbols across the pages
 
-### B10 — 15 dead symbols across the pages
-
-Surfaced as `npm run lint` warnings rather than hidden: `showToast`, `toastHideAt` (`script.js`), `bhBusy` (`space-bar`), `docked` (`iss-docking`), `landed` (`phobos-lander`), `gameOverTitle` (`nebula-trail`), `DESKTOP_W`/`DESKTOP_H` (`orbit-runner`), `raf` (`about-me`), `time` (`arcade`), `MUDA` (`tools-data`), an unused catch binding (`tools.js`), an unused arg (`validator.js`), `GTAG_ID` and `gtagPlugin` (`vite.config.js`).
+Surfaced as `npm run lint` warnings rather than hidden: `raf` (`about-me`), `docked` (`iss-docking`), `landed` (`phobos-lander`), `DESKTOP_W`/`DESKTOP_H` (`orbit-runner`), `gameOverTitle` (`nebula-trail`), `updateExpandBtn` (`scoreboard`), `bhBusy` (`space-bar`), `MUDA` (`tools-data`), an unused catch binding (`tools.js`), an unused arg (`validator.js`), `GTAG_ID` and `gtagPlugin` (`vite.config.js`). `showToast`/`toastHideAt` (`script.js`) and `time` (`arcade.js`) — both on the previous count — are gone, cleaned up incidentally by the `<st-planet-field>` rewrite and the GAMES-data centralization respectively.
 
 Each is a one-line deletion. Best done opportunistically, in the same PR as other work in that file. **Trivial individually.**
 

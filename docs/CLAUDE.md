@@ -70,7 +70,7 @@ Personal portfolio and browser arcade for Tobias Fullerton Støier, at `stoeier.
 - **Firebase Realtime Database** for arcade leaderboards only, loaded from a CDN URL rather than npm.
 - **One runtime dependency, allowlisted.** `three`, bundled by Vite, for the `<st-planet-field>` background on the homepage and the arcade lobby (`DECISIONS.md` ADR-025). It is the only name in `standards.json` → `no-runtime-deps` → `allowed`; anything else is still hook-blocked.
 
-25 pages, 8 Canvas games — 14 original plus the 11 that arrived with `tools/` in #56 (`DECISIONS.md` ADR-019). `envs.json` carries the count as `expectedHtmlCount`, and the build emitting a different number is the signal that the glob is anchored wrong. `dist/` on disk is stale — rebuild rather than reading it as ground truth.
+39 pages, 9 Canvas games — 14 original plus the 24 (up from the 11 ADR-019 anchored) that `tools/` has grown to since #56. `envs.json` carries the count as `expectedHtmlCount`, and the build emitting a different number is the signal that the glob is anchored wrong — recount rather than trust either number blindly; both had drifted out of sync with the actual `src/**/*.html` glob as of 2026-08-23. `dist/` on disk is stale — rebuild rather than reading it as ground truth.
 
 ---
 
@@ -95,7 +95,7 @@ Rules 6 and 7 are not preferences. They are the two halves of the regression PR 
 
 **Change discipline**
 
-8. **Rule of three.** Two copies are fine when the variants genuinely differ; a third means stop and propose an extraction. Never extract silently as a side effect of another change. Current clusters: back-pill CSS ×5 (ADR-008's ×4 was stale by one — a partial copy in `space-bar.css:45-46` was missed), starfield init ×5. `drawPlanet` was a ×3 cluster; #61 resolved it by reuse (one shared `PlanetBody` class), not extraction — see rule 12 below and `standards.json`'s `reuse-threejs-universe`.
+8. **Rule of three.** Two copies are fine when the variants genuinely differ; a third means stop and propose an extraction. Never extract silently as a side effect of another change. `drawPlanet` was a ×3 cluster; #61 resolved it by reuse (one shared `PlanetBody` class), not extraction — see rule 12 below and `standards.json`'s `reuse-threejs-universe`. The in-game HUD topbar (×9) and game-over overlay (×9) clusters are resolved the same way, by `<st-game-topbar>`/`<st-game-over>` (ADR-026). Back-pill CSS — ×5 under ADR-002's "keep, don't merge" — is now centralized into `tailwind.css`'s shared layer instead (ADR-030 supersedes ADR-002); re-verify the About-me back arrow specifically before trusting it, since a shared rule broke it once before. Still-open clusters from the 2026-08-23 sweep: an `isMobile`/`reduced`/`mulberry32` trio duplicated in `space-bar.js` and `tools/validator/validator.js` (canonical copy already in `tools/shared/tools-data.js`), a canvas resize/DPR-cap prefix repeated across 9 game `resize()` functions, and a 3-copy backdrop-starfield IIFE (`tools.js`/`validator.js`/`space-bar.js`) where `space-bar.js`'s twinkle ignores `prefers-reduced-motion` — a real rule-6 gap, not just duplication. None of these are in progress.
 9. **Design tokens are sole-sourced** in `tailwind.css` `@theme`, mirrored typed in `tokens.ts`. Nothing hardcodes a colour. The `--color-scoreboard-*` sub-palette is a deliberate documented drift — leave it.
 10. **Styling lives in JS from here on.** New components carry Tailwind utility classes in their templates. **No new page-local `.css` files.** The 14 existing ones are frozen: they keep working, they stop growing.
 11. **Write components element-shaped** — props in, markup out, no module-scope side effects, no globals, setup returns its own cleanup. See §7.
@@ -259,6 +259,8 @@ The stack decision is **native custom elements, light DOM only, plus TypeScript*
 
 Every new component is written **element-shaped on purpose**: props in, markup out, no module-scope side effects, no globals, cleanup returned from setup. That shape is the `connectedCallback`/`disconnectedCallback` lifecycle contract directly — a component written this way needs no rework when it becomes a real `<st-*>` element. Light DOM only, never Shadow DOM: `tailwind.css`'s shared component layer (`.pill`, `.topbar`, `.badge`, `.stat`, `.gameover`) has to keep reaching every element the way it reaches every page today.
 
+This is no longer purely aspirational — `src/shared/elements/` now ships `<st-planet-field>`, `<st-page-header>`, `<st-hall-nav>`, `<st-game-topbar>` and `<st-game-over>`, all following exactly this contract (ADR-023, ADR-026). `<st-game-intro>` (same contract, same rollout) lives in `src/arcade/shared/` instead, since it's arcade-scoped rather than site-wide — same distinction ADR-025's rule 12 draws for `arcade/shared/starfield.js`. Each replaced markup that used to be hand-copied across every page that needed it.
+
 TypeScript is installed with `allowJs: true`, `checkJs: false`, `strict: false` — nothing is type-checked into submission today. The tightening trigger (flip `strict: true` and `noUncheckedIndexedAccess: true` on the first `.ts` file in `src/shared/`) is recorded in `DECISIONS.md` and fires with the first custom element.
 
 ---
@@ -271,14 +273,16 @@ TypeScript is installed with `allowJs: true`, `checkJs: false`, `strict: false` 
 
 ## 9. Known issues — documented, deliberately unfixed
 
-1. **Homepage canvas planet links are root-absolute** (`src/script.js:52-125`, `/arcade/<game>`) and jump out of previews onto production. The one standing violation of rule 1; the hook stops new ones.
-2. **`preview-cleanup.yml` doesn't match `preview/**`** — only `feature/` and `stage/`. With `keep_files: true`, deleted `preview/*` branches leave their folders on the public site forever. Eight stale previews are up now.
-3. **`public/CNAME` was added in #46 and deleted again in #52.** Production keeps `stoeier.dk` only because `keep_files: true` preserves the file already on `gh-pages`. A full rebuild or a `keep_files: false` publish drops the custom domain.
-4. **`src/arcade/shared/firebase-config.js` is tracked with live values.** `.gitignore` covers a non-existent `src/scoreboard/firebase-config.js` instead. For a client-side Firebase app these values are inherently public, so the real control is Realtime Database security rules — which aren't in this repo.
-5. **No lockfile.** `package-lock.json` is gitignored and CI runs `npm install`, so builds aren't reproducible and a transitive change can break production with no diff to review.
-6. **Dead code in `vite.config.js`** — `GTAG_ID` and an empty `gtagPlugin()` stub, commented out of the plugin array. Analytics is half-wired and abandoned.
-7. **Twelve dead symbols across the pages**, all now surfaced as `npm run lint` warnings rather than hidden: `showToast`/`toastHideAt` (`script.js`), `bhBusy` (`space-bar`), `docked` (`iss-docking`), `landed` (`phobos-lander`), `gameOverTitle` (`nebula-trail`), `DESKTOP_W`/`DESKTOP_H` (`orbit-runner`), `raf` (`about-me`), `time` (`arcade`). Each is a one-line deletion; none is urgent.
+1. **`preview-cleanup.yml` doesn't match `preview/**`** — only `feature/` and `stage/`. With `keep_files: true`, deleted `preview/*` branches leave their folders on the public site forever. Eight stale previews are up now.
+2. **`public/CNAME` was added in #46 and deleted again in #52.** Production keeps `stoeier.dk` only because `keep_files: true` preserves the file already on `gh-pages`. A full rebuild or a `keep_files: false` publish drops the custom domain.
+3. **`src/arcade/shared/firebase-config.js` is tracked with live values.** `.gitignore` covers a non-existent `src/scoreboard/firebase-config.js` instead. For a client-side Firebase app these values are inherently public, so the real control is Realtime Database security rules — which aren't in this repo.
+4. **No lockfile.** `package-lock.json` is gitignored and CI runs `npm install`, so builds aren't reproducible and a transitive change can break production with no diff to review.
+5. **Dead code in `vite.config.js`** — `GTAG_ID` and an empty `gtagPlugin()` stub, commented out of the plugin array. Analytics is half-wired and abandoned.
+6. **Fifteen dead symbols across the pages**, all now surfaced as `npm run lint` warnings rather than hidden — the current list is `docs/BACKLOG.md` B10; don't duplicate it here, it drifts out of sync with this list otherwise (as of 2026-08-23 this section and B10 already disagreed by three symbols).
+7. **The homepage's NEPTUN planet links to `./arcade/asteroid-breaker/`, which doesn't exist** (`src/script.js:130`) — a 404 waiting on production. Every other planet's `link` was updated when its game was renamed/moved under the GAMES-data centralization (ADR-027); this one was missed. Should be `./arcade/neptune/`, matching `GAMES`'s `key: "neptune"`.
 
 None of these are in progress. Pick them off deliberately, one PR each.
 
 **Fixed while building this setup:** `vite.config.js` `getInputs()` was globbing `dist/**` back in as build input — 25 entries instead of 13, and an outright build failure whenever a stale `dist/` from a different `base` was present. CI never hit it because CI checks out fresh, so it only broke local rebuilds. See `DECISIONS.md` ADR-014. The `dist/**` ignore is kept even though `cwd: SRC` now puts `dist/` out of scope anyway — it costs nothing and the next person to move the root will be glad it is there.
+
+**Also fixed since:** the homepage canvas planet links (`src/script.js`) are relative now (`./arcade/<game>/`), not root-absolute — script.js's own comment at line 25 notes the change. This was the one standing violation of rule 1; there are none now, as far as this pass checked.

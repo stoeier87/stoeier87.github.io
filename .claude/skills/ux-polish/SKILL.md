@@ -27,7 +27,7 @@ Usage: `/ux-polish <page>` · `/loop /ux-polish <page>`
 
 **4. Apply it.**
 
-- Tailwind utilities in the JS template. **No new `.css` file**, no edits to the shared component layer in `tailwind.css` — eight game HUDs depend on it.
+- Tailwind utilities in the JS template. **No new `.css` file**, no edits to the shared component layer in `tailwind.css` — nine game HUDs depend on it.
 - Tokens only, no literal colours.
 - **Never gate motion on viewport width.** `prefers-reduced-motion` is the only fallback.
 - Keep the single rAF loop and the `[0,1]` clamp on scroll progress.

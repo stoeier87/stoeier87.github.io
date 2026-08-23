@@ -279,6 +279,21 @@ const DEG = Math.PI / 180;
 // this is a background rocking or drifting a little, not a 3D toy.
 const TILT_MAX = 3.5 * DEG; // radians, for cursor-motion="rotate"
 const SHIFT_MAX = 18; // world units (~= CSS px at z=0), for cursor-motion="translate"
+const PAN_Y_MAX = 5; // world units, the subtle vertical wobble for cursor-motion="pan"
+// cursor-motion="pan" drives the outermost planet to this fraction of the
+// viewport width in from its own side (not all the way to dead centre) --
+// caps how far the sweep travels at either edge.
+const PAN_EDGE_INSET = 0.1;
+// cursor-motion="pan"'s horizontal sweep, scaled down to make room for the
+// mouse-x zoom below -- the zoom is the more prominent read now, pan is
+// just a bit of drift alongside it.
+const PAN_X_SCALE = 0.25;
+// Depth units added to every planet's apparent size via the same
+// ZF/(ZF-depth) fake-perspective PlanetBody.depthBoost already uses --
+// left edge zooms in (positive), right edge zooms out (negative), centre
+// is neutral. Kept independent of pf: a real dolly moves every planet by
+// the same amount, not scaled per depth layer the way the pan is.
+const POINTER_ZOOM_MAX = 400;
 
 /**
  * Focal depth: the Z distance at which one world unit equals one screen pixel.
@@ -327,6 +342,12 @@ export class PlanetFieldElement extends HTMLElement {
   #panXTarget = 0;
   #panYTarget = 0;
   #travelIndex = -1;
+  /** Leftmost/rightmost planet by px, cached for cursor-motion="pan"'s sweep. */
+  #panLeftmost: PlanetSpec | null = null;
+  #panRightmost: PlanetSpec | null = null;
+  /** cursor-motion="pan"'s mouse-x zoom -- see POINTER_ZOOM_MAX. */
+  #pointerZoom = 0;
+  #pointerZoomTarget = 0;
   #raycaster = new Raycaster();
   // Ambient cursor-motion (cursorMotion): rocks or shifts the whole scene
   // toward the pointer, independent of #panX/#panY (which only move when
@@ -505,13 +526,20 @@ export class PlanetFieldElement extends HTMLElement {
    * Ambient pointer-following motion, independent of `interactive` (which is
    * about hover/click on planets, not this). `"rotate"` rocks the whole scene
    * a few degrees toward the cursor; `"translate"` shifts it a few pixels
-   * instead. Anything else, including the attribute being absent, is off.
-   * Not `drift` -- that name is already taken by the pixels/second
+   * instead; `"pan"` sweeps the camera across the full width of the planet
+   * field (scaled down by PAN_X_SCALE) *and* zooms every planet in/out with
+   * the same mouse-x — pointer at the left edge zooms in while bringing the
+   * rightmost planet in to PAN_EDGE_INSET from the right edge, the right
+   * edge zooms out while bringing the leftmost planet in to PAN_EDGE_INSET
+   * from the left, and dead centre reproduces the field's own resting
+   * layout unchanged (see the cursorMotion === "pan" branch in
+   * #updatePlanets). Anything else, including the attribute being absent,
+   * is off. Not `drift` -- that name is already taken by the pixels/second
    * auto-scroll rate below.
    */
-  get cursorMotion(): "rotate" | "translate" | "" {
+  get cursorMotion(): "rotate" | "translate" | "pan" | "" {
     const value = this.getAttribute("cursor-motion");
-    return value === "rotate" || value === "translate" ? value : "";
+    return value === "rotate" || value === "translate" || value === "pan" ? value : "";
   }
 
   /**
@@ -1081,6 +1109,14 @@ export class PlanetFieldElement extends HTMLElement {
     this.#disposePlanets();
     this.#bodies = this.#planets.map((spec, i) => new PlanetBody(spec, i, this.#glow!));
     for (const body of this.#bodies) this.#scene.add(body.group);
+    this.#panLeftmost = this.#planets.reduce<PlanetSpec | null>(
+      (min, p) => (!min || p.px < min.px ? p : min),
+      null,
+    );
+    this.#panRightmost = this.#planets.reduce<PlanetSpec | null>(
+      (max, p) => (!max || p.px > max.px ? p : max),
+      null,
+    );
   }
 
   #updatePlanets(scroll: number, dt: number): void {
@@ -1100,15 +1136,69 @@ export class PlanetFieldElement extends HTMLElement {
       const targetPf = tp.pf || 1;
       this.#panXTarget = (this.#w / 2 - tX) / targetPf;
       this.#panYTarget = (tY - this.#h * this.#focusY) / targetPf;
+      // A deliberate travel-to (e.g. arcade.js's click-to-fly) has its own
+      // depthBoost zoom on the target planet; the ambient pointer-zoom below
+      // is not part of that and shouldn't linger from wherever it was.
+      this.#pointerZoomTarget = 0;
+    } else if (this.cursorMotion === "pan") {
+      // Only recompute while the pointer is actually over the page. On
+      // pointerleave this simply stops touching panXTarget/panYTarget, so
+      // #panX/#panY (eased toward them below) hold wherever they already
+      // were instead of snapping back to centre the instant the cursor
+      // exits — the eased curve below is steepest right at the edges, so a
+      // hard reset-to-0 there reads as a jump, not a transition. The pan
+      // only returns to centre if the pointer comes back in near mx = 0.5.
+      if (this.#pointerInside && this.#panLeftmost && this.#panRightmost) {
+        // Continuous panorama sweep, driven by pointer x alone. mx runs 0
+        // (left edge) to 1 (right edge); at each edge the pan brings that
+        // side's outermost planet in to PAN_EDGE_INSET from its own side
+        // (not dead centre), using the same "pre-divide by the target's own
+        // pf" trick as the travel-target branch above, so the near/far
+        // planets still read as real depth-parallax mid-sweep rather than
+        // one rigid slab. mx = 0.5 is exactly 0 — the pointer resting at
+        // centre must reproduce the field's own designed layout, unchanged.
+        // The sweep runs opposite the pointer on purpose, same direction
+        // convention as cursor-motion="translate": moving right reveals
+        // what's off to the left, like turning to look aside.
+        const mx = (this.#pointer.x + 1) / 2;
+        // (1 - inset) lands the rightmost planet near the right edge;
+        // inset lands the leftmost planet near the left.
+        const rightPan =
+          ((1 - PAN_EDGE_INSET) * this.#w - this.#panRightmost.px * this.#w) /
+          (this.#panRightmost.pf || 1);
+        const leftPan =
+          (PAN_EDGE_INSET * this.#w - this.#panLeftmost.px * this.#w) / (this.#panLeftmost.pf || 1);
+        // Eased, not linear: t is 0 at dead centre and 1 at either edge, and
+        // squaring it means the same few pixels of pointer movement near
+        // centre barely pan at all, while the same movement near an edge
+        // covers much more ground -- slow approaching centrum, fast
+        // approaching left:0/right:0.
+        const t = Math.min(1, Math.abs(mx - 0.5) / 0.5);
+        const eased = t * t;
+        // Scaled down: the mouse-x zoom below is the main effect now, this
+        // is just a bit of drift alongside it.
+        this.#panXTarget = (mx <= 0.5 ? rightPan * eased : leftPan * eased) * PAN_X_SCALE;
+        // Vertical is a small wobble, not a second sweep — capped at
+        // PAN_Y_MAX regardless of any planet's position.
+        this.#panYTarget = this.#pointer.y * PAN_Y_MAX;
+        // Same eased curve as the pan above, but not signed by side --
+        // zoomed in at dead centre (eased = 0), zoomed out at *both* edges
+        // (eased = 1 on either side). 1 - 2*eased runs from +1 at centre
+        // (full zoom in) to -1 at either edge (full zoom out), passing
+        // through 0 a third of the way out.
+        this.#pointerZoomTarget = (1 - 2 * eased) * POINTER_ZOOM_MAX;
+      }
     } else {
       this.#panXTarget = 0;
       this.#panYTarget = 0;
+      this.#pointerZoomTarget = 0;
     }
 
     // Cinematic glide — slow enough to feel like travelling, fast enough to
     // respond before the user's cursor moves to the next card.
     this.#panX += (this.#panXTarget - this.#panX) * Math.min(1, dt * 1.5);
     this.#panY += (this.#panYTarget - this.#panY) * Math.min(1, dt * 1.5);
+    this.#pointerZoom += (this.#pointerZoomTarget - this.#pointerZoom) * Math.min(1, dt * 1.5);
 
     for (const body of this.#bodies) {
       const p = body.spec;
@@ -1125,8 +1215,10 @@ export class PlanetFieldElement extends HTMLElement {
 
       // Depth: scale apparent radius as if the planet were ZF/(ZF-depth) closer.
       // depthBoost animates toward its target each frame, giving the fly-toward
-      // zoom on hover. Orthographic projection keeps planets perfectly circular.
-      const depth = (p.depth ?? 0) + body.depthBoost;
+      // zoom on hover; pointerZoom is cursor-motion="pan"'s mouse-x zoom, the
+      // same fake-perspective applied uniformly instead of per-planet.
+      // Orthographic projection keeps planets perfectly circular regardless.
+      const depth = (p.depth ?? 0) + body.depthBoost + this.#pointerZoom;
       const apparentR = (r * ZF) / (ZF - depth);
       // Apply the camera pan scaled by this planet's own pf: planets with a
       // higher pf (feel nearer) shift more than ones with a lower pf (feel
