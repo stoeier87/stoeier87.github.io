@@ -1,10 +1,35 @@
 import { definePlanetField } from "../shared/elements/planet-field.ts";
 import { definePageHeader } from "../shared/elements/page-header.ts";
+import { defineHallNav } from "../shared/elements/hall-nav.ts";
 import { CardPlanetRenderer } from "../shared/elements/card-planet-renderer.ts";
 import { color } from "../tokens.ts";
+import { GAMES } from "./shared/games-data.js";
 
 definePlanetField();
 definePageHeader();
+defineHallNav();
+
+/* The solar-system grid: one .planet-card per GAMES entry, in source order.
+   Was 9 hand-copied blocks in index.html; only the copy differed between
+   them, so it's rendered from the shared data instead. */
+const solarSystem = document.getElementById("solarSystem");
+if (solarSystem) {
+  solarSystem.innerHTML = GAMES.map(({ key, label, gameLabel, tagline, cardPlanetLabel }) => {
+    const planetSlug = label.toLowerCase();
+    return `
+      <a class="planet-card live" href="${key}/" data-planet="${planetSlug}">
+        <span class="planet ${planetSlug}" aria-hidden="true"></span>
+        <div class="info">
+          <h2>${gameLabel}</h2>
+          <p class="game">${cardPlanetLabel ?? label}</p>
+          <p class="tagline">${tagline}</p>
+        </div>
+        <span class="badge">
+          <img src="../svg/gamepad.svg" class="arcade-icon" alt="" aria-hidden="true" />
+          Play</span>
+      </a>`;
+  }).join("");
+}
 
 /* Planet specs — visual props only. r/s0/px/pf are overridden per usage:
    - card renderer: places each planet at origin, unit radius (r=0 placeholder)

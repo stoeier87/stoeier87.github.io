@@ -12,11 +12,14 @@ import {
   onValue,
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
 import { ARCADE_FIREBASE_CONFIG } from "../arcade/shared/firebase-config.js";
+import { GAMES } from "../arcade/shared/games-data.js";
 import { definePlanetField } from "../shared/elements/planet-field.ts";
 import { definePageHeader } from "../shared/elements/page-header.ts";
+import { defineHallNav } from "../shared/elements/hall-nav.ts";
 import { ZODIAC_SIGNS, ZODIAC_SIGNS_SCATTERED } from "../shared/elements/zodiac-data.ts";
 
 definePageHeader();
+defineHallNav();
 
 const app = initializeApp(ARCADE_FIREBASE_CONFIG, "arcade-scoreboard");
 
@@ -138,18 +141,6 @@ if (sky) {
   }
 }
 
-const GAMES = [
-  { key: "mercury", label: "Merkur", gamekey: "orbit-runner", gameLabel: "Orbit Runner" },
-  { key: "venus", label: "Venus", gamekey: "meteor-dodge", gameLabel: "Meteor Dodge" },
-  { key: "earth", label: "Jorden", gamekey: "iss-docking", gameLabel: "ISS Docking" },
-  { key: "mars", label: "Mars", gamekey: "phobos-lander", gameLabel: "Phobos Lander" },
-  { key: "jupiter", label: "Jupiter", gamekey: "galileo", gameLabel: "Galileo" },
-  { key: "saturn", label: "Saturn", gamekey: "star-memory", gameLabel: "Star Memory" },
-  { key: "uranus", label: "Uranus", gamekey: "nebula-trail", gameLabel: "Nebula Trail" },
-  { key: "neptune", label: "Neptun", gamekey: "diamond-rain", gameLabel: "Diamond Rain" },
-  { key: "pluto", label: "Pluto", gamekey: "ice-fall", gameLabel: "Ice Fall" },
-];
-
 const PREVIEW = 5;
 
 function escapeHtml(str) {
@@ -238,7 +229,7 @@ function createCard(game) {
       topScoreEl.textContent = Number(allRows[0].score).toLocaleString();
 
       // Update expand button if needed
-      updateExpandBtn();
+      // updateExpandBtn();
       const html = renderRows(allRows, expanded);
       console.log(
         `[${game.key}] rendering ${allRows.length} rows, html length: ${html.length}, preview rows in html: ${(html.match(/<tr/g) || []).length}`,
