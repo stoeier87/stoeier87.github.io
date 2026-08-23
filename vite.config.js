@@ -83,6 +83,8 @@ function sitemapPlugin() {
         return dir === "." ? "/" : "/" + dir + "/"; // guard:allow-absolute
       })
         .filter((route) => route !== "/scoreboard/") // guard:allow-absolute
+        // hall-of-stars is live Firebase data like the scoreboard — same reasoning
+        .filter((route) => route !== "/scoreboard/hall-of-stars/") // guard:allow-absolute
         // the comet-pong stub is a redirect, not a page worth indexing
         .filter((route) => route !== "/arcade/comet-pong/") // guard:allow-absolute
         .sort();

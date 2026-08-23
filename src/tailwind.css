@@ -64,6 +64,21 @@
   --color-scoreboard-accent: #6e8fff;
   --color-scoreboard-line: rgba(60,75,130,0.35);
 
+  /* Colors — Hall of Stars scene. Canvas-only, consumed via tokens.ts like
+     the planet palette; sits inside the scoreboard subsystem's dark drift. */
+  --color-hall-ocean: #123a63;
+  --color-hall-ocean-deep: #0b2544;
+  --color-hall-land: #4f9d69;
+  --color-hall-land-shade: #35754d;
+  --color-hall-ice: #dcebf5;
+  --color-hall-night: #04080f;
+  --color-hall-city-light: #ffcf7a;
+  --color-hall-atmosphere: #9fc8ff;
+  --color-hall-cloud: #e8f2fb;
+  --color-hall-nebula-blue: #24386e;
+  --color-hall-nebula-red: #58203a;
+  --color-hall-star-line: #cfd8ff;
+
   /* Typography */
   --font-display: "Archivo Black", sans-serif;
   --font-mono: "Space Mono", ui-monospace, monospace;

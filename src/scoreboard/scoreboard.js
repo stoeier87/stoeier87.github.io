@@ -6,22 +6,18 @@ import {
 import {
   getDatabase,
   ref,
-  query,
-  orderByChild,
-  limitToLast,
   onValue,
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
 import { ARCADE_FIREBASE_CONFIG } from "../arcade/shared/firebase-config.js";
 import { GAMES } from "../arcade/shared/games-data.js";
+import { currentPeriod } from "../shared/zodiac-periods.js";
 import { definePlanetField } from "../shared/elements/planet-field.ts";
 import { definePageHeader } from "../shared/elements/page-header.ts";
 import { defineHallNav } from "../shared/elements/hall-nav.ts";
-import { defineFooter } from "../shared/elements/footer.ts";
 import { ZODIAC_SIGNS, ZODIAC_SIGNS_SCATTERED } from "../shared/elements/zodiac-data.ts";
 
 definePageHeader();
 defineHallNav();
-defineFooter();
 
 const app = initializeApp(ARCADE_FIREBASE_CONFIG, "arcade-scoreboard");
 
@@ -43,12 +39,13 @@ const db = getDatabase(app);
 /* Background — <st-planet-field> with the 12 zodiac signs instead of
    planets. `driven` because this page owns the one rAF loop below;
    `interactive` (set on the element in index.html) turns on hover, which
-   brightens the sign under the pointer and fires constellation-enter/leave
-   — picked up below to show its name and date range. `cursor-motion="rotate"`
-   rocks the whole sky a few degrees toward the pointer. */
+   brightens the sign under the pointer. The name/date tooltip that used to
+   follow the cursor is gone on purpose — the Hall of Stars page names every
+   sign properly, so the hover here is purely the glow.
+   `cursor-motion="rotate"` rocks the whole sky a few degrees toward the
+   pointer. */
 definePlanetField();
 const sky = document.getElementById("bg");
-const zodiacLabel = document.getElementById("zodiac-label");
 // Touch/narrow viewports (<640px) get a scattered, non-grid layout with
 // hover interactivity switched off entirely -- ambient background art, not
 // a UI element. Desktop is unchanged. Checked once at load rather than on
@@ -63,7 +60,7 @@ if (sky) {
     // actually matters -- tick() reads `this.interactive` fresh every frame
     // via hasAttribute, so this alone is what stops #updateHover() from
     // ever running: no grow-on-hover, no colour bloom past the 10% resting
-    // tint, no zodiac-label tooltip, no cursor:none.
+    // tint.
     sky.removeAttribute("interactive");
   }
   // Sparser and dimmer than the homepage default -- the 12 constellation
@@ -114,36 +111,45 @@ if (sky) {
     sky.tick(t);
     requestAnimationFrame(loop);
   });
-
-  if (zodiacLabel) {
-    // translate3d rather than left/top so this doesn't force layout on every
-    // pointermove -- it's the same technique the label was already using via
-    // Tailwind's -translate-x-1/2 before it switched to following the cursor.
-    addEventListener(
-      "pointermove",
-      (e) => {
-        zodiacLabel.style.transform = `translate3d(${e.clientX + 5}px, ${e.clientY - 5}px, 0)`;
-      },
-      { passive: true },
-    );
-    sky.addEventListener("constellation-enter", (e) => {
-      const { name, dateRange, symbol } = e.detail.constellation;
-      const label = symbol ? `${symbol} ${name}` : name;
-      zodiacLabel.textContent = dateRange ? `${label} · ${dateRange}` : label;
-      zodiacLabel.classList.remove("hidden");
-      // The floating label already names what's under the pointer, so the
-      // system arrow is just noise sitting on top of the growing/glowing
-      // shape -- hide it for the duration of the hover.
-      document.body.classList.add("zodiac-hover");
-    });
-    sky.addEventListener("constellation-leave", () => {
-      zodiacLabel.classList.add("hidden");
-      document.body.classList.remove("zodiac-hover");
-    });
-  }
 }
 
 const PREVIEW = 5;
+
+/* ── The running zodiac period ─────────────────────────────────────────
+   The board shows only scores set during the period running right now,
+   computed in Europe/Copenhagen (zodiac-periods.js — never a fixed UTC
+   offset) at load, and re-checked on visibilitychange so a tab left open
+   overnight flips to the new empty period on its own. This is a display
+   filter and nothing else: no score is ever deleted or rewritten to make
+   the board reset, so the Hall of Stars can always recompute any past
+   period from the raw rows. */
+let period = currentPeriod();
+
+const periodLine = document.getElementById("period-line");
+const rerenderers = [];
+
+function renderPeriodLine() {
+  if (periodLine) periodLine.textContent = period.label;
+}
+renderPeriodLine();
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) return;
+  const now = currentPeriod();
+  if (now.startUtcMs !== period.startUtcMs) {
+    period = now;
+    renderPeriodLine();
+    for (const rerender of rerenderers) rerender();
+  }
+});
+
+/* A row counts only if its createdAt is a real timestamp inside the
+   running period. Rows without a usable timestamp are excluded from all
+   period logic — never guessed at, never deleted, simply not shown. */
+function inCurrentPeriod(row) {
+  const t = Number(row?.createdAt);
+  return Number.isFinite(t) && t >= period.startUtcMs && t < period.endUtcMsExclusive;
+}
 
 function escapeHtml(str) {
   return String(str)
@@ -183,7 +189,7 @@ function createCard(game) {
     <div class="board-card-header">
       <div class="game-labels">
         <h2>${escapeHtml(game.label)}</h2>
-        <a href="/arcade/${escapeHtml(game.key)}" class="game-key">(${escapeHtml(game.gameLabel)})</a>
+        <a href="../arcade/${escapeHtml(game.key)}/" class="game-key">(${escapeHtml(game.gameLabel)})</a>
       </div>
       <span class="top-score">—</span>
     </div>
@@ -198,76 +204,55 @@ function createCard(game) {
       </table>
     </div>`;
 
-  let expanded = false;
-  let allRows = [];
-
   const topScoreEl = card.querySelector(".top-score");
   const tbody = card.querySelector(".board-tbody");
 
-  const scoresRef = ref(db, `arcade/scores/${game.key}`);
-  const topQuery = query(scoresRef, orderByChild("score"), limitToLast(50));
+  /* Two live sources per game: the planet key every game submits under
+     since the planet-URL rename, plus the game's older `gamekey` path
+     where pre-rename rows (and any straggler submit) still live. The
+     merge is read-side only — rows are combined for display, never moved
+     between paths.
 
-  onValue(
-    topQuery,
-    (snapshot) => {
-      allRows = [];
-      snapshot.forEach((child) => {
-        allRows.push(child.val());
-      });
-      allRows.sort((a, b) => b.score - a.score || a.createdAt - b.createdAt);
+     No orderByChild/limitToLast any more: an all-time top-50 by score can
+     miss every row of a young period, and the filter below needs the
+     period's rows regardless of their all-time rank. Row counts here are
+     small enough that reading the path whole is the correct simple thing. */
+  const paths = game.gamekey === game.key ? [game.key] : [game.key, game.gamekey];
+  const rowsByPath = paths.map(() => []);
 
-      console.log(
-        `[${game.key}] exists:${snapshot.exists()} size:${snapshot.size} rows:${allRows.length}`,
-        snapshot.val(),
-      );
-      card.classList.remove("is-loading");
-
-      if (!allRows.length) {
-        // card.style.display = "none";
-        return;
-      }
-
-      card.style.display = "";
-      topScoreEl.textContent = Number(allRows[0].score).toLocaleString();
-
-      // Update expand button if needed
-      // updateExpandBtn();
-      const html = renderRows(allRows, expanded);
-      console.log(
-        `[${game.key}] rendering ${allRows.length} rows, html length: ${html.length}, preview rows in html: ${(html.match(/<tr/g) || []).length}`,
-      );
-      tbody.innerHTML = html;
-    },
-    (err) => {
-      card.classList.remove("is-loading");
-      tbody.innerHTML = `<tr class="empty-row"><td colspan="3">Error: ${escapeHtml(err.message)}</td></tr>`;
-    },
-  );
-
-  function updateExpandBtn() {
-    const header = card.querySelector(".board-card-header");
-    let btn = header.querySelector(".expand-btn");
-
-    if (allRows.length <= PREVIEW) {
-      if (btn) btn.remove();
+  const render = () => {
+    const rows = rowsByPath
+      .flat()
+      .filter(inCurrentPeriod)
+      .sort((a, b) => b.score - a.score || a.createdAt - b.createdAt);
+    if (!rows.length) {
+      topScoreEl.textContent = "—";
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="3">unclaimed</td></tr>`;
       return;
     }
+    topScoreEl.textContent = Number(rows[0].score).toLocaleString();
+    tbody.innerHTML = renderRows(rows, false);
+  };
+  rerenderers.push(render);
 
-    if (!btn) {
-      btn = document.createElement("button");
-      btn.className = "expand-btn";
-      header.appendChild(btn);
-      btn.addEventListener("click", () => {
-        expanded = !expanded;
-        tbody.innerHTML = renderRows(allRows, expanded);
-        btn.textContent = expanded
-          ? `▲ Top ${PREVIEW}`
-          : `▼ All ${allRows.length}`;
-      });
-    }
-
-    btn.textContent = expanded ? `▲ Top ${PREVIEW}` : `▼ All ${allRows.length}`;
-  }
+  paths.forEach((path, i) => {
+    onValue(
+      ref(db, `arcade/scores/${path}`),
+      (snapshot) => {
+        const rows = [];
+        snapshot.forEach((child) => {
+          rows.push(child.val());
+        });
+        rowsByPath[i] = rows;
+        card.classList.remove("is-loading");
+        render();
+      },
+      (err) => {
+        card.classList.remove("is-loading");
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="3">Error: ${escapeHtml(err.message)}</td></tr>`;
+      },
+    );
+  });
 
   return card;
 }

@@ -22,13 +22,6 @@ body {
   min-height: 100vh;
 }
 
-/* Toggled from scoreboard.js on constellation-enter/leave -- the floating
-   #zodiac-label already names what's under the pointer while a sign is
-   hovered, so the system arrow just sits on top of the growing shape. */
-body.zodiac-hover {
-  cursor: none;
-}
-
 #bg {
   position: fixed;
   inset: 0;
