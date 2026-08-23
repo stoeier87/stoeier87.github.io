@@ -1167,8 +1167,7 @@ export class PlanetFieldElement extends HTMLElement {
           ((1 - PAN_EDGE_INSET) * this.#w - this.#panRightmost.px * this.#w) /
           (this.#panRightmost.pf || 1);
         const leftPan =
-          (PAN_EDGE_INSET * this.#w - this.#panLeftmost.px * this.#w) /
-          (this.#panLeftmost.pf || 1);
+          (PAN_EDGE_INSET * this.#w - this.#panLeftmost.px * this.#w) / (this.#panLeftmost.pf || 1);
         // Eased, not linear: t is 0 at dead centre and 1 at either edge, and
         // squaring it means the same few pixels of pointer movement near
         // centre barely pan at all, while the same movement near an edge

@@ -48,12 +48,16 @@ class HallNavElement extends HTMLElement {
             </svg>
           </span>
         </a>
-        ${secondHref && secondIcon && secondLabel ? `
+        ${
+          secondHref && secondIcon && secondLabel
+            ? `
         <a class="pill" href="${secondHref}">
           <span class="arrow"><i class="fa-solid ${secondIcon} ${secondIconClass}"></i></span>
           ${secondLabel}
         </a>
-        ` : ""}
+        `
+            : ""
+        }
       </nav>`;
   }
 }
