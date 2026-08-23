@@ -44,6 +44,12 @@ jobs:
   # zero check runs. That commit is exactly what ends up as a PR's head
   # SHA, so a skipped run there means the PR can never satisfy required
   # checks. Same reason the commit itself carries no `[skip ci]`.
+  #
+  # A separate, narrower guard (inside the script, not a job-level `if`)
+  # skips the bump entirely when there are zero commits since LAST_TAG --
+  # e.g. stage reset to exactly match an already-tagged main commit. Without
+  # it, the bump math always defaults to at least a patch, so a no-op reset
+  # still produced a spurious version bump (found 2026-08-23).
   bump:
     runs-on: ubuntu-latest
     permissions:
@@ -60,14 +66,28 @@ jobs:
         id: finalize
         run: |
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          HAS_TAG=true
           if [ -z "$LAST_TAG" ]; then
             LAST_TAG="v$(node -p "require('./package.json').version")"
+            HAS_TAG=false
           fi
 
           if git rev-parse "$LAST_TAG" >/dev/null 2>&1; then
             LOG=$(git log "${LAST_TAG}..HEAD" --pretty=%s%n%b)
           else
             LOG=$(git log --pretty=%s%n%b)
+          fi
+
+          # HEAD sitting exactly at (or with zero commits past) the last tag --
+          # a stage-reset landing on an already-tagged main commit, most
+          # commonly -- is not a release cycle with nothing to bump yet, it's
+          # nothing happening at all. Without this, the code below always
+          # defaults to at least a patch bump even when LOG is empty, which
+          # is exactly the spurious bump a 2026-08-23 stage-reset produced.
+          if [ "$HAS_TAG" = true ] && [ -z "$LOG" ]; then
+            echo "No commits since $LAST_TAG, nothing to bump."
+            echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
           BUMP=patch
