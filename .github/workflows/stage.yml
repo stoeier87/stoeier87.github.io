@@ -12,6 +12,10 @@ name: Deploy Stage
 # (ADR-007) — don't add gates to preview, and don't remove them from here.
 
 on:
+  pull_request:
+    types: [opened]
+    branches:
+      - stage
   push:
     branches:
       - stage
