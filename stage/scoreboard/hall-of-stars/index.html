@@ -18,8 +18,8 @@
     <!-- No page stylesheet on purpose (rule 10: styling lives in JS/utilities
          from here on) — the common-foot pair below is the whole cascade. -->
     <link href="../../css/all.min.css" rel="stylesheet" />
-    <script type="module" crossorigin src="../../assets/scoreboard/hall-of-stars/index-BA1ew1de.js"></script>
-    <link rel="modulepreload" crossorigin href="../../assets/tailwind-CbFadkMw.js">
+    <script type="module" crossorigin src="../../assets/scoreboard/hall-of-stars/index-C2m2gpc4.js"></script>
+    <link rel="modulepreload" crossorigin href="../../assets/tailwind-DUCiUca2.js">
     <link rel="modulepreload" crossorigin href="../../assets/planet-textures-DAkK65wv.js">
     <link rel="modulepreload" crossorigin href="../../assets/tokens-C0x0uWM4.js">
     <link rel="modulepreload" crossorigin href="../../assets/page-header-BXTlxPh2.js">
@@ -27,9 +27,19 @@
     <link rel="modulepreload" crossorigin href="../../assets/firebase-config-CE95sHti.js">
     <link rel="modulepreload" crossorigin href="../../assets/games-data-DPRE8LZ4.js">
     <link rel="modulepreload" crossorigin href="../../assets/zodiac-periods-BYYFId7n.js">
-    <link rel="stylesheet" crossorigin href="../../assets/tailwind-JbbUHMP2.css">
+    <link rel="stylesheet" crossorigin href="../../assets/tailwind-G55ZY1-g.css">
   </head>
   <body class="min-h-screen bg-scoreboard-bg font-mono text-scoreboard-text">
+    <!-- The sky is the whole page's backdrop: one fixed full-viewport canvas
+         behind everything. The transparent #scene box further down is where
+         the globe anchors itself and where drag is captured — gestures never
+         belong to the backdrop, or dragging anywhere would stop the page
+         scrolling on a phone. -->
+    <canvas
+      id="sky"
+      class="pointer-events-none fixed inset-0 z-0 h-full w-full"
+      aria-hidden="true"
+    ></canvas>
     <st-hall-nav
       nav-label="Hall of Stars navigation"
       back-href="../"
@@ -67,12 +77,11 @@
           </button>
         </div>
 
-        <!-- The scene. touch-none + the touchmove preventDefault in JS keep a
-             drag on the globe from scrolling the page; everything the canvas
-             shows is reachable through the arrow controls below it. -->
-        <div id="scene" class="relative h-[40vh] touch-none select-none md:h-[46vh]">
-          <canvas id="sky" class="absolute inset-0 h-full w-full" aria-hidden="true"></canvas>
-        </div>
+        <!-- The globe's anchor and gesture surface. touch-none + the
+             touchmove preventDefault in JS keep a drag here from scrolling
+             the page; everything the scene shows is reachable through the
+             arrow controls below it. -->
+        <div id="scene" class="relative h-[40vh] touch-none select-none md:h-[46vh]"></div>
 
         <!-- Active constellation + step controls (the only way to move under
              prefers-reduced-motion, and the precise way on a phone) -->
