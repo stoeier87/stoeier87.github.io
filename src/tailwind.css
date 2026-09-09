@@ -274,21 +274,6 @@ header p.sub {
   @apply flex flex-col gap-8 md:gap-12;
   @apply h-screen;
 }
-/* backdrop-filter: blur(3px); */
-header.topbar {
-  @apply sm:pt-0;
-  & .pills {
-    @apply flex flex-row  gap-4 w-full p-4 md:px-0;
-    & .pill {
-      @apply w-[48%] md:w-full rounded-xl md:rounded-full p-4 md:p-0 md:px-[0.8rem] md:py-[1rem];
-      transition: all 0.25s ease;
-        & .arrow {
-          @apply mr-0 md:mr-2;
-          @apply text-lg md:text-sm;
-        }
-    }
-  }
-}
 .pill {
   animation: pillFloat 5s ease-in-out infinite;
   display: inline-flex; align-items: center; justify-content: center;
