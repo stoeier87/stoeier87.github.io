@@ -307,6 +307,31 @@ el.yearNext.addEventListener("click", () => {
   if (selectedYear < maxYear) setYear(selectedYear + 1);
 });
 
+/* ── Live period rollover ──────────────────────────────────────────────
+   A hall left open across Danish midnight at a sign boundary updates by
+   itself: the ceiling and the reachable arc refresh, and if the visitor
+   was parked at the future wall — on the running period — the sky follows
+   them into the new one. A minute tick catches the boundary while the tab
+   stays visible; the visibilitychange handler below covers waking up. */
+let watchedPeriodStart = now.startUtcMs;
+
+function rollPeriod() {
+  const p = currentPeriod();
+  if (p.startUtcMs === watchedPeriodStart) return;
+  const wasAtWall = selectedYear === maxYear && !isAllowed(activeIndex + 1);
+  watchedPeriodStart = p.startUtcMs;
+  maxYear = periodOfTimestamp(Date.now()).year;
+  if (wasAtWall) {
+    selectedYear = p.year;
+    refreshAllowed();
+    stepTo(p.index);
+    setActive(p.index);
+  }
+  renderYear(); // re-reads the ceiling and the reachable arc either way
+  scheduleWinners();
+}
+setInterval(rollPeriod, 60_000);
+
 /* ── Active constellation ──────────────────────────────────────────── */
 
 function updateSignArrows() {
@@ -566,21 +591,32 @@ function buildNebulae() {
   nebulae = specs.map((s) => ({ ...s, sprite: makeNebula(s.tint, s.r) }));
 }
 
-function resize() {
+/* The canvas is the whole viewport; the globe anchors to the transparent
+   #scene box in the page flow, so it scrolls with the content while the
+   star field stays put behind everything. Re-read every frame (and on
+   scroll under reduced motion) — one getBoundingClientRect per frame on
+   one element is cheap, and it is what keeps the anchor honest. */
+function updateAnchor() {
   const rect = el.scene.getBoundingClientRect();
-  W = Math.max(1, Math.round(rect.width));
-  H = Math.max(1, Math.round(rect.height));
+  const w = Math.max(1, rect.width);
+  const h = Math.max(1, rect.height);
+  CX = rect.left + w / 2;
+  CY = rect.top + h * 0.44;
+  /* Earth deliberately smaller than the ring's front arc, so the active
+     constellation reads over the lower limb instead of drowning in the disc */
+  EARTH_R = Math.min(w * 0.13, h * 0.24);
+  RING_R = Math.min(w * 0.34, h * 0.52);
+  CAM = RING_R * 2.9;
+}
+
+function resize() {
+  W = Math.max(1, window.innerWidth);
+  H = Math.max(1, window.innerHeight);
   el.sky.width = W * dpr;
   el.sky.height = H * dpr;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // after every resize
   smallViewport = W < 500;
-  CX = W / 2;
-  CY = H * 0.44;
-  /* Earth deliberately smaller than the ring's front arc, so the active
-     constellation reads over the lower limb instead of drowning in the disc */
-  EARTH_R = Math.min(W * 0.13, H * 0.24);
-  RING_R = Math.min(W * 0.34, H * 0.52);
-  CAM = RING_R * 2.9;
+  updateAnchor();
   buildStarLayers();
   buildNebulae();
   if (reduced) renderScene();
@@ -956,6 +992,7 @@ function frame(ts) {
     if (lineDraw < 1) lineDraw = Math.min(1, lineDraw + dt / 0.45);
   }
 
+  updateAnchor(); // the globe follows its box as the page scrolls
   if (!frameSkip) renderScene();
   rafId = requestAnimationFrame(frame);
 }
@@ -968,6 +1005,7 @@ document.addEventListener("visibilitychange", () => {
     rafId = 0;
     last = 0;
   } else {
+    rollPeriod(); // hidden tabs throttle the minute tick — catch up on wake
     renderYear();
     if (!rafId && !reduced) rafId = requestAnimationFrame(frame);
     if (reduced) renderScene();
@@ -1038,9 +1076,10 @@ const release = (e) => {
     const dist = Math.hypot(e.clientX - downX, e.clientY - downY);
     if (dist < 8 && sceneT - downT < 0.4) {
       /* a tap: rotate the tapped constellation to the front */
-      const rect = el.scene.getBoundingClientRect();
-      const mx = e.clientX - rect.left;
-      const my = e.clientY - rect.top;
+      /* project() speaks viewport coordinates now (fixed full-bleed
+         canvas), so the pointer's client position compares directly */
+      const mx = e.clientX;
+      const my = e.clientY;
       let hit = null;
       for (let k = 0; k < 12; k++) {
         const p = project(k);
@@ -1071,6 +1110,22 @@ el.scene.addEventListener(
 /* ── Boot ──────────────────────────────────────────────────────────── */
 
 new ResizeObserver(resize).observe(el.scene);
+addEventListener("resize", resize, { passive: true });
+/* Under reduced motion there is no loop to chase the anchor, so scrolling
+   re-renders the one static frame (rAF-debounced one-shot, not a loop). */
+let scrollShot = 0;
+addEventListener(
+  "scroll",
+  () => {
+    if (!reduced || scrollShot) return;
+    scrollShot = requestAnimationFrame(() => {
+      scrollShot = 0;
+      updateAnchor();
+      renderScene();
+    });
+  },
+  { passive: true },
+);
 resize();
 el.signName.textContent = SIGNS[activeIndex].constellation;
 renderYear();

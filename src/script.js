@@ -41,7 +41,7 @@ import { color } from "./tokens.ts";
       lo: color.planet.merkurLo,
       spin: 0.05,
       depth: -80,
-      link: "./arcade/orbit-runner/",
+      link: "./arcade/mercury/",
     },
     {
       name: "VENUS",
@@ -53,7 +53,7 @@ import { color } from "./tokens.ts";
       lo: color.planet.venusLo,
       spin: 0.035,
       depth: -40,
-      link: "./arcade/meteor-dodge/",
+      link: "./arcade/venus/",
     },
     {
       name: "JORDEN",
@@ -66,7 +66,7 @@ import { color } from "./tokens.ts";
       earth: true,
       spin: 0.08,
       depth: 0,
-      link: "./arcade/iss-docking/",
+      link: "./arcade/earth/",
     },
     {
       name: "MARS",
@@ -78,7 +78,7 @@ import { color } from "./tokens.ts";
       lo: color.planet.marsLo,
       spin: 0.075,
       depth: -60,
-      link: "./arcade/phobos-lander/",
+      link: "./arcade/mars/",
     },
     {
       name: "JUPITER",
@@ -91,7 +91,7 @@ import { color } from "./tokens.ts";
       bands: true,
       spin: 0.16,
       depth: 150,
-      link: "./arcade/galileo/",
+      link: "./arcade/jupiter/",
     },
     {
       name: "SATURN",
@@ -104,7 +104,7 @@ import { color } from "./tokens.ts";
       ring: true,
       spin: 0.15,
       depth: 80,
-      link: "./arcade/star-memory/",
+      link: "./arcade/saturn/",
     },
     {
       name: "URANUS",
@@ -117,7 +117,7 @@ import { color } from "./tokens.ts";
       ring: false,
       spin: 0.09,
       depth: -100,
-      link: "./arcade/nebula-trail/",
+      link: "./arcade/uranus/",
     },
     {
       name: "NEPTUN",
@@ -129,12 +129,13 @@ import { color } from "./tokens.ts";
       lo: color.planet.neptunLo,
       spin: 0.095,
       depth: -130,
-      link: "./arcade/asteroid-breaker/",
+      link: "./arcade/neptune/",
     },
     {
-      // Den niende. Ingen spil endnu, så Pluto sender dig til hele arkaden.
-      // s0 er 0.97 og pf er lav med vilje: højere op og den ville lande oven i
-      // Neptun, lavere og ±3r-cullingen ville skjule den før rejsen er slut.
+      // Den niende. Pluto fik sit eget spil (Ice Fall), så den sender dig
+      // derhen nu i stedet for til hele arkaden. s0 er 0.97 og pf er lav med
+      // vilje: højere op og den ville lande oven i Neptun, lavere og
+      // ±3r-cullingen ville skjule den før rejsen er slut.
       name: "PLUTO",
       r: 0.014,
       s0: 0.97,
@@ -144,7 +145,7 @@ import { color } from "./tokens.ts";
       lo: color.planet.plutoLo,
       spin: 0.03,
       depth: -180,
-      link: "./arcade/",
+      link: "./arcade/pluto/",
     },
   ];
 
