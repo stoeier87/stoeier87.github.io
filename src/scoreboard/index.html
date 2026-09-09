@@ -20,18 +20,13 @@
       shooting-stars
       aria-hidden="true"
     ></st-planet-field>
-    <div
-      id="zodiac-label"
-      class="pointer-events-none fixed top-0 left-0 z-10 hidden rounded-full border border-white/20 bg-black/60 px-4 py-2 font-mono text-xs tracking-widest text-white/90 backdrop-blur"
-      aria-hidden="true"
-    ></div>
     <st-hall-nav
       nav-label="Scoreboard navigation"
       back-href="../arcade/"
       back-label="Back to arcade"
-      second-href="../arcade/"
-      second-icon="fa-gamepad"
-      second-label="Arcade Games"
+      second-href="./hall-of-stars/"
+      second-icon="fa-star"
+      second-label="Hall of Stars"
     ></st-hall-nav>
 
     <main class="wrap">
@@ -42,14 +37,20 @@
         accent="board"
         subtitle="Top scores across the solar arcade"
       ></st-page-header>
+      <!-- The running zodiac period — recomputed at load and on
+           visibilitychange in scoreboard.js, e.g. "Leo, until 22 August". -->
+      <p id="period-line" class="mb-6 text-center text-xs tracking-[0.22em] text-white/35" aria-live="polite"></p>
       <section class="flex flex-col justify-between grow h-max" aria-label="Scoreboard">
 
         <div id="boards" class="boards"></div>
+        <!-- Deliberately NOT <st-footer>: the scoreboard footer reads only
+             SERVICEDESIGN.DK, dimmed — no contact pills, no version badge
+             (task-1 decision, this branch). The element stays in use on the
+             pages that want the full footer. -->
         <footer>
           <a href="https://servicedesign.dk" target="_blank" rel="noopener"
           >servicedesign.dk</a
           >
-          <script type="module" src="../shared/version-badge.js"></script>
         </footer>
       </section>
     </main>

@@ -64,6 +64,21 @@
   --color-scoreboard-accent: #6e8fff;
   --color-scoreboard-line: rgba(60,75,130,0.35);
 
+  /* Colors — Hall of Stars scene. Canvas-only, consumed via tokens.ts like
+     the planet palette; sits inside the scoreboard subsystem's dark drift. */
+  --color-hall-ocean: #123a63;
+  --color-hall-ocean-deep: #0b2544;
+  --color-hall-land: #4f9d69;
+  --color-hall-land-shade: #35754d;
+  --color-hall-ice: #dcebf5;
+  --color-hall-night: #04080f;
+  --color-hall-city-light: #ffcf7a;
+  --color-hall-atmosphere: #9fc8ff;
+  --color-hall-cloud: #e8f2fb;
+  --color-hall-nebula-blue: #24386e;
+  --color-hall-nebula-red: #58203a;
+  --color-hall-star-line: #cfd8ff;
+
   /* Typography */
   --font-display: "Archivo Black", sans-serif;
   --font-mono: "Space Mono", ui-monospace, monospace;
@@ -109,6 +124,35 @@
   --animate-hint-bounce: hintBounce 2s ease-in-out infinite;
   --animate-hint-pulse: hintPulse 2s ease-in-out infinite;
 }
+
+/* Shared html/body/main baseline. `@layer base` on purpose, not plain rules:
+   tailwind.css loads last in every <head> (rule 4), and a plain rule here
+   would win the cascade over every page's own body{} at equal specificity --
+   the opposite of what a shared *default* should do. `@layer base` puts
+   these below Tailwind's own Preflight and below every page's unlayered CSS,
+   so a page's existing body{}/main{} rule (index.css, about-me.css, etc.)
+   keeps winning unchanged; this only fills in what a page never set. Preflight
+   (part of `@import "tailwindcss"` above) already handles box-sizing and
+   margin resets -- this only adds the theme-driven defaults it doesn't. */
+@layer base {
+  html {
+    height: 100%;
+  }
+
+  body {
+    min-height: 100%;
+    font-family: var(--font-mono);
+    background: var(--color-bg);
+    color: var(--color-ink);
+    overflow-x: hidden;
+  }
+
+  main {
+    display: block;
+    position: relative;
+  }
+}
+
 @layer components {
   .planet-card {
     @apply border-2 border-white/[0.28] hover:border-white/[0.58] rounded-2xl;
@@ -186,7 +230,7 @@
 }
 
 header {
-  @apply text-center pt-[clamp(1rem,12vw,5.5rem)] md:pt-0 text-center;
+  @apply text-center p-4 md:p-0;
 }
 header h1 {
     font-family: var(--font-display);
@@ -230,7 +274,6 @@ header p.sub {
   @apply flex flex-col gap-8 md:gap-12;
   @apply h-screen;
 }
-
 .pill {
   animation: pillFloat 5s ease-in-out infinite;
   display: inline-flex; align-items: center; justify-content: center;
@@ -304,11 +347,9 @@ header p.sub {
 .topbar {
   position: fixed;
   @apply top-0 md:top-8;
-  @apply left-3 right-3;
+  @apply justify-between md:justify-center;
   z-index: 25;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
   gap: 10px;
   pointer-events: none;
   flex-wrap: wrap;

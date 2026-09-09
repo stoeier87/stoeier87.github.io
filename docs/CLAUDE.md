@@ -187,7 +187,12 @@ committed if the computed target actually changed since the last time. Re-runnin
 one release cycle that are all `fix:`-shaped produces one commit, not five; a late `feat:` landing
 in the same cycle produces one more. The target is always `last release tag + highest-severity
 commit type since that tag`, set directly rather than incremented, which is what makes it safe to
-recompute on every push without the number running away.
+recompute on every push without the number running away — **with one guard that has to hold**:
+`stage.yml`'s bump step explicitly skips when there are zero commits since the last tag, rather than
+defaulting to a patch bump regardless. Without that check, HEAD landing exactly on an already-tagged
+commit — a stage-reset onto `main` being the common way that happens — bumps anyway, because "at
+least a patch" was the fallback. Found and fixed 2026-08-23 after a reset produced exactly that
+spurious bump.
 
 **Bump type**, from the Conventional Commit type of everything since the last release tag (highest
 severity wins):

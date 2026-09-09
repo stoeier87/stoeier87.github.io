@@ -83,6 +83,8 @@ function sitemapPlugin() {
         return dir === "." ? "/" : "/" + dir + "/"; // guard:allow-absolute
       })
         .filter((route) => route !== "/scoreboard/") // guard:allow-absolute
+        // hall-of-stars is live Firebase data like the scoreboard — same reasoning
+        .filter((route) => route !== "/scoreboard/hall-of-stars/") // guard:allow-absolute
         // the comet-pong stub is a redirect, not a page worth indexing
         .filter((route) => route !== "/arcade/comet-pong/") // guard:allow-absolute
         .sort();
@@ -268,7 +270,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ["@shared/elements/page-header.ts", "@shared/elements/hall-nav.ts"],
+    include: ["@shared/elements/page-header.ts", "@shared/elements/hall-nav.ts", "@shared/elements/footer.ts"],
   },
   server: {
     port: 3000,
