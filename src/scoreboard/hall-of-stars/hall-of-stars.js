@@ -18,7 +18,6 @@ import {
   ZODIAC_PERIODS,
   periodWindowUtc,
   periodOfTimestamp,
-  copenhagenParts,
   currentPeriod,
 } from "../../shared/zodiac-periods.js";
 import { CONSTELLATIONS } from "./constellations.js";
@@ -90,7 +89,11 @@ let reduced = motionQuery.matches;
 const SLOT = (Math.PI * 2) / 12;
 
 const now = currentPeriod();
-let maxYear = copenhagenParts(Date.now()).year;
+/* The ceiling is the RUNNING period's label year, not the calendar year —
+   in the first days of January the calendar says Y+1 while every period
+   that exists is still labelled Y, and a selectable-but-empty Y+1 would be
+   a year made entirely of future. */
+let maxYear = periodOfTimestamp(Date.now()).year;
 let minYear = maxYear; // widened once scores load
 let selectedYear = now.year;
 let activeIndex = now.index; // slot nearest the front
@@ -105,10 +108,43 @@ let forcedSlot = null; // tap-to-rotate / arrow target
 let lastInteraction = 0;
 let lineDraw = reduced ? 1 : 0; // active constellation line-draw progress
 let sceneT = 0;
+/* +1 turns the ring backward through time (the only open direction from
+   the running period); the auto-turn flips it at the future wall. */
+let autoDir = 1;
 
 /** rows per game key, raw from both paths — filtered per period at render. */
 const rowsByGame = new Map();
 let loadFailed = false;
+
+/* ── No forward time travel ────────────────────────────────────────────
+   The hall only contains time that has happened. For the selected year a
+   sign is reachable only once its period has started; because the ring is
+   in chronological order, the reachable signs always form one contiguous
+   arc ending at the running period. Everything that navigates — arrows,
+   taps, snap, momentum, the auto-turn — checks this table, so the winners
+   panel can never land on a period that hasn't begun. */
+const allowed = new Array(12).fill(true);
+
+function refreshAllowed() {
+  const nowMs = Date.now();
+  for (let i = 0; i < 12; i++) {
+    allowed[i] = periodWindowUtc(i, selectedYear).startUtcMs <= nowMs;
+  }
+}
+
+function isAllowed(k) {
+  return allowed[((k % 12) + 12) % 12];
+}
+
+/** Nearest reachable slot by ring distance — the wall a fling bounces off. */
+function clampSlot(k) {
+  if (isAllowed(k)) return ((k % 12) + 12) % 12;
+  for (let d = 1; d <= 6; d++) {
+    if (isAllowed(k - d)) return (((k - d) % 12) + 12) % 12;
+    if (isAllowed(k + d)) return (((k + d) % 12) + 12) % 12;
+  }
+  return activeIndex;
+}
 
 /* ── DOM ───────────────────────────────────────────────────────────── */
 
@@ -236,34 +272,52 @@ function renderWinners() {
 /* ── Year selector ─────────────────────────────────────────────────── */
 
 function renderYear() {
-  /* Forward never passes the current Copenhagen year (re-read here so a
-     tab that lives across New Year picks the new ceiling up); back never
-     passes the label year of the earliest timestamped score. */
-  maxYear = copenhagenParts(Date.now()).year;
+  /* Forward never passes the running period's label year (re-read here so
+     a tab that lives across a period boundary picks the new ceiling up);
+     back never passes the label year of the earliest timestamped score.
+     The reachable-sign table depends on both the year and the clock, so it
+     refreshes here too. */
+  maxYear = periodOfTimestamp(Date.now()).year;
+  refreshAllowed();
   el.yearLabel.textContent = String(selectedYear);
   el.yearNext.disabled = selectedYear >= maxYear;
   el.yearPrev.disabled = selectedYear <= minYear;
+  updateSignArrows();
 }
-el.yearPrev.addEventListener("click", () => {
-  if (selectedYear > minYear) {
-    selectedYear--;
-    renderYear();
-    scheduleWinners();
+
+function setYear(year) {
+  selectedYear = year;
+  refreshAllowed();
+  /* A sign reachable in the old year can be future in the new one — walk
+     back to the nearest period that has actually started. setActive fires
+     right away (name + winners), while stepTo lets the ring catch up. */
+  if (!isAllowed(activeIndex)) {
+    const target = clampSlot(activeIndex);
+    stepTo(target);
+    setActive(target);
   }
+  renderYear();
+  scheduleWinners();
+}
+
+el.yearPrev.addEventListener("click", () => {
+  if (selectedYear > minYear) setYear(selectedYear - 1);
 });
 el.yearNext.addEventListener("click", () => {
-  if (selectedYear < maxYear) {
-    selectedYear++;
-    renderYear();
-    scheduleWinners();
-  }
+  if (selectedYear < maxYear) setYear(selectedYear + 1);
 });
 
 /* ── Active constellation ──────────────────────────────────────────── */
 
+function updateSignArrows() {
+  el.signPrev.disabled = !isAllowed(activeIndex - 1);
+  el.signNext.disabled = !isAllowed(activeIndex + 1);
+}
+
 function setActive(index) {
   if (index === activeIndex) return;
   activeIndex = index;
+  updateSignArrows();
   lineDraw = reduced ? 1 : 0;
   if (reduced) {
     el.signName.textContent = SIGNS[index].constellation;
@@ -279,6 +333,7 @@ function setActive(index) {
 
 function stepTo(index) {
   const target = ((index % 12) + 12) % 12;
+  if (!isAllowed(target)) return; // no stepping into a period that hasn't begun
   lastInteraction = sceneT;
   angVel = 0;
   if (reduced) {
@@ -706,7 +761,10 @@ function drawConstellation(k, t) {
   const depth = (p.s - 0.75) / 0.7; // ~0 at the back, ~1 at the front
   const size = RING_R * 0.3 * p.s;
   const back = p.z < 0;
-  const baseAlpha = 0.28 + 0.62 * Math.max(0, Math.min(1, depth));
+  /* A sign whose period hasn't begun in the selected year stays in the
+     sky but reads clearly asleep — extra dim, on top of ring depth. */
+  const futureDim = isAllowed(k) ? 1 : 0.4;
+  const baseAlpha = (0.28 + 0.62 * Math.max(0, Math.min(1, depth))) * futureDim;
   const pattern = SIGNS[k].pattern;
 
   const px = (star) => p.x + star.x * size;
@@ -869,22 +927,32 @@ function frame(ts) {
         forcedSlot = null;
       }
     } else if (Math.abs(angVel) > 0.25) {
-      /* momentum, easing to a stop */
+      /* momentum, easing to a stop. The future is a wall, not a tunnel:
+         the instant a fling crosses into a period that hasn't begun, the
+         velocity reflects (softly) instead of coasting on through the
+         future arc and out the other side. */
       ringAngle += angVel * dt;
-      angVel *= Math.exp(-2.2 * dt);
+      if (isAllowed(nearestSlot())) {
+        angVel *= Math.exp(-2.2 * dt);
+      } else {
+        angVel = -angVel * 0.2;
+      }
     } else if (sceneT - lastInteraction > 10) {
       /* auto-rotation: one full turn every two minutes, resuming only
-         after ten untouched seconds */
+         after ten untouched seconds. It travels backward through time,
+         and in a year whose later periods haven't begun it ping-pongs
+         inside the arc that has — never through the future. */
       angVel = 0;
-      ringAngle -= ((Math.PI * 2) / 120) * dt;
+      ringAngle += autoDir * ((Math.PI * 2) / 120) * dt;
+      if (!isAllowed(nearestSlot())) autoDir = -autoDir;
     } else {
-      /* snap the nearest constellation to the front */
+      /* snap the nearest REACHABLE constellation to the front */
       angVel = 0;
-      const err = wrapPI(ringAngle + nearestSlot() * SLOT);
+      const err = wrapPI(ringAngle + clampSlot(nearestSlot()) * SLOT);
       ringAngle -= err * Math.min(1, dt * 7);
     }
 
-    setActive(nearestSlot());
+    setActive(clampSlot(nearestSlot()));
     if (lineDraw < 1) lineDraw = Math.min(1, lineDraw + dt / 0.45);
   }
 
@@ -954,9 +1022,13 @@ el.scene.addEventListener("pointermove", (e) => {
     lastInteraction = sceneT;
     const dx = e.clientX - lastX;
     lastX = e.clientX;
-    /* vertical axis only: horizontal drag turns the ring, nothing tumbles */
+    /* vertical axis only: horizontal drag turns the ring, nothing tumbles.
+       Dragging toward a period that hasn't begun meets rubber-band
+       resistance instead of travel — without it a long drag could carry
+       the front clean through the future arc and out the other side. */
     const dTheta = dx / (RING_R * 1.15);
-    ringAngle += dTheta;
+    const tentative = ringAngle + dTheta;
+    ringAngle = isAllowed(Math.round(-tentative / SLOT)) ? tentative : ringAngle + dTheta * 0.15;
     moveV = moveV * 0.6 + (dTheta / Math.max(0.001, 1 / 60)) * 0.4;
 });
 const release = (e) => {
@@ -976,7 +1048,7 @@ const release = (e) => {
         const d = Math.hypot(mx - p.x, my - p.y);
         if (d < size * 0.95 && (!hit || d < hit.d)) hit = { k, d };
       }
-      if (hit) forcedSlot = hit.k;
+      if (hit && isAllowed(hit.k)) forcedSlot = hit.k;
       moveV = 0;
     }
     angVel = Math.max(-6, Math.min(6, moveV));
