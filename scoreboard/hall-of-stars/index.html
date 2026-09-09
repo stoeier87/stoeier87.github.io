@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hall of Stars</title>
+    <meta
+      name="description"
+      content="Winners take their place among the stars — the solar arcade's hall of fame."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap"
+    />
+    <!-- No page stylesheet on purpose (rule 10: styling lives in JS/utilities
+         from here on) — the common-foot pair below is the whole cascade. -->
+    <link href="../../css/all.min.css" rel="stylesheet" />
+    <script type="module" crossorigin src="../../assets/scoreboard/hall-of-stars/index-C2m2gpc4.js"></script>
+    <link rel="modulepreload" crossorigin href="../../assets/tailwind-DUCiUca2.js">
+    <link rel="modulepreload" crossorigin href="../../assets/planet-textures-DAkK65wv.js">
+    <link rel="modulepreload" crossorigin href="../../assets/tokens-C0x0uWM4.js">
+    <link rel="modulepreload" crossorigin href="../../assets/page-header-BXTlxPh2.js">
+    <link rel="modulepreload" crossorigin href="../../assets/hall-nav-BSiOhpg2.js">
+    <link rel="modulepreload" crossorigin href="../../assets/firebase-config-CE95sHti.js">
+    <link rel="modulepreload" crossorigin href="../../assets/games-data-DPRE8LZ4.js">
+    <link rel="modulepreload" crossorigin href="../../assets/zodiac-periods-BYYFId7n.js">
+    <link rel="stylesheet" crossorigin href="../../assets/tailwind-G55ZY1-g.css">
+  </head>
+  <body class="min-h-screen bg-scoreboard-bg font-mono text-scoreboard-text">
+    <!-- The sky is the whole page's backdrop: one fixed full-viewport canvas
+         behind everything. The transparent #scene box further down is where
+         the globe anchors itself and where drag is captured — gestures never
+         belong to the backdrop, or dragging anywhere would stop the page
+         scrolling on a phone. -->
+    <canvas
+      id="sky"
+      class="pointer-events-none fixed inset-0 z-0 h-full w-full"
+      aria-hidden="true"
+    ></canvas>
+    <st-hall-nav
+      nav-label="Hall of Stars navigation"
+      back-href="../"
+      back-label="Back to scoreboard"
+    ></st-hall-nav>
+
+    <main class="wrap">
+      <st-page-header
+        heading="Hall of"
+        accent="stars"
+        subtitle="Winners take their place among the stars."
+      ></st-page-header>
+
+      <section class="flex grow flex-col gap-3 md:gap-4" aria-label="Hall of Stars">
+        <!-- Year selector -->
+        <div class="flex items-center justify-center gap-5">
+          <button
+            id="yearPrev"
+            type="button"
+            aria-label="Previous year"
+            class="flex h-11 w-11 items-center justify-center rounded-pill border border-border-faint text-lg text-scoreboard-muted transition-colors hover:border-border-strong hover:text-scoreboard-text focus-visible:outline-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-30"
+          >
+            &lsaquo;
+          </button>
+          <span id="yearLabel" class="font-display min-w-[4.5rem] text-center text-xl tracking-wide"
+            >—</span
+          >
+          <button
+            id="yearNext"
+            type="button"
+            aria-label="Next year"
+            class="flex h-11 w-11 items-center justify-center rounded-pill border border-border-faint text-lg text-scoreboard-muted transition-colors hover:border-border-strong hover:text-scoreboard-text focus-visible:outline-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-30"
+          >
+            &rsaquo;
+          </button>
+        </div>
+
+        <!-- The globe's anchor and gesture surface. touch-none + the
+             touchmove preventDefault in JS keep a drag here from scrolling
+             the page; everything the scene shows is reachable through the
+             arrow controls below it. -->
+        <div id="scene" class="relative h-[40vh] touch-none select-none md:h-[46vh]"></div>
+
+        <!-- Active constellation + step controls (the only way to move under
+             prefers-reduced-motion, and the precise way on a phone) -->
+        <div class="-mt-1 flex items-center justify-center gap-4">
+          <button
+            id="signPrev"
+            type="button"
+            aria-label="Previous constellation"
+            class="flex h-11 w-11 items-center justify-center rounded-pill border border-border-faint text-xl text-scoreboard-muted transition-colors hover:border-border-strong hover:text-scoreboard-text focus-visible:outline-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-30"
+          >
+            &lsaquo;
+          </button>
+          <span
+            id="signName"
+            aria-live="polite"
+            class="font-display min-w-[11rem] text-center text-2xl uppercase tracking-wide transition-opacity duration-200 md:min-w-[14rem] md:text-3xl"
+            >—</span
+          >
+          <button
+            id="signNext"
+            type="button"
+            aria-label="Next constellation"
+            class="flex h-11 w-11 items-center justify-center rounded-pill border border-border-faint text-xl text-scoreboard-muted transition-colors hover:border-border-strong hover:text-scoreboard-text focus-visible:outline-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-30"
+          >
+            &rsaquo;
+          </button>
+        </div>
+
+        <!-- Winners: nine rows, planetary order, never hidden -->
+        <div class="mx-auto w-full max-w-xl">
+          <p id="hallNote" class="hidden text-center text-xs italic text-text-dim"></p>
+          <ol id="winners" class="flex list-none flex-col"></ol>
+        </div>
+
+        <footer
+          class="relative z-[2] flex grow items-end justify-center px-5 py-4 text-center text-[0.65rem] uppercase tracking-loose text-text-dim"
+        >
+          <a
+            class="transition-colors hover:text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+            href="https://servicedesign.dk"
+            target="_blank"
+            rel="noopener"
+            >servicedesign.dk</a
+          >
+        </footer>
+      </section>
+    </main>
+
+  </body>
+</html>
