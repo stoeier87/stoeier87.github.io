@@ -133,15 +133,20 @@ function renderPeriodLine() {
 }
 renderPeriodLine();
 
-document.addEventListener("visibilitychange", () => {
-  if (document.hidden) return;
+function refreshPeriod() {
   const now = currentPeriod();
   if (now.startUtcMs !== period.startUtcMs) {
     period = now;
     renderPeriodLine();
     for (const rerender of rerenderers) rerender();
   }
+}
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) refreshPeriod();
 });
+/* A tab left open AND visible across Danish midnight flips on its own —
+   the minute tick catches the boundary the visibilitychange path can't. */
+setInterval(refreshPeriod, 60_000);
 
 /* A row counts only if its createdAt is a real timestamp inside the
    running period. Rows without a usable timestamp are excluded from all
