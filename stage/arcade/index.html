@@ -13,12 +13,11 @@
       href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap"
     />
     <link href="../css/all.min.css" rel="stylesheet" />
-    <script type="module" crossorigin src="../assets/arcade/index-8ntpGm4a.js"></script>
+    <script type="module" crossorigin src="../assets/arcade/index--KdFdFxz.js"></script>
     <link rel="modulepreload" crossorigin href="../assets/tailwind-DUCiUca2.js">
     <link rel="modulepreload" crossorigin href="../assets/planet-textures-DAkK65wv.js">
     <link rel="modulepreload" crossorigin href="../assets/planet-field-DSfPo_0H.js">
     <link rel="modulepreload" crossorigin href="../assets/version-badge-DuiW2ut6.js">
-    <link rel="modulepreload" crossorigin href="../assets/footer-BbjAq77E.js">
     <link rel="modulepreload" crossorigin href="../assets/tokens-C0x0uWM4.js">
     <link rel="modulepreload" crossorigin href="../assets/page-header-BXTlxPh2.js">
     <link rel="modulepreload" crossorigin href="../assets/hall-nav-BSiOhpg2.js">
@@ -52,7 +51,13 @@
       ></st-page-header>
       <section class="flex flex-col justify-between grow h-max" aria-label="Arcade games">
             <section class="solar-system" id="solarSystem"></section>
-            <st-footer></st-footer>
+            <!-- The full contact footer (<st-footer>) is homepage-only by
+                 decision — everywhere else the mark stays quiet. -->
+            <footer>
+              <a href="https://servicedesign.dk" target="_blank" rel="noopener"
+                >servicedesign.dk</a
+              >
+          </footer>
       </section>
     </section>
     </main>
