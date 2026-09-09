@@ -1,10 +1,8 @@
 import { definePageHeader } from "@shared/elements/page-header";
 import { defineHallNav } from "@shared/elements/hall-nav";
-import { defineFooter } from "@shared/elements/footer";
 
 definePageHeader();
 defineHallNav();
-defineFooter();
 
 (function () {
   "use strict";

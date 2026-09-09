@@ -35,7 +35,14 @@
       ></st-page-header>
       <section class="flex flex-col justify-between grow h-max" aria-label="Arcade games">
             <section class="solar-system" id="solarSystem"></section>
-            <st-footer></st-footer>
+            <!-- The full contact footer (<st-footer>) is homepage-only by
+                 decision — everywhere else the mark stays quiet. -->
+            <footer>
+              <a href="https://servicedesign.dk" target="_blank" rel="noopener"
+                >servicedesign.dk</a
+              >
+              <script type="module" src="../shared/version-badge.js"></script>
+          </footer>
       </section>
     </section>
     </main>
