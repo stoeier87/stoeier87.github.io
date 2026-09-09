@@ -918,8 +918,11 @@ function finishGameOver() {
   if (!scoreSubmitted) {
     scoreSubmitted = true;
     setTimeout(() => {
+      // "neptune", not the legacy "diamond-rain": fetchGlobalBest above
+      // already reads the planet key, and the database rules only accept
+      // the nine planet paths — the legacy path stopped taking writes.
       submitScoreOnGameOver({
-        gameKey: "diamond-rain",
+        gameKey: "neptune",
         gameLabel: "Diamond Rain",
         score: Math.floor(score),
         ask: true,

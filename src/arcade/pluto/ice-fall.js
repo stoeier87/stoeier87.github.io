@@ -736,9 +736,12 @@ if (canHover) el.introKeys.classList.add("show");
 else el.introTouch.classList.add("show");
 
 /* ── Scoreboard ─────────────────────────────────────────────
-   gameKey stays "ice-fall": it is the Firebase path segment the scoreboard
-   reads. */
-fetchGlobalBest("ice-fall").then((b) => {
+   gameKey is "pluto", the planet key every game submits under since the
+   planet-URL rename — the database rules accept the nine planet paths, so
+   the old "ice-fall" path stopped taking writes. Rows already stored under
+   "ice-fall" stay visible: the scoreboard and the Hall of Stars both read
+   the legacy path alongside this one. */
+fetchGlobalBest("pluto").then((b) => {
   best = Math.max(best, b);
   el.best.textContent = best;
 });
@@ -1558,7 +1561,7 @@ function tickFreeze(now) {
   cardShown = true;
   el.over.classList.add("show");
   submitScoreOnGameOver({
-    gameKey: "ice-fall",
+    gameKey: "pluto",
     gameLabel: "Ice Fall",
     score: Math.floor(score),
     ask: true,
