@@ -14,9 +14,9 @@ import { guardPage } from "../shared/gate.js";
  * hun ombord og bærer lyset — en varm radius rejser med skibet, og alt
  * ses flere sekunder før. Hjemturen er hårdere i indhold, men kan læses.
  *
- * Nåde uden bund: hvert forlis på samme ben gør benet målbart lettere
- * (tæthed ×0.85, strøm ×0.8, +1 hjerte pr. forsøg), så Kap Horn ALTID
- * kan passeres til sidst. Ingen kan tabe rejsen permanent.
+ * Der er ingen liv at miste: nuestro amor tiene vidas infinitas — et
+ * sammenstød ryster og ridser, men koster intet, og rejsen kan ikke
+ * ende i forlis. Hjerterne heler ridserne og tælles ved ankomsten.
  *
  * Canvas-kontrakten: fast virtuel opløsning 420×760 letterboxet, dpr-cap
  * 2, setTransform efter resize, dt clamped til 33 ms, én rAF.
@@ -287,7 +287,6 @@ let mode = "intro"; // intro | sail | turn | ending
 let paused = false;
 let leg = 0;
 let progressY = 0;
-let hp = 3;
 let hearts = 0;
 let attempts = new Array(10).fill(0); // nåden, pr. ben
 let lightT = 0; // 0 = udad (mørkt forude), 1 = hun er ombord
@@ -585,43 +584,16 @@ function enterLeg(nextLeg) {
   showTitle();
 }
 
-function founder() {
-  founderT = 1.3;
-}
-
-function applyFounder() {
-  attempts[leg]++;
-  hp = 3;
-  ship.cracks = [];
-  ship.x = ship.target = BASE_W / 2;
-  ship.vx = 0;
-  progressY = 0;
-  resetLegEntities();
-  saveCheckpoint();
-  showTitle();
-}
-
+/* Man kan ikke dø her — vores kærlighed har uendelige liv. Et sammenstød
+   MÆRKES stadig (ryst, rødt blink, en ridse i skroget), men koster
+   aldrig noget og kan aldrig ende rejsen. Ridserne heler kærligheden:
+   hvert hjerte man samler, lukker én — med den varme ring om skroget. */
 function damage() {
-  if (invulnT > 0 || founderT > 0) return;
-  hp--;
+  if (invulnT > 0) return;
   invulnT = 1;
   hitT = 0.55;
   if (!reduced) shakeT = 0.4;
-  ship.cracks.push({ a: Math.random() * 6, b: Math.random() * 6 });
-  /* BEVIDST ingen repairIfPossible() her: den åd skaden i samme frame,
-     så skibs-ikonerne aldrig faldt og et træf føltes som ingenting.
-     Reparationen sker først ved næste hjerte-opsamling. */
-  if (hp <= 0) founder();
-}
-
-/* Fem hjerter reparerer ét point skade — automatisk, ingen knapper */
-function repairIfPossible() {
-  while (hp < 3 && hp > 0 && hearts >= 5) {
-    hearts -= 5;
-    hp++;
-    ship.cracks.pop();
-    fx.push({ type: "repair", t: 0.9 });
-  }
+  if (ship.cracks.length < 3) ship.cracks.push({ a: Math.random() * 6, b: Math.random() * 6 });
 }
 
 function collectHeart(d) {
@@ -630,7 +602,10 @@ function collectHeart(d) {
   if (gain === 2) flareT = 0.9;
   wakeT = 0.8;
   fx.push({ type: "flare", x: d.x, y: d.y, t: 0.5 });
-  repairIfPossible();
+  if (ship.cracks.length > 0) {
+    ship.cracks.pop();
+    fx.push({ type: "repair", t: 0.9 });
+  }
 }
 
 /* ── Opdatering ─────────────────────────────────────────────────────── */
@@ -664,12 +639,6 @@ function update(dt) {
     return;
   }
   if (mode !== "sail") return;
-
-  if (founderT > 0) {
-    founderT -= dt;
-    if (founderT <= 0) applyFounder();
-    return;
-  }
 
   const s = STAGES[stageForLeg(leg)];
   const speed = s.speed * (isHomebound(leg) ? 1.08 : 1);
@@ -2075,30 +2044,15 @@ function drawHud() {
     ctx.fillStyle = `rgba(255,207,122,${flareT})`;
     ctx.fillText("2x", BASE_W - 14, 48);
   }
-  /* tre små skibe — skadekapacitet, dæmpes når skaden tages */
-  for (let i = 0; i < 3; i++) {
-    ctx.save();
-    ctx.translate(20 + i * 22, BASE_H - 24);
-    ctx.strokeStyle =
-      i < hp
-        ? "rgba(240,244,252,0.9)"
-        : i === hp && hitT > 0
-          ? `rgba(224,58,47,${0.35 + hitT})`
-          : "rgba(240,244,252,0.22)";
-    ctx.lineWidth = 1.3;
-    ctx.beginPath();
-    ctx.moveTo(-7, 2);
-    ctx.quadraticCurveTo(0, 7, 7, 2);
-    ctx.lineTo(5, -2);
-    ctx.lineTo(-5, -2);
-    ctx.closePath();
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(0, -2);
-    ctx.lineTo(0, -9);
-    ctx.stroke();
-    ctx.restore();
-  }
+  /* hvor liv-ikonerne stod: sandheden om det her skib. Lille, varm,
+     altid til stede — og mekanisk sand: man kan ikke dø. */
+  ctx.font = "10px 'Space Mono', monospace";
+  ctx.textAlign = "left";
+  ctx.fillStyle = "rgba(255,207,122,0.8)";
+  const amor = "nuestro amor tiene vidas infinitas";
+  ctx.fillText(amor, 14, BASE_H - 44);
+  drawHeartAt(14 + ctx.measureText(amor).width + 11, BASE_H - 47, 0.5, 0.85);
+
   /* etapenavn — to sekunder, centreret, monospace */
   if (titleT > 0) {
     const a = Math.min(1, titleT / 0.5) * Math.min(1, (2.6 - titleT) / 0.4);
