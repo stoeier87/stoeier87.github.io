@@ -14,9 +14,12 @@ import { guardPage } from "../shared/gate.js";
  * hun ombord og bærer lyset — en varm radius rejser med skibet, og alt
  * ses flere sekunder før. Hjemturen er hårdere i indhold, men kan læses.
  *
- * Der er ingen liv at miste: nuestro amor tiene vidas infinitas — et
- * sammenstød ryster og ridser, men koster intet, og rejsen kan ikke
- * ende i forlis. Hjerterne heler ridserne og tælles ved ankomsten.
+ * Der findes hverken skade eller farer: nuestro amor tiene vidas
+ * infinitas. Havet byder kun på venner — hvalpe, katte, ællinger,
+ * pingviner, skildpadder og sæler samles op som hjerterne og tælles
+ * som amigos. Storm, strøm og malstrømme skubber legende til kursen,
+ * men kan ingenting koste. Og fra bjerget råber hun "¡Necesito
+ * ayuda!", lige inden hun reddes — kodeordet, plantet igen.
  *
  * Canvas-kontrakten: fast virtuel opløsning 420×760 letterboxet, dpr-cap
  * 2, setTransform efter resize, dt clamped til 33 ms, én rAF.
@@ -42,7 +45,7 @@ const STAGES = [
     speed: 95,
     swell: 5,
     roll: 0.05,
-    spawn: { tentacle: 2.2, rock: 0.9 },
+    spawn: { pup: 1.6, cat: 0.9 },
     fog: true,
     hearts: 3.0,
   },
@@ -54,7 +57,7 @@ const STAGES = [
     speed: 105,
     swell: 11,
     roll: 0.09,
-    spawn: { serpent: 1.4, rock: 0.5 },
+    spawn: { cat: 1.0, pup: 0.8 },
     whales: true,
     hearts: 3.0,
   },
@@ -66,7 +69,7 @@ const STAGES = [
     speed: 100,
     swell: 2,
     roll: 0.03,
-    spawn: { jelly: 2.2 },
+    spawn: { duck: 1.6, turtle: 0.8 },
     squalls: true,
     equator: true,
     hearts: 3.0,
@@ -79,7 +82,7 @@ const STAGES = [
     speed: 112,
     swell: 14,
     roll: 0.14,
-    spawn: { berg: 1.7, rock: 0.8, pool: 0.55 },
+    spawn: { penguin: 1.8, pool: 0.5 },
     currents: true,
     snow: true,
     hearts: 3.6,
@@ -92,7 +95,7 @@ const STAGES = [
     speed: 95,
     swell: 6,
     roll: 0.06,
-    spawn: { kelp: 1.1, crab: 1.2 },
+    spawn: { kelp: 1.1, seal: 1.4 },
     andes: true,
     hearts: 3.2,
   },
@@ -288,12 +291,11 @@ let paused = false;
 let leg = 0;
 let progressY = 0;
 let hearts = 0;
+let amigos = 0; // venner samlet op undervejs
 let attempts = new Array(10).fill(0); // nåden, pr. ben
 let lightT = 0; // 0 = udad (mørkt forude), 1 = hun er ombord
 let sceneT = 0;
 let shakeT = 0;
-let hitT = 0; // rødt kant-blink ved træf
-let invulnT = 0;
 let bleachT = 0;
 let founderT = 0;
 let flareT = 0; // "2x"-floater ved hjemad-hjerter
@@ -303,7 +305,7 @@ let titleT = 0;
 let equatorCrossed = false;
 let spawnCursor = 0;
 
-const ship = { x: BASE_W / 2, vx: 0, target: BASE_W / 2, cracks: [] };
+const ship = { x: BASE_W / 2, vx: 0, target: BASE_W / 2 };
 let obstacles = [];
 let drops = []; // hjerter
 let zones = []; // strøm/kelp-felter
@@ -342,7 +344,7 @@ let endHeartAcc = 0;
 /* ── Checkpoint (kun etape-start; forlis kan aldrig koste mere) ─────── */
 function saveCheckpoint() {
   try {
-    localStorage.setItem(CHECKPOINT_KEY, JSON.stringify({ leg, hearts, attempts }));
+    localStorage.setItem(CHECKPOINT_KEY, JSON.stringify({ leg, hearts, amigos, attempts }));
   } catch {
     /* uden storage starter en genindlæsning bare forfra */
   }
@@ -359,6 +361,7 @@ try {
   if (saved && Number.isInteger(saved.leg) && saved.leg > 0 && saved.leg < 10) {
     leg = saved.leg;
     hearts = Number(saved.hearts) || 0;
+    amigos = Number(saved.amigos) || 0;
     if (Array.isArray(saved.attempts) && saved.attempts.length === 10) {
       attempts = saved.attempts.map((n) => Number(n) || 0);
     }
@@ -412,24 +415,11 @@ function spawnBand(y) {
       const x = 34 + Math.random() * (BASE_W - 68);
       if (type === "pool") {
         obstacles.push({ type, x, y, r: 46, spin: Math.random() * 6 });
-      } else if (type === "berg") {
-        obstacles.push({ type, x, y, r: 30 + Math.random() * 16 });
       } else if (type === "kelp") {
         zones.push({ type, x, y, w: 120, h: 220 });
       } else {
-        const R = { tentacle: 9, serpent: 16, jelly: 12, crab: 12, rock: 15 };
-        obstacles.push({
-          type,
-          x,
-          y,
-          r: R[type] ?? 15,
-          drift:
-            type === "serpent"
-              ? (Math.random() - 0.5) * 10
-              : type === "jelly"
-                ? (Math.random() - 0.5) * 6
-                : 0,
-        });
+        /* et dyr, der venter på at komme med — samles op som hjerterne */
+        obstacles.push({ type, x, y, ph: Math.random() * 6 });
       }
     }
   }
@@ -584,17 +574,16 @@ function enterLeg(nextLeg) {
   showTitle();
 }
 
-/* Man kan ikke dø her — vores kærlighed har uendelige liv. Et sammenstød
-   MÆRKES stadig (ryst, rødt blink, en ridse i skroget), men koster
-   aldrig noget og kan aldrig ende rejsen. Ridserne heler kærligheden:
-   hvert hjerte man samler, lukker én — med den varme ring om skroget. */
-function damage() {
-  if (invulnT > 0) return;
-  invulnT = 1;
-  hitT = 0.55;
-  if (!reduced) shakeT = 0.4;
-  if (ship.cracks.length < 3) ship.cracks.push({ a: Math.random() * 6, b: Math.random() * 6 });
-}
+/* Der findes ingen skade i det her hav — kun venner. Dyrene samles op
+   som hjerterne og tæller som amigos; hver har sin lille hilsen. */
+const CRITTER_SOUND = {
+  pup: "¡guau!",
+  cat: "¡miau!",
+  duck: "¡cuac!",
+  penguin: "¡ping!",
+  turtle: "¡hola!",
+  seal: "¡arf!",
+};
 
 function collectHeart(d) {
   const gain = isHomebound(leg) ? 2 : 1;
@@ -602,10 +591,6 @@ function collectHeart(d) {
   if (gain === 2) flareT = 0.9;
   wakeT = 0.8;
   fx.push({ type: "flare", x: d.x, y: d.y, t: 0.5 });
-  if (ship.cracks.length > 0) {
-    ship.cracks.pop();
-    fx.push({ type: "repair", t: 0.9 });
-  }
 }
 
 /* ── Opdatering ─────────────────────────────────────────────────────── */
@@ -613,9 +598,7 @@ let last = 0;
 
 function update(dt) {
   sceneT += dt;
-  invulnT = Math.max(0, invulnT - dt);
   shakeT = Math.max(0, shakeT - dt);
-  hitT = Math.max(0, hitT - dt);
   bleachT = Math.max(0, bleachT - dt);
   flareT = Math.max(0, flareT - dt);
   wakeT = Math.max(0, wakeT - dt);
@@ -739,28 +722,23 @@ function update(dt) {
   ship.target += push * dt; // strøm flytter også sigtet, så man skal arbejde imod
   ship.target = Math.max(26, Math.min(BASE_W - 26, ship.target));
 
-  /* drivende vraggods */
   for (const o of obstacles) {
-    if (o.drift) o.x = Math.max(24, Math.min(BASE_W - 24, o.x + o.drift * dt));
     if (o.type === "pool") o.spin += dt * 2.4;
   }
 
-  /* kollisioner */
+  /* venner ombord: sejl hen over et dyr, og det kommer med */
   for (const o of obstacles) {
+    if (o.type === "pool") continue;
     const dy = o.y - progressY;
-    if (dy < -60 || dy > 90) continue;
-    const dx = o.x - ship.x;
-    const hitR = o.r + 13;
-    if (Math.abs(dx) < hitR && Math.abs(dy) < hitR + 8) {
-      if (o.type === "pool") {
-        if (Math.hypot(dx, dy) < 16) damage();
-      } else {
-        damage();
-        o.y = progressY - 120; // læg den agterud, så samme klods ikke rammer to gange
-      }
+    if (!o.hit && Math.abs(dy) < 30 && Math.abs(o.x - ship.x) < 30) {
+      o.hit = true;
+      amigos++;
+      wakeT = 0.8;
+      fx.push({ type: "flare", x: o.x, y: o.y, t: 0.5 });
+      fx.push({ type: "yay", x: o.x, y1: o.y, t: 1.1, text: CRITTER_SOUND[o.type] ?? "♥" });
     }
   }
-  obstacles = obstacles.filter((o) => o.y > progressY - 420);
+  obstacles = obstacles.filter((o) => !o.hit && o.y > progressY - 420);
   zones = zones.filter((z) => z.y > progressY - 500);
 
   /* hjerter */
@@ -915,7 +893,7 @@ async function updateEnding(dt) {
 function typeMessage(text) {
   el.endingScreen.hidden = false;
   el.endingScreen.classList.add("flex");
-  el.endingHearts.textContent = `♥ ${hearts}`;
+  el.endingHearts.textContent = `♥ ${hearts} · amigos ${amigos}`;
   if (reduced) {
     el.endingText.textContent = text;
     el.endingChoices.hidden = false;
@@ -999,154 +977,283 @@ function drawWater(pal, s) {
   }
 }
 
+/* Dyrene — store, farvelagte og umiskendelige. Fyldte figurer i
+   spillets varme accentfarver (samme palet som Valparaísos huse), alle
+   med hjerternes bløde glød bag sig, så "det her samles op" kan læses
+   på et splitsekund. Blid vippen på dønningen; stille under reduced. */
+const INK_DARK = "rgba(10,14,20,0.85)";
+
+function critterGlow() {
+  const g = ctx.createRadialGradient(0, 0, 4, 0, 0, 30);
+  g.addColorStop(0, "rgba(255,207,122,0.22)");
+  g.addColorStop(1, "rgba(255,207,122,0)");
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(0, 0, 30, 0, Math.PI * 2);
+  ctx.fill();
+}
+
 function drawObstacle(o, alpha) {
   const sy = SHIP_Y - (o.y - progressY);
-  if (sy < -80 || sy > BASE_H + 80) return;
+  if (sy < -70 || sy > BASE_H + 70) return;
+  const bob = reduced ? 0 : Math.sin(sceneT * 1.6 + (o.ph ?? 0)) * 2;
   ctx.save();
   ctx.globalAlpha = alpha;
-  ctx.translate(o.x, sy);
-  ctx.strokeStyle = "rgba(235,240,250,0.85)";
-  ctx.fillStyle = "rgba(10,16,24,0.85)";
-  ctx.lineWidth = 1.4;
-  if (o.type === "tentacle") {
-    /* en krakenarm der bryder overfladen — den vrider sig, og sugekopperne
-       gløder rødt: det HER skal man udenom */
-    const wg = reduced ? 0 : Math.sin(sceneT * 2.4 + o.y * 0.01) * 2.5;
-    ctx.lineWidth = 3.2;
-    ctx.beginPath();
-    ctx.moveTo(-2, 12);
-    ctx.quadraticCurveTo(-8 + wg, 2, -2 + wg, -6);
-    ctx.quadraticCurveTo(4 + wg * 1.4, -14, -3 + wg * 1.4, -19);
-    ctx.stroke();
-    ctx.fillStyle = "rgba(224,58,47,0.85)";
-    for (const [sxp, syp] of [
-      [-4 + wg * 0.5, 3],
-      [-1 + wg, -5],
-      [1 + wg * 1.2, -12],
-    ]) {
-      ctx.beginPath();
-      ctx.arc(sxp, syp, 1.2, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  } else if (o.type === "serpent") {
-    /* søslangen: to bugter og et hoved med gab og rødt øje */
-    const und = reduced ? 0 : Math.sin(sceneT * 2 + o.y * 0.01) * 1.5;
-    ctx.lineWidth = 1.6;
-    ctx.beginPath();
-    ctx.moveTo(15, 6);
-    ctx.quadraticCurveTo(10, -5 - und, 5, 6);
-    ctx.moveTo(3, 6);
-    ctx.quadraticCurveTo(-2, -6 + und, -7, 6);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.ellipse(-13, -2, 4.5, 5.5, -0.4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(-16, 0);
-    ctx.lineTo(-20.5, 3);
-    ctx.stroke();
-    ctx.fillStyle = "rgba(224,58,47,0.95)";
-    ctx.shadowColor = "rgba(224,58,47,0.9)";
-    ctx.shadowBlur = 4;
-    ctx.beginPath();
-    ctx.arc(-13.5, -4.2, 1.3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-  } else if (o.type === "rock") {
-    ctx.beginPath();
-    ctx.moveTo(-14, 6);
-    ctx.lineTo(-6, -9);
-    ctx.lineTo(4, -6);
-    ctx.lineTo(13, 4);
-    ctx.lineTo(6, 9);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-  } else if (o.type === "wreck") {
-    ctx.beginPath();
-    ctx.moveTo(-16, 2);
-    ctx.quadraticCurveTo(0, 12, 16, 0);
-    ctx.moveTo(-9, 0);
-    ctx.lineTo(-6, -10);
-    ctx.stroke();
-  } else if (o.type === "jelly") {
-    /* kæmpegoplen: klokke der pulserer, brændetråde der slæber rødt */
-    const pu = reduced ? 0 : Math.sin(sceneT * 2.6 + o.y * 0.01) * 1.5;
-    ctx.beginPath();
-    ctx.moveTo(-10 - pu, 0);
-    ctx.quadraticCurveTo(0, -15 - pu, 10 + pu, 0);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = "rgba(224,58,47,0.35)";
-    ctx.beginPath();
-    ctx.arc(0, -5 - pu * 0.5, 3.2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = "rgba(224,58,47,0.7)";
-    ctx.lineWidth = 1.1;
-    for (let i = 0; i < 4; i++) {
-      const tx = -7 + i * 4.6;
-      ctx.beginPath();
-      ctx.moveTo(tx, 1);
-      ctx.quadraticCurveTo(tx + (reduced ? 2 : Math.sin(sceneT * 3 + i) * 3), 8, tx + 1, 16);
-      ctx.stroke();
-    }
-  } else if (o.type === "berg") {
-    ctx.strokeStyle = "rgba(220,235,245,0.95)";
-    ctx.fillStyle = "rgba(190,215,230,0.28)";
-    ctx.beginPath();
-    ctx.moveTo(-o.r, o.r * 0.4);
-    ctx.lineTo(-o.r * 0.4, -o.r);
-    ctx.lineTo(o.r * 0.5, -o.r * 0.55);
-    ctx.lineTo(o.r, o.r * 0.35);
-    ctx.lineTo(0, o.r * 0.7);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-  } else if (o.type === "pool") {
+  ctx.translate(o.x, sy + bob);
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  if (o.type === "pool") {
+    ctx.translate(0, -bob);
     ctx.strokeStyle = "rgba(210,225,240,0.6)";
+    ctx.lineWidth = 1.4;
     for (let i = 0; i < 3; i++) {
       ctx.beginPath();
       ctx.arc(0, 0, o.r - i * 13, o.spin + i, o.spin + i + 4.6);
       ctx.stroke();
     }
-  } else if (o.type === "crab") {
-    /* kæmpekrabben: løftede kløer, øjne på stilke — klar besked */
-    const snap = reduced ? 0 : Math.max(0, Math.sin(sceneT * 3 + o.y * 0.01)) * 2;
+    ctx.restore();
+    return;
+  }
+  critterGlow();
+  ctx.lineWidth = 1.5;
+  if (o.type === "pup") {
+    /* hundehvalp i rød-hvid redningskrans */
+    ctx.strokeStyle = "rgba(240,244,252,0.95)";
+    ctx.lineWidth = 7;
     ctx.beginPath();
-    ctx.ellipse(0, 0, 9, 6, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.arc(0, 6, 13, 0, Math.PI * 2);
     ctx.stroke();
-    ctx.lineWidth = 1.1;
-    for (const side of [-1, 1]) {
-      for (let i = 0; i < 3; i++) {
-        ctx.beginPath();
-        ctx.moveTo(side * 8, -2 + i * 3);
-        ctx.lineTo(side * (13 + i), 1 + i * 4);
-        ctx.stroke();
-      }
+    ctx.strokeStyle = "rgba(224,58,47,0.95)";
+    for (let i = 0; i < 4; i++) {
+      ctx.beginPath();
+      ctx.arc(0, 6, 13, i * (Math.PI / 2) + 0.3, i * (Math.PI / 2) + 1.0);
+      ctx.stroke();
     }
     ctx.lineWidth = 1.5;
-    for (const side of [-1, 1]) {
-      ctx.beginPath();
-      ctx.moveTo(side * 6, -4);
-      ctx.quadraticCurveTo(side * 11, -9, side * (9 + snap), -12);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(side * (9 + snap), -13, 2.4, 0, Math.PI * 1.55);
-      ctx.stroke();
-    }
+    ctx.fillStyle = "#e0704a";
+    ctx.strokeStyle = INK_DARK;
+    ctx.beginPath(); // lapøerne bag hovedet
+    ctx.ellipse(-8.5, -6, 3.4, 6.5, 0.45, 0, Math.PI * 2);
+    ctx.ellipse(8.5, -6, 3.4, 6.5, -0.45, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath(); // hovedet
+    ctx.arc(0, -4, 9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "rgba(240,244,252,0.95)";
+    ctx.beginPath(); // snudeparti
+    ctx.ellipse(0, -0.5, 4.6, 3.6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = INK_DARK;
+    ctx.beginPath(); // næse + øjne
+    ctx.arc(0, -2, 1.6, 0, Math.PI * 2);
+    ctx.arc(-3.4, -6.5, 1.4, 0, Math.PI * 2);
+    ctx.arc(3.4, -6.5, 1.4, 0, Math.PI * 2);
+    ctx.fill();
     ctx.fillStyle = "rgba(224,58,47,0.95)";
-    for (const side of [-1, 1]) {
-      ctx.beginPath();
-      ctx.moveTo(side * 2, -5);
-      ctx.lineTo(side * 3, -8);
+    ctx.beginPath(); // tungen
+    ctx.ellipse(0, 2.6, 1.8, 2.4, 0, 0, Math.PI);
+    ctx.fill();
+  } else if (o.type === "cat") {
+    /* gylden kat — stort hoved, spidse ører, knurhår */
+    ctx.fillStyle = "#ffd166";
+    ctx.strokeStyle = INK_DARK;
+    ctx.beginPath(); // ører
+    ctx.moveTo(-8.5, -6);
+    ctx.lineTo(-7, -15);
+    ctx.lineTo(-1.5, -9.5);
+    ctx.moveTo(8.5, -6);
+    ctx.lineTo(7, -15);
+    ctx.lineTo(1.5, -9.5);
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath(); // hoved
+    ctx.arc(0, -2, 9.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "rgba(224,58,47,0.7)";
+    ctx.beginPath(); // indre ører
+    ctx.moveTo(-7, -8);
+    ctx.lineTo(-6.4, -12.5);
+    ctx.lineTo(-3.4, -9.5);
+    ctx.moveTo(7, -8);
+    ctx.lineTo(6.4, -12.5);
+    ctx.lineTo(3.4, -9.5);
+    ctx.fill();
+    ctx.fillStyle = INK_DARK;
+    ctx.beginPath(); // øjne + næse
+    ctx.ellipse(-3.6, -3.5, 1.5, 2, 0, 0, Math.PI * 2);
+    ctx.ellipse(3.6, -3.5, 1.5, 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-1.4, 0.6);
+    ctx.lineTo(1.4, 0.6);
+    ctx.lineTo(0, 2.4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "rgba(240,244,252,0.9)";
+    ctx.lineWidth = 1;
+    ctx.beginPath(); // knurhår
+    ctx.moveTo(-8, 0);
+    ctx.lineTo(-15, -1.5);
+    ctx.moveTo(-8, 2);
+    ctx.lineTo(-15, 2.5);
+    ctx.moveTo(8, 0);
+    ctx.lineTo(15, -1.5);
+    ctx.moveTo(8, 2);
+    ctx.lineTo(15, 2.5);
+    ctx.stroke();
+    ctx.strokeStyle = "#ffd166";
+    ctx.lineWidth = 2.4;
+    ctx.beginPath(); // halen
+    ctx.moveTo(9, 6);
+    ctx.quadraticCurveTo(15, 4 + bob, 13.5, -3);
+    ctx.stroke();
+  } else if (o.type === "duck") {
+    /* gylden andemor med to ællinger */
+    for (const [dx, s] of [
+      [-4, 1],
+      [10, 0.62],
+      [18, 0.55],
+    ]) {
+      ctx.fillStyle = "#ffd166";
+      ctx.strokeStyle = INK_DARK;
+      ctx.beginPath(); // krop
+      ctx.ellipse(dx, 2, 7.5 * s, 5.4 * s, 0, 0, Math.PI * 2);
+      ctx.fill();
       ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(side * 3, -8.5, 1.2, 0, Math.PI * 2);
+      ctx.beginPath(); // hoved
+      ctx.arc(dx - 5.4 * s, -4.5 * s, 3.6 * s, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#e0704a";
+      ctx.beginPath(); // næb
+      ctx.moveTo(dx - 8.6 * s, -5 * s);
+      ctx.lineTo(dx - 12.4 * s, -3.6 * s);
+      ctx.lineTo(dx - 8.6 * s, -2.8 * s);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = INK_DARK;
+      ctx.beginPath(); // øje
+      ctx.arc(dx - 5.6 * s, -5.4 * s, 0.9, 0, Math.PI * 2);
       ctx.fill();
     }
+  } else if (o.type === "penguin") {
+    /* pingvin på isflage — sort krop, hvid mave, gult næb */
+    ctx.fillStyle = "rgba(235,242,250,0.9)";
+    ctx.strokeStyle = INK_DARK;
+    ctx.beginPath(); // isflagen
+    ctx.moveTo(-13, 11);
+    ctx.lineTo(-9, 6.5);
+    ctx.lineTo(10, 6.5);
+    ctx.lineTo(14, 11);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#0c121c";
+    ctx.strokeStyle = "rgba(240,244,252,0.9)";
+    ctx.beginPath(); // krop
+    ctx.ellipse(0, -3, 6.5, 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "rgba(240,244,252,0.95)";
+    ctx.beginPath(); // maven
+    ctx.ellipse(0, -1, 3.8, 6.6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath(); // øjne
+    ctx.arc(-2.2, -9.5, 1.5, 0, Math.PI * 2);
+    ctx.arc(2.2, -9.5, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = INK_DARK;
+    ctx.beginPath();
+    ctx.arc(-2, -9.3, 0.7, 0, Math.PI * 2);
+    ctx.arc(2.4, -9.3, 0.7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#ffd166";
+    ctx.beginPath(); // næb + fødder
+    ctx.moveTo(-1.6, -7.6);
+    ctx.lineTo(0, -5.4);
+    ctx.lineTo(1.6, -7.6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillRect(-4, 5.4, 3, 1.6);
+    ctx.fillRect(1, 5.4, 3, 1.6);
+  } else if (o.type === "turtle") {
+    /* grøn skildpadde med mønstret skjold */
+    ctx.fillStyle = "#7ee0a8";
+    ctx.strokeStyle = INK_DARK;
+    ctx.beginPath(); // luffer
+    ctx.ellipse(-9, 5, 4, 2.2, 0.5, 0, Math.PI * 2);
+    ctx.ellipse(9, 5, 4, 2.2, -0.5, 0, Math.PI * 2);
+    ctx.ellipse(-9, -4, 4, 2.2, -0.5, 0, Math.PI * 2);
+    ctx.ellipse(9, -4, 4, 2.2, 0.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath(); // hoved
+    ctx.arc(0, -10.5, 3.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = INK_DARK;
+    ctx.beginPath(); // øjne
+    ctx.arc(-1.5, -11, 0.8, 0, Math.PI * 2);
+    ctx.arc(1.5, -11, 0.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#4a9a6e";
+    ctx.strokeStyle = INK_DARK;
+    ctx.beginPath(); // skjoldet
+    ctx.ellipse(0, 0, 8.5, 7.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(126,224,168,0.9)";
+    ctx.lineWidth = 1.2;
+    ctx.beginPath(); // mønster
+    ctx.moveTo(-6, -3);
+    ctx.lineTo(6, -3);
+    ctx.moveTo(-7, 1.5);
+    ctx.lineTo(7, 1.5);
+    ctx.moveTo(-2.5, -7);
+    ctx.lineTo(-2.5, 6.5);
+    ctx.moveTo(2.5, -7);
+    ctx.lineTo(2.5, 6.5);
+    ctx.stroke();
+  } else if (o.type === "seal") {
+    /* lysegrå sæl med rød bold på snuden */
+    ctx.fillStyle = "rgba(200,215,230,0.95)";
+    ctx.strokeStyle = INK_DARK;
+    ctx.beginPath(); // krop rejst op
+    ctx.moveTo(-10, 9);
+    ctx.quadraticCurveTo(-8, -6, -1, -9);
+    ctx.quadraticCurveTo(6, -7, 8.5, 9);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath(); // luffe
+    ctx.ellipse(6.5, 6, 4.4, 2.2, -0.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = INK_DARK;
+    ctx.beginPath(); // øjne + snude
+    ctx.arc(-3.6, -6.2, 1.2, 0, Math.PI * 2);
+    ctx.arc(1.6, -6.6, 1.2, 0, Math.PI * 2);
+    ctx.arc(-1.2, -8.8, 1.1, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(240,244,252,0.85)";
+    ctx.lineWidth = 1;
+    ctx.beginPath(); // knurhår
+    ctx.moveTo(-3, -8);
+    ctx.lineTo(-8, -8.5);
+    ctx.moveTo(-3, -7);
+    ctx.lineTo(-8, -6.5);
+    ctx.stroke();
+    ctx.fillStyle = "#e03a2f";
+    ctx.beginPath(); // bolden
+    ctx.arc(-1.2, -14.5 - bob * 0.6, 3.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    ctx.beginPath();
+    ctx.arc(-2.4, -15.6 - bob * 0.6, 1.1, 0, Math.PI * 2);
+    ctx.fill();
   }
   ctx.restore();
 }
@@ -1187,7 +1294,6 @@ function drawShip() {
   if (mode === "turn" && TURN_PHASES[turnPhase][0] === "turn") {
     ctx.rotate(Math.PI * 2 * Math.min(1, turnT / 1.4));
   }
-  if (invulnT > 0 && Math.floor(sceneT * 12) % 2 === 0) ctx.globalAlpha = 0.45;
   if (founderT > 0) {
     ctx.globalAlpha = Math.max(0, founderT / 1.3);
     ctx.rotate((1.3 - founderT) * 0.9);
@@ -1287,17 +1393,6 @@ function drawShip() {
   ctx.beginPath();
   ctx.arc(0, 0, 1.6, 0, Math.PI * 2);
   ctx.stroke();
-
-  /* revner i skroget — bliver stående til de repareres */
-  ctx.strokeStyle = "rgba(224,58,47,0.9)";
-  ctx.lineWidth = 1.1;
-  for (const c of ship.cracks) {
-    ctx.beginPath();
-    ctx.moveTo(-6 + c.a, -18 + c.b * 2);
-    ctx.lineTo(-1 + c.b, -10 + c.a * 2);
-    ctx.lineTo(4 - c.a, -14 + c.b);
-    ctx.stroke();
-  }
 
   /* hun er ombord på hjemturen — en lille skikkelse agter */
   if (lightT > 0.6) drawFigureShape(0, 16, 0.28, 0);
@@ -2040,9 +2135,11 @@ function drawHud() {
   ctx.textAlign = "right";
   ctx.fillStyle = "rgba(240,244,252,0.9)";
   ctx.fillText(`♥ ${hearts}`, BASE_W - 14, 30);
+  ctx.fillStyle = "rgba(255,207,122,0.85)";
+  ctx.fillText(`amigos ${amigos}`, BASE_W - 14, 48);
   if (flareT > 0) {
     ctx.fillStyle = `rgba(255,207,122,${flareT})`;
-    ctx.fillText("2x", BASE_W - 14, 48);
+    ctx.fillText("2x", BASE_W - 14, 66);
   }
   /* hvor liv-ikonerne stod: sandheden om det her skib. Lille, varm,
      altid til stede — og mekanisk sand: man kan ikke dø. */
@@ -2214,6 +2311,19 @@ function render() {
     ctx.stroke();
   }
 
+  /* dyrenes små hilsner stiger op og toner ud */
+  for (const f of fx) {
+    if (f.type !== "yay") continue;
+    const sy = SHIP_Y - (f.y1 - progressY) - (1.1 - f.t) * 22;
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, Math.min(1, f.t));
+    ctx.font = "11px 'Space Mono', monospace";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "rgba(255,209,102,0.95)";
+    ctx.fillText(f.text, f.x, sy);
+    ctx.restore();
+  }
+
   /* hjerte-flares */
   for (const f of fx) {
     if (f.type === "flare") {
@@ -2249,21 +2359,40 @@ function render() {
 
   drawLight();
 
-  /* træf: kanten blinker rødt — skaden skal kunne MÆRKES */
-  if (hitT > 0) {
-    const g = ctx.createRadialGradient(
-      BASE_W / 2,
-      BASE_H / 2,
-      BASE_H * 0.32,
-      BASE_W / 2,
-      BASE_H / 2,
-      BASE_H * 0.72,
-    );
-    const a = (reduced ? 0.22 : 0.4) * (hitT / 0.55);
-    g.addColorStop(0, "rgba(224,58,47,0)");
-    g.addColorStop(1, `rgba(224,58,47,${a})`);
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, BASE_W, BASE_H);
+  /* hendes råb fra bjerget — lige inden hun reddes. Endnu en gang
+     ligger kodeordet gemt i replikken. */
+  if (mode === "turn" && turnPhase <= 1) {
+    const a = turnPhase === 0 ? Math.min(1, turnT / 0.6) : 1;
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.font = "11px 'Space Mono', monospace";
+    const ayuda = "¡Necesito ayuda!";
+    const w = ctx.measureText(ayuda).width + 24;
+    const bx = BASE_W - w - 46;
+    const by = 76;
+    ctx.fillStyle = "rgba(6,10,18,0.88)";
+    ctx.strokeStyle = "rgba(255,207,122,0.75)";
+    ctx.lineWidth = 1.3;
+    roundedRect(bx, by, w, 30, 9);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "rgba(6,10,18,0.88)";
+    ctx.beginPath(); // halen op mod bjergtoppen, hvor hun står
+    ctx.moveTo(bx + w - 26, by + 30);
+    ctx.lineTo(bx + w - 14, by + 30);
+    ctx.lineTo(BASE_W - 32, by + 46);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,207,122,0.75)";
+    ctx.beginPath();
+    ctx.moveTo(bx + w - 26, by + 30);
+    ctx.lineTo(BASE_W - 32, by + 46);
+    ctx.lineTo(bx + w - 14, by + 30);
+    ctx.stroke();
+    ctx.fillStyle = "rgba(240,244,252,0.95)";
+    ctx.textAlign = "left";
+    ctx.fillText(ayuda, bx + 12, by + 19);
+    ctx.restore();
   }
 
   /* nedstigningen og ombordstigningen — med hendes navn over sig */
