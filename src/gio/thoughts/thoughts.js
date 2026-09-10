@@ -76,4 +76,115 @@ if (entries.length === 0) {
     .join("");
 }
 
+/* ── Det store svævende hjerte med Gio indeni ───────────────────────
+   Ét stort, glødende hjerte der svæver roligt øverst til højre, med
+   hendes navn i guld. Prikker man på det, drysser det små hjerter.
+   Sidens eneste rAF; reduced motion = hjertet hænger stille og dryssene
+   toner bare ud på stedet. */
+const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const canvas = document.getElementById("corazon");
+const ctx = canvas.getContext("2d");
+const dpr = Math.min(window.devicePixelRatio || 1, 2); // uncapped melts phones
+let W = 0;
+let H = 0;
+
+function resize() {
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // after every resize
+}
+addEventListener("resize", resize, { passive: true });
+resize();
+
+function heartPos(t) {
+  const bx = W - 64;
+  const by = 108;
+  if (reduced) return { x: bx, y: by };
+  return { x: bx + Math.sin(t * 0.5) * 10, y: by + Math.sin(t * 0.8) * 9 };
+}
+
+function drawHeartPath(scale) {
+  ctx.beginPath();
+  ctx.moveTo(0, 6 * scale);
+  ctx.bezierCurveTo(-9 * scale, -2 * scale, -5 * scale, -10 * scale, 0, -4 * scale);
+  ctx.bezierCurveTo(5 * scale, -10 * scale, 9 * scale, -2 * scale, 0, 6 * scale);
+}
+
+let sprinkles = [];
+
+addEventListener("pointerdown", (e) => {
+  if (e.target.closest("a, button, input, form, summary")) return;
+  const t = performance.now() * 0.001;
+  const { x, y } = heartPos(t);
+  if (Math.hypot(e.clientX - x, e.clientY - y) < 46) {
+    for (let i = 0; i < 10; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const sp = 26 + Math.random() * 70;
+      sprinkles.push({
+        x,
+        y,
+        vx: reduced ? 0 : Math.cos(ang) * sp,
+        vy: reduced ? 0 : Math.sin(ang) * sp - 36,
+        ox: reduced ? Math.cos((i / 10) * Math.PI * 2) * 40 : 0,
+        oy: reduced ? Math.sin((i / 10) * Math.PI * 2) * 40 : 0,
+        size: 0.5 + Math.random() * 0.7,
+        t: 0.9 + Math.random() * 0.5,
+      });
+    }
+  }
+});
+
+let last = 0;
+function frame(ts) {
+  const dt = last ? Math.min(33, ts - last) * 0.001 : 0;
+  last = ts;
+  const t = ts * 0.001;
+  ctx.clearRect(0, 0, W, H);
+
+  const { x, y } = heartPos(t);
+  const pulse = reduced ? 1 : 1 + Math.sin(t * 1.6) * 0.04;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(pulse, pulse);
+  ctx.fillStyle = "rgba(224,58,47,0.16)";
+  ctx.strokeStyle = "rgba(224,58,47,0.95)";
+  ctx.shadowColor = "rgba(224,58,47,0.8)";
+  ctx.shadowBlur = 16;
+  ctx.lineWidth = 1.8;
+  drawHeartPath(4.6);
+  ctx.fill();
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.font = "13px 'Archivo Black', 'Space Mono', monospace";
+  ctx.textAlign = "center";
+  ctx.fillStyle = "rgba(255,209,102,0.95)";
+  ctx.fillText("Gio", 0, 1);
+  ctx.restore();
+
+  for (const s of sprinkles) {
+    s.t -= dt;
+    if (!reduced) {
+      s.x += s.vx * dt;
+      s.y += s.vy * dt;
+      s.vy -= 24 * dt; // små hjerter stiger
+    }
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, Math.min(1, s.t));
+    ctx.translate(s.x + s.ox, s.y + s.oy);
+    ctx.strokeStyle = "rgba(224,58,47,0.95)";
+    ctx.shadowColor = "rgba(224,58,47,0.8)";
+    ctx.shadowBlur = 8;
+    ctx.lineWidth = 1.6;
+    drawHeartPath(s.size);
+    ctx.stroke();
+    ctx.restore();
+  }
+  sprinkles = sprinkles.filter((s) => s.t > 0);
+
+  requestAnimationFrame(frame);
+}
+
 guardPage();
+requestAnimationFrame(frame);
