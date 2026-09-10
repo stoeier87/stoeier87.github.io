@@ -1,0 +1,1 @@
+function e(){let e=document.querySelector(`footer`);if(e){let t=document.createElement(`span`);t.textContent=` · v1.4.1`,e.appendChild(t)}}e();export{e as t};
