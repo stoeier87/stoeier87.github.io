@@ -1,4 +1,5 @@
 import { guardPage } from "../shared/gate.js";
+import { isOwnerDevice, readVisits } from "../shared/visits.js";
 import published from "../../../content/gio/published.json";
 
 /**
@@ -212,5 +213,40 @@ function frame(ts) {
   requestAnimationFrame(frame);
 }
 
-guardPage();
+/* ── Ejerens skjulte aflæsning ──────────────────────────────────────
+   Kun på enheder mærket med ?soy=yo: en diskret linje nederst med
+   hendes seneste besøg — så Firebase-konsollen aldrig skal åbnes.
+   Hendes besøg = pings uden ejer-flag og uden stage-præfiks. Fejler
+   læsningen (offline, regler, CDN), vises linjen bare ikke. */
+const PAGE_ES = { index: "la portada", thoughts: "pensamientos", voyage: "el barco" };
+
+async function showOwnerLine() {
+  if (!isOwnerDevice()) return;
+  const visits = await readVisits();
+  const hers = visits.filter((v) => !v.o && !String(v.p).startsWith("stage:"));
+  const line = document.createElement("p");
+  line.className = "text-center text-[11px] tracking-wide text-text-dim lowercase";
+  if (hers.length === 0) {
+    line.textContent = "aún ninguna visita suya";
+  } else {
+    const v = hers[0];
+    const d = new Date(v.t);
+    const parts = new Intl.DateTimeFormat("es", {
+      timeZone: "Europe/Copenhagen",
+      day: "numeric",
+      month: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).formatToParts(d);
+    const get = (type) => parts.find((p) => p.type === type)?.value ?? "";
+    const when = `${get("day")} ${MONTHS_ES[Number(get("month")) - 1]}, ${get("hour")}.${get("minute")}`;
+    const where = PAGE_ES[v.p] ?? v.p;
+    line.textContent = `última visita suya: ${when} · ${where}`;
+  }
+  document.querySelector("main").appendChild(line);
+}
+
+guardPage().then(() => {
+  showOwnerLine();
+});
 requestAnimationFrame(frame);
