@@ -1,0 +1,1 @@
+import"../../tailwind-DJIsdI1w.js";import{t as e}from"../../tool-page-CXMUptU7.js";e(`crazy-eights`);

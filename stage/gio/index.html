@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="da">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -18,30 +18,49 @@
     />
     <!-- Ingen side-CSS (regel 10) — utilities + det delte lag er hele kaskaden. -->
     <link href="../css/all.min.css" rel="stylesheet" />
-    <script type="module" crossorigin src="../assets/gio/index-BoqImbQT.js"></script>
-    <link rel="modulepreload" crossorigin href="../assets/tailwind-2H3eQ00B.js">
-    <link rel="modulepreload" crossorigin href="../assets/gate-DplIJlxf.js">
-    <link rel="stylesheet" crossorigin href="../assets/tailwind-DjAviQs2.css">
+    <script type="module" crossorigin src="../assets/gio/index-BaL0Mydw.js"></script>
+    <link rel="modulepreload" crossorigin href="../assets/tailwind-DJIsdI1w.js">
+    <link rel="modulepreload" crossorigin href="../assets/gate-n_aI04OQ.js">
+    <link rel="stylesheet" crossorigin href="../assets/tailwind-uEuLXygl.css">
   </head>
-  <body class="min-h-screen bg-bg-deep font-mono text-ink">
+  <body class="min-h-screen overflow-hidden bg-bg-deep font-mono text-ink">
+    <!-- Solen, tæt på. Alle andre steder på sitet er solen et fjernt punkt;
+         her står den stor og varm lavt på skærmen — en tilstedeværelse, ikke
+         en skive. Farverne er tokens blandet mod transparent, så intet er
+         hardcodet. -->
+    <div
+      aria-hidden="true"
+      class="pointer-events-none fixed inset-0 bg-[radial-gradient(140%_95%_at_50%_118%,color-mix(in_srgb,var(--color-hall-city-light)_38%,transparent),color-mix(in_srgb,var(--color-rank-gold)_16%,transparent)_34%,color-mix(in_srgb,var(--color-red)_7%,transparent)_52%,transparent_72%)]"
+    ></div>
+
     <!-- Indholdet er skjult bag kodelågen i shared/gate.js, også ved
          direkte links til undersiderne. -->
-    <main class="flex min-h-screen flex-col items-center justify-center gap-6 px-6" hidden>
-      <p class="text-xs tracking-loose text-text-dim uppercase">Gio</p>
+    <main
+      class="relative flex min-h-screen flex-col items-center justify-center gap-10 px-6 text-center"
+      hidden
+    >
+      <!-- Spejler forsidens typografi: navnet i displayfonten, stort og
+           centreret — parallellen ER pointen. -->
+      <header class="flex flex-col items-center gap-3">
+        <h1>GIO</h1>
+        <p class="text-sm tracking-widest text-text-muted lowercase">the sun of my universe</p>
+        <p class="text-xs tracking-wide text-text-dim lowercase">
+          everything here has been orbiting you the whole time
+        </p>
+      </header>
+
       <nav class="flex w-full max-w-sm flex-col gap-5" aria-label="Gio">
         <a
-          href="./dagbog/"
-          class="flex items-center justify-center gap-4 rounded-card border-2 border-border bg-card-bg px-8 py-10 text-xl tracking-widest uppercase transition-colors hover:border-border-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+          href="./thoughts/"
+          class="flex items-center justify-center rounded-card border-2 border-border bg-card-bg px-8 py-9 text-lg tracking-widest uppercase backdrop-blur-[3px] transition-colors hover:border-border-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
         >
-          <i class="fa-regular fa-envelope text-base text-accent" aria-hidden="true"></i>
-          Dagbog
+          Thoughts
         </a>
         <a
-          href="./spil/"
-          class="flex items-center justify-center gap-4 rounded-card border-2 border-border bg-card-bg px-8 py-10 text-xl tracking-widest uppercase transition-colors hover:border-border-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+          href="./voyage/"
+          class="flex items-center justify-center rounded-card border-2 border-border bg-card-bg px-8 py-9 text-lg tracking-widest uppercase backdrop-blur-[3px] transition-colors hover:border-border-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
         >
-          <i class="fa-solid fa-gamepad text-base text-accent" aria-hidden="true"></i>
-          Spil
+          The Voyage
         </a>
       </nav>
     </main>
