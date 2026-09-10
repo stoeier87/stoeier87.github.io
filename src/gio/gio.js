@@ -36,10 +36,10 @@ const sunSpec = {
 
 function layoutSun() {
   const portrait = window.innerHeight >= window.innerWidth;
-  /* lav og beskåret af underkanten — en glødende bue bag kortene,
-     ikke en væg af orange */
-  sunSpec.r = portrait ? 0.44 : 0.38;
-  sunSpec.s0 = portrait ? 0.82 : 0.86;
+  /* tydelig, men stadig beskåret af underkanten — på mobil hænger den
+     højere, for siden er kort og en for lav sol forsvinder helt */
+  sunSpec.r = portrait ? 0.52 : 0.42;
+  sunSpec.s0 = portrait ? 0.68 : 0.78;
   if (field && !field.failed) field.planets = [sunSpec];
 }
 
