@@ -220,8 +220,7 @@ function frame(ts) {
    Hendes besøg = pings uden ejer-flag og uden stage-præfiks. Fejler
    læsningen (offline, regler, CDN), vises linjen bare ikke. */
 /* Linjen er til HAM alene (hun ser den aldrig), så den taler dansk —
-   alt, hun kan møde, forbliver spansk. */
-const PAGE_DA = { index: "forsiden", thoughts: "tankerne", voyage: "skibet" };
+   totalen og det seneste besøg, ikke mere. */
 const MONTHS_DA = [
   "jan",
   "feb",
@@ -246,18 +245,16 @@ async function showOwnerLine() {
   if (hers.length === 0) {
     line.textContent = "endnu ingen besøg fra hende";
   } else {
-    const v = hers[0];
     const parts = new Intl.DateTimeFormat("da", {
       timeZone: "Europe/Copenhagen",
       day: "numeric",
       month: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-    }).formatToParts(new Date(v.t));
+    }).formatToParts(new Date(hers[0].t));
     const get = (type) => parts.find((p) => p.type === type)?.value ?? "";
     const when = `${get("day")}. ${MONTHS_DA[Number(get("month")) - 1]} kl. ${get("hour")}.${get("minute")}`;
-    const where = PAGE_DA[v.p] ?? v.p;
-    line.textContent = `hendes seneste besøg: ${when} · ${where}`;
+    line.textContent = `hendes besøg i alt: ${hers.length} · seneste: ${when}`;
   }
   document.querySelector("main").appendChild(line);
 }
