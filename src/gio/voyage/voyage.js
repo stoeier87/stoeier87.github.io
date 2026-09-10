@@ -1,10 +1,11 @@
 import { guardPage } from "../shared/gate.js";
 
 /**
- * THE LONG WAY TO YOU — /gio/voyage
+ * THE SHIP OF LOVE — /gio/voyage
  *
  * Én komplet rejse, Danmark → Valparaíso → hjem, i ti ben over de samme
- * fem etaper. Ingen score, ingen leaderboard, ingen forbindelse til
+ * fem etaper — hele turen på ~2½-3 minutter, og der sejles FORBI noget
+ * hele tiden (SIGHTS: kyster, fyrtårn, skibe, delfiner, sydlys). Ingen score, ingen leaderboard, ingen forbindelse til
  * arkadens highscore-system — bevidst. Hjerter er den eneste valuta, og
  * de gemmes ingen steder efter sessionen.
  *
@@ -27,7 +28,7 @@ const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const BASE_W = 420;
 const BASE_H = 760;
 const SHIP_Y = 530;
-const LEG_LEN = 3900; // world-px pr. ben — ca. ét minut sejlads
+const LEG_LEN = 1500; // world-px pr. ben — ca. 14 sekunders sejlads; hele rejsen ~2½ min
 const CHECKPOINT_KEY = "gio_voyage_checkpoint";
 
 /* De fem etaper. Benene 0-4 er udrejsen (etape 0→4), benene 5-9 er
@@ -38,62 +39,62 @@ const STAGES = [
     deep: "#26323c",
     lite: "#3b4a52",
     tint: "#9fb4c4",
-    speed: 58,
+    speed: 95,
     swell: 5,
     roll: 0.05,
-    spawn: { stake: 0.9, rock: 0.45 },
+    spawn: { stake: 2.2, rock: 0.9 },
     fog: true,
-    hearts: 2.2,
+    hearts: 3.6,
   },
   {
     name: "THE ATLANTIC",
     deep: "#132b4e",
     lite: "#1e416f",
     tint: "#7fa8d8",
-    speed: 66,
+    speed: 105,
     swell: 11,
     roll: 0.09,
-    spawn: { wreck: 0.55, rock: 0.2 },
+    spawn: { wreck: 1.4, rock: 0.5 },
     whales: true,
-    hearts: 2.2,
+    hearts: 3.6,
   },
   {
     name: "THE EQUATOR",
     deep: "#3f7187",
     lite: "#8fc0ca",
     tint: "#f2ead2",
-    speed: 62,
+    speed: 100,
     swell: 2,
     roll: 0.03,
-    spawn: { debris: 0.85 },
+    spawn: { debris: 2.2 },
     squalls: true,
     equator: true,
-    hearts: 2.2,
+    hearts: 3.6,
   },
   {
     name: "CAPE HORN",
     deep: "#04070c",
     lite: "#0f171f",
     tint: "#5a6b7a",
-    speed: 70,
+    speed: 112,
     swell: 14,
     roll: 0.14,
-    spawn: { berg: 0.75, rock: 0.3, pool: 0.32 },
+    spawn: { berg: 1.7, rock: 0.8, pool: 0.55 },
     currents: true,
     snow: true,
-    hearts: 2.6,
+    hearts: 4.2,
   },
   {
     name: "THE CHILEAN COAST",
     deep: "#274757",
     lite: "#4a7a86",
     tint: "#ffcf7a",
-    speed: 58,
+    speed: 95,
     swell: 6,
     roll: 0.06,
-    spawn: { kelp: 0.5, boat: 0.5 },
+    spawn: { kelp: 1.1, boat: 1.2 },
     andes: true,
-    hearts: 2.4,
+    hearts: 3.8,
   },
 ];
 
@@ -102,6 +103,66 @@ const isHomebound = (leg) => leg >= 5;
 
 /* Valparaísos huse — den eneste mættede farve i hele spillet */
 const HOUSE_COLORS = ["#e0704a", "#6e8fff", "#ffd166", "#7eb08a", "#e03a2f", "#a8e0e8"];
+
+/* Seværdigheder — det man sejler FORBI. Rejsen skal føles som lande der
+   passerer, ikke som åbent hav i minutter: hver etape har 2-3 navngivne
+   ting i siden af billedet, med en lille billedtekst når de glider ind.
+   p er brøkdel af benet; side -1 = venstre, 1 = højre, 0 = ved skibet. */
+const SIGHTS = [
+  [
+    { p: 0.06, kind: "coast", side: 1, label: "DENMARK, ASTERN", houses: true, gulls: true },
+    { p: 0.45, kind: "lighthouse", side: -1, label: "A LIGHTHOUSE IN THE FOG" },
+    { p: 0.82, kind: "coast", side: 1, label: "THE WHITE CLIFFS OF DOVER", cliffs: true },
+  ],
+  [
+    { p: 0.2, kind: "island", side: -1, label: "THE AZORES", peaks: true },
+    { p: 0.52, kind: "ship", side: 1, label: "A FREIGHTER, OUTWARD BOUND", vyw: -150 },
+    { p: 0.85, kind: "island", side: 1, label: "THE CANARY ISLANDS", peaks: true },
+  ],
+  [
+    { p: 0.16, kind: "island", side: -1, label: "CAPE VERDE", palms: true },
+    { p: 0.62, kind: "dolphins", side: 0, label: "DOLPHINS OFF THE BOW" },
+    { p: 0.88, kind: "coast", side: 1, label: "THE COAST OF BRAZIL", palms: true },
+  ],
+  [
+    { p: 0.28, kind: "island", side: -1, label: "THE FALKLANDS" },
+    { p: 0.52, kind: "aurora", side: 0, label: "THE SOUTHERN LIGHTS" },
+    { p: 0.84, kind: "horn", side: 1, label: "CAPE HORN" },
+  ],
+  [
+    { p: 0.26, kind: "dolphins", side: 0, label: "PELICANS OFF THE COAST", pel: true },
+    { p: 0.52, kind: "ship", side: -1, label: "FISHING BOATS OF QUINTAY", vyw: -25, fishing: true },
+  ],
+  [
+    {
+      p: 0.24,
+      kind: "ship",
+      side: 1,
+      label: "THE FISHING BOATS WAVE YOU OFF",
+      vyw: -20,
+      fishing: true,
+    },
+    { p: 0.66, kind: "dolphins", side: 0, label: "DOLPHINS, CELEBRATING" },
+  ],
+  [
+    { p: 0.26, kind: "horn", side: -1, label: "CAPE HORN, ONE LAST TIME" },
+    { p: 0.6, kind: "aurora", side: 0, label: "THE SOUTHERN LIGHTS, FOR HER" },
+  ],
+  [
+    { p: 0.24, kind: "coast", side: -1, label: "THE COAST OF BRAZIL", palms: true },
+    { p: 0.68, kind: "dolphins", side: 0, label: "FLYING FISH", fly: true },
+  ],
+  [
+    { p: 0.22, kind: "island", side: 1, label: "THE CANARY ISLANDS", peaks: true },
+    { p: 0.56, kind: "ship", side: -1, label: "A FREIGHTER, HOMEWARD BOUND", vyw: -150 },
+    { p: 0.86, kind: "island", side: -1, label: "THE AZORES AGAIN", peaks: true },
+  ],
+  [
+    { p: 0.2, kind: "coast", side: -1, label: "THE WHITE CLIFFS AGAIN", cliffs: true },
+    { p: 0.52, kind: "lighthouse", side: 1, label: "THE LIGHTHOUSE, STILL BURNING" },
+    { p: 0.86, kind: "coast", side: 1, label: "DENMARK AHEAD", houses: true, gulls: true },
+  ],
+];
 
 /* ── DOM ────────────────────────────────────────────────────────────── */
 const el = {
@@ -162,19 +223,23 @@ let drops = []; // hjerter
 let zones = []; // strøm/kelp-felter
 let snowflakes = [];
 let squall = null;
-let squallTimer = 8;
+let squallTimer = 4;
 let fx = []; // små effekter (heart-flare mm.)
+let sights = []; // aktive seværdigheder
+let sightQueue = []; // benets endnu ikke nåede seværdigheder
+let captionText = "";
+let captionT = 0;
 
 /* Vendepunktet i Valparaíso — to bevægelser: skibet hviler, et beat, så
    kommer hun ned ad bjerget (6 s, det eneste der bevæger sig), ombord,
    og først dér bygger lyset over ~3 s. */
 const TURN_PHASES = [
-  ["arrive", 2.2],
-  ["beat", 1.0],
-  ["descent", 6.0],
-  ["board", 1.6],
-  ["light", 3.0],
-  ["turn", 1.6],
+  ["arrive", 1.6],
+  ["beat", 0.8],
+  ["descent", 5.0],
+  ["board", 1.4],
+  ["light", 2.4],
+  ["turn", 1.4],
 ];
 let turnPhase = 0;
 let turnT = 0;
@@ -312,6 +377,17 @@ function resetLegEntities() {
   squall = null;
   spawnCursor = progressY;
   equatorCrossed = false;
+  sights = [];
+  captionT = 0;
+  sightQueue = SIGHTS[leg]
+    .map((q) => ({ ...q, y: q.p * LEG_LEN }))
+    .filter((q) => q.y > progressY)
+    .sort((a, b) => a.y - b.y);
+}
+
+function caption(text) {
+  captionText = text;
+  captionT = 2.6;
 }
 
 /* ── Input — træk hvor som helst, skibet følger relativ bevægelse ───── */
@@ -344,7 +420,7 @@ el.main.addEventListener("pointermove", (e) => {
   if (!dragging || mode !== "sail" || paused) return;
   const dx = (e.clientX - dragX) / viewScale;
   dragX = e.clientX;
-  ship.target = Math.max(26, Math.min(BASE_W - 26, ship.target + dx * 1.15));
+  ship.target = Math.max(26, Math.min(BASE_W - 26, ship.target + dx * 1.25));
 });
 const endDrag = () => {
   dragging = false;
@@ -448,6 +524,7 @@ function update(dt) {
   flareT = Math.max(0, flareT - dt);
   wakeT = Math.max(0, wakeT - dt);
   titleT = Math.max(0, titleT - dt);
+  captionT = Math.max(0, captionT - dt);
   fx = fx.filter((f) => {
     if (f.t !== undefined) {
       f.t -= dt;
@@ -477,9 +554,37 @@ function update(dt) {
   progressY += speed * dt;
   fillAhead();
 
+  /* seværdigheder: verdensfaste aktiveres i god tid (de skal glide ind),
+     de tidsstyrede (delfiner, sydlys) først når man faktisk er der */
+  while (sightQueue.length && sightQueue[0].y < progressY + AHEAD) {
+    const q = sightQueue[0];
+    if (q.kind === "dolphins" || q.kind === "aurora") {
+      if (q.y > progressY + 460) break; // køen er sorteret — vent
+      sights.push({
+        ...q,
+        dur: q.kind === "aurora" ? 8 : 4,
+        t: q.kind === "aurora" ? 8 : 4,
+        ph: Math.random() * 6,
+      });
+      caption(q.label);
+    } else {
+      sights.push({ ...q, seen: false });
+    }
+    sightQueue.shift();
+  }
+  for (const si of sights) {
+    if (si.t !== undefined) si.t -= dt;
+    else if (!si.seen && si.y - progressY < 500) {
+      si.seen = true;
+      caption(si.label);
+    }
+    if (si.kind === "ship") si.y += si.vyw * dt;
+  }
+  sights = sights.filter((si) => (si.t !== undefined ? si.t > 0 : si.y > progressY - 700));
+
   /* styring med vægt: en kurve, ikke et trin */
-  if (keys.has("arrowleft") || keys.has("a")) ship.target -= 230 * dt;
-  if (keys.has("arrowright") || keys.has("d")) ship.target += 230 * dt;
+  if (keys.has("arrowleft") || keys.has("a")) ship.target -= 300 * dt;
+  if (keys.has("arrowright") || keys.has("d")) ship.target += 300 * dt;
   ship.target = Math.max(26, Math.min(BASE_W - 26, ship.target));
   let push = 0;
 
@@ -494,7 +599,7 @@ function update(dt) {
     squallTimer -= dt;
     if (!squall && squallTimer <= 0) {
       squall = { dir: Math.random() < 0.5 ? -1 : 1, t: 3 };
-      squallTimer = 9 + Math.random() * 7;
+      squallTimer = 7 + Math.random() * 5;
     }
     if (squall) {
       squall.t -= dt;
@@ -564,7 +669,7 @@ function update(dt) {
   for (const d of drops) {
     d.x += Math.sin(sceneT * 1.4 + d.ph) * 12 * dt;
     const dy = d.y - progressY;
-    if (Math.abs(dy) < 26 && Math.abs(d.x - ship.x) < 24) {
+    if (Math.abs(dy) < 30 && Math.abs(d.x - ship.x) < 28) {
       d.hit = true;
       collectHeart(d);
     }
@@ -665,7 +770,7 @@ function updateTurn(dt) {
 
 /* Slutningen: solen, der har været fjern hele spillet, står op */
 async function updateEnding(dt) {
-  sunT = Math.min(1, sunT + dt / 4);
+  sunT = Math.min(1, sunT + dt / 2.5);
   ship.x += (BASE_W / 2 - ship.x) * Math.min(1, dt);
   /* en masse hjerter — de stiger op gennem solopgangen */
   if (endingStarted) {
@@ -901,7 +1006,7 @@ function drawShip() {
   ctx.rotate(roll);
   /* vendingen: skibet drejer helt rundt hen over fasen — verden vender med */
   if (mode === "turn" && TURN_PHASES[turnPhase][0] === "turn") {
-    ctx.rotate(Math.PI * 2 * Math.min(1, turnT / 1.6));
+    ctx.rotate(Math.PI * 2 * Math.min(1, turnT / 1.4));
   }
   if (invulnT > 0 && Math.floor(sceneT * 12) % 2 === 0) ctx.globalAlpha = 0.45;
   if (founderT > 0) {
@@ -1207,25 +1312,370 @@ function drawChile(nearShore) {
     ctx.fill();
   }
   if (nearShore) {
-    /* Valparaíso: husene som små farveblokke op ad skråningen —
-       spillets eneste mættede farve */
-    for (let i = 0; i < 26; i++) {
-      const gx = BASE_W - 118 + ((i * 37) % 96);
-      const gy = 402 + Math.floor(i / 6) * 22 + ((i * 13) % 9);
-      ctx.fillStyle = HOUSE_COLORS[i % HOUSE_COLORS.length];
-      ctx.fillRect(gx, gy, 9 + (i % 3) * 3, 8);
-      ctx.strokeStyle = "rgba(10,14,20,0.7)";
-      ctx.strokeRect(gx, gy, 9 + (i % 3) * 3, 8);
+    /* Valparaíso: terrasserede husrækker der FØLGER skråningen — ens
+       højde, fælles bundlinje pr. række, alle inde på land. Det er byen
+       set fra havet, ikke konfetti. Stadig spillets eneste mættede farve. */
+    ctx.lineWidth = 1;
+    let ci = 0;
+    for (const [by, startX] of [
+      [392, BASE_W - 46],
+      [412, BASE_W - 58],
+      [432, BASE_W - 70],
+      [452, BASE_W - 80],
+      [472, BASE_W - 88],
+    ]) {
+      let hx = startX;
+      while (hx < BASE_W - 4) {
+        const hw = 8 + ((ci * 7) % 5);
+        ctx.fillStyle = HOUSE_COLORS[ci % HOUSE_COLORS.length];
+        ctx.fillRect(hx, by - 8, hw, 8);
+        ctx.strokeStyle = "rgba(10,14,20,0.75)";
+        ctx.strokeRect(hx, by - 8, hw, 8);
+        /* et lille varmt vindue i hvert tredje hus */
+        if (ci % 3 === 0) {
+          ctx.fillStyle = "rgba(255,209,102,0.95)";
+          ctx.fillRect(hx + hw / 2 - 1, by - 5, 2, 2);
+        }
+        hx += hw + 3;
+        ci++;
+      }
     }
-    /* molen */
+    /* molen: forankret på kysten, båret af pæle, ud mod hvor skibet lægger til */
     ctx.strokeStyle = "rgba(240,244,252,0.8)";
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(BASE_W - 150, 470);
-    ctx.lineTo(230, 486);
+    ctx.moveTo(BASE_W - 84, 482);
+    ctx.lineTo(180, 498);
+    ctx.stroke();
+    ctx.lineWidth = 1.2;
+    for (let i = 0; i < 6; i++) {
+      const px = BASE_W - 100 - i * 26;
+      const py = 483 + (BASE_W - 84 - px) * (16 / (BASE_W - 84 - 180));
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.lineTo(px, py + 8);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+/* ── Seværdighederne — landene man sejler forbi ─────────────────────── */
+function drawPalmAt(x, y) {
+  ctx.strokeStyle = "rgba(240,244,252,0.75)";
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.quadraticCurveTo(x + 3, y - 8, x + 6, y - 14);
+  ctx.stroke();
+  for (const [dx, dy] of [
+    [-8, -2],
+    [8, -1],
+    [-5, -6],
+    [7, -6],
+  ]) {
+    ctx.beginPath();
+    ctx.moveTo(x + 6, y - 14);
+    ctx.quadraticCurveTo(x + 6 + dx * 0.6, y - 16 + dy, x + 6 + dx, y - 14 + dy);
+    ctx.stroke();
+  }
+}
+
+function drawGull(x, y) {
+  ctx.strokeStyle = "rgba(240,244,252,0.8)";
+  ctx.lineWidth = 1.1;
+  ctx.beginPath();
+  ctx.moveTo(x - 5, y);
+  ctx.quadraticCurveTo(x - 2, y - 3.5, x, y);
+  ctx.quadraticCurveTo(x + 2, y - 3.5, x + 5, y);
+  ctx.stroke();
+}
+
+function drawCoast(s, sy) {
+  const edge = s.side === 1 ? BASE_W : 0;
+  const dir = s.side === 1 ? -1 : 1;
+  const L = 460;
+  ctx.fillStyle = "rgba(9,16,24,0.96)";
+  ctx.strokeStyle = "rgba(240,244,252,0.5)";
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(edge, sy - L / 2);
+  const pts = [];
+  for (let i = 0; i <= 8; i++) {
+    const yy = sy - L / 2 + (L / 8) * i;
+    const inl = 34 + ((i * 53 + Math.round(s.y)) % 47); // deterministisk pr. sight
+    pts.push([edge + dir * inl, yy]);
+    ctx.lineTo(edge + dir * inl, yy);
+  }
+  ctx.lineTo(edge, sy + L / 2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  if (s.cliffs) {
+    /* Dover: selve kystlinjen lyser hvidt */
+    ctx.strokeStyle = "rgba(235,242,250,0.85)";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    for (let i = 0; i < pts.length; i++) {
+      if (i === 0) ctx.moveTo(pts[i][0], pts[i][1]);
+      else ctx.lineTo(pts[i][0], pts[i][1]);
+    }
+    ctx.stroke();
+  }
+  if (s.houses) {
+    /* hjemlandet: varme vinduer der lyser i mørket — de farvede huse er
+       Valparaísos signatur alene, Danmark er gyldent lys på en mørk kyst */
+    ctx.save();
+    ctx.fillStyle = "rgba(255,209,102,0.9)";
+    ctx.shadowColor = "rgba(255,207,122,0.8)";
+    ctx.shadowBlur = 5;
+    for (let i = 0; i < 12; i++) {
+      const [px, py] = pts[Math.floor((i * 7) % 9)];
+      const hx = px - dir * (7 + ((i * 29) % 24));
+      const hy = py + ((i * 13) % 20) - 10;
+      ctx.fillRect(hx, hy, 2.4, 2.4);
+    }
+    ctx.restore();
+  }
+  if (s.palms) {
+    for (let i = 1; i < 8; i += 3) drawPalmAt(pts[i][0] - dir * 4, pts[i][1]);
+  }
+  if (s.gulls) {
+    for (let i = 0; i < 3; i++) {
+      const wob = reduced ? 0 : Math.sin(sceneT * 1.6 + i * 2) * 9;
+      drawGull(edge + dir * (88 + i * 22) + wob, sy - 90 + i * 42);
+    }
+  }
+}
+
+function drawIsland(s, sy) {
+  const cx = s.side === 1 ? BASE_W - 52 : 52;
+  ctx.fillStyle = "rgba(9,16,24,0.96)";
+  ctx.strokeStyle = "rgba(240,244,252,0.55)";
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(cx - 66, sy + 18);
+  ctx.quadraticCurveTo(cx - 30, sy - 26, cx, sy - 20);
+  ctx.quadraticCurveTo(cx + 42, sy - 30, cx + 66, sy + 18);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  if (s.peaks) {
+    ctx.beginPath();
+    ctx.moveTo(cx - 7, sy - 22);
+    ctx.lineTo(cx + 4, sy - 48);
+    ctx.lineTo(cx + 15, sy - 20);
+    ctx.stroke();
+    ctx.fillStyle = "rgba(235,242,250,0.85)";
+    ctx.beginPath();
+    ctx.moveTo(cx, sy - 38);
+    ctx.lineTo(cx + 4, sy - 48);
+    ctx.lineTo(cx + 8, sy - 38);
+    ctx.closePath();
+    ctx.fill();
+  }
+  if (s.palms) {
+    drawPalmAt(cx - 26, sy - 18);
+    drawPalmAt(cx + 14, sy - 20);
+  }
+}
+
+function drawLighthouse(s, sy) {
+  const x = s.side === 1 ? BASE_W - 46 : 46;
+  ctx.fillStyle = "rgba(9,16,24,0.96)";
+  ctx.strokeStyle = "rgba(240,244,252,0.55)";
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(x - 26, sy + 16);
+  ctx.lineTo(x - 10, sy + 2);
+  ctx.lineTo(x + 12, sy + 4);
+  ctx.lineTo(x + 26, sy + 16);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  /* strålen fejer — det er en begivenhed, ikke kulisse */
+  const ang = reduced ? 0.55 : sceneT * 0.9;
+  const ex = x + Math.cos(ang) * 190;
+  const ey = sy - 37 + Math.sin(ang) * 64;
+  const px2 = -Math.sin(ang) * 24;
+  const py2 = Math.cos(ang) * 9;
+  ctx.fillStyle = "rgba(255,209,102,0.10)";
+  ctx.beginPath();
+  ctx.moveTo(x, sy - 37);
+  ctx.lineTo(ex - px2, ey - py2);
+  ctx.lineTo(ex + px2, ey + py2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "rgba(235,242,250,0.9)";
+  ctx.fillRect(x - 5, sy - 34, 10, 36);
+  ctx.fillStyle = "rgba(224,58,47,0.85)";
+  ctx.fillRect(x - 5, sy - 26, 10, 7);
+  ctx.fillRect(x - 5, sy - 12, 10, 7);
+  ctx.strokeRect(x - 5, sy - 34, 10, 36);
+  ctx.fillStyle = "rgba(255,209,102,0.95)";
+  ctx.fillRect(x - 3.4, sy - 40, 6.8, 6);
+}
+
+function drawPassingShip(s, sy) {
+  const x = s.side === 1 ? BASE_W - 64 : 64;
+  ctx.strokeStyle = "rgba(235,240,250,0.85)";
+  ctx.fillStyle = "rgba(10,16,24,0.9)";
+  ctx.lineWidth = 1.3;
+  if (s.fishing) {
+    /* tre små kuttere i klynge */
+    for (let i = 0; i < 3; i++) {
+      const bx = x + (i - 1) * 34;
+      const by = sy + (i % 2) * 26 - 8;
+      ctx.beginPath();
+      ctx.moveTo(bx - 11, by + 3);
+      ctx.quadraticCurveTo(bx, by + 8, bx + 11, by + 3);
+      ctx.lineTo(bx + 8, by - 2);
+      ctx.lineTo(bx - 8, by - 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(bx, by - 2);
+      ctx.lineTo(bx, by - 12);
+      ctx.stroke();
+      ctx.fillStyle = "rgba(255,209,102,0.9)";
+      ctx.fillRect(bx - 1, by - 7, 2, 2); // lanterne
+      ctx.fillStyle = "rgba(10,16,24,0.9)";
+    }
+  } else {
+    /* fragtskibet: langt, mørkt, med en række lys — verden derude fortsætter */
+    ctx.beginPath();
+    ctx.moveTo(x - 13, sy - 36);
+    ctx.lineTo(x + 13, sy - 36);
+    ctx.lineTo(x + 10, sy + 40);
+    ctx.lineTo(x - 10, sy + 40);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.strokeRect(x - 8, sy + 22, 16, 12); // broen
+    ctx.fillStyle = "rgba(255,209,102,0.85)";
+    for (let i = 0; i < 5; i++) ctx.fillRect(x - 6 + i * 3, sy - 26 + i * 11, 1.8, 1.8);
+  }
+}
+
+function drawHorn(s, sy) {
+  const edge = s.side === 1 ? BASE_W : 0;
+  const dir = s.side === 1 ? -1 : 1;
+  ctx.fillStyle = "rgba(5,9,14,0.98)";
+  ctx.strokeStyle = "rgba(240,244,252,0.6)";
+  ctx.lineWidth = 1.3;
+  ctx.beginPath();
+  ctx.moveTo(edge, sy + 120);
+  ctx.lineTo(edge + dir * 30, sy + 62);
+  ctx.lineTo(edge + dir * 22, sy + 12);
+  ctx.lineTo(edge + dir * 58, sy - 28);
+  ctx.lineTo(edge + dir * 42, sy - 108);
+  ctx.lineTo(edge + dir * 12, sy - 150);
+  ctx.lineTo(edge, sy - 160);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  /* brænding ved foden */
+  ctx.strokeStyle = "rgba(235,242,250,0.7)";
+  ctx.lineWidth = 1.6;
+  for (let i = 0; i < 3; i++) {
+    const wy = sy + 90 + i * 12 + (reduced ? 0 : Math.sin(sceneT * 2 + i) * 3);
+    ctx.beginPath();
+    ctx.moveTo(edge, wy);
+    ctx.lineTo(edge + dir * (34 - i * 8), wy);
+    ctx.stroke();
+  }
+}
+
+function drawAurora(s) {
+  const a = Math.max(0, Math.min(1, (s.dur - s.t) / 1.2, s.t / 1.2)) * (reduced ? 0.6 : 1);
+  ctx.save();
+  ctx.lineWidth = 9;
+  ctx.lineCap = "round";
+  for (let i = 0; i < 3; i++) {
+    ctx.strokeStyle = `rgba(126,224,168,${(0.2 - i * 0.04) * a})`;
+    ctx.shadowColor = "rgba(126,224,168,0.5)";
+    ctx.shadowBlur = 14;
+    ctx.beginPath();
+    for (let x = -10; x <= BASE_W + 10; x += 20) {
+      const y = 44 + i * 26 + Math.sin(x * 0.02 + (reduced ? 0 : sceneT * 0.8) + i * 1.7) * 15;
+      if (x === -10) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
     ctx.stroke();
   }
   ctx.restore();
+}
+
+function drawPod(s) {
+  const a = Math.max(0, Math.min(1, (s.dur - s.t) / 0.6, s.t / 0.6));
+  ctx.save();
+  ctx.globalAlpha = a;
+  if (s.pel) {
+    /* pelikaner i linje hen over himlen */
+    const t = 1 - s.t / s.dur;
+    for (let i = 0; i < 4; i++) {
+      drawGull(
+        -30 + (BASE_W + 60) * t - i * 26,
+        110 + i * 9 + (reduced ? 0 : Math.sin(sceneT * 2 + i) * 4),
+      );
+    }
+  } else if (s.fly) {
+    /* flyvefisk: små sølvbuer der springer hen over kursen */
+    ctx.strokeStyle = "rgba(220,232,244,0.85)";
+    ctx.lineWidth = 1.4;
+    for (let i = 0; i < 5; i++) {
+      const ph = (reduced ? 0.6 : sceneT * 2.4) + i * 1.3 + s.ph;
+      const hop = Math.sin(ph % Math.PI);
+      const fxp = ship.x - 90 + i * 44 + ((ph * 30) % 60);
+      ctx.beginPath();
+      ctx.arc(fxp, SHIP_Y - 40 - hop * 26, 5, Math.PI * 0.15, Math.PI * 0.85, true);
+      ctx.stroke();
+    }
+  } else {
+    /* delfiner langs siden — de springer på skift */
+    ctx.strokeStyle = "rgba(200,220,236,0.9)";
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 3; i++) {
+      const ph = (reduced ? 1.2 : sceneT * 2.6) + i * 1.15 + s.ph;
+      const hop = Math.max(0, Math.sin(ph));
+      if (hop < 0.08) continue;
+      const dxp = ship.x + (i === 0 ? -58 : i === 1 ? -36 : 48);
+      const dy = SHIP_Y + 6 - hop * 24;
+      ctx.beginPath();
+      ctx.arc(dxp, dy, 9, Math.PI * 1.05, Math.PI * 1.95);
+      ctx.stroke();
+      ctx.beginPath(); // finnen
+      ctx.moveTo(dxp, dy - 9);
+      ctx.lineTo(dxp + 3, dy - 13);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+function drawSights() {
+  for (const si of sights) {
+    if (si.kind === "aurora") {
+      drawAurora(si);
+      continue;
+    }
+    if (si.kind === "dolphins") {
+      drawPod(si);
+      continue;
+    }
+    const sy = SHIP_Y - (si.y - progressY);
+    if (sy < -600 || sy > BASE_H + 600) continue;
+    /* landkending må gerne anes i mørket — den dæmpes, men forsvinder ikke */
+    ctx.save();
+    ctx.globalAlpha = Math.max(0.6, visibilityAlpha(si.y));
+    if (si.kind === "coast") drawCoast(si, sy);
+    else if (si.kind === "island") drawIsland(si, sy);
+    else if (si.kind === "lighthouse") drawLighthouse(si, sy);
+    else if (si.kind === "ship") drawPassingShip(si, sy);
+    else if (si.kind === "horn") drawHorn(si, sy);
+    ctx.restore();
+  }
 }
 
 /* Lysmekanikken — må kunne aflæses uden at blive forklaret */
@@ -1234,7 +1684,7 @@ function drawLight() {
   if (lightT < 1) {
     /* udad: solen er lille og kold forude, og havet foran ligger i mørke */
     const dark = ctx.createLinearGradient(0, 0, 0, SHIP_Y + 60);
-    const a = 0.8 * (1 - lightT);
+    const a = 0.68 * (1 - lightT); // mørkt nok til at bære mekanikken, lyst nok til at kysterne læses
     dark.addColorStop(0, `rgba(3,6,10,${a})`);
     dark.addColorStop(0.55, `rgba(3,6,10,${a * 0.55})`);
     dark.addColorStop(1, "rgba(3,6,10,0)");
@@ -1263,8 +1713,10 @@ function drawLight() {
 function visibilityAlpha(worldY) {
   const ahead = worldY - progressY;
   if (ahead <= 0) return 1;
-  const visD = 175 + (420 - 175) * lightT;
-  return Math.max(0, Math.min(1, (visD - ahead) / 70));
+  /* farten er sat op, så sigtbarheden følger med — reaktionstiden er den
+     samme følelse som før: ~2 s udad, rigeligt hjemad */
+  const visD = 240 + (470 - 240) * lightT;
+  return Math.max(0, Math.min(1, (visD - ahead) / 80));
 }
 
 function drawHud() {
@@ -1305,6 +1757,70 @@ function drawHud() {
     ctx.fillText(titleText, BASE_W / 2, BASE_H * 0.3);
     ctx.globalAlpha = 1;
   }
+  /* billedtekst til seværdighederne — mindre end etapenavnet, nederst */
+  if (captionT > 0) {
+    const a = Math.min(1, captionT / 0.4) * Math.min(1, (2.6 - captionT) / 0.35);
+    ctx.globalAlpha = a * 0.9;
+    ctx.font = "11px 'Space Mono', monospace";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "rgba(240,244,252,0.9)";
+    ctx.fillText(captionText, BASE_W / 2, BASE_H - 64);
+    ctx.globalAlpha = 1;
+  }
+  drawRouteMap();
+}
+
+/* Rutekortet — en lille transparent linje nederst: hjem til venstre,
+   hende til højre, skibet som prik derimellem. Udad sejler prikken mod
+   hjertet; hjemad vender den og sejler tilbage mod huset. */
+function drawRouteMap() {
+  if (mode === "ending") return;
+  const y = BASE_H - 26;
+  const x0 = 96;
+  const x1 = BASE_W - 40;
+  const overall = Math.min(1, (leg + Math.min(1, progressY / LEG_LEN)) / 10);
+  const t = mode === "turn" ? 1 : overall <= 0.5 ? overall * 2 : (1 - overall) * 2;
+  ctx.save();
+  ctx.globalAlpha = 0.55;
+  ctx.strokeStyle = "rgba(240,244,252,0.5)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x0, y);
+  ctx.lineTo(x1, y);
+  ctx.stroke();
+  /* etape-prikker */
+  ctx.fillStyle = "rgba(240,244,252,0.6)";
+  for (let i = 1; i < 5; i++) {
+    ctx.beginPath();
+    ctx.arc(x0 + ((x1 - x0) * i) / 5, y, 1.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  /* hjem: et lille hus */
+  ctx.strokeStyle = "rgba(240,244,252,0.8)";
+  ctx.lineWidth = 1.1;
+  ctx.strokeRect(x0 - 8, y - 4, 7, 5);
+  ctx.beginPath();
+  ctx.moveTo(x0 - 9, y - 4);
+  ctx.lineTo(x0 - 4.5, y - 8);
+  ctx.lineTo(x0, y - 4);
+  ctx.stroke();
+  /* hende: et hjerte for enden */
+  drawHeartAt(x1 + 8, y - 1, 0.55, 0.9);
+  /* skibet: en lille prik med retning */
+  const sx = x0 + (x1 - x0) * t;
+  ctx.fillStyle = "rgba(255,207,122,0.95)";
+  ctx.beginPath();
+  ctx.arc(sx, y, 2.6, 0, Math.PI * 2);
+  ctx.fill();
+  if (isHomebound(leg)) {
+    /* hjemad har prikken en lille varm hale — hun er med */
+    ctx.strokeStyle = "rgba(255,207,122,0.5)";
+    ctx.beginPath();
+    ctx.moveTo(sx + 4, y);
+    ctx.lineTo(sx + 10, y);
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 function render() {
@@ -1350,6 +1866,8 @@ function render() {
       ctx.stroke();
     }
   }
+
+  drawSights();
 
   if (s.andes || mode === "turn") {
     const nearShore =
@@ -1465,6 +1983,8 @@ function frame(ts) {
   render();
   requestAnimationFrame(frame);
 }
+
+resetLegEntities(); // også ved genoptaget checkpoint: benets seværdigheder skal i kø fra start
 
 /* Lågen først — spillet starter ikke, før siden faktisk er åbnet */
 guardPage().then(() => {
