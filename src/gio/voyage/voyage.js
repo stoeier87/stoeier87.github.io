@@ -977,172 +977,283 @@ function drawWater(pal, s) {
   }
 }
 
-/* Dyrene — små, varme og glade. Alle vipper blidt på dønningen
-   (sceneT + egen fase), står stille under reduced motion. */
+/* Dyrene — store, farvelagte og umiskendelige. Fyldte figurer i
+   spillets varme accentfarver (samme palet som Valparaísos huse), alle
+   med hjerternes bløde glød bag sig, så "det her samles op" kan læses
+   på et splitsekund. Blid vippen på dønningen; stille under reduced. */
+const INK_DARK = "rgba(10,14,20,0.85)";
+
+function critterGlow() {
+  const g = ctx.createRadialGradient(0, 0, 4, 0, 0, 30);
+  g.addColorStop(0, "rgba(255,207,122,0.22)");
+  g.addColorStop(1, "rgba(255,207,122,0)");
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(0, 0, 30, 0, Math.PI * 2);
+  ctx.fill();
+}
+
 function drawObstacle(o, alpha) {
   const sy = SHIP_Y - (o.y - progressY);
-  if (sy < -60 || sy > BASE_H + 60) return;
+  if (sy < -70 || sy > BASE_H + 70) return;
   const bob = reduced ? 0 : Math.sin(sceneT * 1.6 + (o.ph ?? 0)) * 2;
   ctx.save();
   ctx.globalAlpha = alpha;
   ctx.translate(o.x, sy + bob);
-  ctx.strokeStyle = "rgba(240,244,252,0.9)";
-  ctx.fillStyle = "rgba(12,18,28,0.9)";
-  ctx.lineWidth = 1.4;
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
   if (o.type === "pool") {
     ctx.translate(0, -bob);
     ctx.strokeStyle = "rgba(210,225,240,0.6)";
+    ctx.lineWidth = 1.4;
     for (let i = 0; i < 3; i++) {
       ctx.beginPath();
       ctx.arc(0, 0, o.r - i * 13, o.spin + i, o.spin + i + 4.6);
       ctx.stroke();
     }
-  } else if (o.type === "pup") {
-    /* hundehvalp i redningskrans */
+    ctx.restore();
+    return;
+  }
+  critterGlow();
+  ctx.lineWidth = 1.5;
+  if (o.type === "pup") {
+    /* hundehvalp i rød-hvid redningskrans */
+    ctx.strokeStyle = "rgba(240,244,252,0.95)";
+    ctx.lineWidth = 7;
     ctx.beginPath();
-    ctx.arc(0, 4, 11, 0, Math.PI * 2);
+    ctx.arc(0, 6, 13, 0, Math.PI * 2);
     ctx.stroke();
-    ctx.strokeStyle = "rgba(224,58,47,0.85)";
-    ctx.lineWidth = 3.4;
+    ctx.strokeStyle = "rgba(224,58,47,0.95)";
     for (let i = 0; i < 4; i++) {
       ctx.beginPath();
-      ctx.arc(0, 4, 11, i * (Math.PI / 2) + 0.25, i * (Math.PI / 2) + 0.95);
+      ctx.arc(0, 6, 13, i * (Math.PI / 2) + 0.3, i * (Math.PI / 2) + 1.0);
       ctx.stroke();
     }
-    ctx.strokeStyle = "rgba(240,244,252,0.9)";
-    ctx.lineWidth = 1.4;
-    ctx.beginPath(); // hoved
-    ctx.arc(0, -4, 6, 0, Math.PI * 2);
+    ctx.lineWidth = 1.5;
+    ctx.fillStyle = "#e0704a";
+    ctx.strokeStyle = INK_DARK;
+    ctx.beginPath(); // lapøerne bag hovedet
+    ctx.ellipse(-8.5, -6, 3.4, 6.5, 0.45, 0, Math.PI * 2);
+    ctx.ellipse(8.5, -6, 3.4, 6.5, -0.45, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
-    ctx.beginPath(); // lapøerne
-    ctx.ellipse(-5.5, -7, 2.2, 4, 0.5, 0, Math.PI * 2);
-    ctx.ellipse(5.5, -7, 2.2, 4, -0.5, 0, Math.PI * 2);
+    ctx.beginPath(); // hovedet
+    ctx.arc(0, -4, 9, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = "rgba(224,58,47,0.9)";
-    ctx.beginPath(); // tungen
-    ctx.ellipse(0, 0.5, 1.4, 2, 0, 0, Math.PI * 2);
-    ctx.fill();
     ctx.fillStyle = "rgba(240,244,252,0.95)";
-    ctx.fillRect(-2.6, -5.4, 1.4, 1.4); // øjne
-    ctx.fillRect(1.2, -5.4, 1.4, 1.4);
+    ctx.beginPath(); // snudeparti
+    ctx.ellipse(0, -0.5, 4.6, 3.6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = INK_DARK;
+    ctx.beginPath(); // næse + øjne
+    ctx.arc(0, -2, 1.6, 0, Math.PI * 2);
+    ctx.arc(-3.4, -6.5, 1.4, 0, Math.PI * 2);
+    ctx.arc(3.4, -6.5, 1.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "rgba(224,58,47,0.95)";
+    ctx.beginPath(); // tungen
+    ctx.ellipse(0, 2.6, 1.8, 2.4, 0, 0, Math.PI);
+    ctx.fill();
   } else if (o.type === "cat") {
-    /* kat på en trækasse */
-    ctx.strokeRect(-9, 2, 18, 9);
-    ctx.beginPath();
-    ctx.moveTo(-9, 6.5);
-    ctx.lineTo(9, 6.5);
-    ctx.stroke();
-    ctx.beginPath(); // krop + hoved
-    ctx.ellipse(0, -3, 6.5, 5, 0, 0, Math.PI * 2);
+    /* gylden kat — stort hoved, spidse ører, knurhår */
+    ctx.fillStyle = "#ffd166";
+    ctx.strokeStyle = INK_DARK;
+    ctx.beginPath(); // ører
+    ctx.moveTo(-8.5, -6);
+    ctx.lineTo(-7, -15);
+    ctx.lineTo(-1.5, -9.5);
+    ctx.moveTo(8.5, -6);
+    ctx.lineTo(7, -15);
+    ctx.lineTo(1.5, -9.5);
     ctx.fill();
     ctx.stroke();
-    ctx.beginPath(); // spidse ører
-    ctx.moveTo(-4.5, -6.5);
-    ctx.lineTo(-3.4, -10.5);
-    ctx.lineTo(-1.4, -7.4);
-    ctx.moveTo(4.5, -6.5);
-    ctx.lineTo(3.4, -10.5);
-    ctx.lineTo(1.4, -7.4);
+    ctx.beginPath(); // hoved
+    ctx.arc(0, -2, 9.5, 0, Math.PI * 2);
+    ctx.fill();
     ctx.stroke();
-    ctx.beginPath(); // hale i sving
-    ctx.moveTo(6, 0);
-    ctx.quadraticCurveTo(11, -2 + bob, 9.5, -7);
+    ctx.fillStyle = "rgba(224,58,47,0.7)";
+    ctx.beginPath(); // indre ører
+    ctx.moveTo(-7, -8);
+    ctx.lineTo(-6.4, -12.5);
+    ctx.lineTo(-3.4, -9.5);
+    ctx.moveTo(7, -8);
+    ctx.lineTo(6.4, -12.5);
+    ctx.lineTo(3.4, -9.5);
+    ctx.fill();
+    ctx.fillStyle = INK_DARK;
+    ctx.beginPath(); // øjne + næse
+    ctx.ellipse(-3.6, -3.5, 1.5, 2, 0, 0, Math.PI * 2);
+    ctx.ellipse(3.6, -3.5, 1.5, 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-1.4, 0.6);
+    ctx.lineTo(1.4, 0.6);
+    ctx.lineTo(0, 2.4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "rgba(240,244,252,0.9)";
+    ctx.lineWidth = 1;
+    ctx.beginPath(); // knurhår
+    ctx.moveTo(-8, 0);
+    ctx.lineTo(-15, -1.5);
+    ctx.moveTo(-8, 2);
+    ctx.lineTo(-15, 2.5);
+    ctx.moveTo(8, 0);
+    ctx.lineTo(15, -1.5);
+    ctx.moveTo(8, 2);
+    ctx.lineTo(15, 2.5);
     ctx.stroke();
-    ctx.fillStyle = "rgba(255,209,102,0.95)";
-    ctx.fillRect(-3.2, -4.4, 1.6, 1.2); // gyldne øjne
-    ctx.fillRect(1.6, -4.4, 1.6, 1.2);
+    ctx.strokeStyle = "#ffd166";
+    ctx.lineWidth = 2.4;
+    ctx.beginPath(); // halen
+    ctx.moveTo(9, 6);
+    ctx.quadraticCurveTo(15, 4 + bob, 13.5, -3);
+    ctx.stroke();
   } else if (o.type === "duck") {
-    /* andemor med to ællinger på række */
-    ctx.strokeStyle = "rgba(255,209,102,0.95)";
-    ctx.fillStyle = "rgba(255,209,102,0.28)";
+    /* gylden andemor med to ællinger */
     for (const [dx, s] of [
-      [-2, 1],
-      [9, 0.6],
-      [16, 0.55],
+      [-4, 1],
+      [10, 0.62],
+      [18, 0.55],
     ]) {
-      ctx.beginPath();
-      ctx.ellipse(dx, 2, 5 * s, 3.6 * s, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffd166";
+      ctx.strokeStyle = INK_DARK;
+      ctx.beginPath(); // krop
+      ctx.ellipse(dx, 2, 7.5 * s, 5.4 * s, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(dx - 3.6 * s, -1.6 * s - 1, 2.2 * s, 0, Math.PI * 2);
+      ctx.beginPath(); // hoved
+      ctx.arc(dx - 5.4 * s, -4.5 * s, 3.6 * s, 0, Math.PI * 2);
+      ctx.fill();
       ctx.stroke();
+      ctx.fillStyle = "#e0704a";
       ctx.beginPath(); // næb
-      ctx.moveTo(dx - 5.6 * s, -1.6 * s - 1);
-      ctx.lineTo(dx - 8 * s, -1.6 * s);
-      ctx.stroke();
+      ctx.moveTo(dx - 8.6 * s, -5 * s);
+      ctx.lineTo(dx - 12.4 * s, -3.6 * s);
+      ctx.lineTo(dx - 8.6 * s, -2.8 * s);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = INK_DARK;
+      ctx.beginPath(); // øje
+      ctx.arc(dx - 5.6 * s, -5.4 * s, 0.9, 0, Math.PI * 2);
+      ctx.fill();
     }
   } else if (o.type === "penguin") {
-    /* pingvin på en lille isflage */
-    ctx.beginPath();
-    ctx.moveTo(-11, 8);
-    ctx.lineTo(-7, 4);
-    ctx.lineTo(8, 4);
-    ctx.lineTo(12, 8);
+    /* pingvin på isflage — sort krop, hvid mave, gult næb */
+    ctx.fillStyle = "rgba(235,242,250,0.9)";
+    ctx.strokeStyle = INK_DARK;
+    ctx.beginPath(); // isflagen
+    ctx.moveTo(-13, 11);
+    ctx.lineTo(-9, 6.5);
+    ctx.lineTo(10, 6.5);
+    ctx.lineTo(14, 11);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
+    ctx.fillStyle = "#0c121c";
+    ctx.strokeStyle = "rgba(240,244,252,0.9)";
     ctx.beginPath(); // krop
-    ctx.ellipse(0, -3, 4.6, 7, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, -3, 6.5, 10, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = "rgba(240,244,252,0.9)";
-    ctx.beginPath(); // hvid mave
-    ctx.ellipse(0, -1.6, 2.6, 4.4, 0, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(240,244,252,0.95)";
+    ctx.beginPath(); // maven
+    ctx.ellipse(0, -1, 3.8, 6.6, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = "rgba(255,209,102,0.95)";
-    ctx.beginPath(); // næb
-    ctx.moveTo(-1.4, -8.4);
-    ctx.lineTo(0, -11);
-    ctx.lineTo(1.4, -8.4);
+    ctx.beginPath(); // øjne
+    ctx.arc(-2.2, -9.5, 1.5, 0, Math.PI * 2);
+    ctx.arc(2.2, -9.5, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = INK_DARK;
+    ctx.beginPath();
+    ctx.arc(-2, -9.3, 0.7, 0, Math.PI * 2);
+    ctx.arc(2.4, -9.3, 0.7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#ffd166";
+    ctx.beginPath(); // næb + fødder
+    ctx.moveTo(-1.6, -7.6);
+    ctx.lineTo(0, -5.4);
+    ctx.lineTo(1.6, -7.6);
     ctx.closePath();
     ctx.fill();
+    ctx.fillRect(-4, 5.4, 3, 1.6);
+    ctx.fillRect(1, 5.4, 3, 1.6);
   } else if (o.type === "turtle") {
-    /* lille skildpadde */
-    ctx.strokeStyle = "rgba(126,224,168,0.95)";
-    ctx.fillStyle = "rgba(126,224,168,0.2)";
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 8.5, 6, 0, 0, Math.PI * 2);
+    /* grøn skildpadde med mønstret skjold */
+    ctx.fillStyle = "#7ee0a8";
+    ctx.strokeStyle = INK_DARK;
+    ctx.beginPath(); // luffer
+    ctx.ellipse(-9, 5, 4, 2.2, 0.5, 0, Math.PI * 2);
+    ctx.ellipse(9, 5, 4, 2.2, -0.5, 0, Math.PI * 2);
+    ctx.ellipse(-9, -4, 4, 2.2, -0.5, 0, Math.PI * 2);
+    ctx.ellipse(9, -4, 4, 2.2, 0.5, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
-    ctx.beginPath(); // skjoldmønster
-    ctx.moveTo(-5, -2);
-    ctx.lineTo(5, -2);
-    ctx.moveTo(-5.5, 2);
-    ctx.lineTo(5.5, 2);
+    ctx.beginPath(); // hoved
+    ctx.arc(0, -10.5, 3.8, 0, Math.PI * 2);
+    ctx.fill();
     ctx.stroke();
-    ctx.beginPath(); // hoved og luffer
-    ctx.arc(10.5, -1, 2.4, 0, Math.PI * 2);
+    ctx.fillStyle = INK_DARK;
+    ctx.beginPath(); // øjne
+    ctx.arc(-1.5, -11, 0.8, 0, Math.PI * 2);
+    ctx.arc(1.5, -11, 0.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#4a9a6e";
+    ctx.strokeStyle = INK_DARK;
+    ctx.beginPath(); // skjoldet
+    ctx.ellipse(0, 0, 8.5, 7.5, 0, 0, Math.PI * 2);
+    ctx.fill();
     ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(-6, 5);
-    ctx.lineTo(-9, 8);
-    ctx.moveTo(6, 5);
-    ctx.lineTo(9, 8);
+    ctx.strokeStyle = "rgba(126,224,168,0.9)";
+    ctx.lineWidth = 1.2;
+    ctx.beginPath(); // mønster
+    ctx.moveTo(-6, -3);
+    ctx.lineTo(6, -3);
+    ctx.moveTo(-7, 1.5);
+    ctx.lineTo(7, 1.5);
+    ctx.moveTo(-2.5, -7);
+    ctx.lineTo(-2.5, 6.5);
+    ctx.moveTo(2.5, -7);
+    ctx.lineTo(2.5, 6.5);
     ctx.stroke();
   } else if (o.type === "seal") {
-    /* sæl der balancerer med en lille bold */
-    ctx.beginPath();
-    ctx.moveTo(-8, 6);
-    ctx.quadraticCurveTo(-6, -4, 0, -6);
-    ctx.quadraticCurveTo(5, -4.5, 7, 6);
+    /* lysegrå sæl med rød bold på snuden */
+    ctx.fillStyle = "rgba(200,215,230,0.95)";
+    ctx.strokeStyle = INK_DARK;
+    ctx.beginPath(); // krop rejst op
+    ctx.moveTo(-10, 9);
+    ctx.quadraticCurveTo(-8, -6, -1, -9);
+    ctx.quadraticCurveTo(6, -7, 8.5, 9);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
-    ctx.beginPath(); // snude + knurhår
-    ctx.moveTo(-2, -6.5);
-    ctx.lineTo(-5, -5.5);
-    ctx.moveTo(-2, -5.5);
-    ctx.lineTo(-5, -4.5);
+    ctx.beginPath(); // luffe
+    ctx.ellipse(6.5, 6, 4.4, 2.2, -0.5, 0, Math.PI * 2);
+    ctx.fill();
     ctx.stroke();
-    ctx.strokeStyle = "rgba(224,58,47,0.9)";
+    ctx.fillStyle = INK_DARK;
+    ctx.beginPath(); // øjne + snude
+    ctx.arc(-3.6, -6.2, 1.2, 0, Math.PI * 2);
+    ctx.arc(1.6, -6.6, 1.2, 0, Math.PI * 2);
+    ctx.arc(-1.2, -8.8, 1.1, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(240,244,252,0.85)";
+    ctx.lineWidth = 1;
+    ctx.beginPath(); // knurhår
+    ctx.moveTo(-3, -8);
+    ctx.lineTo(-8, -8.5);
+    ctx.moveTo(-3, -7);
+    ctx.lineTo(-8, -6.5);
+    ctx.stroke();
+    ctx.fillStyle = "#e03a2f";
     ctx.beginPath(); // bolden
-    ctx.arc(0, -11 - bob * 0.6, 3, 0, Math.PI * 2);
-    ctx.stroke();
+    ctx.arc(-1.2, -14.5 - bob * 0.6, 3.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    ctx.beginPath();
+    ctx.arc(-2.4, -15.6 - bob * 0.6, 1.1, 0, Math.PI * 2);
+    ctx.fill();
   }
   ctx.restore();
 }
