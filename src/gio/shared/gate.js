@@ -9,8 +9,9 @@ import { GIO_CODE } from "./code.js";
  * holder tilfældige forbipasserende ude, intet mere.
  *
  * Husker oplåsningen i 30 dage i localStorage (samme mekanisme som
- * arcade_player_name), og "lås igen"-linket i hjørnet rydder den, så
- * lågen kan testes uden at rydde hele browseren.
+ * arcade_player_name). Der er bevidst INTET synligt log ud-link — det
+ * læste malplaceret. Til test rydder ?lock på en hvilken som helst
+ * /gio-URL oplåsningen og viser lågen igen.
  */
 
 const STORAGE_KEY = "gio_unlocked_until";
@@ -34,27 +35,18 @@ function unlock() {
   }
 }
 
-function lockAgain() {
+/* ?lock: skjult test-håndtag — rydder oplåsningen og viser lågen */
+if (new URLSearchParams(location.search).has("lock")) {
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch {
     /* intet at rydde */
   }
-  location.reload();
+  history.replaceState(null, "", location.pathname);
 }
 
 function codeMatches(input) {
   return input.trim().toLowerCase() === GIO_CODE.trim().toLowerCase();
-}
-
-function mountSignOut() {
-  const link = document.createElement("button");
-  link.type = "button";
-  link.textContent = "lås igen";
-  link.className =
-    "fixed right-3 bottom-3 z-40 cursor-pointer font-mono text-[11px] tracking-wide text-text-dim transition-colors hover:text-text-muted focus-visible:outline-2 focus-visible:outline-accent";
-  link.addEventListener("click", lockAgain);
-  document.body.appendChild(link);
 }
 
 function reveal(main) {
@@ -62,7 +54,6 @@ function reveal(main) {
   if (!reduced) {
     main.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 350, easing: "ease-out" });
   }
-  mountSignOut();
 }
 
 function mountGate(main, onRevealed) {

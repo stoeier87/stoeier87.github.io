@@ -182,6 +182,8 @@ let turnT = 0;
 /* Slutningen */
 let sunT = 0;
 let endingStarted = false;
+let endHearts = [];
+let endHeartAcc = 0;
 
 /* ── Checkpoint (kun etape-start; forlis kan aldrig koste mere) ─────── */
 function saveCheckpoint() {
@@ -665,6 +667,39 @@ function updateTurn(dt) {
 async function updateEnding(dt) {
   sunT = Math.min(1, sunT + dt / 4);
   ship.x += (BASE_W / 2 - ship.x) * Math.min(1, dt);
+  /* en masse hjerter — de stiger op gennem solopgangen */
+  if (endingStarted) {
+    if (reduced) {
+      if (endHearts.length === 0) {
+        for (let i = 0; i < 20; i++) {
+          endHearts.push({
+            x: 20 + Math.random() * (BASE_W - 40),
+            y: 60 + Math.random() * (BASE_H - 140),
+            v: 0,
+            sway: Math.random() * 6,
+            size: 0.6 + Math.random() * 0.9,
+          });
+        }
+      }
+    } else {
+      endHeartAcc += dt * 9;
+      while (endHeartAcc > 1 && endHearts.length < 52) {
+        endHeartAcc -= 1;
+        endHearts.push({
+          x: 12 + Math.random() * (BASE_W - 24),
+          y: BASE_H + 16,
+          v: 26 + Math.random() * 40,
+          sway: Math.random() * 6,
+          size: 0.5 + Math.random() * 1.0,
+        });
+      }
+      for (const hh of endHearts) {
+        hh.y -= hh.v * dt;
+        hh.x += Math.sin(sceneT * 1.3 + hh.sway) * 11 * dt;
+      }
+      endHearts = endHearts.filter((hh) => hh.y > -30);
+    }
+  }
   if (sunT >= 1 && !endingStarted) {
     endingStarted = true;
     /* Beskeden hentes FØRST nu — dynamisk import, egen chunk. Den findes
@@ -832,14 +867,11 @@ function drawObstacle(o, alpha) {
   ctx.restore();
 }
 
-function drawHeart(d, alpha) {
-  const sy = SHIP_Y - (d.y - progressY);
-  if (sy < -40 || sy > BASE_H + 40) return;
+function drawHeartAt(x, y, scale, alpha) {
   ctx.save();
   ctx.globalAlpha = alpha;
-  ctx.translate(d.x, sy);
-  const pulse = reduced ? 1 : 1 + Math.sin(sceneT * 3 + d.ph) * 0.12;
-  ctx.scale(pulse, pulse);
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
   ctx.strokeStyle = "rgba(224,58,47,0.95)";
   ctx.shadowColor = "rgba(224,58,47,0.8)";
   ctx.shadowBlur = 8;
@@ -850,6 +882,13 @@ function drawHeart(d, alpha) {
   ctx.bezierCurveTo(5, -10, 9, -2, 0, 6);
   ctx.stroke();
   ctx.restore();
+}
+
+function drawHeart(d, alpha) {
+  const sy = SHIP_Y - (d.y - progressY);
+  if (sy < -40 || sy > BASE_H + 40) return;
+  const pulse = reduced ? 1 : 1 + Math.sin(sceneT * 3 + d.ph) * 0.12;
+  drawHeartAt(d.x, sy, pulse, alpha);
 }
 
 function drawShip() {
@@ -870,7 +909,9 @@ function drawShip() {
     ctx.rotate((1.3 - founderT) * 0.9);
   }
 
-  /* langskib set ovenfra — tynde streger, spidst i begge ender */
+  /* langskib set ovenfra — og umiskendeligt et VIKINGESKIB: dragehoved
+     i stævnen, krøllet agterstavn, skjolde langs rælingen, årer ude og
+     klinkbyggede planker */
   ctx.strokeStyle = "rgba(240,244,252,0.95)";
   ctx.fillStyle = "rgba(12,18,28,0.9)";
   ctx.lineWidth = 1.6;
@@ -883,19 +924,82 @@ function drawShip() {
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
-  ctx.beginPath(); // planker
+  ctx.beginPath(); // klinkbyggede planker
   ctx.moveTo(-7, -12);
   ctx.quadraticCurveTo(0, -16, 7, -12);
   ctx.moveTo(-8, 2);
   ctx.quadraticCurveTo(0, -2, 8, 2);
+  ctx.moveTo(-7, 14);
+  ctx.quadraticCurveTo(0, 10, 7, 14);
   ctx.stroke();
 
-  /* sejlet fanger etapens lys */
+  /* dragehovedet: hals der rejser sig af stævnen og krøller */
+  ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  ctx.moveTo(0, -29);
+  ctx.quadraticCurveTo(2, -37, 6, -40);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(4.6, -41.5, 2.6, -0.6, Math.PI * 1.5);
+  ctx.stroke();
+  ctx.beginPath(); // gab
+  ctx.moveTo(6.6, -43.4);
+  ctx.lineTo(9.4, -44.6);
+  ctx.stroke();
+  /* agterstavnens krølle */
+  ctx.beginPath();
+  ctx.moveTo(0, 29);
+  ctx.quadraticCurveTo(-1.5, 35, -4, 37);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(-4.5, 35, 2.2, 0.8, Math.PI * 2.1);
+  ctx.stroke();
+
+  /* skjolde langs begge rælinger */
+  const SHIELD_Y = [-17, -8, 1, 10, 19];
+  const HULL_W = [9.8, 11, 11.4, 10.8, 9.2];
+  ctx.lineWidth = 1.2;
+  for (let i = 0; i < SHIELD_Y.length; i++) {
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.arc(side * HULL_W[i], SHIELD_Y[i], 3.1, 0, Math.PI * 2);
+      ctx.fillStyle = i % 2 === 0 ? "rgba(224,58,47,0.55)" : "rgba(20,28,40,0.95)";
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(side * HULL_W[i], SHIELD_Y[i], 0.8, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
+  /* årerne, med et roligt tag i vandet */
+  ctx.lineWidth = 1.1;
+  const stroke = frozen || reduced ? 0 : Math.sin(sceneT * 2.2) * 3;
+  for (const oy of [-6, 6, 16]) {
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(side * 10.5, oy);
+      ctx.lineTo(side * (19 + stroke * 0.4), oy + 8 + stroke);
+      ctx.stroke();
+    }
+  }
+
+  /* råsejlet fanger etapens lys — og bærer vikingesejlets striber */
+  const sailA = ctx.globalAlpha;
   ctx.fillStyle = lerpHex(s.tint, "#ffffff", 0.15);
-  ctx.globalAlpha *= 0.32;
-  ctx.fillRect(-13, -6, 26, 13);
-  ctx.globalAlpha = invulnT > 0 && Math.floor(sceneT * 12) % 2 === 0 ? 0.45 : 1;
-  ctx.strokeRect(-13, -6, 26, 13);
+  ctx.globalAlpha = sailA * 0.34;
+  ctx.fillRect(-14, -7, 28, 14);
+  ctx.globalAlpha = sailA * 0.42;
+  ctx.fillStyle = "rgba(224,58,47,0.8)";
+  for (let sx = -14; sx < 14; sx += 8) {
+    ctx.fillRect(sx, -7, 4, 14);
+  }
+  ctx.globalAlpha = sailA;
+  ctx.strokeRect(-14, -7, 28, 14);
+  ctx.beginPath(); // ræen
+  ctx.moveTo(-15, -7);
+  ctx.lineTo(15, -7);
+  ctx.stroke();
   ctx.beginPath();
   ctx.arc(0, 0, 1.6, 0, Math.PI * 2);
   ctx.stroke();
@@ -912,7 +1016,7 @@ function drawShip() {
   }
 
   /* hun er ombord på hjemturen — en lille skikkelse agter */
-  if (lightT > 0.6) drawFigureShape(0, 20, 0.34, 0);
+  if (lightT > 0.6) drawFigureShape(0, 16, 0.28, 0);
 
   ctx.restore();
 
@@ -929,38 +1033,143 @@ function drawShip() {
   }
 }
 
-/* Silhuetten med det mørke hår — ingen ansigtstræk, uanset størrelse */
+/* Prinsessen — mørkt, flagrende hår, diadem med små sten, taljeret
+   kjole med foldefald og løftet søm når hun går. Aldrig ansigtstræk,
+   uanset størrelse. Hun bærer en svag varm glød: det er hende, der er
+   lyset, længe før mekanikken siger det højt. */
 function drawFigureShape(x, y, scale, walk) {
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(scale, scale);
-  ctx.strokeStyle = "rgba(240,244,252,0.9)";
-  ctx.fillStyle = "rgba(8,12,18,0.95)";
-  ctx.lineWidth = 1.6 / Math.max(scale, 0.35);
-  const sway = Math.sin(walk) * 2.4;
-  /* hår — mørkt, falder forbi skuldrene */
+  const lw = 1.5 / Math.max(scale, 0.34);
+  const sway = Math.sin(walk) * 2;
+  const step = Math.sin(walk * 2) * 1.4;
+
+  /* den varme glød omkring hende */
+  const halo = ctx.createRadialGradient(0, -8, 2, 0, -8, 46);
+  halo.addColorStop(0, "rgba(255,207,122,0.16)");
+  halo.addColorStop(1, "rgba(255,207,122,0)");
+  ctx.fillStyle = halo;
   ctx.beginPath();
-  ctx.moveTo(-6, -26);
-  ctx.quadraticCurveTo(-9, -12, -6, -2);
-  ctx.lineTo(6, -2);
-  ctx.quadraticCurveTo(9, -12, 6, -26);
-  ctx.quadraticCurveTo(0, -33, -6, -26);
+  ctx.arc(0, -8, 46, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "rgba(242,246,252,0.92)";
+  ctx.fillStyle = "rgba(8,12,18,0.96)";
+  ctx.lineWidth = lw;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+
+  /* håret bagest: langt og mørkt, ned over ryggen til taljen, med et
+     blødt sving efter gangen */
+  ctx.beginPath();
+  ctx.moveTo(-6.5, -36);
+  ctx.quadraticCurveTo(-11, -26, -9.5, -14);
+  ctx.quadraticCurveTo(-9 - sway, -4, -6 - sway, 3);
+  ctx.quadraticCurveTo(-2, 5, 0, 2);
+  ctx.quadraticCurveTo(2, 5, 6 + sway * 0.6, 3);
+  ctx.quadraticCurveTo(9 + sway * 0.6, -4, 9.5, -14);
+  ctx.quadraticCurveTo(11, -26, 6.5, -36);
+  ctx.quadraticCurveTo(0, -42, -6.5, -36);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
-  /* krop og ben — enkle streger */
+  /* hårets indre bølgelinjer */
   ctx.beginPath();
-  ctx.moveTo(0, -2);
-  ctx.lineTo(0, 14);
-  ctx.moveTo(0, 14);
-  ctx.lineTo(-4 + sway, 26);
-  ctx.moveTo(0, 14);
-  ctx.lineTo(4 - sway, 26);
-  ctx.moveTo(0, 4);
-  ctx.lineTo(-6, 12);
-  ctx.moveTo(0, 4);
-  ctx.lineTo(6, 12);
+  ctx.moveTo(-6, -30);
+  ctx.quadraticCurveTo(-7.5, -18, -5.5 - sway * 0.5, -6);
+  ctx.moveTo(6, -30);
+  ctx.quadraticCurveTo(7.5, -18, 5.5 + sway * 0.4, -6);
   ctx.stroke();
+
+  /* hovedet som silhuet i håret */
+  ctx.beginPath();
+  ctx.ellipse(0, -32.5, 5.2, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  /* diademet: fin gylden bue med tre spidser og små sten */
+  ctx.strokeStyle = "rgba(255,209,102,0.95)";
+  ctx.fillStyle = "rgba(255,209,102,0.95)";
+  ctx.lineWidth = lw * 0.85;
+  ctx.beginPath();
+  ctx.moveTo(-4.6, -37.5);
+  ctx.quadraticCurveTo(0, -39.5, 4.6, -37.5);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-3.2, -38.2);
+  ctx.lineTo(-2.6, -41);
+  ctx.moveTo(0, -39);
+  ctx.lineTo(0, -42.6);
+  ctx.moveTo(3.2, -38.2);
+  ctx.lineTo(2.6, -41);
+  ctx.stroke();
+  for (const [gx, gy] of [
+    [-2.6, -41.4],
+    [0, -43.1],
+    [2.6, -41.4],
+  ]) {
+    ctx.beginPath();
+    ctx.arc(gx, gy, 0.55, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  /* hals, skuldre og taljeret liv */
+  ctx.strokeStyle = "rgba(242,246,252,0.92)";
+  ctx.fillStyle = "rgba(8,12,18,0.96)";
+  ctx.lineWidth = lw;
+  ctx.beginPath();
+  ctx.moveTo(-1.4, -26.5);
+  ctx.lineTo(-1.4, -24);
+  ctx.moveTo(1.4, -26.5);
+  ctx.lineTo(1.4, -24);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-6.5, -22.5);
+  ctx.quadraticCurveTo(0, -25.5, 6.5, -22.5);
+  ctx.quadraticCurveTo(5, -14, 3.6, -9);
+  ctx.lineTo(-3.6, -9);
+  ctx.quadraticCurveTo(-5, -14, -6.5, -22.5);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  /* armene: den ene løfter sømmen let, den anden svinger med */
+  ctx.beginPath();
+  ctx.moveTo(-6, -21);
+  ctx.quadraticCurveTo(-9.5, -14, -8.5 + sway * 0.5, -5.5);
+  ctx.moveTo(6, -21);
+  ctx.quadraticCurveTo(9.5, -15, 8, -7.5);
+  ctx.quadraticCurveTo(7.4, -6, 6.4, -5.8);
+  ctx.stroke();
+
+  /* kjolen: flarer fra taljen til en svungen søm; foldefald indeni,
+     og sømmen løfter sig lidt i den side, hun lige har taget skridtet */
+  ctx.beginPath();
+  ctx.moveTo(-3.6, -9);
+  ctx.quadraticCurveTo(-11, 6, -13.5 + sway * 0.6, 22 - step);
+  ctx.quadraticCurveTo(-6, 26.5 + sway * 0.4, 0, 25.2);
+  ctx.quadraticCurveTo(6, 26.5 - sway * 0.4, 13.5 + sway * 0.6, 22 + step);
+  ctx.quadraticCurveTo(11, 6, 3.6, -9);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-4.5, -4);
+  ctx.quadraticCurveTo(-6.5, 10, -6 + sway * 0.4, 23.5);
+  ctx.moveTo(0.5, -4);
+  ctx.quadraticCurveTo(0, 10, 0.5, 25);
+  ctx.moveTo(5, -4);
+  ctx.quadraticCurveTo(7, 10, 6.5 + sway * 0.4, 24);
+  ctx.stroke();
+
+  /* en fodspids under sømmen, skiftevis, når hun går */
+  if (Math.abs(step) > 0.5) {
+    ctx.beginPath();
+    ctx.moveTo(step > 0 ? -3.5 : 3.5, 25.8);
+    ctx.lineTo(step > 0 ? -6 : 6, 26.6);
+    ctx.stroke();
+  }
   ctx.restore();
 }
 
@@ -1231,6 +1440,11 @@ function render() {
     g.addColorStop(1, "rgba(224,58,47,0)");
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, BASE_W, BASE_H);
+    for (const hh of endHearts) {
+      const a =
+        Math.max(0, Math.min(1, (BASE_H - hh.y) / 90)) * Math.max(0.25, Math.min(1, hh.y / 120));
+      drawHeartAt(hh.x, hh.y, hh.size, reduced ? 0.5 : a);
+    }
   }
 
   /* ækvator-bleach */

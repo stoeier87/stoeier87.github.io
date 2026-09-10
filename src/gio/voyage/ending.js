@@ -11,9 +11,7 @@
  * Tomme linjer bliver til afsnit på skærmen. Teksten skrives langsomt
  * frem, uden knap og uden timer.
  */
-const ENDING_MESSAGE = `PLADSHOLDER — her skriver Tobias selv beskeden.
-
-Den vises først, når hele rejsen er sejlet: derned, og hele den lange vej hjem.`;
+const ENDING_MESSAGE = `Te Necesito, Mi Gio`;
 
 export function getEndingMessage() {
   return ENDING_MESSAGE;
