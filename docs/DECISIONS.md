@@ -761,3 +761,39 @@ markup doesn't automatically answer it.**
   change happened and why it's plausible.
 
 ---
+
+## ADR-031 — Gio pensamientos publish directly to `gh-pages`, outside the ladder
+
+**Decided:** 2026-09-10
+**Status:** active
+
+`/gio/thoughts/` loads its entries at runtime from `../pensamientos.json` instead of bundling
+them, and a dedicated workflow (`gio-pensamientos.yml`) publishes exactly that one file —
+`content/gio/published.json`, copied to `gio/pensamientos.json` and `stage/gio/pensamientos.json`
+on `gh-pages` — on pushes to the `gio-content` branch. The bundled `published.json` stays as seed
+and fallback (dev server, cold `gh-pages`).
+
+**Why.** `/gio` is a private corner with a daily-content cadence: the owner writes a thought in a
+Claude session, and it should be live minutes later. The ladder's whole premise — merge to `main`
+is the deploy, gated by a second person's approval — is right for code and wrong for this: a
+daily diary entry cannot wait on `stage` being releasable that day, nor on a second person
+clicking approve every evening. Decoupling content from code removes both couplings. The date
+shown is data (`date` in the JSON, the day the thought was written), never derived from when a
+run happened, so publish timing can't distort it.
+
+**The boundary, stated sharply:** this workflow touches exactly one file on `gh-pages` and builds
+nothing. Any change to `/gio`'s _code_ still rides the ladder like everything else. The workflow
+joins the mandatory `gh-pages-write` concurrency group (`cancel-in-progress: false`), per §1's
+rule that anything new writing `gh-pages` must.
+
+**Privacy trade-off, accepted:** the JSON sits at a stable, unlinked, noindexed path instead of
+inside a hashed bundle. The gate is client-side either way (a deliberate låge, not security —
+ADR's original /gio premise), so the effective protection level is unchanged. Nothing links to
+the file; `/gio` stays out of the sitemap and carries `noindex` throughout. If analytics is ever
+wired up (the dead `gtagPlugin` in `vite.config.js`), `/gio/**` must be explicitly excluded — a
+guard note now sits at `GTAG_ID`.
+
+**Approved by both:** the integrator's blessing for the ladder exception was given explicitly
+(2026-09-10, relayed by the owner) — this is the record of it.
+
+---

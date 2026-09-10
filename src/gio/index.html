@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gio</title>
+    <!-- Privat side: må aldrig optræde i søgeresultater. Bevidst IKKE i
+         robots.txt — en disallow-regel ville forhindre crawlere i at læse
+         netop dette tag. Udeladt af sitemap.xml i vite.config.js, og intet
+         andet sted på sitet linker hertil. Alt synligt er spansk — det er
+         hendes sprog; kun hans indlæg under /thoughts er engelske. -->
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <meta name="st:common-head" />
+    <!-- Ingen side-CSS (regel 10) — utilities + det delte lag er hele kaskaden. -->
+    <meta name="st:common-foot" />
+  </head>
+  <body class="min-h-screen overflow-hidden bg-bg-deep font-mono text-ink">
+    <!-- Varm bund under det hele — og fallback hvis WebGL fejler -->
+    <div
+      aria-hidden="true"
+      class="pointer-events-none fixed inset-0 bg-[radial-gradient(140%_95%_at_50%_118%,color-mix(in_srgb,var(--color-hall-city-light)_38%,transparent),color-mix(in_srgb,var(--color-rank-gold)_16%,transparent)_34%,color-mix(in_srgb,var(--color-red)_7%,transparent)_52%,transparent_72%)]"
+    ></div>
+
+    <!-- Solen som en RIGTIG klode: samme three.js-univers som forsiden af
+         stoeier.dk (<st-planet-field>, regel 12 — komponeret, ikke håndrullet).
+         Alle andre steder er solen et fjernt punkt; her fylder den himlen,
+         for i det her univers er hun lyset. `driven`: gio.js ejer sidens ene
+         rAF og ticker feltet selv. -->
+    <st-planet-field id="bg" driven aria-hidden="true" class="pointer-events-none fixed inset-0">
+    </st-planet-field>
+
+    <!-- Hjerterne der svæver op gennem sollyset — rør ét, og det springer
+         ud i flere. Tegnes af gio.js i samme rAF. -->
+    <canvas id="hearts" class="pointer-events-none fixed inset-0 h-full w-full" aria-hidden="true">
+    </canvas>
+
+    <!-- Indholdet er skjult bag kodelågen i shared/gate.js, også ved
+         direkte links til undersiderne. -->
+    <main
+      class="relative flex min-h-screen flex-col items-center justify-center gap-10 px-6 text-center"
+      hidden
+    >
+      <!-- Spejler forsidens typografi: navnet i displayfonten, stort og
+           centreret — parallellen ER pointen. -->
+      <header class="flex flex-col items-center gap-3">
+        <h1>GIO</h1>
+        <p class="text-sm tracking-widest text-text-muted lowercase">el sol de mi universo</p>
+        <p class="text-xs tracking-wide text-text-dim lowercase">
+          todo aquí lleva desde siempre orbitando alrededor de ti
+        </p>
+      </header>
+
+      <nav class="flex w-full max-w-sm flex-col gap-5" aria-label="Gio">
+        <a
+          href="./thoughts/"
+          class="flex items-center justify-center rounded-card border-2 border-border bg-card-bg px-8 py-9 text-lg tracking-widest uppercase backdrop-blur-[3px] transition-colors hover:border-border-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+        >
+          Pensamientos
+        </a>
+        <a
+          href="./voyage/"
+          class="flex items-center justify-center rounded-card border-2 border-border bg-card-bg px-8 py-9 text-lg tracking-widest uppercase backdrop-blur-[3px] transition-colors hover:border-border-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+        >
+          El Barco del Amor
+        </a>
+      </nav>
+    </main>
+    <script type="module" src="./gio.js"></script>
+  </body>
+</html>

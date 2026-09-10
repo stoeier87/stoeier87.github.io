@@ -1,0 +1,46 @@
+name: Publish Gio Pensamientos
+
+# INDHOLD, IKKE KODE — den ene bevidste undtagelse fra stigen (ADR-031).
+#
+# Publicerer content/gio/published.json som pensamientos.json direkte til
+# gh-pages på både prod- og stage-stien, udenom stage → main. Dermed kan
+# en ny tanke gå live på stoeier.dk/gio/thoughts/ uden kode-release og
+# uden PR-godkendelse: thoughts.js henter filen på runtime.
+#
+# Grænsen er skarp: denne workflow rører præcis ÉN fil på gh-pages og
+# bygger intet. Al kode følger stadig stigen. Kører kun fra branchen
+# gio-content, som kun indeholder indholdsopdateringer.
+
+on:
+  push:
+    branches: [gio-content]
+    paths: [content/gio/published.json]
+  workflow_dispatch:
+
+# Mandatory (docs/CLAUDE.md §1): alt der skriver gh-pages deler denne
+# gruppe — én branch, mange destination dirs, afbryd aldrig en skrivning.
+concurrency:
+  group: gh-pages-write
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Læg den ene fil klar til begge trin
+        run: |
+          mkdir -p out/gio out/stage/gio
+          cp content/gio/published.json out/gio/pensamientos.json
+          cp content/gio/published.json out/stage/gio/pensamientos.json
+
+      - name: Publish pensamientos.json
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./out
+          keep_files: true
