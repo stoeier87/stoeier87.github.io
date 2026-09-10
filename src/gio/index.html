@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="da">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gio</title>
+    <!-- Privat side: må aldrig optræde i søgeresultater. Bevidst IKKE i
+         robots.txt — en disallow-regel ville forhindre crawlere i at læse
+         netop dette tag. Udeladt af sitemap.xml i vite.config.js, og intet
+         andet sted på sitet linker hertil. -->
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <meta name="st:common-head" />
+    <!-- Ingen side-CSS (regel 10) — utilities + det delte lag er hele kaskaden. -->
+    <meta name="st:common-foot" />
+  </head>
+  <body class="min-h-screen bg-bg-deep font-mono text-ink">
+    <!-- Indholdet er skjult bag kodelågen i shared/gate.js, også ved
+         direkte links til undersiderne. -->
+    <main class="flex min-h-screen flex-col items-center justify-center gap-6 px-6" hidden>
+      <p class="text-xs tracking-loose text-text-dim uppercase">Gio</p>
+      <nav class="flex w-full max-w-sm flex-col gap-5" aria-label="Gio">
+        <a
+          href="./dagbog/"
+          class="flex items-center justify-center gap-4 rounded-card border-2 border-border bg-card-bg px-8 py-10 text-xl tracking-widest uppercase transition-colors hover:border-border-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+        >
+          <i class="fa-regular fa-envelope text-base text-accent" aria-hidden="true"></i>
+          Dagbog
+        </a>
+        <a
+          href="./spil/"
+          class="flex items-center justify-center gap-4 rounded-card border-2 border-border bg-card-bg px-8 py-10 text-xl tracking-widest uppercase transition-colors hover:border-border-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+        >
+          <i class="fa-solid fa-gamepad text-base text-accent" aria-hidden="true"></i>
+          Spil
+        </a>
+      </nav>
+    </main>
+    <script type="module" src="./gio.js"></script>
+  </body>
+</html>

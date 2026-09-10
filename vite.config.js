@@ -85,6 +85,10 @@ function sitemapPlugin() {
         .filter((route) => route !== "/scoreboard/") // guard:allow-absolute
         // hall-of-stars is live Firebase data like the scoreboard — same reasoning
         .filter((route) => route !== "/scoreboard/hall-of-stars/") // guard:allow-absolute
+        // /gio and everything under it is private (noindex on every page,
+        // no robots.txt rule on purpose — crawlers must be able to READ the
+        // noindex tag, so the pages stay out of the sitemap instead)
+        .filter((route) => !route.startsWith("/gio/")) // guard:allow-absolute
         // the comet-pong stub is a redirect, not a page worth indexing
         .filter((route) => route !== "/arcade/comet-pong/") // guard:allow-absolute
         .sort();
