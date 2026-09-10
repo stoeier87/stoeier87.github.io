@@ -2,64 +2,8 @@
   "lastRun": null,
   "entries": [
     {
-      "date": "2026-08-27",
-      "body": "PLADSHOLDER · Denne tekst udskiftes før lancering. Besked nummer 1 af 15 i prøvearkivet."
-    },
-    {
-      "date": "2026-08-28",
-      "body": "PLADSHOLDER · Denne tekst udskiftes før lancering. Besked nummer 2 af 15 i prøvearkivet."
-    },
-    {
-      "date": "2026-08-29",
-      "body": "PLADSHOLDER · Denne tekst udskiftes før lancering. Besked nummer 3 af 15 i prøvearkivet."
-    },
-    {
-      "date": "2026-08-30",
-      "body": "PLADSHOLDER · Denne tekst udskiftes før lancering.\n\nEt lidt længere afsnit nummer to, så layoutet også er prøvet med beskeder i flere afsnit. Linjerne skal kunne ånde, selv på en lille skærm."
-    },
-    {
-      "date": "2026-08-31",
-      "body": "PLADSHOLDER · Denne tekst udskiftes før lancering. Besked nummer 5 af 15 i prøvearkivet."
-    },
-    {
-      "date": "2026-09-01",
-      "body": "PLADSHOLDER · Denne tekst udskiftes før lancering. Besked nummer 6 af 15 i prøvearkivet."
-    },
-    {
-      "date": "2026-09-02",
-      "body": "PLADSHOLDER · Denne tekst udskiftes før lancering. Besked nummer 7 af 15 i prøvearkivet."
-    },
-    {
-      "date": "2026-09-03",
-      "body": "PLADSHOLDER · Denne tekst udskiftes før lancering.\nEn linje mere i samme afsnit — et blødt linjeskift, ikke et nyt afsnit."
-    },
-    {
-      "date": "2026-09-04",
-      "body": "PLADSHOLDER · Denne tekst udskiftes før lancering. Besked nummer 9 af 15 i prøvearkivet."
-    },
-    {
-      "date": "2026-09-05",
-      "body": "PLADSHOLDER · Denne tekst udskiftes før lancering. Besked nummer 10 af 15 i prøvearkivet."
-    },
-    {
-      "date": "2026-09-06",
-      "body": "PLADSHOLDER · Denne tekst udskiftes før lancering. Besked nummer 11 af 15 i prøvearkivet."
-    },
-    {
-      "date": "2026-09-07",
-      "body": "PLADSHOLDER · Denne tekst udskiftes før lancering.\n\nAndet afsnit.\n\nTredje afsnit, kort."
-    },
-    {
-      "date": "2026-09-08",
-      "body": "PLADSHOLDER · Denne tekst udskiftes før lancering. Besked nummer 13 af 15 i prøvearkivet."
-    },
-    {
-      "date": "2026-09-09",
-      "body": "PLADSHOLDER · Denne tekst udskiftes før lancering. Besked nummer 14 af 15 i prøvearkivet."
-    },
-    {
       "date": "2026-09-10",
-      "body": "PLADSHOLDER · Denne tekst udskiftes før lancering. Besked nummer 15 af 15 i prøvearkivet."
+      "body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed sailing across the ocean of my mind, I keep finding you on every horizon.\n\nBla bla placeholder — this is the first entry, published today, so the feed can be validated. Real thoughts replace this one."
     }
   ]
 }

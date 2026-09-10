@@ -35,7 +35,7 @@ const CHECKPOINT_KEY = "gio_voyage_checkpoint";
    hjemrejsen (etape 4→0). Farver lerpes kontinuerligt hen over grænserne. */
 const STAGES = [
   {
-    name: "THE NORTH SEA",
+    name: "EL MAR DEL NORTE",
     deep: "#26323c",
     lite: "#3b4a52",
     tint: "#9fb4c4",
@@ -47,7 +47,7 @@ const STAGES = [
     hearts: 3.0,
   },
   {
-    name: "THE ATLANTIC",
+    name: "EL ATLÁNTICO",
     deep: "#132b4e",
     lite: "#1e416f",
     tint: "#7fa8d8",
@@ -59,7 +59,7 @@ const STAGES = [
     hearts: 3.0,
   },
   {
-    name: "THE EQUATOR",
+    name: "EL ECUADOR",
     deep: "#3f7187",
     lite: "#8fc0ca",
     tint: "#f2ead2",
@@ -72,7 +72,7 @@ const STAGES = [
     hearts: 3.0,
   },
   {
-    name: "CAPE HORN",
+    name: "CABO DE HORNOS",
     deep: "#04070c",
     lite: "#0f171f",
     tint: "#5a6b7a",
@@ -85,7 +85,7 @@ const STAGES = [
     hearts: 3.6,
   },
   {
-    name: "THE CHILEAN COAST",
+    name: "LA COSTA CHILENA",
     deep: "#274757",
     lite: "#4a7a86",
     tint: "#ffcf7a",
@@ -97,6 +97,19 @@ const STAGES = [
     hearts: 3.2,
   },
 ];
+
+/* Talebobler fra skibet — hans egne replikker, tre ud og tre hjem,
+   med hendes navn vævet ind hvor det falder naturligt ("flaca" og
+   "mi valquiria" beholder deres pladser). Én pr. ben, vist ~5 s. */
+const BUBBLES = {
+  0: "¡Necesito cruzar el Pacífico por un beso tuyo, Gio!",
+  2: "Necesito más completos que remos... pero más a ti, flaca.",
+  4: "Zarpé sin brújula: mi corazón siempre te necesitó, Gio.",
+  5: "Necesito llevarte a Kattegat, Gio, ¡los dioses se enamorarán!",
+  7: "Necesito tu risa más que el viento, mi valquiria.",
+  9: "Solo necesito una cosa, Gio: ¡que zarpes conmigo otra vez!",
+};
+const BUBBLE_P = { 0: 0.6, 2: 0.42, 4: 0.16, 5: 0.4, 7: 0.44, 9: 0.5 };
 
 const stageForLeg = (leg) => (leg < 5 ? leg : 9 - leg);
 const isHomebound = (leg) => leg >= 5;
@@ -115,102 +128,122 @@ const SIGHTS = [
       p: 0.07,
       kind: "coast",
       side: 1,
-      label: "DENMARK, ASTERN",
-      place: "DENMARK",
+      label: "DINAMARCA, A POPA",
+      place: "DINAMARCA",
       houses: true,
       gulls: true,
     },
-    { p: 0.45, kind: "lighthouse", side: -1, label: "A LIGHTHOUSE IN THE FOG" },
+    { p: 0.45, kind: "lighthouse", side: -1, label: "UN FARO EN LA NIEBLA" },
     {
       p: 0.82,
       kind: "coast",
       side: 1,
-      label: "THE WHITE CLIFFS OF DOVER",
+      label: "LOS ACANTILADOS BLANCOS DE DOVER",
       place: "DOVER",
       cliffs: true,
     },
   ],
   [
-    { p: 0.2, kind: "island", side: -1, label: "THE AZORES", place: "AZORES", peaks: true },
-    { p: 0.52, kind: "ship", side: 1, label: "A FREIGHTER, OUTWARD BOUND", vyw: -150 },
+    { p: 0.2, kind: "island", side: -1, label: "LAS AZORES", place: "AZORES", peaks: true },
+    { p: 0.52, kind: "ship", side: 1, label: "UN CARGUERO, RUMBO AL SUR", vyw: -150 },
     {
       p: 0.85,
       kind: "island",
       side: 1,
-      label: "THE CANARY ISLANDS",
+      label: "LAS ISLAS CANARIAS",
       place: "CANARIAS",
       peaks: true,
     },
   ],
   [
-    { p: 0.16, kind: "island", side: -1, label: "CAPE VERDE", place: "CABO VERDE", palms: true },
-    { p: 0.62, kind: "dolphins", side: 0, label: "DOLPHINS OFF THE BOW" },
-    { p: 0.88, kind: "coast", side: 1, label: "THE COAST OF BRAZIL", place: "BRASIL", palms: true },
+    { p: 0.16, kind: "island", side: -1, label: "CABO VERDE", place: "CABO VERDE", palms: true },
+    { p: 0.62, kind: "dolphins", side: 0, label: "DELFINES EN LA PROA" },
+    { p: 0.88, kind: "coast", side: 1, label: "LA COSTA DE BRASIL", place: "BRASIL", palms: true },
   ],
   [
-    { p: 0.28, kind: "island", side: -1, label: "THE FALKLANDS", place: "FALKLANDS" },
-    { p: 0.52, kind: "aurora", side: 0, label: "THE SOUTHERN LIGHTS" },
-    { p: 0.84, kind: "horn", side: 1, label: "CAPE HORN", place: "CABO DE HORNOS" },
+    { p: 0.28, kind: "island", side: -1, label: "LAS MALVINAS", place: "MALVINAS" },
+    { p: 0.52, kind: "aurora", side: 0, label: "LA AURORA AUSTRAL" },
+    { p: 0.84, kind: "horn", side: 1, label: "CABO DE HORNOS", place: "CABO DE HORNOS" },
   ],
   [
-    { p: 0.26, kind: "dolphins", side: 0, label: "PELICANS OFF THE COAST", pel: true },
-    { p: 0.52, kind: "ship", side: -1, label: "FISHING BOATS OF QUINTAY", vyw: -25, fishing: true },
+    { p: 0.26, kind: "dolphins", side: 0, label: "PELÍCANOS EN LA COSTA", pel: true },
+    {
+      p: 0.52,
+      kind: "ship",
+      side: -1,
+      label: "LOS PESCADORES DE QUINTAY",
+      vyw: -25,
+      fishing: true,
+    },
   ],
   [
     {
       p: 0.24,
       kind: "ship",
       side: 1,
-      label: "THE FISHING BOATS WAVE YOU OFF",
+      label: "LOS PESCADORES SE DESPIDEN",
       vyw: -20,
       fishing: true,
     },
-    { p: 0.66, kind: "dolphins", side: 0, label: "DOLPHINS, CELEBRATING" },
+    { p: 0.66, kind: "dolphins", side: 0, label: "DELFINES DE FIESTA" },
   ],
   [
-    { p: 0.26, kind: "horn", side: -1, label: "CAPE HORN, ONE LAST TIME", place: "CABO DE HORNOS" },
-    { p: 0.6, kind: "aurora", side: 0, label: "THE SOUTHERN LIGHTS, FOR HER" },
+    {
+      p: 0.26,
+      kind: "horn",
+      side: -1,
+      label: "CABO DE HORNOS, UNA ÚLTIMA VEZ",
+      place: "CABO DE HORNOS",
+    },
+    { p: 0.6, kind: "aurora", side: 0, label: "LA AURORA AUSTRAL, PARA ELLA" },
   ],
   [
     {
       p: 0.24,
       kind: "coast",
       side: -1,
-      label: "THE COAST OF BRAZIL",
+      label: "LA COSTA DE BRASIL",
       place: "BRASIL",
       palms: true,
     },
-    { p: 0.68, kind: "dolphins", side: 0, label: "FLYING FISH", fly: true },
+    { p: 0.68, kind: "dolphins", side: 0, label: "PECES VOLADORES", fly: true },
   ],
   [
     {
       p: 0.22,
       kind: "island",
       side: 1,
-      label: "THE CANARY ISLANDS",
+      label: "LAS ISLAS CANARIAS",
       place: "CANARIAS",
       peaks: true,
     },
-    { p: 0.56, kind: "ship", side: -1, label: "A FREIGHTER, HOMEWARD BOUND", vyw: -150 },
-    { p: 0.86, kind: "island", side: -1, label: "THE AZORES AGAIN", place: "AZORES", peaks: true },
+    { p: 0.56, kind: "ship", side: -1, label: "UN CARGUERO, RUMBO A CASA", vyw: -150 },
+    {
+      p: 0.86,
+      kind: "island",
+      side: -1,
+      label: "LAS AZORES OTRA VEZ",
+      place: "AZORES",
+      peaks: true,
+    },
   ],
   [
     {
       p: 0.2,
       kind: "coast",
       side: -1,
-      label: "THE WHITE CLIFFS AGAIN",
+      label: "LOS ACANTILADOS OTRA VEZ",
       place: "DOVER",
       cliffs: true,
     },
-    { p: 0.5, kind: "lighthouse", side: 1, label: "THE LIGHTHOUSE, STILL BURNING" },
+    { p: 0.5, kind: "lighthouse", side: 1, label: "EL FARO, TODAVÍA ENCENDIDO" },
     { p: 0.76, kind: "sea", label: "KATTEGAT" },
     {
       p: 0.88,
       kind: "coast",
       side: 1,
-      label: "DENMARK AHEAD",
-      place: "DENMARK",
+      label: "DINAMARCA A LA VISTA",
+      place: "DINAMARCA",
       houses: true,
       gulls: true,
     },
@@ -283,6 +316,9 @@ let sights = []; // aktive seværdigheder
 let sightQueue = []; // benets endnu ikke nåede seværdigheder
 let captionText = "";
 let captionT = 0;
+let bubbleLines = [];
+let bubbleT = 0;
+let bubbleDone = false;
 
 /* Vendepunktet i Valparaíso — to bevægelser: skibet hviler, et beat, så
    kommer hun ned ad bjerget (6 s, det eneste der bevæger sig), ombord,
@@ -439,6 +475,8 @@ function resetLegEntities() {
   equatorCrossed = false;
   sights = [];
   captionT = 0;
+  bubbleT = 0;
+  bubbleDone = false;
   sightQueue = SIGHTS[leg]
     .map((q) => ({ ...q, y: q.p * LEG_LEN }))
     .filter((q) => q.y > progressY)
@@ -538,6 +576,7 @@ function enterLeg(nextLeg) {
   shiftY(fx);
   shiftY(sights);
   equatorCrossed = false;
+  bubbleDone = false;
   sightQueue = SIGHTS[leg]
     .map((q) => ({ ...q, y: q.p * LEG_LEN }))
     .filter((q) => q.y > progressY)
@@ -607,6 +646,7 @@ function update(dt) {
   wakeT = Math.max(0, wakeT - dt);
   titleT = Math.max(0, titleT - dt);
   captionT = Math.max(0, captionT - dt);
+  bubbleT = Math.max(0, bubbleT - dt);
   fx = fx.filter((f) => {
     if (f.t !== undefined) {
       f.t -= dt;
@@ -664,6 +704,12 @@ function update(dt) {
     if (si.kind === "ship") si.y += si.vyw * dt;
   }
   sights = sights.filter((si) => (si.t !== undefined ? si.t > 0 : si.y > progressY - 700));
+
+  /* skibets replik på dette ben */
+  if (!bubbleDone && BUBBLES[leg] !== undefined && progressY > BUBBLE_P[leg] * LEG_LEN) {
+    bubbleDone = true;
+    showBubble(BUBBLES[leg]);
+  }
 
   /* styring med vægt: en kurve, ikke et trin */
   if (keys.has("arrowleft") || keys.has("a")) ship.target -= 300 * dt;
@@ -1945,6 +1991,81 @@ function visibilityAlpha(worldY) {
   return Math.max(0, Math.min(1, (visD - ahead) / 80));
 }
 
+/* Taleboblen: tekst brudt i korte linjer, boks med hale ned til
+   dragehovedet. Ren tekst, varm kant — sødt, ikke støjende. */
+function showBubble(text) {
+  const words = text.split(" ");
+  const lines = [];
+  let line = "";
+  for (const w of words) {
+    if ((line + " " + w).trim().length > 26) {
+      lines.push(line.trim());
+      line = w;
+    } else {
+      line = (line + " " + w).trim();
+    }
+  }
+  if (line) lines.push(line);
+  bubbleLines = lines;
+  bubbleT = 5;
+}
+
+function roundedRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function drawBubble() {
+  if (bubbleT <= 0 || mode !== "sail" || founderT > 0) return;
+  const a = Math.min(1, bubbleT / 0.4, (5 - bubbleT) / 0.3);
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.font = "11px 'Space Mono', monospace";
+  const lineH = 15;
+  let w = 0;
+  for (const l of bubbleLines) w = Math.max(w, ctx.measureText(l).width);
+  w += 26;
+  const h = bubbleLines.length * lineH + 16;
+  const bx = Math.max(12, Math.min(BASE_W - w - 12, ship.x + 26));
+  const by = SHIP_Y - 66 - h;
+  ctx.fillStyle = "rgba(6,10,18,0.88)";
+  ctx.strokeStyle = "rgba(255,207,122,0.75)";
+  ctx.lineWidth = 1.3;
+  roundedRect(bx, by, w, h, 9);
+  ctx.fill();
+  ctx.stroke();
+  /* halen ned mod stævnen */
+  const tx = Math.max(bx + 14, Math.min(bx + w - 14, ship.x + 8));
+  ctx.fillStyle = "rgba(6,10,18,0.88)";
+  ctx.beginPath();
+  ctx.moveTo(tx - 6, by + h);
+  ctx.lineTo(tx + 6, by + h);
+  ctx.lineTo(ship.x + 5, SHIP_Y - 44);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,207,122,0.75)";
+  ctx.beginPath();
+  ctx.moveTo(tx - 6, by + h);
+  ctx.lineTo(ship.x + 5, SHIP_Y - 44);
+  ctx.lineTo(tx + 6, by + h);
+  ctx.stroke();
+  ctx.fillStyle = "rgba(240,244,252,0.95)";
+  ctx.textAlign = "left";
+  for (let i = 0; i < bubbleLines.length; i++) {
+    ctx.fillText(bubbleLines[i], bx + 13, by + 13 + i * lineH + 4);
+  }
+  ctx.restore();
+}
+
 function drawHud() {
   ctx.font = "13px 'Space Mono', monospace";
   ctx.textAlign = "right";
@@ -2122,7 +2243,7 @@ function render() {
       ctx.font = "11px 'Space Mono', monospace";
       ctx.textAlign = "center";
       ctx.fillStyle = "rgba(242,234,210,0.85)";
-      ctx.fillText("THE EQUATOR", BASE_W / 2, eq - 8);
+      ctx.fillText("EL ECUADOR", BASE_W / 2, eq - 8);
     }
   }
 
@@ -2202,7 +2323,7 @@ function render() {
     ctx.font = "10px 'Archivo Black', 'Space Mono', monospace";
     ctx.textAlign = "center";
     ctx.fillStyle = "rgba(255,209,102,0.95)";
-    const nameText = spacedText("PRINCESS GIO");
+    const nameText = spacedText("PRINCESA GIO");
     ctx.fillText(nameText, nx, ny);
     drawHeartAt(nx + ctx.measureText(nameText).width / 2 + 10, ny - 3, 0.5, nameA * 0.9);
     ctx.restore();
@@ -2241,6 +2362,7 @@ function render() {
     ctx.fillRect(0, 0, BASE_W, BASE_H);
   }
 
+  drawBubble();
   drawHud();
   ctx.restore();
 }
