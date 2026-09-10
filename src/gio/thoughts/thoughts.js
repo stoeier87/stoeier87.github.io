@@ -215,10 +215,27 @@ function frame(ts) {
 
 /* ── Ejerens skjulte aflæsning ──────────────────────────────────────
    Kun på enheder mærket med ?soy=yo: en diskret linje nederst med
-   hendes seneste besøg — så Firebase-konsollen aldrig skal åbnes.
+   hendes seneste besøg, på dansk (den er til ham, ikke til hende) —
+   så Firebase-konsollen aldrig skal åbnes.
    Hendes besøg = pings uden ejer-flag og uden stage-præfiks. Fejler
    læsningen (offline, regler, CDN), vises linjen bare ikke. */
-const PAGE_ES = { index: "la portada", thoughts: "pensamientos", voyage: "el barco" };
+/* Linjen er til HAM alene (hun ser den aldrig), så den taler dansk —
+   alt, hun kan møde, forbliver spansk. */
+const PAGE_DA = { index: "forsiden", thoughts: "tankerne", voyage: "skibet" };
+const MONTHS_DA = [
+  "jan",
+  "feb",
+  "mar",
+  "apr",
+  "maj",
+  "jun",
+  "jul",
+  "aug",
+  "sep",
+  "okt",
+  "nov",
+  "dec",
+];
 
 async function showOwnerLine() {
   if (!isOwnerDevice()) return;
@@ -227,21 +244,20 @@ async function showOwnerLine() {
   const line = document.createElement("p");
   line.className = "text-center text-[11px] tracking-wide text-text-dim lowercase";
   if (hers.length === 0) {
-    line.textContent = "aún ninguna visita suya";
+    line.textContent = "endnu ingen besøg fra hende";
   } else {
     const v = hers[0];
-    const d = new Date(v.t);
-    const parts = new Intl.DateTimeFormat("es", {
+    const parts = new Intl.DateTimeFormat("da", {
       timeZone: "Europe/Copenhagen",
       day: "numeric",
       month: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-    }).formatToParts(d);
+    }).formatToParts(new Date(v.t));
     const get = (type) => parts.find((p) => p.type === type)?.value ?? "";
-    const when = `${get("day")} ${MONTHS_ES[Number(get("month")) - 1]}, ${get("hour")}.${get("minute")}`;
-    const where = PAGE_ES[v.p] ?? v.p;
-    line.textContent = `última visita suya: ${when} · ${where}`;
+    const when = `${get("day")}. ${MONTHS_DA[Number(get("month")) - 1]} kl. ${get("hour")}.${get("minute")}`;
+    const where = PAGE_DA[v.p] ?? v.p;
+    line.textContent = `hendes seneste besøg: ${when} · ${where}`;
   }
   document.querySelector("main").appendChild(line);
 }
