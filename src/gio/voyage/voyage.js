@@ -42,7 +42,7 @@ const STAGES = [
     speed: 95,
     swell: 5,
     roll: 0.05,
-    spawn: { stake: 2.2, rock: 0.9 },
+    spawn: { tentacle: 2.2, rock: 0.9 },
     fog: true,
     hearts: 3.6,
   },
@@ -54,7 +54,7 @@ const STAGES = [
     speed: 105,
     swell: 11,
     roll: 0.09,
-    spawn: { wreck: 1.4, rock: 0.5 },
+    spawn: { serpent: 1.4, rock: 0.5 },
     whales: true,
     hearts: 3.6,
   },
@@ -66,7 +66,7 @@ const STAGES = [
     speed: 100,
     swell: 2,
     roll: 0.03,
-    spawn: { debris: 2.2 },
+    spawn: { jelly: 2.2 },
     squalls: true,
     equator: true,
     hearts: 3.6,
@@ -92,7 +92,7 @@ const STAGES = [
     speed: 95,
     swell: 6,
     roll: 0.06,
-    spawn: { kelp: 1.1, boat: 1.2 },
+    spawn: { kelp: 1.1, crab: 1.2 },
     andes: true,
     hearts: 3.8,
   },
@@ -110,24 +110,47 @@ const HOUSE_COLORS = ["#e0704a", "#6e8fff", "#ffd166", "#7eb08a", "#e03a2f", "#a
    p er brøkdel af benet; side -1 = venstre, 1 = højre, 0 = ved skibet. */
 const SIGHTS = [
   [
-    { p: 0.06, kind: "coast", side: 1, label: "DENMARK, ASTERN", houses: true, gulls: true },
+    { p: 0.02, kind: "sea", label: "KATTEGAT" },
+    {
+      p: 0.07,
+      kind: "coast",
+      side: 1,
+      label: "DENMARK, ASTERN",
+      place: "DENMARK",
+      houses: true,
+      gulls: true,
+    },
     { p: 0.45, kind: "lighthouse", side: -1, label: "A LIGHTHOUSE IN THE FOG" },
-    { p: 0.82, kind: "coast", side: 1, label: "THE WHITE CLIFFS OF DOVER", cliffs: true },
+    {
+      p: 0.82,
+      kind: "coast",
+      side: 1,
+      label: "THE WHITE CLIFFS OF DOVER",
+      place: "DOVER",
+      cliffs: true,
+    },
   ],
   [
-    { p: 0.2, kind: "island", side: -1, label: "THE AZORES", peaks: true },
+    { p: 0.2, kind: "island", side: -1, label: "THE AZORES", place: "AZORES", peaks: true },
     { p: 0.52, kind: "ship", side: 1, label: "A FREIGHTER, OUTWARD BOUND", vyw: -150 },
-    { p: 0.85, kind: "island", side: 1, label: "THE CANARY ISLANDS", peaks: true },
+    {
+      p: 0.85,
+      kind: "island",
+      side: 1,
+      label: "THE CANARY ISLANDS",
+      place: "CANARIAS",
+      peaks: true,
+    },
   ],
   [
-    { p: 0.16, kind: "island", side: -1, label: "CAPE VERDE", palms: true },
+    { p: 0.16, kind: "island", side: -1, label: "CAPE VERDE", place: "CABO VERDE", palms: true },
     { p: 0.62, kind: "dolphins", side: 0, label: "DOLPHINS OFF THE BOW" },
-    { p: 0.88, kind: "coast", side: 1, label: "THE COAST OF BRAZIL", palms: true },
+    { p: 0.88, kind: "coast", side: 1, label: "THE COAST OF BRAZIL", place: "BRASIL", palms: true },
   ],
   [
-    { p: 0.28, kind: "island", side: -1, label: "THE FALKLANDS" },
+    { p: 0.28, kind: "island", side: -1, label: "THE FALKLANDS", place: "FALKLANDS" },
     { p: 0.52, kind: "aurora", side: 0, label: "THE SOUTHERN LIGHTS" },
-    { p: 0.84, kind: "horn", side: 1, label: "CAPE HORN" },
+    { p: 0.84, kind: "horn", side: 1, label: "CAPE HORN", place: "CABO DE HORNOS" },
   ],
   [
     { p: 0.26, kind: "dolphins", side: 0, label: "PELICANS OFF THE COAST", pel: true },
@@ -145,22 +168,52 @@ const SIGHTS = [
     { p: 0.66, kind: "dolphins", side: 0, label: "DOLPHINS, CELEBRATING" },
   ],
   [
-    { p: 0.26, kind: "horn", side: -1, label: "CAPE HORN, ONE LAST TIME" },
+    { p: 0.26, kind: "horn", side: -1, label: "CAPE HORN, ONE LAST TIME", place: "CABO DE HORNOS" },
     { p: 0.6, kind: "aurora", side: 0, label: "THE SOUTHERN LIGHTS, FOR HER" },
   ],
   [
-    { p: 0.24, kind: "coast", side: -1, label: "THE COAST OF BRAZIL", palms: true },
+    {
+      p: 0.24,
+      kind: "coast",
+      side: -1,
+      label: "THE COAST OF BRAZIL",
+      place: "BRASIL",
+      palms: true,
+    },
     { p: 0.68, kind: "dolphins", side: 0, label: "FLYING FISH", fly: true },
   ],
   [
-    { p: 0.22, kind: "island", side: 1, label: "THE CANARY ISLANDS", peaks: true },
+    {
+      p: 0.22,
+      kind: "island",
+      side: 1,
+      label: "THE CANARY ISLANDS",
+      place: "CANARIAS",
+      peaks: true,
+    },
     { p: 0.56, kind: "ship", side: -1, label: "A FREIGHTER, HOMEWARD BOUND", vyw: -150 },
-    { p: 0.86, kind: "island", side: -1, label: "THE AZORES AGAIN", peaks: true },
+    { p: 0.86, kind: "island", side: -1, label: "THE AZORES AGAIN", place: "AZORES", peaks: true },
   ],
   [
-    { p: 0.2, kind: "coast", side: -1, label: "THE WHITE CLIFFS AGAIN", cliffs: true },
-    { p: 0.52, kind: "lighthouse", side: 1, label: "THE LIGHTHOUSE, STILL BURNING" },
-    { p: 0.86, kind: "coast", side: 1, label: "DENMARK AHEAD", houses: true, gulls: true },
+    {
+      p: 0.2,
+      kind: "coast",
+      side: -1,
+      label: "THE WHITE CLIFFS AGAIN",
+      place: "DOVER",
+      cliffs: true,
+    },
+    { p: 0.5, kind: "lighthouse", side: 1, label: "THE LIGHTHOUSE, STILL BURNING" },
+    { p: 0.76, kind: "sea", label: "KATTEGAT" },
+    {
+      p: 0.88,
+      kind: "coast",
+      side: 1,
+      label: "DENMARK AHEAD",
+      place: "DENMARK",
+      houses: true,
+      gulls: true,
+    },
   ],
 ];
 
@@ -328,12 +381,18 @@ function spawnBand(y) {
       } else if (type === "kelp") {
         zones.push({ type, x, y, w: 120, h: 220 });
       } else {
+        const R = { tentacle: 9, serpent: 16, jelly: 12, crab: 12, rock: 15 };
         obstacles.push({
           type,
           x,
           y,
-          r: type === "stake" ? 7 : 15,
-          drift: type === "wreck" ? (Math.random() - 0.5) * 8 : 0,
+          r: R[type] ?? 15,
+          drift:
+            type === "serpent"
+              ? (Math.random() - 0.5) * 10
+              : type === "jelly"
+                ? (Math.random() - 0.5) * 6
+                : 0,
         });
       }
     }
@@ -568,7 +627,8 @@ function update(dt) {
       });
       caption(q.label);
     } else {
-      sights.push({ ...q, seen: false });
+      /* havnavne (kind sea) skriver sig selv i vandet — ingen billedtekst */
+      sights.push({ ...q, seen: q.kind === "sea" });
     }
     sightQueue.shift();
   }
@@ -910,13 +970,51 @@ function drawObstacle(o, alpha) {
   ctx.strokeStyle = "rgba(235,240,250,0.85)";
   ctx.fillStyle = "rgba(10,16,24,0.85)";
   ctx.lineWidth = 1.4;
-  if (o.type === "stake") {
+  if (o.type === "tentacle") {
+    /* en krakenarm der bryder overfladen — den vrider sig, og sugekopperne
+       gløder rødt: det HER skal man udenom */
+    const wg = reduced ? 0 : Math.sin(sceneT * 2.4 + o.y * 0.01) * 2.5;
+    ctx.lineWidth = 3.2;
     ctx.beginPath();
-    ctx.moveTo(-2, 10);
-    ctx.lineTo(0, -12);
-    ctx.moveTo(4, 9);
-    ctx.lineTo(5, -8);
+    ctx.moveTo(-2, 12);
+    ctx.quadraticCurveTo(-8 + wg, 2, -2 + wg, -6);
+    ctx.quadraticCurveTo(4 + wg * 1.4, -14, -3 + wg * 1.4, -19);
     ctx.stroke();
+    ctx.fillStyle = "rgba(224,58,47,0.85)";
+    for (const [sxp, syp] of [
+      [-4 + wg * 0.5, 3],
+      [-1 + wg, -5],
+      [1 + wg * 1.2, -12],
+    ]) {
+      ctx.beginPath();
+      ctx.arc(sxp, syp, 1.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (o.type === "serpent") {
+    /* søslangen: to bugter og et hoved med gab og rødt øje */
+    const und = reduced ? 0 : Math.sin(sceneT * 2 + o.y * 0.01) * 1.5;
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(15, 6);
+    ctx.quadraticCurveTo(10, -5 - und, 5, 6);
+    ctx.moveTo(3, 6);
+    ctx.quadraticCurveTo(-2, -6 + und, -7, 6);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(-13, -2, 4.5, 5.5, -0.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-16, 0);
+    ctx.lineTo(-20.5, 3);
+    ctx.stroke();
+    ctx.fillStyle = "rgba(224,58,47,0.95)";
+    ctx.shadowColor = "rgba(224,58,47,0.9)";
+    ctx.shadowBlur = 4;
+    ctx.beginPath();
+    ctx.arc(-13.5, -4.2, 1.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
   } else if (o.type === "rock") {
     ctx.beginPath();
     ctx.moveTo(-14, 6);
@@ -934,9 +1032,28 @@ function drawObstacle(o, alpha) {
     ctx.moveTo(-9, 0);
     ctx.lineTo(-6, -10);
     ctx.stroke();
-  } else if (o.type === "debris") {
-    ctx.strokeRect(-8, -4, 9, 7);
-    ctx.strokeRect(2, -1, 6, 5);
+  } else if (o.type === "jelly") {
+    /* kæmpegoplen: klokke der pulserer, brændetråde der slæber rødt */
+    const pu = reduced ? 0 : Math.sin(sceneT * 2.6 + o.y * 0.01) * 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-10 - pu, 0);
+    ctx.quadraticCurveTo(0, -15 - pu, 10 + pu, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "rgba(224,58,47,0.35)";
+    ctx.beginPath();
+    ctx.arc(0, -5 - pu * 0.5, 3.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(224,58,47,0.7)";
+    ctx.lineWidth = 1.1;
+    for (let i = 0; i < 4; i++) {
+      const tx = -7 + i * 4.6;
+      ctx.beginPath();
+      ctx.moveTo(tx, 1);
+      ctx.quadraticCurveTo(tx + (reduced ? 2 : Math.sin(sceneT * 3 + i) * 3), 8, tx + 1, 16);
+      ctx.stroke();
+    }
   } else if (o.type === "berg") {
     ctx.strokeStyle = "rgba(220,235,245,0.95)";
     ctx.fillStyle = "rgba(190,215,230,0.28)";
@@ -956,18 +1073,42 @@ function drawObstacle(o, alpha) {
       ctx.arc(0, 0, o.r - i * 13, o.spin + i, o.spin + i + 4.6);
       ctx.stroke();
     }
-  } else if (o.type === "boat") {
+  } else if (o.type === "crab") {
+    /* kæmpekrabben: løftede kløer, øjne på stilke — klar besked */
+    const snap = reduced ? 0 : Math.max(0, Math.sin(sceneT * 3 + o.y * 0.01)) * 2;
     ctx.beginPath();
-    ctx.moveTo(-12, 3);
-    ctx.quadraticCurveTo(0, 9, 12, 3);
-    ctx.lineTo(9, -2);
-    ctx.lineTo(-9, -2);
-    ctx.closePath();
+    ctx.ellipse(0, 0, 9, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
     ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(0, -2);
-    ctx.lineTo(0, -14);
-    ctx.stroke();
+    ctx.lineWidth = 1.1;
+    for (const side of [-1, 1]) {
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.moveTo(side * 8, -2 + i * 3);
+        ctx.lineTo(side * (13 + i), 1 + i * 4);
+        ctx.stroke();
+      }
+    }
+    ctx.lineWidth = 1.5;
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(side * 6, -4);
+      ctx.quadraticCurveTo(side * 11, -9, side * (9 + snap), -12);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(side * (9 + snap), -13, 2.4, 0, Math.PI * 1.55);
+      ctx.stroke();
+    }
+    ctx.fillStyle = "rgba(224,58,47,0.95)";
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(side * 2, -5);
+      ctx.lineTo(side * 3, -8);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(side * 3, -8.5, 1.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
   ctx.restore();
 }
@@ -1340,6 +1481,7 @@ function drawChile(nearShore) {
         ci++;
       }
     }
+    drawPlaceName("VALPARA\u00cdSO", BASE_W - 64, 374, -0.5, 11, 0.8);
     /* molen: forankret på kysten, båret af pæle, ud mod hvor skibet lægger til */
     ctx.strokeStyle = "rgba(240,244,252,0.8)";
     ctx.lineWidth = 2;
@@ -1389,6 +1531,49 @@ function drawGull(x, y) {
   ctx.quadraticCurveTo(x - 2, y - 3.5, x, y);
   ctx.quadraticCurveTo(x + 2, y - 3.5, x + 5, y);
   ctx.stroke();
+}
+
+/* Stednavne skrevet grafisk ind på landet — displayfonten, spatieret,
+   halvt gennemsigtig, som navne trykt på et gammelt søkort. Hendes side
+   af havet bærer sine egne navne: CABO VERDE, BRASIL, CABO DE HORNOS. */
+function spacedText(t) {
+  return t.split("").join(" ");
+}
+
+function drawPlaceName(text, x, y, angle, size = 10, alpha = 0.55) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.globalAlpha *= alpha;
+  ctx.font = `${size}px 'Archivo Black', 'Space Mono', monospace`;
+  ctx.textAlign = "center";
+  ctx.fillStyle = "rgba(240,244,252,0.9)";
+  ctx.fillText(spacedText(text), 0, 0);
+  ctx.restore();
+}
+
+/* Havnavne — KATTEGAT står i vandet når man stævner ud, og igen når man
+   kommer hjem */
+function drawSeaName(s, sy) {
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  ctx.font = "13px 'Archivo Black', 'Space Mono', monospace";
+  ctx.textAlign = "center";
+  ctx.fillStyle = "rgba(240,244,252,0.85)";
+  const t = spacedText(s.label);
+  ctx.fillText(t, BASE_W / 2, sy);
+  const w = ctx.measureText(t).width;
+  ctx.strokeStyle = "rgba(240,244,252,0.35)";
+  ctx.lineWidth = 1;
+  ctx.setLineDash([2, 7]);
+  ctx.beginPath();
+  ctx.moveTo(18, sy - 4);
+  ctx.lineTo(BASE_W / 2 - w / 2 - 14, sy - 4);
+  ctx.moveTo(BASE_W / 2 + w / 2 + 14, sy - 4);
+  ctx.lineTo(BASE_W - 18, sy - 4);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
 }
 
 function drawCoast(s, sy) {
@@ -1446,6 +1631,9 @@ function drawCoast(s, sy) {
       drawGull(edge + dir * (88 + i * 22) + wob, sy - 90 + i * 42);
     }
   }
+  if (s.place) {
+    drawPlaceName(s.place, edge + dir * 58, sy, dir === 1 ? Math.PI / 2 : -Math.PI / 2);
+  }
 }
 
 function drawIsland(s, sy) {
@@ -1478,6 +1666,7 @@ function drawIsland(s, sy) {
     drawPalmAt(cx - 26, sy - 18);
     drawPalmAt(cx + 14, sy - 20);
   }
+  if (s.place) drawPlaceName(s.place, cx, sy + 34, 0, 9);
 }
 
 function drawLighthouse(s, sy) {
@@ -1585,6 +1774,16 @@ function drawHorn(s, sy) {
     ctx.lineTo(edge + dir * (34 - i * 8), wy);
     ctx.stroke();
   }
+  if (s.place) {
+    drawPlaceName(
+      s.place,
+      edge + dir * 26,
+      sy - 12,
+      dir === 1 ? Math.PI / 2 : -Math.PI / 2,
+      11,
+      0.7,
+    );
+  }
 }
 
 function drawAurora(s) {
@@ -1666,6 +1865,10 @@ function drawSights() {
     }
     const sy = SHIP_Y - (si.y - progressY);
     if (sy < -600 || sy > BASE_H + 600) continue;
+    if (si.kind === "sea") {
+      drawSeaName(si, sy);
+      continue;
+    }
     /* landkending må gerne anes i mørket — den dæmpes, men forsvinder ikke */
     ctx.save();
     ctx.globalAlpha = Math.max(0.6, visibilityAlpha(si.y));
