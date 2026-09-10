@@ -44,7 +44,7 @@ const STAGES = [
     roll: 0.05,
     spawn: { tentacle: 2.2, rock: 0.9 },
     fog: true,
-    hearts: 3.6,
+    hearts: 3.0,
   },
   {
     name: "THE ATLANTIC",
@@ -56,7 +56,7 @@ const STAGES = [
     roll: 0.09,
     spawn: { serpent: 1.4, rock: 0.5 },
     whales: true,
-    hearts: 3.6,
+    hearts: 3.0,
   },
   {
     name: "THE EQUATOR",
@@ -69,7 +69,7 @@ const STAGES = [
     spawn: { jelly: 2.2 },
     squalls: true,
     equator: true,
-    hearts: 3.6,
+    hearts: 3.0,
   },
   {
     name: "CAPE HORN",
@@ -82,7 +82,7 @@ const STAGES = [
     spawn: { berg: 1.7, rock: 0.8, pool: 0.55 },
     currents: true,
     snow: true,
-    hearts: 4.2,
+    hearts: 3.6,
   },
   {
     name: "THE CHILEAN COAST",
@@ -94,7 +94,7 @@ const STAGES = [
     roll: 0.06,
     spawn: { kelp: 1.1, crab: 1.2 },
     andes: true,
-    hearts: 3.8,
+    hearts: 3.2,
   },
 ];
 
@@ -260,6 +260,7 @@ let attempts = new Array(10).fill(0); // nåden, pr. ben
 let lightT = 0; // 0 = udad (mørkt forude), 1 = hun er ombord
 let sceneT = 0;
 let shakeT = 0;
+let hitT = 0; // rødt kant-blink ved træf
 let invulnT = 0;
 let bleachT = 0;
 let founderT = 0;
@@ -519,10 +520,28 @@ function showTitle() {
   titleT = 2.6;
 }
 
+/* Etapeskift er SØMLØSE: intet ryddes og intet klippes — verdenen
+   forskydes bare én benlængde tilbage, så alt på skærmen (uhyrer,
+   hjerter, en halvt passeret kyst) sejler naturligt videre. Kun det
+   nye bens seværdigheder lægges i kø. Nulstilling findes stadig, men
+   kun ved forlis (applyFounder) og sceneskift — dér er den meningen. */
 function enterLeg(nextLeg) {
   leg = nextLeg;
-  progressY = 0;
-  resetLegEntities();
+  progressY -= LEG_LEN;
+  spawnCursor -= LEG_LEN;
+  const shiftY = (arr) => {
+    for (const o of arr) if (o.y !== undefined) o.y -= LEG_LEN;
+  };
+  shiftY(obstacles);
+  shiftY(drops);
+  shiftY(zones);
+  shiftY(fx);
+  shiftY(sights);
+  equatorCrossed = false;
+  sightQueue = SIGHTS[leg]
+    .map((q) => ({ ...q, y: q.p * LEG_LEN }))
+    .filter((q) => q.y > progressY)
+    .sort((a, b) => a.y - b.y);
   saveCheckpoint();
   showTitle();
 }
@@ -547,9 +566,12 @@ function damage() {
   if (invulnT > 0 || founderT > 0) return;
   hp--;
   invulnT = 1;
-  if (!reduced) shakeT = 0.35;
+  hitT = 0.55;
+  if (!reduced) shakeT = 0.4;
   ship.cracks.push({ a: Math.random() * 6, b: Math.random() * 6 });
-  repairIfPossible();
+  /* BEVIDST ingen repairIfPossible() her: den åd skaden i samme frame,
+     så skibs-ikonerne aldrig faldt og et træf føltes som ingenting.
+     Reparationen sker først ved næste hjerte-opsamling. */
   if (hp <= 0) founder();
 }
 
@@ -579,6 +601,7 @@ function update(dt) {
   sceneT += dt;
   invulnT = Math.max(0, invulnT - dt);
   shakeT = Math.max(0, shakeT - dt);
+  hitT = Math.max(0, hitT - dt);
   bleachT = Math.max(0, bleachT - dt);
   flareT = Math.max(0, flareT - dt);
   wakeT = Math.max(0, wakeT - dt);
@@ -1935,7 +1958,12 @@ function drawHud() {
   for (let i = 0; i < 3; i++) {
     ctx.save();
     ctx.translate(20 + i * 22, BASE_H - 24);
-    ctx.strokeStyle = i < hp ? "rgba(240,244,252,0.9)" : "rgba(240,244,252,0.22)";
+    ctx.strokeStyle =
+      i < hp
+        ? "rgba(240,244,252,0.9)"
+        : i === hp && hitT > 0
+          ? `rgba(224,58,47,${0.35 + hitT})`
+          : "rgba(240,244,252,0.22)";
     ctx.lineWidth = 1.3;
     ctx.beginPath();
     ctx.moveTo(-7, 2);
@@ -2101,6 +2129,16 @@ function render() {
   for (const o of obstacles) drawObstacle(o, visibilityAlpha(o.y));
   for (const d of drops) drawHeart(d, visibilityAlpha(d.y));
 
+  /* reparation: en varm ring der lukker sig om skibet */
+  for (const f of fx) {
+    if (f.type !== "repair") continue;
+    ctx.strokeStyle = `rgba(255,207,122,${f.t})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(ship.x, SHIP_Y, 40 - (0.9 - f.t) * 26, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
   /* hjerte-flares */
   for (const f of fx) {
     if (f.type === "flare") {
@@ -2136,9 +2174,38 @@ function render() {
 
   drawLight();
 
-  /* nedstigningen og ombordstigningen */
+  /* træf: kanten blinker rødt — skaden skal kunne MÆRKES */
+  if (hitT > 0) {
+    const g = ctx.createRadialGradient(
+      BASE_W / 2,
+      BASE_H / 2,
+      BASE_H * 0.32,
+      BASE_W / 2,
+      BASE_H / 2,
+      BASE_H * 0.72,
+    );
+    const a = (reduced ? 0.22 : 0.4) * (hitT / 0.55);
+    g.addColorStop(0, "rgba(224,58,47,0)");
+    g.addColorStop(1, `rgba(224,58,47,${a})`);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, BASE_W, BASE_H);
+  }
+
+  /* nedstigningen og ombordstigningen — med hendes navn over sig */
   if (mode === "turn" && turnPhase >= 2 && turnPhase <= 3) {
     drawFigureShape(figure.x, figure.y, figure.s, figure.walk);
+    const nameA = turnPhase === 2 ? Math.min(1, turnT / 0.8) : 1;
+    const nx = Math.max(78, Math.min(BASE_W - 78, figure.x));
+    const ny = figure.y - 46 * figure.s - 12;
+    ctx.save();
+    ctx.globalAlpha = nameA;
+    ctx.font = "10px 'Archivo Black', 'Space Mono', monospace";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "rgba(255,209,102,0.95)";
+    const nameText = spacedText("PRINCESS GIO");
+    ctx.fillText(nameText, nx, ny);
+    drawHeartAt(nx + ctx.measureText(nameText).width / 2 + 10, ny - 3, 0.5, nameA * 0.9);
+    ctx.restore();
   }
 
   /* slutningens solopgang — nær og varm, som på /gio */
