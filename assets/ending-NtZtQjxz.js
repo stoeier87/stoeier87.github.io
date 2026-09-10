@@ -1,0 +1,1 @@
+function e(){return`Te Necesito, Mi Gio`}export{e as getEndingMessage};
