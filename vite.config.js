@@ -99,6 +99,9 @@ function sitemapPlugin() {
   };
 }
 
+// Bliver gtag/GTM nogensinde koblet til (pluginnet er død kode i dag),
+// skal /gio/** eksplicit undtages — det er et privat hjørne, og der må
+// aldrig ligge tracking bag lågen.
 const GTAG_ID = "G-9M0GB4HHY0";
 
 function gtagPlugin() {

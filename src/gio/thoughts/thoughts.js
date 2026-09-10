@@ -56,13 +56,34 @@ function prettyDate(iso) {
   return `${d} ${MONTHS_ES[m - 1]}`;
 }
 
-const entries = [...published.entries].sort((a, b) => (a.date < b.date ? 1 : -1));
+/* Indlæggene hentes på RUNTIME fra ../pensamientos.json, som
+   gio-pensamientos.yml publicerer direkte til gh-pages udenom
+   kode-releases (ADR-031) — sådan kan en ny tanke, en rettelse eller en
+   sletning gå live uden deploy af sitet. Den bundlede published.json er
+   seed og fallback: dev-serveren (hvor filen ikke findes) og et koldt
+   gh-pages før første publicering. Datoen er DATA — den dag tanken blev
+   skrevet — aldrig noget der afledes af hvornår en kørsel løb. */
+async function loadEntries() {
+  try {
+    const res = await fetch("../pensamientos.json", { cache: "no-store" });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.entries)) return data.entries;
+    }
+  } catch {
+    /* offline eller før første publicering — den bundlede seed viser siden */
+  }
+  return published.entries;
+}
 
-const feed = document.getElementById("feed");
+function renderFeed(list) {
+  const entries = [...list].sort((a, b) => (a.date < b.date ? 1 : -1));
+  const feed = document.getElementById("feed");
 
-if (entries.length === 0) {
-  feed.innerHTML = `<p class="text-center text-sm leading-relaxed text-text-muted">Aún no hay pensamientos — el primero llega pronto.</p>`;
-} else {
+  if (entries.length === 0) {
+    feed.innerHTML = `<p class="text-center text-sm leading-relaxed text-text-muted">Aún no hay pensamientos — el primero llega pronto.</p>`;
+    return;
+  }
   feed.innerHTML = entries
     .map(
       (entry) => `
@@ -75,6 +96,11 @@ if (entries.length === 0) {
     )
     .join("");
 }
+
+renderFeed(published.entries);
+loadEntries().then((list) => {
+  if (list !== published.entries) renderFeed(list);
+});
 
 /* ── Det store svævende hjerte med Gio indeni ───────────────────────
    Ét stort, glødende hjerte der svæver roligt øverst til højre, med
