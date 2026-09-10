@@ -1,0 +1,14 @@
+{
+  "entries": [
+    {
+      "body": "KØ-PLADSHOLDER QK7391-A · Denne besked er endnu ikke publiceret og må aldrig kunne findes i buildet."
+    },
+    {
+      "body": "KØ-PLADSHOLDER QK7391-B · Endnu en upubliceret besked.\n\nMed to afsnit, så publicering af flere afsnit også er prøvet."
+    },
+    {
+      "date": "2026-12-24",
+      "body": "KØ-PLADSHOLDER QK7391-C · Har en eksplicit dato (juleaften), som publish-scriptet skal lade stå urørt."
+    }
+  ]
+}

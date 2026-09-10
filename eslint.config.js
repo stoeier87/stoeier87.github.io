@@ -191,7 +191,13 @@ export default [
 
   // Tooling that runs in Node.
   {
-    files: ["vite.config.js", "eslint.config.js", "scripts/**/*.mjs", ".claude/hooks/*.mjs"],
+    files: [
+      "vite.config.js",
+      "eslint.config.js",
+      "scripts/**/*.mjs",
+      "scripts/publish-next.js",
+      ".claude/hooks/*.mjs",
+    ],
     languageOptions: {
       ecmaVersion: 2024,
       sourceType: "module",
@@ -214,6 +220,7 @@ export default [
       "src/shared/**/*.{js,mjs,ts}",
       "src/proto/**/*.{js,mjs,ts}",
       "scripts/**/*.mjs",
+      "scripts/publish-next.js",
       ".claude/hooks/*.mjs",
       "eslint.config.js",
     ],
