@@ -91,7 +91,7 @@ export function pingVisit() {
  * Ejerens aflæsning: de seneste besøg, nyeste først. Returnerer [] ved
  * enhver fejl — visningen ovenpå skal kunne leve med stilhed.
  */
-export async function readVisits(limit = 40) {
+export async function readVisits(limit = 2000) {
   try {
     const { rtdb, db } = await firebaseDb();
     const snap = await rtdb.get(
