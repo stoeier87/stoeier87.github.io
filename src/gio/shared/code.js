@@ -9,4 +9,4 @@
  * JavaScript og holder kun tilfældige forbipasserende ude. Skriv aldrig
  * noget bag lågen, som ikke kunne tåle at blive set.
  */
-export const GIO_CODE = "stjernestøv";
+export const GIO_CODE = "necesito";
