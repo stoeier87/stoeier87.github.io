@@ -1,4 +1,5 @@
 import { GIO_CODE } from "./code.js";
+import { pingVisit } from "./visits.js";
 
 /**
  * Kodelågen foran alt under /gio — på spansk, som resten af universet.
@@ -134,5 +135,8 @@ export function guardPage() {
       return;
     }
     mountGate(main, resolve);
+  }).then(() => {
+    /* først når siden faktisk er låst op og vist tæller det som et besøg */
+    pingVisit();
   });
 }
