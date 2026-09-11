@@ -22,15 +22,21 @@
       href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap"
     />
     <link href="../../css/all.min.css" rel="stylesheet" />
-    <script type="module" crossorigin src="../../assets/arcade/mercury/index-BYA4BKcM.js"></script>
+    <script type="module" crossorigin src="../../assets/arcade/mercury/index-fP2ycA9H.js"></script>
     <link rel="modulepreload" crossorigin href="../../assets/tailwind-BowG0W28.js">
+    <link rel="modulepreload" crossorigin href="../../assets/planet-textures-DAkK65wv.js">
+    <link rel="modulepreload" crossorigin href="../../assets/planet-field-DSfPo_0H.js">
+    <link rel="modulepreload" crossorigin href="../../assets/tokens-C0x0uWM4.js">
     <link rel="modulepreload" crossorigin href="../../assets/firebase-config-CE95sHti.js">
-    <link rel="modulepreload" crossorigin href="../../assets/games-data-DPRE8LZ4.js">
-    <link rel="modulepreload" crossorigin href="../../assets/game-intro-Dt_BICbi.js">
+    <link rel="modulepreload" crossorigin href="../../assets/games-data-CZaWL4_h.js">
+    <link rel="modulepreload" crossorigin href="../../assets/game-intro-B3rdjUaJ.js">
     <link rel="stylesheet" crossorigin href="../../assets/tailwind-DzmjQoix.css">
     <link rel="stylesheet" crossorigin href="../../assets/index-B9vedlY9.css">
   </head>
   <body>
+    <!-- The setting: a real 3D Mercury + star layers, same element as the
+         other games. The game canvas above it is transparent. -->
+    <st-planet-field id="bg" driven aria-hidden="true"></st-planet-field>
     <canvas id="game"></canvas>
 
     <!-- Canonical chrome: circular back arrow + title pill top left,
