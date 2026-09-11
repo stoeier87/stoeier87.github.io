@@ -39,7 +39,7 @@ export const GAMES = [
   {
     key: "mercury", label: "Merkur", gamekey: "orbit-runner", gameLabel: "Orbit Runner",
     tagline: "Dodge debris, bend gravity, fire beam.",
-    introBody: "Your beam only fires toward the far half of the screen — below center it shoots up, above it, down. Dodge what you can, burn what you can't.",
+    introBody: "Debris storms in from every edge, and Mercury's gravity bends every path. Your beam only fires toward the far half of the screen — below center it shoots up, above it, down. Dodge what you can, burn what you can't.",
     introKeys: {
       kb: [["Mouse / drag", "move"], ["Space", "fire beam"]],
       touch: [["Drag", "move"], ["Tap", "fire beam"]],

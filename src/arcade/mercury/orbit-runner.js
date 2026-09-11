@@ -2,13 +2,18 @@ import {
   submitScoreOnGameOver,
   fetchGlobalBest,
 } from "../shared/score-submit.js";
+import { definePlanetField } from "../../shared/elements/planet-field.ts";
 import { defineGameTopbar } from "../../shared/elements/game-topbar.ts";
 import { defineGameOver } from "../../shared/elements/game-over.ts";
 import { defineGameIntro } from "../shared/game-intro.ts";
+import { color } from "../../tokens.ts";
 
+definePlanetField();
 defineGameTopbar();
 defineGameOver();
 defineGameIntro();
+
+const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // .intro-keys defaults to display:none; only the list matching the
 // player's input method gets .show (same pattern as pluto/ice-fall.js).
@@ -34,11 +39,7 @@ addEventListener("keydown", hideIntro, { once: true });
   const scoreEl = document.getElementById("score");
   const bestEl = document.getElementById("best");
 
-  // Dual world presets:
-  // - desktop: fills wide screens
-  // - mobile: portrait-native
-  const DESKTOP_W = 1600;
-  const DESKTOP_H = 900; // 16:9
+  // Dual world presets: desktop tracks the viewport, mobile is portrait-native.
   const MOBILE_W = 720;
   const MOBILE_H = 1280; // 9:16
 
@@ -56,8 +57,7 @@ addEventListener("keydown", hideIntro, { once: true });
     campZone = -1,
     campMs = 0,
     gameOver = false;
-  let stars = [],
-    debris = [],
+  let debris = [],
     beams = [];
   let pointer = { x: 0, y: 0, down: false, seen: false, id: null };
   const gameOverEl = document.getElementById("gameOver");
@@ -134,15 +134,39 @@ addEventListener("keydown", hideIntro, { once: true });
     pointer.seen = true;
   }
 
-  function initStars() {
-    stars = [
-      ...Array(Math.max(90, Math.round((worldW() * worldH()) / 13000))),
-    ].map(() => ({
-      x: Math.random() * worldW(),
-      y: Math.random() * worldH(),
-      r: Math.random() * 1.5 + 0.4,
-      s: Math.random() * 0.8 + 0.2,
-    }));
+  /* ── The setting: Mercury itself ──────────────────────────────────────
+     A real PlanetBody inside <st-planet-field>, same as pluto/neptune/
+     saturn/jupiter — the element also supplies the star layers, so the old
+     hand-rolled 2D starfield is gone. The spec is mutated in place on
+     resize (assigning `.planets` would rebuild textures); layoutBackdrop()
+     inverts the element's placement maths so the sphere lands exactly
+     where the gameplay planet sits on screen. */
+  const backdrop = document.getElementById("bg");
+  let backdropPainted = false;
+
+  const mercurySpec = {
+    name: "MERCURY",
+    r: 0.06,
+    s0: 0,
+    px: 0.5,
+    pf: 1,
+    hi: color.planet.merkurHi,
+    lo: color.planet.merkurLo,
+    spin: 0.02,
+  };
+
+  if (backdrop) backdrop.planets = [mercurySpec];
+
+  function layoutBackdrop() {
+    /* The element draws at x = px*W, y = H*0.55 + s0*H*pf, r = spec.r*vmin.
+       Solve those for the planet's screen position; pf is 1 by choice. */
+    const sx = viewOffX + planet.x * viewScale;
+    const sy = viewOffY + planet.y * viewScale;
+    mercurySpec.px = sx / W;
+    mercurySpec.s0 = sy / H - 0.55;
+    /* 1.15: a touch larger than the gravity circle for presence — the
+       planet has no collision, so its drawn size is purely visual. */
+    mercurySpec.r = (planet.r * 1.15 * viewScale) / Math.min(W, H);
   }
 
   function placeCoreObjects() {
@@ -169,7 +193,7 @@ addEventListener("keydown", hideIntro, { once: true });
 
     updateView();
     placeCoreObjects();
-    initStars();
+    layoutBackdrop();
   }
 
   addEventListener("resize", resize, { passive: true });
@@ -185,10 +209,10 @@ addEventListener("keydown", hideIntro, { once: true });
   const RAMP_MS = 120000; // two minutes to full difficulty
   const SPAWN_MS_START = 1200;
   const SPAWN_MS_END = 350;
-  const FALL_SPEED_CAP = 1.8; // multiple of the starting fall speed
-  const SPAWN_PAD = 26; // keeps a meteor fully on-screen at either edge
-  const CAMP_MS = 3000; // dwell time in one third before we lean on it
-  const CAMP_BIAS = 0.6; // share of a wave pulled toward the camped third
+  const FALL_SPEED_CAP = 1.8; // multiple of the starting meteor speed
+  const CAMP_MS = 3000; // dwell time in one zone before we lean on it
+  const CAMP_BIAS = 0.6; // share of a wave aimed at a camped ship
+  const CULL_PAD = 140; // world-units margin beyond every edge before culling
 
   function difficulty() {
     return Math.min(1, elapsed / RAMP_MS);
@@ -206,7 +230,7 @@ addEventListener("keydown", hideIntro, { once: true });
     return Math.max(1, Math.round(1 + difficulty() * 2 + (Math.random() - 0.5)));
   }
 
-  /* Small ones fall fast, big ones lumber, so the field has to be read rather
+  /* Small ones fly fast, big ones lumber, so the field has to be read rather
      than purely reacted to. */
   const METEOR_CLASSES = [
     { w: 0.4, r: [7, 11], speed: [1.15, 1.4] },
@@ -223,101 +247,58 @@ addEventListener("keydown", hideIntro, { once: true });
     return METEOR_CLASSES[METEOR_CLASSES.length - 1];
   }
 
-  /* The full playable span — spawns cover all of it, edges included */
-  function playableBand() {
-    return { lo: SPAWN_PAD, hi: worldW() - SPAWN_PAD };
-  }
-
-  function shipLaneY() {
-    return worldH() * 0.78;
-  }
-
-  /* The corridor the ship needs to slip through, in world units */
-  function safeGap() {
-    return ufo.r * 2 + 52;
-  }
-
-  function makeMeteor(x) {
+  /* Meteors arrive from ALL four edges, aimed loosely at the planet — the
+     gravity well then bends every path, so nothing crosses in a straight
+     line. A camped ship pulls part of the aim onto itself: pressure, not a
+     homing missile. Edges are 0 top, 1 right, 2 bottom, 3 left. */
+  function makeMeteor(edge, camping) {
     const c = pickClass();
     const r = c.r[0] + Math.random() * (c.r[1] - c.r[0]);
     const speed = c.speed[0] + Math.random() * (c.speed[1] - c.speed[0]);
+    const WW = worldW(),
+      HH = worldH();
+    const off = r + 8;
+    let x, y;
+    if (edge === 0) {
+      x = Math.random() * WW;
+      y = -off;
+    } else if (edge === 1) {
+      x = WW + off;
+      y = Math.random() * HH;
+    } else if (edge === 2) {
+      x = Math.random() * WW;
+      y = HH + off;
+    } else {
+      x = -off;
+      y = Math.random() * HH;
+    }
+
+    let tx = planet.x,
+      ty = planet.y;
+    if (camping && Math.random() < CAMP_BIAS) {
+      tx += (ufo.x - planet.x) * 0.65;
+      ty += (ufo.y - planet.y) * 0.65;
+    }
+    const heading = Math.atan2(ty - y, tx - x) + (Math.random() - 0.5) * 0.6;
+    const v = HH * 0.13 * speed * fallSpeedMul();
     return {
       x,
-      y: -r - 8,
-      vx: (Math.random() - 0.5) * 30,
-      vy: worldH() * 0.13 * speed * fallSpeedMul(),
+      y,
+      vx: Math.cos(heading) * v,
+      vy: Math.sin(heading) * v,
       r,
       alive: true,
     };
   }
 
-  /* Uniform across the whole band, except that parking in one third starts
-     tilting the odds toward it — pressure, not a homing missile. */
-  function sampleX(camping) {
-    const { lo, hi } = playableBand();
-    if (camping && campZone >= 0 && Math.random() < CAMP_BIAS) {
-      const third = (hi - lo) / 3;
-      return lo + campZone * third + Math.random() * third;
-    }
-    return lo + Math.random() * (hi - lo);
-  }
-
-  /* Forward-integrate a copy under the same gravity the live meteors feel, so
-     the gap we validate is the gap the player actually arrives at rather than
-     the one at spawn height. */
-  function projectedX(m) {
-    let x = m.x,
-      y = m.y,
-      vx = m.vx,
-      vy = m.vy;
-    const target = shipLaneY();
-    const dt = 32;
-    for (let i = 0; i < 300 && y < target; i++) {
-      const dx = planet.x - x,
-        dy = planet.y - y;
-      const dist = Math.hypot(dx, dy) || 1;
-      const g = planet.mass / (dist * dist);
-      vx += (dx / dist) * g * dt * 0.001;
-      vy += (dy / dist) * g * dt * 0.001;
-      x += vx * dt * 0.001;
-      y += vy * dt * 0.001;
-    }
-    return x;
-  }
-
-  /* Widest opening left at the ship's altitude, in world units */
-  function widestGap(wave) {
-    const { lo, hi } = playableBand();
-    const blocked = wave
-      .map((m) => {
-        const px = projectedX(m);
-        const half = m.r + ufo.r + 4;
-        return [px - half, px + half];
-      })
-      .sort((a, b) => a[0] - b[0]);
-
-    let cursor = lo;
-    let widest = 0;
-    for (const [a, b] of blocked) {
-      if (a > cursor) widest = Math.max(widest, a - cursor);
-      cursor = Math.max(cursor, b);
-    }
-    return Math.max(widest, hi - cursor);
-  }
-
   function spawnWave() {
     const camping = campMs >= CAMP_MS;
-    const wave = [];
     const n = waveSize();
-    for (let i = 0; i < n; i++) wave.push(makeMeteor(sampleX(camping)));
-
-    /* Checked, not assumed: thin the wave until a route exists. Dropping a
-       meteor can only widen a gap, so this always terminates. */
-    while (wave.length > 1 && widestGap(wave) < safeGap()) {
-      wave.splice(Math.floor(Math.random() * wave.length), 1);
-    }
-
-    for (const m of wave) debris.push(m);
+    /* Walk the edges from a random start, so a multi-meteor wave never
+       arrives as one clump from a single direction — and a route out always
+       exists, because no wave can seal more than its own edges. */
+    const start = Math.floor(Math.random() * 4);
+    for (let i = 0; i < n; i++) debris.push(makeMeteor((start + i) % 4, camping));
   }
 
   function fireBeam() {
@@ -416,6 +397,7 @@ addEventListener("keydown", hideIntro, { once: true });
     if (paused || gameOver) return;
     paused = true;
     pauseEl?.classList.add("show");
+    document.body.classList.add("is-paused"); // blurs the 3D backdrop
   }
   addEventListener("blur", autoPause);
   document.addEventListener("visibilitychange", () => {
@@ -424,6 +406,7 @@ addEventListener("keydown", hideIntro, { once: true });
   document.getElementById("resumeBtn")?.addEventListener("click", () => {
     paused = false;
     pauseEl?.classList.remove("show");
+    document.body.classList.remove("is-paused");
     last = 0;
   });
 
@@ -440,11 +423,6 @@ addEventListener("keydown", hideIntro, { once: true });
     const WW = worldW(),
       HH = worldH();
 
-    for (const s of stars) {
-      s.y += s.s * dt * 0.05;
-      if (s.y > HH) s.y = -2;
-    }
-
     if (!gameOver) {
       score += dt * 0.01;
       scoreEl.textContent = Math.floor(score);
@@ -459,15 +437,15 @@ addEventListener("keydown", hideIntro, { once: true });
       ufo.x = Math.max(10, Math.min(WW - 10, ufo.x));
       ufo.y = Math.max(10, Math.min(HH - 10, ufo.y));
 
-      /* Which third is the ship loitering in, and for how long */
-      const band = playableBand();
-      const third = Math.max(
-        0,
-        Math.min(2, Math.floor(((ufo.x - band.lo) / (band.hi - band.lo)) * 3)),
-      );
-      if (third === campZone) campMs += dt;
+      /* Which of the nine world zones (3×3) the ship is loitering in, and
+         for how long — threats come from every side now, so camping is a
+         position, not just a column */
+      const zone =
+        Math.min(2, Math.floor((ufo.x / WW) * 3)) +
+        3 * Math.min(2, Math.floor((ufo.y / HH) * 3));
+      if (zone === campZone) campMs += dt;
       else {
-        campZone = third;
+        campZone = zone;
         campMs = 0;
       }
 
@@ -506,15 +484,16 @@ addEventListener("keydown", hideIntro, { once: true });
           }
         }
       }
-      /* Cull what has left the field — at a 350ms cadence the old code's
-         alive-only filter let spent meteors accumulate for the whole run */
+      /* Cull what has left the field — symmetric now that meteors enter and
+         slingshot out through any edge. Spawns sit at most ~36 units outside,
+         well inside the pad, so a fresh meteor is never culled. */
       debris = debris.filter(
         (d) =>
           d.alive &&
-          d.y < HH + 90 &&
-          d.y > -400 &&
-          d.x > -160 &&
-          d.x < WW + 160,
+          d.x > -CULL_PAD &&
+          d.x < WW + CULL_PAD &&
+          d.y > -CULL_PAD &&
+          d.y < HH + CULL_PAD,
       );
 
       for (const d of debris) {
@@ -547,15 +526,22 @@ addEventListener("keydown", hideIntro, { once: true });
       }
     }
 
+    /* Under reduced motion the backdrop paints one static frame and stays
+       put — same pattern as pluto/neptune/saturn/jupiter. */
+    if (backdrop && (!reduced || !backdropPainted)) {
+      backdrop.tick(ts);
+      backdropPainted = true;
+    }
+
     draw();
     requestAnimationFrame(step);
   }
 
   function draw() {
+    /* The canvas is transparent: Mercury, the stars and the deep-space
+       background all come from <st-planet-field> underneath. */
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = "#070b14";
-    ctx.fillRect(0, 0, W, H);
 
     ctx.save();
     ctx.translate(viewOffX, viewOffY);
@@ -563,35 +549,26 @@ addEventListener("keydown", hideIntro, { once: true });
 
     const WW = worldW(),
       HH = worldH();
-    ctx.fillStyle = "#0b1020";
-    ctx.fillRect(0, 0, WW, HH);
 
-    for (const s of stars) {
-      ctx.globalAlpha = 0.5;
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fillStyle = "#fff";
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-
-    const g = ctx.createRadialGradient(
-      planet.x - 14,
-      planet.y - 14,
-      8,
-      planet.x,
-      planet.y,
-      planet.r * 1.2,
-    );
-    g.addColorStop(0, "#7bc2f2");
-    g.addColorStop(1, "#1d4f8d");
-    ctx.fillStyle = g;
+    /* Letterboxed viewports used to hide off-world spawns behind opaque
+       bars; with a transparent canvas the clip does that job, so meteors
+       still enter the frame instead of popping into existence. */
     ctx.beginPath();
-    ctx.arc(planet.x, planet.y, planet.r, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.rect(0, 0, WW, HH);
+    ctx.clip();
 
     for (const d of debris) {
-      ctx.fillStyle = "#bfc9d6";
+      const shade = ctx.createRadialGradient(
+        d.x - d.r * 0.35,
+        d.y - d.r * 0.35,
+        d.r * 0.2,
+        d.x,
+        d.y,
+        d.r,
+      );
+      shade.addColorStop(0, "#d8dee8");
+      shade.addColorStop(1, "#6d7684");
+      ctx.fillStyle = shade;
       ctx.beginPath();
       ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
       ctx.fill();
