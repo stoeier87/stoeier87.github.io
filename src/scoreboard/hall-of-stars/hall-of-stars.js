@@ -89,12 +89,23 @@ let reduced = motionQuery.matches;
 const SLOT = (Math.PI * 2) / 12;
 
 const now = currentPeriod();
+
+/* ── The hall's first period ───────────────────────────────────────────
+   The hall has existed since Leo 2026 — there is no time before it, so
+   backward travel stops there: no earlier year is selectable, and in the
+   birth year the signs before Leo are off the reachable arc entirely.
+   Without this floor, every period back to the earliest score's year was
+   browsable as an "unclaimed" list of pure nothing. */
+const EPOCH_INDEX = ZODIAC_PERIODS.findIndex((p) => p.name === "Leo");
+const EPOCH_YEAR = 2026;
+const EPOCH_START_MS = periodWindowUtc(EPOCH_INDEX, EPOCH_YEAR).startUtcMs;
+
 /* The ceiling is the RUNNING period's label year, not the calendar year —
    in the first days of January the calendar says Y+1 while every period
    that exists is still labelled Y, and a selectable-but-empty Y+1 would be
    a year made entirely of future. */
 let maxYear = periodOfTimestamp(Date.now()).year;
-let minYear = maxYear; // widened once scores load
+let minYear = maxYear; // widened once scores load, never past EPOCH_YEAR
 let selectedYear = now.year;
 let activeIndex = now.index; // slot nearest the front
 let ringAngle = -activeIndex * SLOT; // slot k is front when ringAngle ≡ -k·SLOT
@@ -116,19 +127,22 @@ let autoDir = 1;
 const rowsByGame = new Map();
 let loadFailed = false;
 
-/* ── No forward time travel ────────────────────────────────────────────
-   The hall only contains time that has happened. For the selected year a
-   sign is reachable only once its period has started; because the ring is
-   in chronological order, the reachable signs always form one contiguous
-   arc ending at the running period. Everything that navigates — arrows,
-   taps, snap, momentum, the auto-turn — checks this table, so the winners
-   panel can never land on a period that hasn't begun. */
+/* ── No time travel outside the hall's existence ───────────────────────
+   The hall only contains time that has happened TO IT. For the selected
+   year a sign is reachable only once its period has started — and only if
+   it starts no earlier than the hall's own first period (Leo 2026); both
+   walls keep the reachable signs one contiguous arc, since the ring is in
+   chronological order. Everything that navigates — arrows, taps, snap,
+   momentum, the auto-turn — checks this table, so the winners panel can
+   never land on a period that hasn't begun, nor on one from before the
+   hall existed. */
 const allowed = new Array(12).fill(true);
 
 function refreshAllowed() {
   const nowMs = Date.now();
   for (let i = 0; i < 12; i++) {
-    allowed[i] = periodWindowUtc(i, selectedYear).startUtcMs <= nowMs;
+    const start = periodWindowUtc(i, selectedYear).startUtcMs;
+    allowed[i] = start <= nowMs && start >= EPOCH_START_MS;
   }
 }
 
@@ -274,8 +288,8 @@ function renderWinners() {
 function renderYear() {
   /* Forward never passes the running period's label year (re-read here so
      a tab that lives across a period boundary picks the new ceiling up);
-     back never passes the label year of the earliest timestamped score.
-     The reachable-sign table depends on both the year and the clock, so it
+     back never passes the hall's first year, Leo 2026's. The
+     reachable-sign table depends on both the year and the clock, so it
      refreshes here too. */
   maxYear = periodOfTimestamp(Date.now()).year;
   refreshAllowed();
@@ -1168,7 +1182,9 @@ if (reduced) {
     }
   }
   if (Number.isFinite(minTs)) {
-    minYear = Math.min(maxYear, periodOfTimestamp(minTs).year);
+    /* A stray score stamped before the hall existed must not reopen the
+       years before it — the epoch is the floor, whatever the data says. */
+    minYear = Math.max(EPOCH_YEAR, Math.min(maxYear, periodOfTimestamp(minTs).year));
   }
   if (loadFailed && ![...rowsByGame.values()].some((r) => r.length)) {
     el.note.textContent = "The leaderboard could not be reached — showing the empty sky.";
