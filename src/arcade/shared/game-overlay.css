@@ -1,7 +1,8 @@
 /* The shared "approach panel / intro card / pause / final-score" overlay UI
    used by games that have a pausable status HUD (currently earth, jupiter,
    mars, neptune, pluto, saturn, uranus — not every game uses this template,
-   unlike game-hud.css; mercury/venus don't import this file at all).
+   unlike game-hud.css; venus doesn't import this file at all, and mercury
+   imports it for st-planet-field#bg + the final-rows/best-marker rules).
    Extracted where the rule body was identical (post whitespace AND numeric-
    literal normalization, e.g. ".14em" == "0.14em") across every game that
    had it. `.approach-label`, `.bar-fill` have genuine per-game variance and
