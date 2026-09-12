@@ -9,6 +9,12 @@
          Rammen er spansk; selve indlæggene skrives på engelsk og bærer
          lang="en" i thoughts.js. -->
     <meta name="robots" content="noindex, nofollow, noarchive" />
+    <!-- Brevene sættes i Lora — en varm, litterær serif. Kun denne side
+         henter den; resten af sitet kender kun Archivo Black + Space Mono. -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&display=swap"
+    />
     <meta name="st:common-head" />
     <meta name="st:common-foot" />
   </head>
@@ -42,9 +48,10 @@
     >
       <!-- Løbende refleksioner — ingen læst/ulæst, ingen dagslås. Det er
            en strøm hun kan dykke ned i, når hun vil. -->
-      <header class="flex flex-col items-center gap-2 text-center">
+      <header class="flex flex-col items-center gap-2.5 text-center">
         <p class="font-display text-2xl tracking-wide">PENSAMIENTOS</p>
-        <p class="text-xs tracking-loose text-text-muted lowercase">
+        <!-- Dedikationen i brevets egen skrift — varm, ikke maskinel -->
+        <p class="text-[15px] text-text-muted italic [font-family:Lora,Georgia,serif]">
           reflexiones que lanzo al universo — y a ti
         </p>
         <!-- Siden skal udstråle at der løbende kommer nyt -->

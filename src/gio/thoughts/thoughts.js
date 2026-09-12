@@ -85,14 +85,17 @@ function renderFeed(list) {
     feed.innerHTML = `<p class="text-center text-sm leading-relaxed text-text-muted">Aún no hay pensamientos — el primero llega pronto.</p>`;
     return;
   }
+  /* Brevkroppen sættes i Lora (serif, varm, litterær) — rammen omkring den
+     (dato, header, knapper) beholder sitets mono-identitet. Al varme hentes
+     via color-mix af eksisterende tokens; ingen nye farver. */
   feed.innerHTML = entries
     .map(
       (entry) => `
-    <article class="flex flex-col gap-3 rounded-card border border-border-faint bg-card-bg px-6 py-6 backdrop-blur-[2px]">
-      <p class="flex items-center gap-2 text-xs tracking-loose text-text-dim">
+    <article class="flex flex-col gap-4 rounded-card border border-[color-mix(in_srgb,var(--color-hall-city-light)_16%,var(--color-border-faint))] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-hall-city-light)_6%,var(--color-card-bg)),var(--color-card-bg)_60%)] px-6 py-7 backdrop-blur-[2px] sm:px-8">
+      <p class="flex items-center gap-2 text-xs tracking-loose text-[color-mix(in_srgb,var(--color-hall-city-light)_55%,var(--color-text-dim))]">
         <span class="text-accent" aria-hidden="true">♥</span>${escapeHtml(prettyDate(entry.date))}
       </p>
-      <div lang="en" class="flex flex-col gap-3 text-base leading-relaxed text-ink">${bodyHtml(entry.body)}</div>
+      <div lang="en" class="flex flex-col gap-4 text-[17px] leading-[1.8] text-[color-mix(in_srgb,var(--color-ink)_90%,var(--color-hall-city-light)_10%)] [font-family:Lora,Georgia,serif]">${bodyHtml(entry.body)}</div>
     </article>`,
     )
     .join("");
