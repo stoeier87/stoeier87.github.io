@@ -430,8 +430,13 @@ addEventListener("keydown", hideIntro, { once: true });
       elapsed += dt;
 
       if (pointer.seen) {
-        ufo.x += (pointer.x - ufo.x) * 0.22;
-        ufo.y += (pointer.y - ufo.y) * 0.22;
+        /* Time-based easing (τ ≈ 67 ms, the old 0.22/frame at 60 fps) —
+           same feel at every refresh rate. The per-frame lerp doubled the
+           ship's speed on 120 Hz phones the moment the opaque 2D
+           background stopped throttling the loop to 60 fps. */
+        const k = 1 - Math.exp(-dt / 67);
+        ufo.x += (pointer.x - ufo.x) * k;
+        ufo.y += (pointer.y - ufo.y) * k;
       }
 
       ufo.x = Math.max(10, Math.min(WW - 10, ufo.x));
