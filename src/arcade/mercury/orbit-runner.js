@@ -314,12 +314,73 @@ addEventListener("keydown", hideIntro, { once: true });
     });
   }
 
+  /* ── Input: two schemes, split on pointer type ─────────────────────────
+     Mouse: the ship follows the cursor absolutely, click fires — the
+     cursor IS where the ship already is, so firing never displaces it.
+     Touch/pen: steering is RELATIVE — the ship follows the finger's
+     MOVEMENT, never its position, so a firing tap cannot yank the ship
+     across the screen (which it did: pointerdown both fired and set the
+     follow target to the tap point — lethal now that threats come from
+     every side). A still tap fires; a second finger during a steering
+     drag fires too. */
+  const TOUCH_GAIN = 1.15; // full-screen reach without full-screen thumb travel
+  const TAP_MS = 300;
+  const TAP_SLOP_PX = 12;
+  const touch = { steering: false, lastX: 0, lastY: 0, startX: 0, startY: 0, t0: 0, moved: false };
+  /* Every touch currently on the glass, steering or not. When the steering
+     finger lifts, a surviving touch ADOPTS steering seamlessly — otherwise
+     two alternating thumbs strand the ship: the second thumb was stamped
+     "fire only" at touch-down and its drags would be ignored forever. */
+  const activeTouches = new Map(); // pointerId → last client position
+
+  function adoptSurvivingTouch() {
+    const next = activeTouches.entries().next().value;
+    if (!next) {
+      touch.steering = false;
+      pointer.down = false;
+      pointer.id = null;
+      return;
+    }
+    const [id, pos] = next;
+    pointer.id = id;
+    pointer.down = true;
+    touch.steering = true;
+    touch.moved = true; // it already fired on its down — its up must not fire again
+    touch.t0 = performance.now();
+    touch.lastX = touch.startX = pos.x;
+    touch.lastY = touch.startY = pos.y;
+  }
+
   canvas.addEventListener(
     "pointermove",
     (e) => {
-      if (pointer.id !== null && e.pointerId !== pointer.id) return;
-      setPointerFromEvent(e);
-      if (pointer.down) e.preventDefault();
+      if (e.pointerType === "mouse") {
+        if (pointer.id !== null && e.pointerId !== pointer.id) return;
+        setPointerFromEvent(e);
+        if (pointer.down) e.preventDefault();
+        return;
+      }
+      const known = activeTouches.get(e.pointerId);
+      if (known) {
+        known.x = e.clientX;
+        known.y = e.clientY;
+      }
+      if (!touch.steering || e.pointerId !== pointer.id) return;
+      pointer.x = Math.max(
+        0,
+        Math.min(BASE_W, pointer.x + ((e.clientX - touch.lastX) / viewScale) * TOUCH_GAIN),
+      );
+      pointer.y = Math.max(
+        0,
+        Math.min(BASE_H, pointer.y + ((e.clientY - touch.lastY) / viewScale) * TOUCH_GAIN),
+      );
+      pointer.seen = true;
+      touch.lastX = e.clientX;
+      touch.lastY = e.clientY;
+      if (Math.hypot(e.clientX - touch.startX, e.clientY - touch.startY) > TAP_SLOP_PX) {
+        touch.moved = true;
+      }
+      e.preventDefault();
     },
     { passive: false },
   );
@@ -329,15 +390,34 @@ addEventListener("keydown", hideIntro, { once: true });
     (e) => {
       e.preventDefault();
       if (gameOver) return;
+      if (e.pointerType !== "mouse") {
+        activeTouches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (pointer.id !== null) {
+          fireBeam(); // second finger mid-drag: fire, and never steal the steering
+          return;
+        }
+      }
       pointer.down = true;
       pointer.id = e.pointerId;
-      setPointerFromEvent(e);
+      if (e.pointerType === "mouse") {
+        setPointerFromEvent(e);
+        fireBeam();
+      } else {
+        /* The finger claims steering from wherever the ship IS — no jump */
+        touch.steering = true;
+        touch.moved = false;
+        touch.t0 = performance.now();
+        touch.lastX = touch.startX = e.clientX;
+        touch.lastY = touch.startY = e.clientY;
+        pointer.x = ufo.x;
+        pointer.y = ufo.y;
+        pointer.seen = true;
+      }
       if (canvas.setPointerCapture) {
         try {
           canvas.setPointerCapture(e.pointerId);
         } catch (_) {}
       }
-      fireBeam();
     },
     { passive: false },
   );
@@ -345,14 +425,17 @@ addEventListener("keydown", hideIntro, { once: true });
   canvas.addEventListener(
     "pointerup",
     (e) => {
+      activeTouches.delete(e.pointerId);
       if (pointer.id !== null && e.pointerId !== pointer.id) return;
-      pointer.down = false;
+      if (touch.steering && !touch.moved && performance.now() - touch.t0 < TAP_MS) {
+        fireBeam(); // a still tap is a shot, not a destination
+      }
       if (canvas.releasePointerCapture) {
         try {
           canvas.releasePointerCapture(e.pointerId);
         } catch (_) {}
       }
-      pointer.id = null;
+      adoptSurvivingTouch();
     },
     { passive: true },
   );
@@ -360,9 +443,9 @@ addEventListener("keydown", hideIntro, { once: true });
   canvas.addEventListener(
     "pointercancel",
     (e) => {
+      activeTouches.delete(e.pointerId);
       if (pointer.id !== null && e.pointerId !== pointer.id) return;
-      pointer.down = false;
-      pointer.id = null;
+      adoptSurvivingTouch();
     },
     { passive: true },
   );
@@ -398,6 +481,13 @@ addEventListener("keydown", hideIntro, { once: true });
     paused = true;
     pauseEl?.classList.add("show");
     document.body.classList.add("is-paused"); // blurs the 3D backdrop
+    /* An app switch is exactly where a finger's up-event gets lost. Drop
+       every input claim, so a swallowed pointerup can never leave steering
+       locked to a finger that is no longer on the glass. */
+    activeTouches.clear();
+    touch.steering = false;
+    pointer.down = false;
+    pointer.id = null;
   }
   addEventListener("blur", autoPause);
   document.addEventListener("visibilitychange", () => {
@@ -430,8 +520,13 @@ addEventListener("keydown", hideIntro, { once: true });
       elapsed += dt;
 
       if (pointer.seen) {
-        ufo.x += (pointer.x - ufo.x) * 0.22;
-        ufo.y += (pointer.y - ufo.y) * 0.22;
+        /* Time-based easing (τ ≈ 67 ms, the old 0.22/frame at 60 fps) —
+           same feel at every refresh rate. The per-frame lerp doubled the
+           ship's speed on 120 Hz phones the moment the opaque 2D
+           background stopped throttling the loop to 60 fps. */
+        const k = 1 - Math.exp(-dt / 67);
+        ufo.x += (pointer.x - ufo.x) * k;
+        ufo.y += (pointer.y - ufo.y) * k;
       }
 
       ufo.x = Math.max(10, Math.min(WW - 10, ufo.x));
