@@ -118,9 +118,14 @@ const dpr = Math.min(window.devicePixelRatio || 1, 2); // uncapped melts phones
 let W = 0;
 let H = 0;
 
+/* Hjertet bor i en 320px-strimmel øverst på siden (canvas er absolute,
+   ikke fixed) — det scroller med op og væk i stedet for at klistre til
+   skærmen og gemme sig bag brevene. */
+const HEART_H = 320;
+
 function resize() {
   W = window.innerWidth;
-  H = window.innerHeight;
+  H = HEART_H;
   canvas.width = W * dpr;
   canvas.height = H * dpr;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // after every resize
@@ -148,7 +153,9 @@ addEventListener("pointerdown", (e) => {
   if (e.target.closest("a, button, input, form, summary")) return;
   const t = performance.now() * 0.001;
   const { x, y } = heartPos(t);
-  if (Math.hypot(e.clientX - x, e.clientY - y) < 46) {
+  /* Canvas-koordinater, ikke viewport: strimlen scroller med siden */
+  const rect = canvas.getBoundingClientRect();
+  if (Math.hypot(e.clientX - rect.left - x, e.clientY - rect.top - y) < 46) {
     for (let i = 0; i < 10; i++) {
       const ang = Math.random() * Math.PI * 2;
       const sp = 26 + Math.random() * 70;

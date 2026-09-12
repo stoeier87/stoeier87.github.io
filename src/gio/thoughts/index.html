@@ -35,10 +35,13 @@
       >
     </div>
 
-    <!-- Det store svævende hjerte med Gio indeni — tegnes af thoughts.js -->
+    <!-- Det store svævende hjerte med Gio indeni — tegnes af thoughts.js.
+         Bor i en strimmel øverst på SIDEN (absolute, ikke fixed): det
+         svæver blidt deroppe og bliver deroppe — det følger ikke med ned
+         og forsvinder aldrig bag brevene under scroll. -->
     <canvas
       id="corazon"
-      class="pointer-events-none fixed inset-0 h-full w-full"
+      class="pointer-events-none absolute top-0 left-0 h-[320px] w-full"
       aria-hidden="true"
     ></canvas>
 
@@ -54,8 +57,11 @@
         <p class="text-[15px] text-text-muted italic [font-family:Lora,Georgia,serif]">
           reflexiones que lanzo al universo — y a ti
         </p>
-        <!-- Siden skal udstråle at der løbende kommer nyt -->
-        <p class="text-[11px] tracking-wide text-text-dim lowercase">
+        <!-- Siden skal udstråle at der løbende kommer nyt — varm og læsbar,
+             ikke en fodnote -->
+        <p
+          class="text-xs tracking-wide lowercase text-[color-mix(in_srgb,var(--color-hall-city-light)_45%,var(--color-text-muted))]"
+        >
           siempre hay una nueva en camino · vuelve pronto
         </p>
       </header>
