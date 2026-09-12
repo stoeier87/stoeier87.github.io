@@ -327,6 +327,29 @@ addEventListener("keydown", hideIntro, { once: true });
   const TAP_MS = 300;
   const TAP_SLOP_PX = 12;
   const touch = { steering: false, lastX: 0, lastY: 0, startX: 0, startY: 0, t0: 0, moved: false };
+  /* Every touch currently on the glass, steering or not. When the steering
+     finger lifts, a surviving touch ADOPTS steering seamlessly — otherwise
+     two alternating thumbs strand the ship: the second thumb was stamped
+     "fire only" at touch-down and its drags would be ignored forever. */
+  const activeTouches = new Map(); // pointerId → last client position
+
+  function adoptSurvivingTouch() {
+    const next = activeTouches.entries().next().value;
+    if (!next) {
+      touch.steering = false;
+      pointer.down = false;
+      pointer.id = null;
+      return;
+    }
+    const [id, pos] = next;
+    pointer.id = id;
+    pointer.down = true;
+    touch.steering = true;
+    touch.moved = true; // it already fired on its down — its up must not fire again
+    touch.t0 = performance.now();
+    touch.lastX = touch.startX = pos.x;
+    touch.lastY = touch.startY = pos.y;
+  }
 
   canvas.addEventListener(
     "pointermove",
@@ -336,6 +359,11 @@ addEventListener("keydown", hideIntro, { once: true });
         setPointerFromEvent(e);
         if (pointer.down) e.preventDefault();
         return;
+      }
+      const known = activeTouches.get(e.pointerId);
+      if (known) {
+        known.x = e.clientX;
+        known.y = e.clientY;
       }
       if (!touch.steering || e.pointerId !== pointer.id) return;
       pointer.x = Math.max(
@@ -362,9 +390,12 @@ addEventListener("keydown", hideIntro, { once: true });
     (e) => {
       e.preventDefault();
       if (gameOver) return;
-      if (e.pointerType !== "mouse" && pointer.id !== null) {
-        fireBeam(); // second finger mid-drag: fire, and never steal the steering
-        return;
+      if (e.pointerType !== "mouse") {
+        activeTouches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (pointer.id !== null) {
+          fireBeam(); // second finger mid-drag: fire, and never steal the steering
+          return;
+        }
       }
       pointer.down = true;
       pointer.id = e.pointerId;
@@ -394,18 +425,17 @@ addEventListener("keydown", hideIntro, { once: true });
   canvas.addEventListener(
     "pointerup",
     (e) => {
+      activeTouches.delete(e.pointerId);
       if (pointer.id !== null && e.pointerId !== pointer.id) return;
       if (touch.steering && !touch.moved && performance.now() - touch.t0 < TAP_MS) {
         fireBeam(); // a still tap is a shot, not a destination
       }
-      touch.steering = false;
-      pointer.down = false;
       if (canvas.releasePointerCapture) {
         try {
           canvas.releasePointerCapture(e.pointerId);
         } catch (_) {}
       }
-      pointer.id = null;
+      adoptSurvivingTouch();
     },
     { passive: true },
   );
@@ -413,10 +443,9 @@ addEventListener("keydown", hideIntro, { once: true });
   canvas.addEventListener(
     "pointercancel",
     (e) => {
+      activeTouches.delete(e.pointerId);
       if (pointer.id !== null && e.pointerId !== pointer.id) return;
-      touch.steering = false;
-      pointer.down = false;
-      pointer.id = null;
+      adoptSurvivingTouch();
     },
     { passive: true },
   );
@@ -452,6 +481,13 @@ addEventListener("keydown", hideIntro, { once: true });
     paused = true;
     pauseEl?.classList.add("show");
     document.body.classList.add("is-paused"); // blurs the 3D backdrop
+    /* An app switch is exactly where a finger's up-event gets lost. Drop
+       every input claim, so a swallowed pointerup can never leave steering
+       locked to a finger that is no longer on the glass. */
+    activeTouches.clear();
+    touch.steering = false;
+    pointer.down = false;
+    pointer.id = null;
   }
   addEventListener("blur", autoPause);
   document.addEventListener("visibilitychange", () => {
