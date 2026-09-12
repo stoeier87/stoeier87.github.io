@@ -9,6 +9,12 @@
          Rammen er spansk; selve indlæggene skrives på engelsk og bærer
          lang="en" i thoughts.js. -->
     <meta name="robots" content="noindex, nofollow, noarchive" />
+    <!-- Brevene sættes i Lora — en varm, litterær serif. Kun denne side
+         henter den; resten af sitet kender kun Archivo Black + Space Mono. -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&display=swap"
+    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -17,11 +23,11 @@
       href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap"
     />
     <link href="../../css/all.min.css" rel="stylesheet" />
-    <script type="module" crossorigin src="../../assets/gio/thoughts/index-DKT4sHzN.js"></script>
-    <link rel="modulepreload" crossorigin href="../../assets/tailwind-BowG0W28.js">
+    <script type="module" crossorigin src="../../assets/gio/thoughts/index-COtqYABf.js"></script>
+    <link rel="modulepreload" crossorigin href="../../assets/tailwind-zqEq0gQZ.js">
     <link rel="modulepreload" crossorigin href="../../assets/firebase-config-CE95sHti.js">
     <link rel="modulepreload" crossorigin href="../../assets/gate-qPdJeSUb.js">
-    <link rel="stylesheet" crossorigin href="../../assets/tailwind-DzmjQoix.css">
+    <link rel="stylesheet" crossorigin href="../../assets/tailwind-CtO4vsyB.css">
   </head>
   <body class="min-h-screen bg-bg-deep font-mono text-ink">
     <!-- Varmt skær nederst — samme sol som på forsiden, bare i det fjerne -->
@@ -53,9 +59,10 @@
     >
       <!-- Løbende refleksioner — ingen læst/ulæst, ingen dagslås. Det er
            en strøm hun kan dykke ned i, når hun vil. -->
-      <header class="flex flex-col items-center gap-2 text-center">
+      <header class="flex flex-col items-center gap-2.5 text-center">
         <p class="font-display text-2xl tracking-wide">PENSAMIENTOS</p>
-        <p class="text-xs tracking-loose text-text-muted lowercase">
+        <!-- Dedikationen i brevets egen skrift — varm, ikke maskinel -->
+        <p class="text-[15px] text-text-muted italic [font-family:Lora,Georgia,serif]">
           reflexiones que lanzo al universo — y a ti
         </p>
         <!-- Siden skal udstråle at der løbende kommer nyt -->

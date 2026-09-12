@@ -1,0 +1,1 @@
+import"../../tailwind-zqEq0gQZ.js";import{t as e}from"../../tool-page-BPkVQ47b.js";e(`core-model`);
