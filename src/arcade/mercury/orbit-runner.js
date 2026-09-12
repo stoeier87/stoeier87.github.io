@@ -314,12 +314,45 @@ addEventListener("keydown", hideIntro, { once: true });
     });
   }
 
+  /* ── Input: two schemes, split on pointer type ─────────────────────────
+     Mouse: the ship follows the cursor absolutely, click fires — the
+     cursor IS where the ship already is, so firing never displaces it.
+     Touch/pen: steering is RELATIVE — the ship follows the finger's
+     MOVEMENT, never its position, so a firing tap cannot yank the ship
+     across the screen (which it did: pointerdown both fired and set the
+     follow target to the tap point — lethal now that threats come from
+     every side). A still tap fires; a second finger during a steering
+     drag fires too. */
+  const TOUCH_GAIN = 1.15; // full-screen reach without full-screen thumb travel
+  const TAP_MS = 300;
+  const TAP_SLOP_PX = 12;
+  const touch = { steering: false, lastX: 0, lastY: 0, startX: 0, startY: 0, t0: 0, moved: false };
+
   canvas.addEventListener(
     "pointermove",
     (e) => {
-      if (pointer.id !== null && e.pointerId !== pointer.id) return;
-      setPointerFromEvent(e);
-      if (pointer.down) e.preventDefault();
+      if (e.pointerType === "mouse") {
+        if (pointer.id !== null && e.pointerId !== pointer.id) return;
+        setPointerFromEvent(e);
+        if (pointer.down) e.preventDefault();
+        return;
+      }
+      if (!touch.steering || e.pointerId !== pointer.id) return;
+      pointer.x = Math.max(
+        0,
+        Math.min(BASE_W, pointer.x + ((e.clientX - touch.lastX) / viewScale) * TOUCH_GAIN),
+      );
+      pointer.y = Math.max(
+        0,
+        Math.min(BASE_H, pointer.y + ((e.clientY - touch.lastY) / viewScale) * TOUCH_GAIN),
+      );
+      pointer.seen = true;
+      touch.lastX = e.clientX;
+      touch.lastY = e.clientY;
+      if (Math.hypot(e.clientX - touch.startX, e.clientY - touch.startY) > TAP_SLOP_PX) {
+        touch.moved = true;
+      }
+      e.preventDefault();
     },
     { passive: false },
   );
@@ -329,15 +362,31 @@ addEventListener("keydown", hideIntro, { once: true });
     (e) => {
       e.preventDefault();
       if (gameOver) return;
+      if (e.pointerType !== "mouse" && pointer.id !== null) {
+        fireBeam(); // second finger mid-drag: fire, and never steal the steering
+        return;
+      }
       pointer.down = true;
       pointer.id = e.pointerId;
-      setPointerFromEvent(e);
+      if (e.pointerType === "mouse") {
+        setPointerFromEvent(e);
+        fireBeam();
+      } else {
+        /* The finger claims steering from wherever the ship IS — no jump */
+        touch.steering = true;
+        touch.moved = false;
+        touch.t0 = performance.now();
+        touch.lastX = touch.startX = e.clientX;
+        touch.lastY = touch.startY = e.clientY;
+        pointer.x = ufo.x;
+        pointer.y = ufo.y;
+        pointer.seen = true;
+      }
       if (canvas.setPointerCapture) {
         try {
           canvas.setPointerCapture(e.pointerId);
         } catch (_) {}
       }
-      fireBeam();
     },
     { passive: false },
   );
@@ -346,6 +395,10 @@ addEventListener("keydown", hideIntro, { once: true });
     "pointerup",
     (e) => {
       if (pointer.id !== null && e.pointerId !== pointer.id) return;
+      if (touch.steering && !touch.moved && performance.now() - touch.t0 < TAP_MS) {
+        fireBeam(); // a still tap is a shot, not a destination
+      }
+      touch.steering = false;
       pointer.down = false;
       if (canvas.releasePointerCapture) {
         try {
@@ -361,6 +414,7 @@ addEventListener("keydown", hideIntro, { once: true });
     "pointercancel",
     (e) => {
       if (pointer.id !== null && e.pointerId !== pointer.id) return;
+      touch.steering = false;
       pointer.down = false;
       pointer.id = null;
     },
